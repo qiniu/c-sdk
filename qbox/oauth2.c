@@ -82,7 +82,7 @@ void QBox_Global_Cleanup()
 
 static const char g_statusCodeError[] = "http status code is not OK";
 
-QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError)
+static QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError)
 {
 	QBox_Error err;
 	CURLcode curlCode;
@@ -121,7 +121,7 @@ QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool
 	return err;
 }
 
-QBox_Error QBox_call(CURL* curl, int bufSize, QBox_Json** ret, QBox_Bool simpleError)
+static QBox_Error QBox_call(CURL* curl, int bufSize, QBox_Json** ret, QBox_Bool simpleError)
 {
 	QBox_Error err;
 	QBox_Buffer resp;
@@ -136,7 +136,7 @@ QBox_Error QBox_call(CURL* curl, int bufSize, QBox_Json** ret, QBox_Bool simpleE
 /*============================================================================*/
 /* type QBox_Token */
 
-void QBox_Token_set(QBox_Token* self, const char* accessToken, const char* refreshToken, QBox_Int64 expiry)
+static void QBox_Token_set(QBox_Token* self, const char* accessToken, const char* refreshToken, QBox_Int64 expiry)
 {
 	size_t accessTokenLen = strlen(accessToken) + 1;
 	size_t refreshTokenLen = strlen(refreshToken) + 1;
@@ -198,7 +198,7 @@ char* QBox_Token_Access(QBox_Token* self, QBox_Int64* expiry)
 	return accessToken;
 }
 
-void QBox_Token_ret(QBox_Token* self, QBox_Json* root, QBox_Error* err)
+static void QBox_Token_ret(QBox_Token* self, QBox_Json* root, QBox_Error* err)
 {
 	QBox_Int64 expiry;
 	const char* accessToken = QBox_Json_GetString(root, "access_token", NULL);
@@ -213,7 +213,7 @@ void QBox_Token_ret(QBox_Token* self, QBox_Json* root, QBox_Error* err)
 	}
 }
 
-QBox_Error QBox_Token_refresh(QBox_Token* self, const char* refreshToken)
+static QBox_Error QBox_Token_refresh(QBox_Token* self, const char* refreshToken)
 {
 	QBox_Error err;
 	CURL* curl;
@@ -348,7 +348,7 @@ QBox_Int64 QBox_Json_GetInt64(QBox_Json* self, const char* key, QBox_Int64 defva
 /*============================================================================*/
 /* type QBox_Client */
 
-void QBox_Client_initAccess(QBox_Client* self)
+static void QBox_Client_initAccess(QBox_Client* self)
 {
 	char* accessToken;
 	char* auth;
@@ -393,7 +393,7 @@ void QBox_Client_Cleanup(QBox_Client* self)
 	}
 }
 
-QBox_Error QBox_Client_initcall(QBox_Client* self, const char* url)
+static QBox_Error QBox_Client_initcall(QBox_Client* self, const char* url)
 {
 	QBox_Error err;
 	CURL* curl = (CURL*)self->curl;

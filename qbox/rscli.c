@@ -14,7 +14,7 @@
 /*============================================================================*/
 /* func QBox_RSCli_call */
 
-QBox_Error QBox_RSCli_call(CURL* curl, QBox_Buffer* resp)
+static QBox_Error QBox_RSCli_call(CURL* curl, QBox_Buffer* resp)
 {
 	QBox_Error err;
 	CURLcode curlCode;

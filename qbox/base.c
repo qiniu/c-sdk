@@ -219,7 +219,7 @@ char* QBox_String_Encode(const char* buf)
 /*============================================================================*/
 /* type QBox_Buffer */
 
-void QBox_Buffer_expand(QBox_Buffer* self, size_t expandSize)
+static void QBox_Buffer_expand(QBox_Buffer* self, size_t expandSize)
 {
 	size_t oldSize = self->curr - self->buf;
 	size_t newSize = (self->bufEnd - self->buf) << 1;
