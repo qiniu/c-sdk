@@ -23,7 +23,7 @@ QBox_Error QBox_RS_PutAuth(QBox_Client* self, QBox_RS_PutAuthRet* ret)
 	free(url);
 
 	if (err.code == 200) {
-		ret->url = QBox_Json_GetString(root, "url", 0);
+		ret->url = QBox_Json_GetString(root, "url", NULL);
 		ret->expiresIn = QBox_Json_GetInt64(root, "expiresIn", 0);
 	}
 	return err;
@@ -76,7 +76,7 @@ QBox_Error QBox_RS_GetIfNotModified(
 
 	char* entryURI = QBox_String_Concat3(tableName, ":", key);
 	char* entryURIEncoded = QBox_String_Encode(entryURI);
-	char* url = QBox_String_Concat(QBOX_RS_HOST, "/get/", entryURIEncoded, "/base/", base, 0);
+	char* url = QBox_String_Concat(QBOX_RS_HOST, "/get/", entryURIEncoded, "/base/", base, NULL);
 	char* urlOld;
 	char* attNameEncoded;
 
@@ -140,7 +140,7 @@ QBox_Error QBox_RS_Publish(QBox_Client* self, const char* tableName, const char*
 	QBox_Error err;
 
 	char* domainEncoded = QBox_String_Encode(domain);
-	char* url = QBox_String_Concat(QBOX_RS_HOST, "/publish/", domainEncoded, "/from/", tableName, 0);
+	char* url = QBox_String_Concat(QBOX_RS_HOST, "/publish/", domainEncoded, "/from/", tableName, NULL);
 	free(domainEncoded);
 
 	err = QBox_Client_CallNoRet(self, url);
