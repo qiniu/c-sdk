@@ -17,7 +17,16 @@
 /*============================================================================*/
 /* func QBox_Zero */
 
-#define QBox_Zero(v)	memset(&v, 0, sizeof(v))
+#define QBox_Zero(v)		memset(&v, 0, sizeof(v))
+
+/*============================================================================*/
+/* func QBox_snprintf */
+
+#if defined(_MSC_VER)
+#define QBox_snprintf		_snprintf
+#else
+#define QBox_snprintf		snprintf
+#endif
 
 /*============================================================================*/
 /* type QBox_Int64 */
@@ -45,11 +54,6 @@ typedef struct _QBox_Error {
 	int code;
 	const char* message;
 } QBox_Error;
-
-/*============================================================================*/
-/* func QBox_CAS */
-
-void* QBox_CAS(void** pp, void* oldVal, void* newVal);
 
 /*============================================================================*/
 /* type QBox_Count */

@@ -226,6 +226,7 @@ static QBox_Error QBox_Token_refresh(QBox_Token* self, const char* refreshToken)
 
 	curl = curl_easy_init();
 
+	curl_easy_setopt(curl, CURLOPT_POST, 1);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(curl, CURLOPT_URL, QBOX_TOKEN_ENDPOINT);
@@ -271,6 +272,7 @@ QBox_Error QBox_Token_ExchangeByPassword(QBox_Token** token, const char* user, c
 
 	curl = curl_easy_init();
 
+	curl_easy_setopt(curl, CURLOPT_POST, 1);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(curl, CURLOPT_URL, QBOX_TOKEN_ENDPOINT);
@@ -414,6 +416,7 @@ static QBox_Error QBox_Client_initcall(QBox_Client* self, const char* url)
 		QBox_Client_initAccess(self);
 	}
 
+	curl_easy_setopt(curl, CURLOPT_POST, 1);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
@@ -421,6 +424,23 @@ static QBox_Error QBox_Client_initcall(QBox_Client* self, const char* url)
 
 	err.code = 200;
 	err.message = "OK";
+	return err;
+}
+
+QBox_Error QBox_Client_CallWithBinary(
+	QBox_Client* self, QBox_Json** ret, const char* url, FILE* body, QBox_Int64 bodyLen)
+{
+	CURL* curl;
+	QBox_Error err = QBox_Client_initcall(self, url);
+	if (err.code != 200) {
+		return err;
+	}
+	curl = (CURL*)self->curl;
+	curl_easy_setopt(curl, CURLOPT_INFILE, body);
+	curl_easy_setopt(curl, CURLOPT_INFILESIZE, bodyLen);
+
+	err = QBox_callex(curl, &self->b, &self->root, QBox_False);
+	*ret = self->root;
 	return err;
 }
 
