@@ -31,7 +31,7 @@
 /*============================================================================*/
 /* type QBox_Int64 */
 
-#ifdef WIN32
+#if defined(_MSC_VER)
 typedef _int64 QBox_Int64;
 #else
 typedef long long QBox_Int64;
