@@ -14,14 +14,18 @@
 #include "oauth2.h"
 
 /*============================================================================*/
-/* func QBox_RS_PutAuth */
+/* func QBox_RS_PutAuth, QBox_RS_PutAuthEx */
 
 typedef struct _QBox_RS_PutAuthRet {
 	const char *url;
 	QBox_Int64 expiresIn;
 } QBox_RS_PutAuthRet;
 
-QBox_Error QBox_RS_PutAuth(QBox_Client* self, QBox_RS_PutAuthRet* ret);
+QBox_Error QBox_RS_PutAuth(
+	QBox_Client* self, QBox_RS_PutAuthRet* ret);
+
+QBox_Error QBox_RS_PutAuthEx(
+	QBox_Client* self, QBox_RS_PutAuthRet* ret, const char* callbackUrl, int expiresIn);
 
 /*============================================================================*/
 /* func QBox_RS_Get, QBox_RS_GetIfNotModified */
@@ -39,6 +43,21 @@ QBox_Error QBox_RS_Get(
 
 QBox_Error QBox_RS_GetIfNotModified(
 	QBox_Client* self, QBox_RS_GetRet* ret, const char* tableName, const char* key, const char* attName, const char* base);
+
+/*============================================================================*/
+/* func QBox_RS_Put, QBox_RS_PutFile */
+
+typedef struct _QBox_RS_PutRet {
+	const char* hash;
+} QBox_RS_PutRet;
+
+QBox_Error QBox_RS_Put(
+	QBox_Client* self, QBox_RS_PutRet* ret, const char* tableName, const char* key,
+	const char* mimeType, FILE* source, QBox_Int64 fsize, const char* customMeta);
+
+QBox_Error QBox_RS_PutFile(
+	QBox_Client* self, QBox_RS_PutRet* ret, const char* tableName, const char* key,
+	const char* mimeType, const char* srcFile, const char* customMeta);
 
 /*============================================================================*/
 /* func QBox_RS_Stat */

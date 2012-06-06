@@ -14,6 +14,7 @@
 #include "base.h"
 #include "conf.h"
 #include "../cJSON/cJSON.h"
+#include <stdio.h>
 
 /*============================================================================*/
 /* Global */
@@ -90,6 +91,8 @@ void QBox_Client_Cleanup(QBox_Client* self);
 
 QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url);
 QBox_Error QBox_Client_CallNoRet(QBox_Client* self, const char* url);
+QBox_Error QBox_Client_CallWithBinary(
+	QBox_Client* self, QBox_Json** ret, const char* url, FILE* body, QBox_Int64 bodyLen);
 
 /*============================================================================*/
 
