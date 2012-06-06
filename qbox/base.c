@@ -17,26 +17,6 @@
 #include <time.h>
 
 /*============================================================================*/
-/* func QBox_CAS */
-
-#if defined(_WIN32)
-#include <windows.h>
-
-void* QBox_CAS(void** pp, void* oldVal, void* newVal)
-{
-	return InterlockedCompareExchangePointer(pp, newVal, oldVal);
-}
-
-#else
-
-void* QBox_CAS(void** pp, void* oldVal, void* newVal)
-{
-	return (void*)__sync_val_compare_and_swap(pp, oldVal, newVal);
-}
-
-#endif
-
-/*============================================================================*/
 /* type QBox_Count */
 
 #if defined(_WIN32)

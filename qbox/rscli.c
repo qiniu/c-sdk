@@ -54,7 +54,9 @@ QBox_Error QBox_RSCli_PutFile(
 	char* entryURI;
 	char* entryURIEncoded;
 	char* mimeTypeEncoded;
+	char* customMetaEncoded;
 	char* action;
+	char* action2;
 	CURL* curl;
 	QBox_Error err;
 
@@ -74,6 +76,14 @@ QBox_Error QBox_RSCli_PutFile(
 	action = QBox_String_Concat("/rs-put/", entryURIEncoded, "/mimeType/", mimeTypeEncoded, NULL);
 	free(entryURIEncoded);
 	free(mimeTypeEncoded);
+
+	if (customMeta != NULL && *customMeta != '\0') {
+		customMetaEncoded = QBox_String_Encode(customMeta);
+		action2 = QBox_String_Concat3(action, "/meta/", customMetaEncoded);
+		free(action);
+		free(customMetaEncoded);
+		action = action2;
+	}
 
 	curl = curl_easy_init();
 
