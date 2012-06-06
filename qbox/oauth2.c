@@ -226,9 +226,8 @@ static QBox_Error QBox_Token_refresh(QBox_Token* self, const char* refreshToken)
 
 	curl = curl_easy_init();
 
-	curl_easy_setopt(curl, CURLOPT_POST, 1);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(curl, CURLOPT_URL, QBOX_TOKEN_ENDPOINT);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, params);
 
@@ -272,9 +271,8 @@ QBox_Error QBox_Token_ExchangeByPassword(QBox_Token** token, const char* user, c
 
 	curl = curl_easy_init();
 
-	curl_easy_setopt(curl, CURLOPT_POST, 1);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(curl, CURLOPT_URL, QBOX_TOKEN_ENDPOINT);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, params);
 
@@ -416,9 +414,9 @@ static QBox_Error QBox_Client_initcall(QBox_Client* self, const char* url)
 		QBox_Client_initAccess(self);
 	}
 
-	curl_easy_setopt(curl, CURLOPT_POST, 1);
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, self->authHeader);
 
@@ -431,15 +429,28 @@ QBox_Error QBox_Client_CallWithBinary(
 	QBox_Client* self, QBox_Json** ret, const char* url, FILE* body, QBox_Int64 bodyLen)
 {
 	CURL* curl;
+	struct curl_slist* headers;
 	QBox_Error err = QBox_Client_initcall(self, url);
 	if (err.code != 200) {
 		return err;
 	}
 	curl = (CURL*)self->curl;
-	curl_easy_setopt(curl, CURLOPT_INFILE, body);
 	curl_easy_setopt(curl, CURLOPT_INFILESIZE, bodyLen);
+	curl_easy_setopt(curl, CURLOPT_READFUNCTION, fread);
+	curl_easy_setopt(curl, CURLOPT_READDATA, body);
+	curl_easy_setopt(curl, CURLOPT_POST, 1);
+
+	char ctxLength[64];
+	QBox_snprintf(ctxLength, 64, "Content-Length: %lld", bodyLen);
+	headers = curl_slist_append(NULL, ctxLength);
+	headers = curl_slist_append(headers, "Content-Type: application/octet-stream");
+	headers = curl_slist_append(headers, ((struct curl_slist*)self->authHeader)->data);
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
 	err = QBox_callex(curl, &self->b, &self->root, QBox_False);
+
+	curl_slist_free_all(headers);
+
 	*ret = self->root;
 	return err;
 }

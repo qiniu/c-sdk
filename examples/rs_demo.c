@@ -20,6 +20,7 @@ int main()
 	QBox_Token* token;
 	QBox_Client client;
 	QBox_RS_PutAuthRet putAuthRet;
+	QBox_RS_PutRet putRet;
 	QBox_RS_GetRet getRet;
 	QBox_RS_StatRet statRet;
 	char* hash;
@@ -39,6 +40,22 @@ int main()
 	QBox_Token_Release(token);
 	QBox_RS_Delete(&client, "tblName", "rs_demo.c");
 
+	printf("QBox_RS_PutFile\n");
+
+	err = QBox_RS_PutFile(&client, &putRet, "tblName", "rs/demo.c", "application/octet-stream", __FILE__, "");
+	if (err.code != 200) {
+		printf("QBox_RS_PutFile failed: %d - %s\n", err.code, err.message);
+		goto lzDone;
+	}
+
+	printf("QBox_RS_Get\n");
+
+	err = QBox_RS_Get(&client, &getRet, "tblName", "rs/demo.c", NULL);
+	if (err.code != 200) {
+		printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
+		goto lzDone;
+	}
+	
 	printf("QBox_RS_PutAuth\n");
 
 	err = QBox_RS_PutAuth(&client, &putAuthRet);

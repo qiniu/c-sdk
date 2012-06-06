@@ -75,6 +75,7 @@ QBox_Error QBox_RS_Put(
 	char* entryURI = QBox_String_Concat3(tableName, ":", key);
 	char* entryURIEncoded = QBox_String_Encode(entryURI);
 	char* customMetaEncoded;
+	char* mimeEncoded;
 	char* url;
 	char* url2;
 
@@ -82,7 +83,10 @@ QBox_Error QBox_RS_Put(
 		mimeType = "application/octet-stream";
 	}
 
-	url = QBox_String_Concat(QBOX_IO_HOST, "/rs-put/", entryURIEncoded, "/mime/", mimeType, NULL);
+	mimeEncoded = QBox_String_Encode(mimeType);
+	url = QBox_String_Concat(QBOX_IO_HOST, "/rs-put/", entryURIEncoded, "/mime/", mimeEncoded, NULL);
+	free(mimeEncoded);
+	free(entryURIEncoded);
 
 	if (customMeta != NULL && *customMeta != '\0') {
 		customMetaEncoded = QBox_String_Encode(customMeta);
