@@ -77,6 +77,8 @@ QBox_Int64 QBox_Json_GetInt64(QBox_Json* self, const char* key, QBox_Int64 defva
 /*============================================================================*/
 /* type QBox_Client */
 
+struct QBox_Virtual_FuncTable;
+
 typedef struct _QBox_Client {
 	void* curl;
 	void* authHeader;
@@ -84,15 +86,26 @@ typedef struct _QBox_Client {
 	QBox_Json* root;
 	QBox_Token* token;
 	QBox_Buffer b;
+
+    int refreshToken;
+
+    char const* acsKey;
+    char const* scrKey;
+
+    struct QBox_Virtual_FuncTable * vptr;
 } QBox_Client;
 
 void QBox_Client_Init(QBox_Client* self, QBox_Token* token, size_t bufSize);
+void QBox_Client_Init_ByAccessKey(QBox_Client* self, char const* accessKey, char const* secretKey, size_t bufSize);
 void QBox_Client_Cleanup(QBox_Client* self);
 
 QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url);
 QBox_Error QBox_Client_CallNoRet(QBox_Client* self, const char* url);
 QBox_Error QBox_Client_CallWithBinary(
 	QBox_Client* self, QBox_Json** ret, const char* url, FILE* body, QBox_Int64 bodyLen);
+
+void QBox_RS_Init_ByPassword(struct QBox_Virtual_FuncTable** vptr);
+void QBox_RS_Init_ByAccessKey(struct QBox_Virtual_FuncTable** vptr);
 
 /*============================================================================*/
 

@@ -366,10 +366,27 @@ void QBox_Client_Init(QBox_Client* self, QBox_Token* token, size_t bufSize)
 	self->curl = curl_easy_init();
 	self->token = token;
 	self->root = NULL;
+    self->refreshToken = 1;
 
-	QBox_Buffer_Init(&self->b, bufSize);
-	QBox_Token_Acquire(token);
-	QBox_Client_initAccess(self);
+    QBox_Buffer_Init(&self->b, bufSize);
+    QBox_Token_Acquire(token);
+    QBox_Client_initAccess(self);
+
+    QBox_RS_Init_ByPassword(&self->vptr);
+}
+
+void QBox_Client_Init_ByAccessKey(QBox_Client* self, char const* accessKey, char const* secretKey, size_t bufSize)
+{
+	self->curl = curl_easy_init();
+	self->root = NULL;
+    self->refreshToken = 0;
+
+    self->acsKey = accessKey;
+    self->scrKey = secretKey;
+
+    QBox_Buffer_Init(&self->b, bufSize);
+
+    QBox_RS_Init_ByAccessKey(&self->vptr);
 }
 
 void QBox_Client_Cleanup(QBox_Client* self)
@@ -405,14 +422,16 @@ static QBox_Error QBox_Client_initcall(QBox_Client* self, const char* url)
 		self->root = NULL;
 	}
 
-	if (self->expiry <= QBox_Seconds()) { // refresh
-		err = QBox_Token_Refresh(self->token);
-		if (err.code != 200) {
-			return err;
-		}
-		curl_slist_free_all((struct curl_slist*)self->authHeader);
-		QBox_Client_initAccess(self);
-	}
+    if (self->refreshToken) {
+        if (self->expiry <= QBox_Seconds()) { // refresh
+            err = QBox_Token_Refresh(self->token);
+            if (err.code != 200) {
+                return err;
+            }
+            curl_slist_free_all((struct curl_slist*)self->authHeader);
+            QBox_Client_initAccess(self);
+        }
+    }
 
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
