@@ -23,8 +23,8 @@ int main()
 	QBox_RS_GetRet getRet;
 	QBox_RS_StatRet statRet;
 	char* hash;
-    char* accessKey = "<PUT YOUR ACCESS KEY HERE>";
-    char* secretKey = "<PUT YOUR SECRET KEY HERE>";
+    char* accessKey = "<Please apply your access key>";
+    char* secretKey = "<Dont send your secret key to anyone>";
 
 	QBox_Zero(client);
 	QBox_Global_Init(-1);
@@ -36,7 +36,7 @@ int main()
 
 	printf("QBox_RS_PutFile\n");
 
-	err = QBox_RS_PutFile(&client, &putRet, "tblName", "rs/demo.c", "application/octet-stream", __FILE__, "");
+	err = QBox_RS_PutFile(&client, &putRet, "tblName", "rs_accesskey_demo.c", "application/octet-stream", __FILE__, "");
 	if (err.code != 200) {
 		printf("QBox_RS_PutFile failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -44,7 +44,7 @@ int main()
 
 	printf("QBox_RS_Get\n");
 
-	err = QBox_RS_Get(&client, &getRet, "tblName", "rs/demo.c", NULL);
+	err = QBox_RS_Get(&client, &getRet, "tblName", "rs_accesskey_demo.c", NULL);
 	if (err.code != 200) {
 		printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -58,11 +58,11 @@ int main()
 		goto lzDone;
 	}
 
-	printf("QBox_RSCli_PutFile\n");
+	printf("QBox_RS_PutFile\n");
 
 	err = QBox_RSCli_PutFile(NULL, putAuthRet.url, "tblName", "rs_accesskey_demo.c", "application/octet-stream", __FILE__, "", "key=rs_accesskey_demo.c");
 	if (err.code != 200) {
-		printf("QBox_RS_PutFile failed: %d - %s\n", err.code, err.message);
+		printf("QBox_RSCli_PutFile failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
 	}
 
