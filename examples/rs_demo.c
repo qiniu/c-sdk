@@ -38,11 +38,11 @@ int main()
 
 	QBox_Client_Init(&client, token, 1024);
 	QBox_Token_Release(token);
-	QBox_RS_Delete(&client, "tblName", "rs_demo.c");
+	QBox_RS_Delete(&client, "Bucket", "rs_demo.c");
 
 	printf("QBox_RS_PutFile\n");
 
-	err = QBox_RS_PutFile(&client, &putRet, "tblName", "rs/demo.c", "application/octet-stream", __FILE__, "");
+	err = QBox_RS_PutFile(&client, &putRet, "Bucket", "rs/demo.c", "application/octet-stream", __FILE__, "");
 	if (err.code != 200) {
 		printf("QBox_RS_PutFile failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -50,7 +50,7 @@ int main()
 
 	printf("QBox_RS_Get\n");
 
-	err = QBox_RS_Get(&client, &getRet, "tblName", "rs/demo.c", NULL);
+	err = QBox_RS_Get(&client, &getRet, "Bucket", "rs/demo.c", NULL);
 	if (err.code != 200) {
 		printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -66,7 +66,7 @@ int main()
 
 	printf("QBox_RSCli_PutFile\n");
 
-	err = QBox_RSCli_PutFile(NULL, putAuthRet.url, "tblName", "rs_demo.c", "application/octet-stream", __FILE__, "", "key=rs_demo.c");
+	err = QBox_RSCli_PutFile(NULL, putAuthRet.url, "Bucket", "rs_demo.c", "application/octet-stream", __FILE__, "", "key=rs_demo.c");
 	if (err.code != 200) {
 		printf("QBox_RS_PutFile failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -74,7 +74,7 @@ int main()
 
 	printf("QBox_RS_Get\n");
 
-	err = QBox_RS_Get(&client, &getRet, "tblName", "rs_demo.c", NULL);
+	err = QBox_RS_Get(&client, &getRet, "Bucket", "rs_demo.c", NULL);
 	if (err.code != 200) {
 		printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -83,7 +83,7 @@ int main()
 
 	printf("QBox_RS_GetIfNotModified: %s\n", hash);
 
-	err = QBox_RS_GetIfNotModified(&client, &getRet, "tblName", "rs_demo.c", NULL, hash);
+	err = QBox_RS_GetIfNotModified(&client, &getRet, "Bucket", "rs_demo.c", NULL, hash);
 	free(hash);
 	if (err.code != 200) {
 		printf("QBox_RS_GetIfNotModified failed: %d - %s\n", err.code, err.message);
@@ -92,7 +92,7 @@ int main()
 
 	printf("QBox_RS_Stat\n");
 
-	err = QBox_RS_Stat(&client, &statRet, "tblName", "rs_demo.c");
+	err = QBox_RS_Stat(&client, &statRet, "Bucket", "rs_demo.c");
 	if (err.code != 200) {
 		printf("QBox_RS_Stat failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -100,7 +100,7 @@ int main()
 
 	printf("QBox_RS_Publish\n");
 
-	err = QBox_RS_Publish(&client, "tblName", "iovip.qbox.me/tblName");
+	err = QBox_RS_Publish(&client, "Bucket", "iovip.qbox.me/Bucket");
 	if (err.code != 200) {
 		printf("QBox_RS_Publish failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -108,7 +108,7 @@ int main()
 
 	printf("QBox_RS_Unpublish\n");
 
-	err = QBox_RS_Unpublish(&client, "iovip.qbox.me/tblName");
+	err = QBox_RS_Unpublish(&client, "iovip.qbox.me/Bucket");
 	if (err.code != 200) {
 		printf("QBox_RS_Unpublish failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -116,7 +116,7 @@ int main()
 
 	printf("QBox_RS_Delete\n");
 
-	err = QBox_RS_Delete(&client, "tblName", "rs_demo.c");
+	err = QBox_RS_Delete(&client, "Bucket", "rs_demo.c");
 	if (err.code != 200) {
 		printf("QBox_RS_Delete failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -124,7 +124,7 @@ int main()
 
 	printf("QBox_RS_Drop\n");
 
-	err = QBox_RS_Drop(&client, "tblName");
+	err = QBox_RS_Drop(&client, "Bucket");
 	if (err.code != 200) {
 		printf("QBox_RS_Drop failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
