@@ -2,8 +2,8 @@
 
 /*============================================================================*/
 
-const char* QBOX_CLIENT_ID				= "abcd0c7edcdf914228ed8aa7c6cee2f2bc6155e2";
-const char* QBOX_CLIENT_SECRET			= "fc9ef8b171a74e197b17f85ba23799860ddf3b9c";
+const char* QBOX_ACCESS_KEY				= "<Please apply your access key>";
+const char* QBOX_SECRET_KEY				= "<Dont send your secret key to anyone>";
 
 const char* QBOX_REDIRECT_URI			= "<RedirectURL>";
 const char* QBOX_AUTHORIZATION_ENDPOINT	= "<AuthURL>";

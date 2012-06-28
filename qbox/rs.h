@@ -12,6 +12,7 @@
 #define QBOX_RS_H
 
 #include "oauth2.h"
+#include "oauth2_passwd.h"
 
 /*============================================================================*/
 /* func QBox_RS_PutAuth, QBox_RS_PutAuthEx */
