@@ -33,7 +33,7 @@ static QBox_Error QBox_DigestAuth_Auth(void* self, QBox_Header** header, const c
 	}
 	if (path == NULL) {
 		err.code = 400;
-		err.message = "invalid url";
+		err.message = "Invalid URL";
 		return err;
 	}
 
