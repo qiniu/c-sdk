@@ -9,11 +9,18 @@
  */
 
 #include "oauth2.h"
+#include <openssl/hmac.h>
 #include <curl/curl.h>
 #include <string.h>
 #include <stdlib.h>
 
 #define QBox_initBufSize	1024
+
+struct QBox_Virtual_Client_FuncTable QBox_Client_Default_Func = {
+    NULL, /* QBox_Client_CallWithBinary */
+    NULL, /* QBox_Client_Call */
+    NULL  /* QBox_Client_CallNoRet */
+};
 
 /*============================================================================*/
 /* type QBox_Mutex */
@@ -366,10 +373,13 @@ void QBox_Client_Init(QBox_Client* self, QBox_Token* token, size_t bufSize)
 	self->curl = curl_easy_init();
 	self->token = token;
 	self->root = NULL;
+    self->refreshToken = 1;
 
 	QBox_Buffer_Init(&self->b, bufSize);
 	QBox_Token_Acquire(token);
 	QBox_Client_initAccess(self);
+
+    self->vptr = &QBox_Client_Default_Func;
 }
 
 void QBox_Client_Cleanup(QBox_Client* self)
@@ -405,14 +415,16 @@ static QBox_Error QBox_Client_initcall(QBox_Client* self, const char* url)
 		self->root = NULL;
 	}
 
-	if (self->expiry <= QBox_Seconds()) { // refresh
-		err = QBox_Token_Refresh(self->token);
-		if (err.code != 200) {
-			return err;
-		}
-		curl_slist_free_all((struct curl_slist*)self->authHeader);
-		QBox_Client_initAccess(self);
-	}
+    if (self->refreshToken) {
+        if (self->expiry <= QBox_Seconds()) { // refresh
+            err = QBox_Token_Refresh(self->token);
+            if (err.code != 200) {
+                return err;
+            }
+            curl_slist_free_all((struct curl_slist*)self->authHeader);
+            QBox_Client_initAccess(self);
+        }
+    }
 
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -430,7 +442,17 @@ QBox_Error QBox_Client_CallWithBinary(
 {
 	CURL* curl;
 	struct curl_slist* headers;
-	QBox_Error err = QBox_Client_initcall(self, url);
+	QBox_Error err;
+
+    if (self->vptr->QBox_Client_CallWithBinary) {
+        err = self->vptr->QBox_Client_CallWithBinary(self, ret, url, body, bodyLen);
+
+        if (err.code != 200) {
+            return err;
+        }
+    }
+
+	err = QBox_Client_initcall(self, url);
 	if (err.code != 200) {
 		return err;
 	}
@@ -457,7 +479,17 @@ QBox_Error QBox_Client_CallWithBinary(
 
 QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url)
 {
-	QBox_Error err = QBox_Client_initcall(self, url);
+	QBox_Error err;
+
+    if (self->vptr->QBox_Client_Call) {
+        err = self->vptr->QBox_Client_Call(self, ret, url);
+
+        if (err.code != 200) {
+            return err;
+        }
+    }
+
+	err = QBox_Client_initcall(self, url);
 	if (err.code != 200) {
 		return err;
 	}
@@ -468,7 +500,17 @@ QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url)
 
 QBox_Error QBox_Client_CallNoRet(QBox_Client* self, const char* url)
 {
-	QBox_Error err = QBox_Client_initcall(self, url);
+	QBox_Error err;
+
+    if (self->vptr->QBox_Client_CallNoRet) {
+        err = self->vptr->QBox_Client_CallNoRet(self, url);
+
+        if (err.code != 200) {
+            return err;
+        }
+    }
+
+	err = QBox_Client_initcall(self, url);
 	if (err.code != 200) {
 		return err;
 	}
@@ -477,3 +519,136 @@ QBox_Error QBox_Client_CallNoRet(QBox_Client* self, const char* url)
 
 /*============================================================================*/
 
+static QBox_Error QBox_Client_Generate_AccessKey_Header(
+    QBox_Client* self, char const* url, char const* addition, size_t addlen)
+{
+    QBox_Error err;
+	struct curl_slist* headers = NULL;
+    char const* path = NULL;
+    char* auth = NULL;
+    char digest[EVP_MAX_MD_SIZE + 1];
+    unsigned int dgtlen = sizeof(digest);
+    char* enc_digest = NULL;
+    int ret = 0;
+    HMAC_CTX ctx;
+
+    ENGINE_load_builtin_engines();
+    ENGINE_register_all_complete();
+
+	err.code    = 200;
+	err.message = "OK";
+
+    path = strstr(url, "://");
+
+    if (path == NULL) {
+        path = strstr(url, "/");
+    }
+    else {
+        path = strstr(path + 3, "/");
+    }
+
+    /* Do digest calculation */
+    HMAC_CTX_init(&ctx);
+
+    ret = HMAC_Init_ex(&ctx, self->scrKey, strlen(self->scrKey), EVP_sha1(), NULL);
+
+    if (ret == 0) {
+        HMAC_CTX_cleanup(&ctx);
+        err.code    = 503;
+        err.message = "Service Unavailable";
+        return err;
+    }
+
+    ret = HMAC_Update(&ctx, path, strlen(path));
+
+    if (ret == 0) {
+        HMAC_CTX_cleanup(&ctx);
+        err.code    = 503;
+        err.message = "Service Unavailable";
+        return err;
+    }
+
+    ret = HMAC_Update(&ctx, "\n", 1);
+
+    if (ret == 0) {
+        HMAC_CTX_cleanup(&ctx);
+        err.code    = 503;
+        err.message = "Service Unavailable";
+        return err;
+    }
+
+    if (addlen > 0) {
+        ret = HMAC_Update(&ctx, addition, addlen);
+
+        if (ret == 0) {
+            HMAC_CTX_cleanup(&ctx);
+            err.code    = 503;
+            err.message = "Service Unavailable";
+            return err;
+        }
+    }
+
+    ret = HMAC_Final(&ctx, digest, &dgtlen);
+
+    if (ret == 0) {
+        HMAC_CTX_cleanup(&ctx);
+        err.code    = 503;
+        err.message = "Service Unavailable";
+        return err;
+    }
+
+    HMAC_CTX_cleanup(&ctx);
+
+    digest[dgtlen] = '\0';
+    enc_digest = QBox_String_Encode(digest);
+
+    /* Set appopriate HTTP header */
+    auth = QBox_String_Concat("Authorization: QBox ", self->acsKey, ":", enc_digest, NULL);
+    free(enc_digest);
+
+    if (self->authHeader != NULL) {
+	    curl_slist_free_all(self->authHeader);
+        self->authHeader = NULL;
+    }
+
+	self->authHeader = curl_slist_append(NULL, auth);
+    free(auth);
+
+    return err;
+}
+
+static QBox_Error QBox_Client_CallWithBinary_ByAccessKey(
+	QBox_Client* self, QBox_Json** ret, const char* url, FILE* body, QBox_Int64 bodyLen)
+{
+    return QBox_Client_Generate_AccessKey_Header(self, url, NULL, 0);
+}
+
+static QBox_Error QBox_Client_Call_ByAccessKey(QBox_Client* self, QBox_Json** ret, const char* url)
+{
+    return QBox_Client_Generate_AccessKey_Header(self, url, NULL, 0);
+}
+
+static QBox_Error QBox_Client_CallNoRet_ByAccessKey(QBox_Client* self, const char* url)
+{
+    return QBox_Client_Generate_AccessKey_Header(self, url, NULL, 0);
+}
+
+struct QBox_Virtual_Client_FuncTable QBox_Client_ByAccessKey_Func = {
+    &QBox_Client_CallWithBinary_ByAccessKey,
+    &QBox_Client_Call_ByAccessKey,
+    &QBox_Client_CallNoRet_ByAccessKey
+};
+
+void QBox_Client_Init_ByAccessKey(QBox_Client* self, char const* accessKey, char const* secretKey, size_t bufSize)
+{
+	self->curl = curl_easy_init();
+	self->root = NULL;
+    self->refreshToken = 0;
+
+    self->acsKey = accessKey;
+    self->scrKey = secretKey;
+
+    QBox_Buffer_Init(&self->b, bufSize);
+
+    self->vptr = &QBox_Client_ByAccessKey_Func;
+}

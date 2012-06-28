@@ -1,6 +1,6 @@
 /*
  ============================================================================
- Name        : rs_demo.c
+ Name        : rs_accesskey_demo.c
  Author      : RS Author
  Version     : 1.0.0.0
  Copyright   : 2012 Shanghai Qiniu Information Technologies Co., Ltd.
@@ -17,32 +17,26 @@
 int main()
 {
 	QBox_Error err;
-	QBox_Token* token;
 	QBox_Client client;
 	QBox_RS_PutAuthRet putAuthRet;
 	QBox_RS_PutRet putRet;
 	QBox_RS_GetRet getRet;
 	QBox_RS_StatRet statRet;
 	char* hash;
+    char* accessKey = "<Please apply your access key>";
+    char* secretKey = "<Dont send your secret key to anyone>";
 
 	QBox_Zero(client);
 	QBox_Global_Init(-1);
 
-	printf("QBox_Token_ExchangeByPassword\n");
+	printf("QBox_Client_Init_ByAccessKey\n");
 
-	err = QBox_Token_ExchangeByPassword(&token, "test@qbox.net", "test");
-	if (err.code != 200) {
-		printf("QBox_Token_ExchangeByPassword failed: %d - %s\n", err.code, err.message);
-		goto lzDone;
-	}
-
-	QBox_Client_Init(&client, token, 1024);
-	QBox_Token_Release(token);
-	QBox_RS_Delete(&client, "Bucket", "rs_demo.c");
+	QBox_Client_Init_ByAccessKey(&client, accessKey, secretKey, 1024);
+	QBox_RS_Delete(&client, "Bucket", "rs_accesskey_demo.c");
 
 	printf("QBox_RS_PutFile\n");
 
-	err = QBox_RS_PutFile(&client, &putRet, "Bucket", "rs/demo.c", "application/octet-stream", __FILE__, "");
+	err = QBox_RS_PutFile(&client, &putRet, "Bucket", "rs_accesskey_demo.c", "application/octet-stream", __FILE__, "");
 	if (err.code != 200) {
 		printf("QBox_RS_PutFile failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -50,7 +44,7 @@ int main()
 
 	printf("QBox_RS_Get\n");
 
-	err = QBox_RS_Get(&client, &getRet, "Bucket", "rs/demo.c", NULL);
+	err = QBox_RS_Get(&client, &getRet, "Bucket", "rs_accesskey_demo.c", NULL);
 	if (err.code != 200) {
 		printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -64,17 +58,17 @@ int main()
 		goto lzDone;
 	}
 
-	printf("QBox_RSCli_PutFile\n");
+	printf("QBox_RS_PutFile\n");
 
-	err = QBox_RSCli_PutFile(NULL, putAuthRet.url, "Bucket", "rs_demo.c", "application/octet-stream", __FILE__, "", "key=rs_demo.c");
+	err = QBox_RSCli_PutFile(NULL, putAuthRet.url, "Bucket", "rs_accesskey_demo.c", "application/octet-stream", __FILE__, "", "key=rs_accesskey_demo.c");
 	if (err.code != 200) {
-		printf("QBox_RS_PutFile failed: %d - %s\n", err.code, err.message);
+		printf("QBox_RSCli_PutFile failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
 	}
 
 	printf("QBox_RS_Get\n");
 
-	err = QBox_RS_Get(&client, &getRet, "Bucket", "rs_demo.c", NULL);
+	err = QBox_RS_Get(&client, &getRet, "Bucket", "rs_accesskey_demo.c", NULL);
 	if (err.code != 200) {
 		printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -83,7 +77,7 @@ int main()
 
 	printf("QBox_RS_GetIfNotModified: %s\n", hash);
 
-	err = QBox_RS_GetIfNotModified(&client, &getRet, "Bucket", "rs_demo.c", NULL, hash);
+	err = QBox_RS_GetIfNotModified(&client, &getRet, "Bucket", "rs_accesskey_demo.c", NULL, hash);
 	free(hash);
 	if (err.code != 200) {
 		printf("QBox_RS_GetIfNotModified failed: %d - %s\n", err.code, err.message);
@@ -92,7 +86,7 @@ int main()
 
 	printf("QBox_RS_Stat\n");
 
-	err = QBox_RS_Stat(&client, &statRet, "Bucket", "rs_demo.c");
+	err = QBox_RS_Stat(&client, &statRet, "Bucket", "rs_accesskey_demo.c");
 	if (err.code != 200) {
 		printf("QBox_RS_Stat failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -116,7 +110,7 @@ int main()
 
 	printf("QBox_RS_Delete\n");
 
-	err = QBox_RS_Delete(&client, "Bucket", "rs_demo.c");
+	err = QBox_RS_Delete(&client, "Bucket", "rs_accesskey_demo.c");
 	if (err.code != 200) {
 		printf("QBox_RS_Delete failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
