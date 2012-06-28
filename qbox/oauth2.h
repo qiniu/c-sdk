@@ -40,33 +40,6 @@ void QBox_Mutex_Lock(QBox_Mutex* self);
 void QBox_Mutex_Unlock(QBox_Mutex* self);
 
 /*============================================================================*/
-/* type QBox_Token */
-
-typedef struct _QBox_Token {
-	const char* accessToken;
-	const char* refreshToken;
-	QBox_Int64 expiry;
-	QBox_Mutex mutex;
-	QBox_Count nref;
-} QBox_Token;
-
-QBox_Token* QBox_Token_New(
-	const char* accessToken, const char* refreshToken, QBox_Int64 expiry);
-
-QBox_Count QBox_Token_Acquire(QBox_Token* self);
-QBox_Count QBox_Token_Release(QBox_Token* self);
-
-char* QBox_Token_Access(QBox_Token* self, QBox_Int64* expiry);
-
-QBox_Error QBox_Token_Refresh(QBox_Token* self);
-
-QBox_Error QBox_Token_ExchangeByPassword(
-	QBox_Token** token, const char* user, const char* passwd);
-
-QBox_Error QBox_Token_ExchangeByRefreshToken(
-	QBox_Token** token, const char* refreshToken);
-
-/*============================================================================*/
 /* type QBox_Json */
 
 typedef struct cJSON QBox_Json;
@@ -77,22 +50,32 @@ QBox_Int64 QBox_Json_GetInt64(QBox_Json* self, const char* key, QBox_Int64 defva
 /*============================================================================*/
 /* type QBox_Client */
 
+typedef struct curl_slist QBox_Header;
+
+typedef struct _QBox_Auth_Vtable {
+	QBox_Error (*Auth)(void* self, QBox_Header** header, const char* url, const char* addition, size_t addlen);
+	void (*Release)(void* self);
+} QBox_Auth_Vtable;
+
 typedef struct _QBox_Client {
 	void* curl;
-	void* authHeader;
-	QBox_Int64 expiry;
+	void* auth;
+	QBox_Auth_Vtable* vptr;
 	QBox_Json* root;
-	QBox_Token* token;
 	QBox_Buffer b;
 } QBox_Client;
 
-void QBox_Client_Init(QBox_Client* self, QBox_Token* token, size_t bufSize);
+void QBox_Client_InitEx(QBox_Client* self, void* auth, QBox_Auth_Vtable* vptr, size_t bufSize);
 void QBox_Client_Cleanup(QBox_Client* self);
 
 QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url);
 QBox_Error QBox_Client_CallNoRet(QBox_Client* self, const char* url);
 QBox_Error QBox_Client_CallWithBinary(
 	QBox_Client* self, QBox_Json** ret, const char* url, FILE* body, QBox_Int64 bodyLen);
+
+/*============================================================================*/
+
+void QBox_Client_Init(QBox_Client* self, size_t bufSize);
 
 /*============================================================================*/
 

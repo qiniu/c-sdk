@@ -4,12 +4,13 @@ SOURCE_FILES=\
 	../qbox/conf.c\
 	../qbox/base.c\
 	../qbox/oauth2.c\
+	../qbox/oauth2_digest.c\
 	../qbox/rs.c\
 	../qbox/rscli.c\
 	rs_demo.c\
 
 all: $(SOURCE_FILES)
-	gcc -o rs_demo -lcurl -lm $^
+	gcc -o rs_demo -lcurl -lm -lssl -lcrypto $^
 
 install: all
 	@echo

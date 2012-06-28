@@ -11,8 +11,8 @@
 #ifndef QBOX_CONF_H
 #define QBOX_CONF_H
 
-extern const char* QBOX_CLIENT_ID;				// "abcd0c7edcdf914228ed8aa7c6cee2f2bc6155e2"
-extern const char* QBOX_CLIENT_SECRET;			// "fc9ef8b171a74e197b17f85ba23799860ddf3b9c"
+extern const char* QBOX_ACCESS_KEY;
+extern const char* QBOX_SECRET_KEY;
 
 extern const char* QBOX_REDIRECT_URI;			// "<RedirectURL>"
 extern const char* QBOX_AUTHORIZATION_ENDPOINT;	// "<AuthURL>"
