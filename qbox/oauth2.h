@@ -75,5 +75,9 @@ QBox_Error QBox_Client_CallWithBinary(
 
 /*============================================================================*/
 
+void QBox_Client_Init(QBox_Client* self, size_t bufSize);
+
+/*============================================================================*/
+
 #endif /* QBOX_OAUTH2_H */
 

@@ -10,6 +10,7 @@
 
 #include "../../qbox/rs.h"
 #include "../../qbox/rscli.h"
+#include "../../qbox/oauth2_passwd.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

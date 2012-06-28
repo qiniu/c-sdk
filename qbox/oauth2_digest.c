@@ -8,7 +8,7 @@
  ============================================================================
  */
 
-#include "oauth2_digest.h"
+#include "oauth2.h"
 #include <curl/curl.h>
 #include <openssl/hmac.h>
 
