@@ -347,6 +347,7 @@ QBox_Error QBox_RS_InitBlockData(QBox_RS_BlockSet* blockSet, QBox_RS_BlockData* 
 
     blockData->index = blockIndex;
     blockData->begin = blockIndex * QBOX_RS_BLOCKSIZE;
+    blockData->current = blockData->begin;
 
     if (blockData->index == blockSet->count - 1) {
         /* It's the last block */
@@ -385,7 +386,7 @@ QBox_Error QBox_RS_MakeBlock(QBox_Client* self, QBox_RS_BlockSet* blockSet,
 
     chunkSize = (chunkSize > 0) ? chunkSize : QBOX_RS_CHUNKSIZE;
 
-    err = QBox_RS_InitBlockData(blockSet, blockData, blockIndex, 0);
+    err = QBox_RS_InitBlockData(blockSet, blockData, blockIndex, chunkSize);
 
     rest = blockData->end - blockData->current;
     step_size = (rest > chunkSize) ? chunkSize : rest;
@@ -439,7 +440,7 @@ QBox_Error QBox_RS_PutBlock(QBox_Client* self, QBox_RS_BlockData* blockData, FIL
                 return err;
             }
 
-            err = QBox_RS_PutChunk(self, chunk, step_size, blockData->current, blockData);
+            err = QBox_RS_PutChunk(self, chunk, step_size, blockData->current - blockData->begin, blockData);
             if (err.code != 200) {
                 free(chunk);
                 return err;
