@@ -209,22 +209,15 @@ static void QBox_Client_initcall(QBox_Client* self, const char* url)
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 }
 
-QBox_Error QBox_Client_CallWithBinary(
-	QBox_Client* self, QBox_Json** ret, const char* url, FILE* body, QBox_Int64 bodyLen)
+static QBox_Error QBox_Client_CallWithBody(
+	QBox_Client* self, QBox_Json** ret, const char* url, QBox_Int64 bodyLen,
+    CURL* curl, struct curl_slist* headers)
 {
-	CURL* curl;
-	struct curl_slist* headers;
 	QBox_Error err;
+	char ctxLength[64];
 
-	QBox_Client_initcall(self, url);
-
-	curl = (CURL*)self->curl;
-	curl_easy_setopt(curl, CURLOPT_INFILESIZE, bodyLen);
-	curl_easy_setopt(curl, CURLOPT_READFUNCTION, fread);
-	curl_easy_setopt(curl, CURLOPT_READDATA, body);
 	curl_easy_setopt(curl, CURLOPT_POST, 1);
 
-	char ctxLength[64];
 	QBox_snprintf(ctxLength, 64, "Content-Length: %lld", bodyLen);
 	headers = curl_slist_append(NULL, ctxLength);
 	headers = curl_slist_append(headers, "Content-Type: application/octet-stream");
@@ -242,6 +235,39 @@ QBox_Error QBox_Client_CallWithBinary(
 
 	*ret = self->root;
 	return err;
+}
+
+QBox_Error QBox_Client_CallWithBinary(
+	QBox_Client* self, QBox_Json** ret, const char* url, FILE* body, QBox_Int64 bodyLen)
+{
+	CURL* curl;
+	struct curl_slist* headers;
+	QBox_Error err;
+
+	QBox_Client_initcall(self, url);
+
+	curl = (CURL*)self->curl;
+	curl_easy_setopt(curl, CURLOPT_INFILESIZE, bodyLen);
+	curl_easy_setopt(curl, CURLOPT_READFUNCTION, fread);
+	curl_easy_setopt(curl, CURLOPT_READDATA, body);
+
+	return QBox_Client_CallWithBody(self, ret, url, bodyLen, curl, headers);
+}
+
+QBox_Error QBox_Client_CallWithBuffer(
+	QBox_Client* self, QBox_Json** ret, const char* url, const char* body, QBox_Int64 bodyLen)
+{
+	CURL* curl;
+	struct curl_slist* headers;
+	QBox_Error err;
+
+	QBox_Client_initcall(self, url);
+
+	curl = (CURL*)self->curl;
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, bodyLen);
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
+
+	return QBox_Client_CallWithBody(self, ret, url, bodyLen, curl, headers);
 }
 
 QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url)

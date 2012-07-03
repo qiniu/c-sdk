@@ -23,6 +23,7 @@ extern int QBOX_PUT_TIMEOUT;					// 300000 = 300s = 5m
 extern const char* QBOX_IO_HOST;				// "http://io.qbox.me"
 extern const char* QBOX_FS_HOST;				// "https://fs.qbox.me"
 extern const char* QBOX_RS_HOST;				// "http://rs.qbox.me:10100"
+extern const char* QBOX_UP_HOST;				// TODO
 
 #endif
 

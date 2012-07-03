@@ -196,6 +196,16 @@ char* QBox_String_Encode(const char* buf)
 	return dest;
 }
 
+char* QBox_String_Decode(const char* buf)
+{
+	const size_t cb = strlen(buf);
+	const size_t cbDest = urlsafe_b64_decode(buf, cb, NULL, 0);
+	char* dest = (char*)malloc(cbDest + 1);
+	const size_t cbReal = urlsafe_b64_decode(buf, cb, dest, cbDest);
+	dest[cbReal] = '\0';
+	return dest;
+}
+
 /*============================================================================*/
 /* type QBox_Buffer */
 

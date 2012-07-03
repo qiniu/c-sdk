@@ -74,6 +74,7 @@ char* QBox_String_Concat(const char* s1, ...);
 /* func QBox_String_Encode */
 
 char* QBox_String_Encode(const char* s);
+char* QBox_String_Decode(const char* s);
 
 /*============================================================================*/
 /* func QBox_QueryEscape */
