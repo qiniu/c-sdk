@@ -302,16 +302,10 @@ static const QBox_Off_t QBOX_RS_BLOCKSIZE = (4 * 1024 * 1024); /* Default block 
 static const QBox_Off_t QBOX_RS_CHUNKSIZE = (32 * 1024); /* Default chunk size is 32KB */
 static const int QBOX_RS_BLOCK_CHECKSUM_SIZE = 20;
 
-QBox_Error QBox_RS_SplitFile(QBox_Client* self, QBox_RS_BlockSet* blockSet, FILE *fp)
+QBox_Error QBox_RS_SplitFile(QBox_Client* self, QBox_RS_BlockSet* blockSet, QBox_Off_t fsize)
 {
     QBox_Error err;
-    QBox_Off_t cur_pos = 0;
-
-    if (fp == NULL) {
-        err.code = 400;
-        err.message = "Invalid file handle";
-        return err;
-    }
+    int i = 0;
 
     if (blockSet == NULL) {
         err.code = 400;
@@ -319,10 +313,7 @@ QBox_Error QBox_RS_SplitFile(QBox_Client* self, QBox_RS_BlockSet* blockSet, FILE
         return err;
     }
 
-    cur_pos = ftell(fp);
-    fseek(fp, 0, SEEK_END);
-    blockSet->fsize = ftell(fp);
-    fseek(fp, cur_pos, SEEK_SET);
+    blockSet->fsize = fsize;
 
     blockSet->lastBlockSize = blockSet->fsize % QBOX_RS_BLOCKSIZE;
     blockSet->count = blockSet->fsize / QBOX_RS_BLOCKSIZE;
@@ -333,37 +324,39 @@ QBox_Error QBox_RS_SplitFile(QBox_Client* self, QBox_RS_BlockSet* blockSet, FILE
 
     blockSet->blocks = calloc(sizeof(*(blockSet->blocks)), blockSet->count);
 
+    for (i = 0; i < blockSet->count; ++i) {
+        blockSet->blocks[i].set = blockSet;
+    } /* for */
+
     err.code = 200;
     err.message = "OK";
     return err;
 }
 
-QBox_Error QBox_RS_InitBlockData(QBox_RS_BlockSet* blockSet, QBox_RS_BlockData* blockData,
-    int blockIndex, QBox_Off_t chunkSize)
+QBox_Error QBox_RS_InitBlockData(QBox_RS_BlockData* blockData, int blockIndex, QBox_Off_t chunkSize)
 {
     QBox_Error err;
     int bsize_len = 0;
-    int ret = 0;
 
-    blockData->index = blockIndex;
-    blockData->begin = blockIndex * QBOX_RS_BLOCKSIZE;
-    blockData->current = blockData->begin;
-
-    if (blockData->index == blockSet->count - 1) {
-        /* It's the last block */
-        blockData->end = blockData->begin + blockSet->lastBlockSize;
-    }
-    else {
-        blockData->end = blockData->begin + QBOX_RS_BLOCKSIZE;
-    }
-
+    blockData->blockIndex = blockIndex;
     blockData->ctx = NULL;
     blockData->cksum = NULL;
+
+    blockData->blockOffset = blockIndex * QBOX_RS_BLOCKSIZE;
+    blockData->chunkOffset = blockData->blockOffset;
+
+    if (blockData->blockIndex == blockData->set->count - 1) {
+        /* It's the last block */
+        blockData->blockEnd = blockData->blockOffset + blockData->set->lastBlockSize;
+    }
+    else {
+        blockData->blockEnd = blockData->blockOffset + QBOX_RS_BLOCKSIZE;
+    }
 
     bsize_len = sizeof(blockData->bsize_str);
 
     bzero(blockData->bsize_str, bsize_len);
-    ret = snprintf(blockData->bsize_str, bsize_len, "%lu", blockData->end - blockData->begin);
+    QBox_snprintf(blockData->bsize_str, bsize_len, "%lu", blockData->blockEnd - blockData->blockOffset);
 
     err.code = 200;
     err.message = "OK";
@@ -371,44 +364,31 @@ QBox_Error QBox_RS_InitBlockData(QBox_RS_BlockSet* blockSet, QBox_RS_BlockData* 
 }
 
 QBox_Error QBox_RS_MakeBlock(QBox_Client* self, QBox_RS_BlockSet* blockSet,
-    FILE *fp, int blockIndex, QBox_RS_BlockData* blockData, QBox_Off_t chunkSize)
+    int blockIndex, QBox_RS_BlockIO* io, QBox_RS_BlockProgress* prog)
 {
     QBox_Error err;
     QBox_Off_t rest = 0;
-    QBox_Off_t step_size = 0;
+    QBox_Off_t stepSize = 0;
+    QBox_Off_t chunkSize = 0;
+    QBox_RS_BlockData* blockData = &blockSet->blocks[blockIndex];
     char* chunk = NULL;
 
-    if (fp == NULL) {
-        err.code = 400;
-        err.message = "Invalid file handle";
-        return err;
-    }
+    chunkSize = (io->chunkSize > 0) ? io->chunkSize : QBOX_RS_CHUNKSIZE;
 
-    chunkSize = (chunkSize > 0) ? chunkSize : QBOX_RS_CHUNKSIZE;
+    err = QBox_RS_InitBlockData(blockData, blockIndex, chunkSize);
 
-    err = QBox_RS_InitBlockData(blockSet, blockData, blockIndex, chunkSize);
-
-    rest = blockData->end - blockData->current;
-    step_size = (rest > chunkSize) ? chunkSize : rest;
-    chunk = malloc(step_size);
-
-    fseek(fp, blockData->current, SEEK_SET);
-
-    if (fread(chunk, step_size, 1, fp) == 0) {
-        err.code = 400;
-        err.message = "Failed in reading file";
-        free(chunk);
-        return err;
-    }
+    rest = blockData->blockEnd - blockData->chunkOffset;
+    stepSize = (rest > chunkSize) ? chunkSize : rest;
+    chunk = malloc(stepSize);
 
     /* Put the first chunk */
-    err = QBox_RS_PutChunk(self, chunk, step_size, 0, blockData);
+    err = QBox_RS_PutChunk(self, blockData, 0, chunk, stepSize, io, prog);
     if (err.code != 200) {
         free(chunk);
         return err;
     }
 
-    blockData->current += step_size;
+    blockData->chunkOffset += stepSize;
     free(chunk);
 
     err.code = 200;
@@ -416,39 +396,41 @@ QBox_Error QBox_RS_MakeBlock(QBox_Client* self, QBox_RS_BlockSet* blockSet,
     return err;
 }
 
-QBox_Error QBox_RS_PutBlock(QBox_Client* self, QBox_RS_BlockData* blockData, FILE *fp, QBox_Off_t chunkSize)
+QBox_Error QBox_RS_PutBlock(QBox_Client* self, QBox_RS_BlockSet* blockSet,
+    int blockIndex, QBox_RS_BlockIO* io, QBox_RS_BlockProgress* prog)
 {
     QBox_Error err;
     QBox_Off_t rest = 0;
-    QBox_Off_t step_size = 0;
+    QBox_Off_t offset = 0;
+    QBox_Off_t stepSize = 0;
+    QBox_Off_t chunkSize = 0;
+    QBox_RS_BlockData* blockData = &blockSet->blocks[blockIndex];
     char* chunk = NULL;
 
-    chunkSize = (chunkSize > 0) ? chunkSize : QBOX_RS_CHUNKSIZE;
+    chunkSize = (io->chunkSize > 0) ? io->chunkSize : QBOX_RS_CHUNKSIZE;
 
-    rest = blockData->end - blockData->current;
+    rest = blockData->blockEnd - blockData->chunkOffset;
 
     if (rest > 0) {
-        step_size = (rest > chunkSize) ? chunkSize : rest;
-        chunk = malloc(step_size);
+        stepSize = (rest > chunkSize) ? chunkSize : rest;
+        chunk = malloc(stepSize);
 
-        fseek(fp, blockData->current, SEEK_SET);
         do {
-            if (fread(chunk, step_size, 1, fp) == 0) {
-                err.code = 400;
-                err.message = "Failed in reading file";
-                free(chunk);
-                return err;
-            }
-
-            err = QBox_RS_PutChunk(self, chunk, step_size, blockData->current - blockData->begin, blockData);
+            err = QBox_RS_PutChunk(self,
+                blockData,
+                blockData->chunkOffset - blockData->blockOffset, /* offset from the beginning of the current block */
+                chunk,
+                stepSize,
+                io,
+                prog);
             if (err.code != 200) {
                 free(chunk);
                 return err;
             }
 
-            rest -= step_size;
-            blockData->current += step_size;
-            step_size = (rest > chunkSize) ? chunkSize : rest;
+            rest -= stepSize;
+            blockData->chunkOffset += stepSize;
+            stepSize = (rest > chunkSize) ? chunkSize : rest;
         } while (rest > 0);
 
         free(chunk);
@@ -459,17 +441,25 @@ QBox_Error QBox_RS_PutBlock(QBox_Client* self, QBox_RS_BlockData* blockData, FIL
     return err;
 }
 
-QBox_Error QBox_RS_PutChunk(QBox_Client* self,
-    char* chunk, QBox_Off_t size, QBox_Off_t offset,
-    QBox_RS_BlockData* blockData)
+QBox_Error QBox_RS_PutChunk(QBox_Client* self, QBox_RS_BlockData* blockData,
+    QBox_Off_t chunkOffset, char* chunk, QBox_Off_t size,
+    QBox_RS_BlockIO* io, QBox_RS_BlockProgress* prog)
 {
     QBox_Error err;
+    char offsetStr[128];
+
 	char* mimeEncoded = NULL;
 	cJSON* root = NULL;
     char* url = NULL;
-    char offsetStr[128];
     unsigned long chunk_crc32 = 0L;
+    int keepGoing;
     QBox_Int64 ret_crc32 = 0;
+
+    if (io->readChunk(io->data, blockData->blockOffset + chunkOffset, chunk, &size) == 0) {
+        err.code = 400;
+        err.message = "Failed in reading file";
+        return err;
+    }
 
 	mimeEncoded = QBox_String_Encode("application/octet-stream");
 
@@ -480,7 +470,7 @@ QBox_Error QBox_RS_PutChunk(QBox_Client* self,
     else {
         /* Put other chunks */
         bzero(offsetStr, sizeof(offsetStr));
-        QBox_snprintf(offsetStr, sizeof(offsetStr), "%lu", offset);
+        QBox_snprintf(offsetStr, sizeof(offsetStr), "%lu", chunkOffset);
 
         url = QBox_String_Concat(QBOX_UP_HOST, "/bput/", blockData->ctx, "/", offsetStr, "/mime/", mimeEncoded, NULL);
     }
@@ -493,7 +483,7 @@ QBox_Error QBox_RS_PutChunk(QBox_Client* self,
 		blockData->cksum = QBox_Json_GetString(root, "checksum", NULL);
 
 		ret_crc32 = QBox_Json_GetInt64(root, "crc32", 0);
-        chunk_crc32 = crc32(0L, NULL, 0);;
+        chunk_crc32 = crc32(0L, NULL, 0);
         chunk_crc32 = crc32(chunk_crc32, chunk, size);
 
         if (chunk_crc32 != ret_crc32) {
@@ -505,6 +495,20 @@ QBox_Error QBox_RS_PutChunk(QBox_Client* self,
             err.message = "OK";
         }
 	}
+
+    if (prog && prog->callback) {
+        keepGoing = prog->callback(prog->data,
+                                   blockData->blockIndex,
+                                   blockData->ctx,
+                                   blockData->cksum,
+                                   chunkOffset,
+                                   err);
+
+        if (!keepGoing && err.code == 200) {
+            err.code = 499;
+            err.message = "Aborted by client";
+        }
+    }
 
     return err;
 }
@@ -584,27 +588,27 @@ void QBox_RS_CleanupBlockSet(QBox_RS_BlockSet* blockSet)
 QBox_Error QBox_RS_PutFile_ByUpToken(
     QBox_Client* self, const char* bucket, const char* key,
     const char* mimeType, const char* customMeta,
-    const char* callbackParams, FILE* fp, QBox_Off_t chunkSize)
+    const char* callbackParams, QBox_RS_BlockIO* io, QBox_RS_BlockProgress* prog)
 {
     QBox_Error err;
     QBox_RS_BlockSet blockSet;
     char* entry = NULL;
     int i = 0;
 
-    err = QBox_RS_SplitFile(self, &blockSet, fp);
+    err = QBox_RS_SplitFile(self, &blockSet, io->fileSize);
     if (err.code != 200) {
         QBox_RS_CleanupBlockSet(&blockSet);
         return err;
     }
 
     for (i = 0; i < blockSet.count; ++i) {
-        err = QBox_RS_MakeBlock(self, &blockSet, fp, i, &blockSet.blocks[i], chunkSize);
+        err = QBox_RS_MakeBlock(self, &blockSet, i, io, prog);
         if (err.code != 200) {
             QBox_RS_CleanupBlockSet(&blockSet);
             return err;
         }
 
-        err = QBox_RS_PutBlock(self, &blockSet.blocks[i], fp, chunkSize);
+        err = QBox_RS_PutBlock(self, &blockSet, i, io, prog);
         if (err.code != 200) {
             QBox_RS_CleanupBlockSet(&blockSet);
             return err;

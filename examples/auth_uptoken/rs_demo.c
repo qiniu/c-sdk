@@ -15,119 +15,122 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main()
+int check_block_progress(void* data,
+    int blockIndex, const char* ctx, const char* cksum,
+    QBox_Off_t chunkOffset, QBox_Error err)
 {
-	QBox_Error err;
-	QBox_Client client;
-	QBox_Client client2;
-	QBox_RS_GetRet getRet;
+    printf("blockIndex=%d\n", blockIndex);
+    printf("ctx=%s\n", ctx);
+    printf("cksum=%s\n", cksum);
+    printf("chunkOffset=%lu\n", chunkOffset);
+    printf("\n");
+}
+
+int read_chunk(void* data, size_t offset, void* chunk, size_t* size)
+{
+    FILE* fp = (FILE*) data;
+
+    if (fread(chunk, *size, 1, fp) == 1) {
+        return *size;
+    }
+
+    return 0;
+}
+
+void put_blocks(const char* fl)
+{
+    QBox_Error err;
+    QBox_Client client;
+    QBox_Client client2;
+    QBox_RS_BlockIO io;
+    QBox_RS_BlockProgress prog;
+    QBox_RS_GetRet getRet;
     FILE* fp = NULL;
     char* uptoken = NULL;
 
-	QBOX_ACCESS_KEY	= "<Please apply your access key>";
-	QBOX_SECRET_KEY	= "<Dont send your secret key to anyone>";
+    printf("Processing ... %s\n", fl);
 
-	QBox_Global_Init(-1);
+    /* Delete old file */
+    QBox_Zero(client2);
+    QBox_Client_Init(&client2, 1024);
+    printf("QBox_RS_Delete\n");
+    QBox_RS_Delete(&client2, "Bucket", fl);
 
-    {
-        QBox_Zero(client2);
-	    QBox_Client_Init(&client2, 1024);
-	    printf("QBox_RS_Delete\n");
-	    QBox_RS_Delete(&client2, "Bucket", "rs_demo.c");
-        QBox_Client_Cleanup(&client2);
-    }
+    /* Upload file */
+    QBox_Zero(client);
 
-	QBox_Zero(client);
-
-	printf("QBox_Client_MakeUpToken\n");
+    printf("QBox_Client_MakeUpToken\n");
 
     uptoken = QBox_Client_MakeUpToken("Bucket", 3600, NULL, NULL);
     if (uptoken == NULL) {
         printf("Cannot generate UpToken!\n");
-        goto lzDone;
+        return;
     }
 
-	printf("QBox_Client_InitByUpToken\n");
+    printf("QBox_Client_InitByUpToken\n");
 
-	QBox_Client_InitByUpToken(&client, uptoken, 1024);
+    QBox_Client_InitByUpToken(&client, uptoken, 1024);
 
-	printf("QBox_RS_PutFile_ByUpToken(rs_demo.c)\n");
+    printf("QBox_RS_PutFile_ByUpToken\n");
 
-    fp = fopen("./rs_demo.c", "r");
+    fp = fopen(fl, "rb");
     if (fp) {
-        err = QBox_RS_PutFile_ByUpToken(&client, "Bucket", "rs_demo.c", "text/plain", NULL, NULL, fp, 0);
-        if (err.code != 200) {
-		    printf("QBox_RS_PutFile_ByUpToken failed: %d - %s\n", err.code, err.message);
-        }
+        fseek(fp, 0, SEEK_END);
+
+        io.readChunk = read_chunk;
+        io.data = (void *)fp;
+        io.fileSize = ftell(fp);
+        io.chunkSize = 0;
+
+        fseek(fp, 0, SEEK_SET);
+
+        prog.callback = check_block_progress; 
+        prog.data = NULL;
+
+        err = QBox_RS_PutFile_ByUpToken(&client, "Bucket", fl, "text/plain", NULL, NULL, &io, &prog);
         fclose(fp);
+
+        if (err.code != 200) {
+            printf("QBox_RS_PutFile_ByUpToken failed: %d - %s\n", err.code, err.message);
+            free(uptoken);
+            return;
+        }
     }
 
-	printf("QBox_RS_PutFile_ByUpToken(big_file.txt)\n");
+    /* Check uploaded file */
+    printf("QBox_RS_Get\n");
 
-    fp = fopen("./big_file.txt", "r");
-    if (fp) {
-        err = QBox_RS_PutFile_ByUpToken(&client, "Bucket", "big_file.txt", "text/plain", NULL, NULL, fp, 0);
-        if (err.code != 200) {
-		    printf("QBox_RS_PutFile_ByUpToken failed: %d - %s\n", err.code, err.message);
-        }
-        fclose(fp);
+    err = QBox_RS_Get(&client2, &getRet, "Bucket", fl, NULL);
+    if (err.code != 200) {
+        printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
+        free(uptoken);
+        return;
     }
 
-	printf("QBox_RS_PutFile_ByUpToken(huge_file.txt)\n");
+    printf("Got url=[%s]\n", getRet.url);
+    printf("Got fsize=%llu\n", getRet.fsize);
 
-    fp = fopen("./huge_file.txt", "r");
-    if (fp) {
-        err = QBox_RS_PutFile_ByUpToken(&client, "Bucket", "huge_file.txt", "text/plain", NULL, NULL, fp, 0);
-        if (err.code != 200) {
-		    printf("QBox_RS_PutFile_ByUpToken failed: %d - %s\n", err.code, err.message);
-        }
-        fclose(fp);
-    }
+    QBox_Client_Cleanup(&client2);
+    QBox_Client_Cleanup(&client);
 
-    {
-        QBox_Zero(client2);
-	    QBox_Client_Init(&client2, 1024);
+    printf("\n");
+}
 
-        printf("QBox_RS_Get(rs_demo.c)\n");
+int main()
+{
+    QBOX_ACCESS_KEY = "<Please apply your access key>";
+    QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
 
-        err = QBox_RS_Get(&client2, &getRet, "Bucket", "rs_demo.c", NULL);
-        if (err.code != 200) {
-            printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
-            goto lzDone;
-        }
+    QBox_Global_Init(-1);
 
-        printf("Got url(rs_demo.c)=[%s]\n", getRet.url);
-        printf("Got fsize(rs_demo.c)=%llu\n", getRet.fsize);
+    put_blocks("rs_demo.c");
+    put_blocks("big_file.txt");
 
-        printf("QBox_RS_Get(big_file.txt)\n");
+    /* Generate a file first which size is more than 4MB and name it as 'huge_file.txt' */
+    put_blocks("huge_file.txt");
 
-        err = QBox_RS_Get(&client2, &getRet, "Bucket", "big_file.txt", NULL);
-        if (err.code != 200) {
-            printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
-            goto lzDone;
-        }
+    QBox_Global_Cleanup();
 
-        printf("Got url(big_file.txt)=[%s]\n", getRet.url);
-        printf("Got fsize(big_file.txt)=%llu\n", getRet.fsize);
-
-        printf("QBox_RS_Get(huge_file.txt)\n");
-
-        err = QBox_RS_Get(&client2, &getRet, "Bucket", "huge_file.txt", NULL);
-        if (err.code != 200) {
-            printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
-            goto lzDone;
-        }
-
-        printf("Got url(huge_file.txt)=[%s]\n", getRet.url);
-        printf("Got fsize(huge_file.txt)=%llu\n", getRet.fsize);
-
-        QBox_Client_Cleanup(&client2);
-    }
-
-lzDone:
-    free(uptoken);
-	QBox_Client_Cleanup(&client);
-	QBox_Global_Cleanup();
-	return 0;
+    return 0;
 }
 
