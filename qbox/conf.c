@@ -14,8 +14,7 @@ int QBOX_PUT_TIMEOUT					= 300000; // 300s = 5m
 const char* QBOX_IO_HOST				= "http://iovip.qbox.me";
 const char* QBOX_FS_HOST				= "https://fs.qbox.me";
 const char* QBOX_RS_HOST				= "http://rs.qbox.me:10100";
-//const char* QBOX_UP_HOST				= "http://up.qbox.me";
-const char* QBOX_UP_HOST				= "http://m1.qbox.me:13019";
+const char* QBOX_UP_HOST				= "http://up.qbox.me";
 
 /*============================================================================*/
 
