@@ -1,6 +1,6 @@
 /*
  ============================================================================
- Name        : oauth2_uptoken.h
+ Name        : auth_policy.h
  Author      : Qiniu Developers
  Version     : 1.0.0.0
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
@@ -8,20 +8,22 @@
  ============================================================================
  */
 
-#ifndef QBOX_OAUTH2_UPTOKEN_H
-#define QBOX_OAUTH2_UPTOKEN_H
-
-#ifndef QBOX_OAUTH2_H
-#include "oauth2.h"
-#endif
+#ifndef QBOX_AUTH_POLICY_H
+#define QBOX_AUTH_POLICY_H
 
 /*============================================================================*/
-/* type QBox_Token */
+/* type QBox_AuthPolicy */
 
-void QBox_Client_InitByUpToken(QBox_Client* self, char* uptoken, size_t bufSize);
-char* QBox_Client_MakeUpToken(const char* scope, long expires, const char* callbackURL, const char* returnURL);
+typedef struct _QBox_AuthPolicy {
+	const char* scope;
+	const char* callbackUrl;
+	const char* returnUrl;
+	int expires;
+} QBox_AuthPolicy;
+
+char* QBox_MakeUpToken(const QBox_AuthPolicy* auth);
 
 /*============================================================================*/
 
-#endif /* QBOX_OAUTH2_UPTOKEN_H */
+#endif /* QBOX_AUTH_POLICY_H */
 

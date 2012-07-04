@@ -3,10 +3,13 @@ SOURCE_FILES=\
 	../../cJSON/cJSON.c\
 	../../qbox/conf.c\
 	../../qbox/base.c\
+	../../qbox/base_io.c\
+	../../qbox/auth_policy.c\
 	../../qbox/oauth2.c\
 	../../qbox/oauth2_digest.c\
 	../../qbox/oauth2_uptoken.c\
 	../../qbox/rs.c\
+	../../qbox/up.c\
 	../../qbox/rscli.c\
 	rs_demo.c\
 

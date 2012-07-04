@@ -209,7 +209,7 @@ static void QBox_Client_initcall(QBox_Client* self, const char* url)
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 }
 
-static QBox_Error QBox_Client_CallWithBody(
+static QBox_Error QBox_Client_callWithBody(
 	QBox_Client* self, QBox_Json** ret, const char* url, QBox_Int64 bodyLen,
     CURL* curl, struct curl_slist* headers)
 {
@@ -238,7 +238,7 @@ static QBox_Error QBox_Client_CallWithBody(
 }
 
 QBox_Error QBox_Client_CallWithBinary(
-	QBox_Client* self, QBox_Json** ret, const char* url, FILE* body, QBox_Int64 bodyLen)
+	QBox_Client* self, QBox_Json** ret, const char* url, QBox_Reader body, QBox_Int64 bodyLen)
 {
 	CURL* curl;
 	struct curl_slist* headers;
@@ -248,10 +248,10 @@ QBox_Error QBox_Client_CallWithBinary(
 
 	curl = (CURL*)self->curl;
 	curl_easy_setopt(curl, CURLOPT_INFILESIZE, bodyLen);
-	curl_easy_setopt(curl, CURLOPT_READFUNCTION, fread);
-	curl_easy_setopt(curl, CURLOPT_READDATA, body);
+	curl_easy_setopt(curl, CURLOPT_READFUNCTION, body.Read);
+	curl_easy_setopt(curl, CURLOPT_READDATA, body.self);
 
-	return QBox_Client_CallWithBody(self, ret, url, bodyLen, curl, headers);
+	return QBox_Client_callWithBody(self, ret, url, bodyLen, curl, headers);
 }
 
 QBox_Error QBox_Client_CallWithBuffer(
@@ -267,7 +267,7 @@ QBox_Error QBox_Client_CallWithBuffer(
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, bodyLen);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
 
-	return QBox_Client_CallWithBody(self, ret, url, bodyLen, curl, headers);
+	return QBox_Client_callWithBody(self, ret, url, bodyLen, curl, headers);
 }
 
 QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url)

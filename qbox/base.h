@@ -11,6 +11,7 @@
 #ifndef QBOX_BASE_H
 #define QBOX_BASE_H
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -29,13 +30,15 @@
 #endif
 
 /*============================================================================*/
-/* type QBox_Int64 */
+/* type QBox_Int64, QBox_Uint32 */
 
 #if defined(_MSC_VER)
 typedef _int64 QBox_Int64;
 #else
 typedef long long QBox_Int64;
 #endif
+
+typedef unsigned int QBox_Uint32;
 
 /*============================================================================*/
 /* type QBox_Bool */
@@ -104,12 +107,40 @@ const char* QBox_Buffer_CStr(QBox_Buffer* self);
 
 size_t QBox_Buffer_Len(QBox_Buffer* self);
 size_t QBox_Buffer_Write(QBox_Buffer* self, const void* buf, size_t n);
-size_t QBox_Buffer_Fwrite(void *buf, size_t size, size_t nmemb, void *self);
+size_t QBox_Buffer_Fwrite(void *buf, size_t, size_t n, void *self);
 
 /*============================================================================*/
 /* func QBox_Null_Fwrite */
 
-size_t QBox_Null_Fwrite(void *buf, size_t size, size_t nmemb, void *self);
+size_t QBox_Null_Fwrite(void *buf, size_t, size_t n, void *self);
+
+/*============================================================================*/
+/* type QBox_Reader */
+
+typedef size_t (*QBox_FnRead)(void *buf, size_t, size_t n, void *self);
+
+typedef struct _QBox_Reader {
+	void* self;
+	QBox_FnRead Read;
+} QBox_Reader;
+
+QBox_Reader QBox_FILE_Reader(FILE* fp);
+
+/*============================================================================*/
+/* type QBox_ReaderAt */
+
+typedef	ssize_t (*QBox_FnReadAt)(void* self, void *buf, size_t bytes, off_t offset);
+
+typedef struct _QBox_ReaderAt {
+	void* self;
+	QBox_FnReadAt ReadAt;
+} QBox_ReaderAt;
+
+QBox_Reader QBox_SectionReader(QBox_ReaderAt readerAt, off_t off, off_t n);
+void QBox_SectionReader_Release(void* f);
+
+QBox_ReaderAt QBox_FileReaderAt_Open(const char* file);
+void QBox_FileReaderAt_Close(void* f);
 
 /*============================================================================*/
 
