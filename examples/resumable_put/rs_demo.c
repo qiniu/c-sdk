@@ -9,8 +9,8 @@
  */
 
 #include "../../qbox/rs.h"
+#include "../../qbox/up.h"
 #include "../../qbox/oauth2.h"
-#include "../../qbox/oauth2_uptoken.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +42,7 @@ void put_blocks(const char* fl)
     QBox_Error err;
     QBox_Client client;
     QBox_Client client2;
+    QBox_AuthPolicy auth;
     QBox_RS_BlockIO io;
     QBox_RS_BlockProgress prog;
     QBox_RS_GetRet getRet;
@@ -58,14 +59,15 @@ void put_blocks(const char* fl)
 
     /* Upload file */
     QBox_Zero(client);
+    QBox_Zero(auth);
 
-    printf("QBox_Client_MakeUpToken\n");
+	printf("QBox_MakeUpToken\n");
 
-    uptoken = QBox_Client_MakeUpToken("Bucket", 3600, NULL, NULL);
-    if (uptoken == NULL) {
-        printf("Cannot generate UpToken!\n");
-        return;
-    }
+	uptoken = QBox_MakeUpToken(&auth);
+	if (uptoken == NULL) {
+		printf("Cannot generate UpToken!\n");
+		return;
+	}
 
     printf("QBox_Client_InitByUpToken\n");
 

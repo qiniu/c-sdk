@@ -289,4 +289,13 @@ size_t QBox_Null_Fwrite(void *buf, size_t size, size_t nmemb, void *self)
 }
 
 /*============================================================================*/
+/* func QBox_FILE_Reader */
+
+QBox_Reader QBox_FILE_Reader(FILE* fp)
+{
+	QBox_Reader reader = { fp, (QBox_FnRead)fread };
+	return reader;
+}
+
+/*============================================================================*/
 
