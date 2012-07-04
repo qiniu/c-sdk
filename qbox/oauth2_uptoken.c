@@ -107,7 +107,7 @@ char* QBox_Client_MakeUpToken(const char* scope, long expires, const char* callb
 	HMAC_Final(&ctx, digest, &dgtlen);
 	HMAC_CTX_cleanup(&ctx);
 
-    encoded_digest = QBox_String_Encode(digest);
+    encoded_digest = QBox_Memory_Encode(digest, dgtlen);
 
     uptoken = QBox_String_Concat(QBOX_ACCESS_KEY, ":", encoded_digest, ":", encoded_policy_str, NULL);
     free(encoded_digest);
