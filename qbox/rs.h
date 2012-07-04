@@ -94,10 +94,6 @@ QBox_Error QBox_RS_Drop(QBox_Client* self, const char* tableName);
 
 typedef unsigned long QBox_Off_t;
 
-typedef int (*QBox_RS_BlockCallback)(void *data, int blockIndex,
-    const char* ctx, const char* cksum,
-    QBox_Off_t chunkOffset, QBox_Error err);
-
 typedef struct _QBox_RS_BlockIO {
     int (*readChunk)(void* data, size_t offset, void* chunk, size_t* size);
     void* data;
@@ -105,6 +101,10 @@ typedef struct _QBox_RS_BlockIO {
     QBox_Off_t fileSize;
     QBox_Off_t chunkSize;
 } QBox_RS_BlockIO;
+
+typedef int (*QBox_RS_BlockCallback)(void *data, int blockIndex,
+    const char* ctx, const char* cksum,
+    QBox_Off_t chunkOffset, QBox_Error err);
 
 typedef struct _QBox_RS_BlockProgress {
     QBox_RS_BlockCallback callback;
@@ -128,7 +128,7 @@ typedef struct _QBox_RS_BlockData {
 } QBox_RS_BlockData;
 
 typedef struct _QBox_RS_BlockSet {
-    QBox_Off_t fsize;
+    QBox_Off_t fileSize;
 
     int count;
     QBox_Off_t lastBlockSize;

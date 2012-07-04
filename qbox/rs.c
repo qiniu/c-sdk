@@ -302,7 +302,7 @@ static const QBox_Off_t QBOX_RS_BLOCKSIZE = (4 * 1024 * 1024); /* Default block 
 static const QBox_Off_t QBOX_RS_CHUNKSIZE = (32 * 1024); /* Default chunk size is 32KB */
 static const int QBOX_RS_BLOCK_CHECKSUM_SIZE = 20;
 
-QBox_Error QBox_RS_SplitFile(QBox_Client* self, QBox_RS_BlockSet* blockSet, QBox_Off_t fsize)
+QBox_Error QBox_RS_SplitFile(QBox_Client* self, QBox_RS_BlockSet* blockSet, QBox_Off_t fileSize)
 {
     QBox_Error err;
     int i = 0;
@@ -313,10 +313,10 @@ QBox_Error QBox_RS_SplitFile(QBox_Client* self, QBox_RS_BlockSet* blockSet, QBox
         return err;
     }
 
-    blockSet->fsize = fsize;
+    blockSet->fileSize = fileSize;
 
-    blockSet->lastBlockSize = blockSet->fsize % QBOX_RS_BLOCKSIZE;
-    blockSet->count = blockSet->fsize / QBOX_RS_BLOCKSIZE;
+    blockSet->lastBlockSize = blockSet->fileSize % QBOX_RS_BLOCKSIZE;
+    blockSet->count = blockSet->fileSize / QBOX_RS_BLOCKSIZE;
 
     if (blockSet->lastBlockSize > 0) {
         blockSet->count += 1;
@@ -544,7 +544,7 @@ QBox_Error QBox_RS_MakeFile(QBox_Client* self, QBox_RS_BlockSet* blockSet,
     } /* for */
 
     bzero(fsize_str, fsize_len);
-    QBox_snprintf(fsize_str, fsize_len, "%lu", blockSet->fsize);
+    QBox_snprintf(fsize_str, fsize_len, "%lu", blockSet->fileSize);
 
     entryEncoded = QBox_String_Encode(entry);
 
