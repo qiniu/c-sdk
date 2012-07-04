@@ -10,6 +10,8 @@ const char* QBOX_AUTHORIZATION_ENDPOINT	= "<AuthURL>";
 const char* QBOX_TOKEN_ENDPOINT			= "https://acc.qbox.me/oauth2/token";
 
 int QBOX_PUT_TIMEOUT					= 300000; // 300s = 5m
+int QBOX_PUT_CHUNK_SIZE					= 256 * 1024; // 256k
+int QBOX_PUT_RETRY_TIMES				= 2;
 
 const char* QBOX_IO_HOST				= "http://iovip.qbox.me";
 const char* QBOX_FS_HOST				= "https://fs.qbox.me";
