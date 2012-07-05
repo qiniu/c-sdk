@@ -129,16 +129,12 @@ void put_blocks(const char* fl)
 
 int main()
 {
-    //QBOX_ACCESS_KEY = "<Please apply your access key>";
-    //QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
-
-    QBOX_ACCESS_KEY = "RLT1NBD08g3kih5-0v8Yi6nX6cBhesa2Dju4P7mT";
-    QBOX_SECRET_KEY = "k6uZoSDAdKBXQcNYG3UOm4bP3spDVkTg-9hWHIKm";
+    QBOX_ACCESS_KEY = "<Please apply your access key>";
+    QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
 
     QBox_Global_Init(-1);
 
     put_blocks("up_demo.c");
-    put_blocks("big_file.txt");
 
     /* Generate a file first which size is more than 4MB and name it as 'huge_file.txt' */
     put_blocks("huge_file.txt");
