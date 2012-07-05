@@ -45,8 +45,6 @@ QBox_Error QBox_RS_ResumablePut(
     );
     free(params);
 
-    err.code = 200;
-    err.message = "OK";
     return err;
 }
 
