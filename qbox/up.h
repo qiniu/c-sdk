@@ -29,10 +29,7 @@ typedef struct _QBox_UP_PutRet {
 	const char* ctx;
 	const char* checksum;
 	QBox_Uint32 crc32;
-    int uploadedSize;
 } QBox_UP_PutRet;
-
-void QBox_UP_InitPutRet(QBox_UP_PutRet* ret);
 
 QBox_Error QBox_UP_Mkblock(
 	QBox_Client* self, QBox_UP_PutRet* ret, int blockSize, QBox_Reader body, int bodyLength);
