@@ -34,8 +34,8 @@ void put_blocks(const char* fl)
     QBox_Client client2;
     QBox_AuthPolicy auth;
     QBox_ReaderAt f;
+    QBox_UP_PutRet putRet;
     QBox_RS_GetRet getRet;
-    FILE* fp = NULL;
     char* uptoken = NULL;
     char* entry = NULL;
     QBox_Json* root = NULL;
@@ -69,68 +69,59 @@ void put_blocks(const char* fl)
 
     QBox_Client_InitByUpToken(&client, uptoken, 1024);
 
-    fp = fopen(fl, "rb");
-    if (fp) {
-        fseek(fp, 0, SEEK_END);
-        fsize = ftell(fp);
-        fseek(fp, 0, SEEK_SET);
+    f = QBox_FileReaderAt_Open(fl);
 
-        f.self = fp;
-        f.ReadAt = read_chunk;
+    if ((int)f.self >= 0) {
+        fsize = (QBox_Int64) lseek((int)f.self, 0, SEEK_END);
 
         prog = QBox_UP_NewProgress(fsize);
 
-        printf("QBox_UP_Put\n");
-
-        err = QBox_UP_Put(&client, f, fsize, prog, NULL, NULL, NULL);
-        fclose(fp);
-
-        if (err.code != 200) {
-            printf("QBox_UP_Put failed: %d - %s\n", err.code, err.message);
-            free(uptoken);
-            return;
-        }
-
-        printf("QBox_UP_Mkfile\n");
+        printf("QBox_RS_ResumablePut\n");
 
         entry = QBox_String_Concat("Bucket:", fl, NULL);
-        err = QBox_UP_Mkfile(
+        QBox_UP_InitPutRet(&putRet);
+        err = QBox_RS_ResumablePut(
             &client,
-            &root,
-            "/rs-mkfile/",
+            &putRet,
+            prog,
+            NULL, /* blockNotify    */
+            NULL, /* chunkNotify    */
+            NULL, /* notifyParams   */
             entry,
             "text/plain",
+            f,
             fsize,
-            NULL,
-            NULL,
-            prog->checksums,
-            prog->blockCount
+            NULL, /* customMeta     */
+            NULL  /* callbackParams */
         );
         free(entry);
 
+        QBox_FileReaderAt_Close(f.self);
+
         if (err.code != 200) {
-            printf("QBox_UP_Put failed: %d - %s\n", err.code, err.message);
+            printf("QBox_RS_ResumablePut failed: %d - %s\n", err.code, err.message);
             free(uptoken);
             return;
         }
 
         QBox_UP_Progress_Release(prog);
+
+        /* Check uploaded file */
+        printf("QBox_RS_Get\n");
+
+        err = QBox_RS_Get(&client2, &getRet, "Bucket", fl, NULL);
+        if (err.code != 200) {
+            printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
+            free(uptoken);
+            return;
+        }
+
+        printf("Got url=[%s]\n", getRet.url);
+        printf("Got fsize=%llu\n", getRet.fsize);
+
+        QBox_Client_Cleanup(&client2);
     }
 
-    /* Check uploaded file */
-    printf("QBox_RS_Get\n");
-
-    err = QBox_RS_Get(&client2, &getRet, "Bucket", fl, NULL);
-    if (err.code != 200) {
-        printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
-        free(uptoken);
-        return;
-    }
-
-    printf("Got url=[%s]\n", getRet.url);
-    printf("Got fsize=%llu\n", getRet.fsize);
-
-    QBox_Client_Cleanup(&client2);
     QBox_Client_Cleanup(&client);
 
     printf("\n");

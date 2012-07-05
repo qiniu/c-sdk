@@ -69,6 +69,18 @@ static QBox_Error QBox_UP_Chunkput(QBox_Client* self, QBox_UP_PutRet* ret,
 
 /*============================================================================*/
 
+void QBox_UP_InitPutRet(QBox_UP_PutRet* ret)
+{
+    if (ret) {
+        ret->ctx          = NULL;
+        ret->checksum     = 0;
+        ret->crc32        = 0;
+        ret->uploadedSize = 0;
+    }
+}
+
+/*============================================================================*/
+
 QBox_Error QBox_UP_Mkblock(QBox_Client* self, QBox_UP_PutRet* ret,
     int blkSize, QBox_Reader body, int bodyLength)
 {
@@ -125,6 +137,7 @@ QBox_Error QBox_UP_Blockput(QBox_Client* self, QBox_UP_PutRet* ret,
 }
 
 /*============================================================================*/
+
 static size_t QBox_UP_read(void *buf, size_t sz, size_t n, void *self)
 {
     QBox_UP_chunkReader* chkReader = (QBox_UP_chunkReader*) self;
@@ -243,15 +256,15 @@ QBox_Error QBox_UP_Mkfile(
         free(cksum);
     } /* for */
 
-	if (mimeType == NULL) {
-		mimeType = "application/octet-stream";
-	}
-	strEncoded = QBox_String_Encode(mimeType);
-
     if (params == NULL) {
         params = "";
     }
 
+	if (mimeType == NULL) {
+		mimeType = "application/octet-stream";
+	}
+
+	strEncoded = QBox_String_Encode(mimeType);
     paramsFinal = QBox_String_Concat(params, "/mimeType/", strEncoded, NULL);
     free(strEncoded);
 
@@ -261,10 +274,10 @@ QBox_Error QBox_UP_Mkfile(
         paramsFinal = params2;
     }
 
-    strEncoded = QBox_String_Encode(entry);
     bzero(fsizeStr, sizeof(fsizeStr));
     QBox_snprintf(fsizeStr, sizeof(fsizeStr), "%llu", fsize);
 
+    strEncoded = QBox_String_Encode(entry);
     url = QBox_String_Concat(QBOX_UP_HOST, cmd, strEncoded, "/fsize/", fsizeStr, paramsFinal, NULL);
 	free(paramsFinal);
 	free(strEncoded);
@@ -284,8 +297,9 @@ QBox_UP_Progress* QBox_UP_NewProgress(QBox_Int64 fsize)
     prog = malloc(sizeof(*prog));
 
     if (prog != NULL) {
-        prog->blockCount = fsize / QBOX_UP_BLOCK_SIZE;
+        prog->blockCurrentIndex = 0;
 
+        prog->blockCount = fsize / QBOX_UP_BLOCK_SIZE;
         if (fsize % QBOX_UP_BLOCK_SIZE > 0) {
             prog->blockCount += 1;
         }
@@ -308,29 +322,23 @@ void QBox_UP_Progress_Release(QBox_UP_Progress* prog)
 
 /*============================================================================*/
 
-QBox_Error QBox_UP_Put(QBox_Client* self, QBox_ReaderAt f,
+QBox_Error QBox_UP_Put(QBox_Client* self, QBox_UP_PutRet* ret, QBox_ReaderAt f,
     QBox_Int64 fsize, QBox_UP_Progress* prog,
 	QBox_UP_FnBlockNotify blockNotify, QBox_UP_FnChunkNotify chunkNotify, void* notifyParams)
 {
     QBox_Error err;
-    QBox_UP_PutRet ret;
     QBox_Json* root; 
-    int blkIndex = 0;
+    int blkIndex = prog->blockCurrentIndex;
     int blkSize = 0;
     QBox_Int64 rest = 0;
 
     rest = fsize;
-    for (blkIndex = 0; blkIndex < prog->blockCount; ++blkIndex) {
-        ret.ctx          = NULL;
-        ret.checksum     = NULL;
-        ret.crc32        = 0;
-        ret.uploadedSize = 0;
-
+    for (; blkIndex < prog->blockCount; blkIndex = ++prog->blockCurrentIndex) {
         blkSize = (rest > QBOX_UP_BLOCK_SIZE) ? QBOX_UP_BLOCK_SIZE : rest;
 
         err = QBox_UP_ResumableBlockput(
             self,
-            &ret,
+            ret,
             f,
             blkIndex,
             blkSize,
@@ -345,13 +353,14 @@ QBox_Error QBox_UP_Put(QBox_Client* self, QBox_ReaderAt f,
             return err;
         }
 
-        memcpy(prog->checksums[blkIndex].value, ret.checksum, strlen(ret.checksum));
+        memcpy(prog->checksums[blkIndex].value, ret->checksum, strlen(ret->checksum));
 
         if (blockNotify) {
             blockNotify(notifyParams, blkIndex, &prog->checksums[blkIndex]);
         }
 
         rest -= blkSize;
+        QBox_UP_InitPutRet(ret);
     } /* for */
 
     err.code = 200;

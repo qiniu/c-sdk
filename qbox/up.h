@@ -32,6 +32,8 @@ typedef struct _QBox_UP_PutRet {
     int uploadedSize;
 } QBox_UP_PutRet;
 
+void QBox_UP_InitPutRet(QBox_UP_PutRet* ret);
+
 QBox_Error QBox_UP_Mkblock(
 	QBox_Client* self, QBox_UP_PutRet* ret, int blockSize, QBox_Reader body, int bodyLength);
 
@@ -62,6 +64,7 @@ typedef struct _QBox_UP_Progress {
 	QBox_UP_Checksum* checksums;
 	QBox_UP_BlockProgress* progs;
 	int blockCount;
+    int blockCurrentIndex;
 } QBox_UP_Progress;
 
 QBox_UP_Progress* QBox_UP_NewProgress(QBox_Int64 fsize);
@@ -70,7 +73,7 @@ void QBox_UP_Progress_Release(QBox_UP_Progress* prog);
 typedef void (*QBox_UP_FnBlockNotify)(void* self, int blockIdx, QBox_UP_Checksum* checksum);
 
 QBox_Error QBox_UP_Put(
-	QBox_Client* self, QBox_ReaderAt f, QBox_Int64 fsize, QBox_UP_Progress* prog,
+	QBox_Client* self, QBox_UP_PutRet* ret, QBox_ReaderAt f, QBox_Int64 fsize, QBox_UP_Progress* prog,
 	QBox_UP_FnBlockNotify blockNotify, QBox_UP_FnChunkNotify chunkNotify, void* notifyParams);
 
 #endif 

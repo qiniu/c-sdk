@@ -9,6 +9,7 @@ SOURCE_FILES=\
 	../../qbox/oauth2_digest.c\
 	../../qbox/oauth2_uptoken.c\
 	../../qbox/rs.c\
+	../../qbox/rs_up.c\
 	../../qbox/up.c\
 	../../qbox/rscli.c\
 	up_demo.c\
