@@ -177,8 +177,6 @@ QBox_Error QBox_UP_ResumableBlockput(QBox_Client* self, QBox_UP_PutRet* ret,
 
                 break;
             }
-
-            sleep(10);
         } /* for retry */
 
         if (err.code != 200) {
