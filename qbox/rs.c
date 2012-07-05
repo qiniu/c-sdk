@@ -8,6 +8,7 @@
  ============================================================================
  */
 
+#include <zlib.h>
 #include "rs.h"
 
 /*============================================================================*/
@@ -67,7 +68,7 @@ QBox_Error QBox_RS_PutAuthEx(
 
 QBox_Error QBox_RS_Put(
 	QBox_Client* self, QBox_RS_PutRet* ret, const char* tableName, const char* key,
-	const char* mimeType, FILE* source, QBox_Int64 fsize, const char* customMeta)
+	const char* mimeType, QBox_Reader source, QBox_Int64 fsize, const char* customMeta)
 {
 	QBox_Error err;
 	cJSON* root;
@@ -120,7 +121,7 @@ QBox_Error QBox_RS_PutFile(
 	fseek(fp, 0, SEEK_END);
 	fsize = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
-	err = QBox_RS_Put(self, ret, tableName, key, mimeType, fp, fsize, customMeta);
+	err = QBox_RS_Put(self, ret, tableName, key, mimeType, QBox_FILE_Reader(fp), fsize, customMeta);
 	fclose(fp);
 	return err;
 }

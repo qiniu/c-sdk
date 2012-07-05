@@ -51,8 +51,7 @@ static QBox_Error QBox_DigestAuth_Auth(void* self, QBox_Header** header, const c
 	HMAC_Final(&ctx, digest, &dgtlen);
 	HMAC_CTX_cleanup(&ctx);
 
-	digest[dgtlen] = '\0';
-	enc_digest = QBox_String_Encode(digest);
+	enc_digest = QBox_Memory_Encode(digest, dgtlen);
 
 	/* Set appopriate HTTP header */
 	auth = QBox_String_Concat("Authorization: QBox ", QBOX_ACCESS_KEY, ":", enc_digest, NULL);

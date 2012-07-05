@@ -196,6 +196,25 @@ char* QBox_String_Encode(const char* buf)
 	return dest;
 }
 
+char* QBox_Memory_Encode(const char* buf, const size_t cb)
+{
+	const size_t cbDest = urlsafe_b64_encode(buf, cb, NULL, 0);
+	char* dest = (char*)malloc(cbDest + 1);
+	const size_t cbReal = urlsafe_b64_encode(buf, cb, dest, cbDest);
+	dest[cbReal] = '\0';
+	return dest;
+}
+
+char* QBox_String_Decode(const char* buf)
+{
+	const size_t cb = strlen(buf);
+	const size_t cbDest = urlsafe_b64_decode(buf, cb, NULL, 0);
+	char* dest = (char*)malloc(cbDest + 1);
+	const size_t cbReal = urlsafe_b64_decode(buf, cb, dest, cbDest);
+	dest[cbReal] = '\0';
+	return dest;
+}
+
 /*============================================================================*/
 /* type QBox_Buffer */
 
@@ -267,6 +286,15 @@ size_t QBox_Buffer_Fwrite(void *buf, size_t size, size_t nmemb, void *self)
 size_t QBox_Null_Fwrite(void *buf, size_t size, size_t nmemb, void *self)
 {
 	return nmemb;
+}
+
+/*============================================================================*/
+/* func QBox_FILE_Reader */
+
+QBox_Reader QBox_FILE_Reader(FILE* fp)
+{
+	QBox_Reader reader = { fp, (QBox_FnRead)fread };
+	return reader;
 }
 
 /*============================================================================*/

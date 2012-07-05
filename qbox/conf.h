@@ -19,10 +19,13 @@ extern const char* QBOX_AUTHORIZATION_ENDPOINT;	// "<AuthURL>"
 extern const char* QBOX_TOKEN_ENDPOINT;			// "https://acc.qbox.me/oauth2/token"
 
 extern int QBOX_PUT_TIMEOUT;					// 300000 = 300s = 5m
+extern int QBOX_PUT_CHUNK_SIZE;
+extern int QBOX_PUT_RETRY_TIMES;
 
-extern const char* QBOX_IO_HOST;				// "http://io.qbox.me"
-extern const char* QBOX_FS_HOST;				// "https://fs.qbox.me"
-extern const char* QBOX_RS_HOST;				// "http://rs.qbox.me:10100"
+extern const char* QBOX_IO_HOST;
+extern const char* QBOX_FS_HOST;
+extern const char* QBOX_RS_HOST;
+extern const char* QBOX_UP_HOST;
 
 #endif
 
