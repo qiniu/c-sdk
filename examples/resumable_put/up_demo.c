@@ -1,6 +1,6 @@
 /*
  ============================================================================
- Name        : rs_demo.c
+ Name        : up_demo.c
  Author      : RS Author
  Version     : 1.0.0.0
  Copyright   : 2012 Shanghai Qiniu Information Technologies Co., Ltd.
@@ -15,23 +15,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-int check_block_progress(void* data,
-    int blockIndex, const char* ctx, const char* cksum,
-    QBox_Off_t chunkOffset, QBox_Error err)
+ssize_t read_chunk(void* self, void *buf, size_t bytes, off_t offset)
 {
-    printf("blockIndex=%d\n", blockIndex);
-    printf("ctx=%s\n", ctx);
-    printf("cksum=%s\n", cksum);
-    printf("chunkOffset=%lu\n", chunkOffset);
-    printf("\n");
-}
+    FILE* fp = (FILE*) self;
 
-int read_chunk(void* data, size_t offset, void* chunk, size_t* size)
-{
-    FILE* fp = (FILE*) data;
-
-    if (fread(chunk, *size, 1, fp) == 1) {
-        return *size;
+    fseek(fp, offset, SEEK_SET);
+    if (fread(buf, bytes, 1, fp) == 1) {
+        return bytes;
     }
 
     return 0;
@@ -43,11 +33,14 @@ void put_blocks(const char* fl)
     QBox_Client client;
     QBox_Client client2;
     QBox_AuthPolicy auth;
-    QBox_RS_BlockIO io;
-    QBox_RS_BlockProgress prog;
+    QBox_ReaderAt f;
     QBox_RS_GetRet getRet;
     FILE* fp = NULL;
     char* uptoken = NULL;
+    char* entry = NULL;
+    QBox_Json* root = NULL;
+    QBox_UP_Progress* prog = NULL;
+    QBox_Int64 fsize = 0;
 
     printf("Processing ... %s\n", fl);
 
@@ -61,6 +54,7 @@ void put_blocks(const char* fl)
     QBox_Zero(client);
     QBox_Zero(auth);
 
+    /* QBox_MakeUpToken() should be called on Biz-Server side */
 	printf("QBox_MakeUpToken\n");
 
 	uptoken = QBox_MakeUpToken(&auth);
@@ -69,34 +63,58 @@ void put_blocks(const char* fl)
 		return;
 	}
 
+    /* QBox_Client_InitByUpToken() and 
+     * other QBox_UP_xxx() functions should be called on Up-Client side */
     printf("QBox_Client_InitByUpToken\n");
 
     QBox_Client_InitByUpToken(&client, uptoken, 1024);
 
-    printf("QBox_RS_PutFile_ByUpToken\n");
-
     fp = fopen(fl, "rb");
     if (fp) {
         fseek(fp, 0, SEEK_END);
-
-        io.readChunk = read_chunk;
-        io.data = (void *)fp;
-        io.fileSize = ftell(fp);
-        io.chunkSize = 0;
-
+        fsize = ftell(fp);
         fseek(fp, 0, SEEK_SET);
 
-        prog.callback = check_block_progress; 
-        prog.data = NULL;
+        f.self = fp;
+        f.ReadAt = read_chunk;
 
-        err = QBox_RS_PutFile_ByUpToken(&client, "Bucket", fl, "text/plain", NULL, NULL, &io, &prog);
+        prog = QBox_UP_NewProgress(fsize);
+
+        printf("QBox_UP_Put\n");
+
+        err = QBox_UP_Put(&client, f, fsize, prog, NULL, NULL, NULL);
         fclose(fp);
 
         if (err.code != 200) {
-            printf("QBox_RS_PutFile_ByUpToken failed: %d - %s\n", err.code, err.message);
+            printf("QBox_UP_Put failed: %d - %s\n", err.code, err.message);
             free(uptoken);
             return;
         }
+
+        printf("QBox_UP_Mkfile\n");
+
+        entry = QBox_String_Concat("Bucket:", fl, NULL);
+        err = QBox_UP_Mkfile(
+            &client,
+            &root,
+            "/rs-mkfile/",
+            entry,
+            "text/plain",
+            fsize,
+            NULL,
+            NULL,
+            prog->checksums,
+            prog->blockCount
+        );
+        free(entry);
+
+        if (err.code != 200) {
+            printf("QBox_UP_Put failed: %d - %s\n", err.code, err.message);
+            free(uptoken);
+            return;
+        }
+
+        QBox_UP_Progress_Release(prog);
     }
 
     /* Check uploaded file */
@@ -120,12 +138,15 @@ void put_blocks(const char* fl)
 
 int main()
 {
-    QBOX_ACCESS_KEY = "<Please apply your access key>";
-    QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
+    //QBOX_ACCESS_KEY = "<Please apply your access key>";
+    //QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
+
+    QBOX_ACCESS_KEY = "RLT1NBD08g3kih5-0v8Yi6nX6cBhesa2Dju4P7mT";
+    QBOX_SECRET_KEY = "k6uZoSDAdKBXQcNYG3UOm4bP3spDVkTg-9hWHIKm";
 
     QBox_Global_Init(-1);
 
-    put_blocks("rs_demo.c");
+    put_blocks("up_demo.c");
     put_blocks("big_file.txt");
 
     /* Generate a file first which size is more than 4MB and name it as 'huge_file.txt' */

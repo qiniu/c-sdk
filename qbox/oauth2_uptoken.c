@@ -42,7 +42,7 @@ void QBox_Client_InitByUpToken(QBox_Client* self, const char* uptoken, size_t bu
 	QBox_Error err;
 	char* auth = NULL;
 
-	/* Set appopriate HTTP header */
+	/* Set appropriate HTTP header */
 	auth = QBox_String_Concat("Authorization: UpToken ", uptoken, NULL);
 
 	QBox_Client_InitEx(self, auth, &QBox_UpTokenAuth_Vtable, bufSize);

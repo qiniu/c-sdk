@@ -11,13 +11,13 @@ SOURCE_FILES=\
 	../../qbox/rs.c\
 	../../qbox/up.c\
 	../../qbox/rscli.c\
-	rs_demo.c\
+	up_demo.c\
 
 all: $(SOURCE_FILES)
-	gcc -o rs_demo -lcurl -lm -lz $^
+	gcc -o up_demo -lcurl -lm -lz $^
 
 install: all
 	@echo
 
 clean:
-	rm -f rs_demo
+	rm -f up_demo
