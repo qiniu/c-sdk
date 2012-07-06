@@ -61,7 +61,7 @@ typedef struct _QBox_UP_Progress {
 	QBox_UP_Checksum* checksums;
 	QBox_UP_BlockProgress* progs;
 	int blockCount;
-    int blockCurrentIndex;
+    int blockNextIndex;
 } QBox_UP_Progress;
 
 QBox_UP_Progress* QBox_UP_NewProgress(QBox_Int64 fsize);

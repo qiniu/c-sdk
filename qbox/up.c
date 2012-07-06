@@ -160,7 +160,7 @@ QBox_Error QBox_UP_ResumableBlockput(QBox_Client* self, QBox_UP_PutRet* ret,
         );
 
         for (i = 0; i <= retryTimes; ++i) {
-            err = QBox_UP_Blockput(self, ret, ret->ctx, blkProg->offset, ri, bodyLength);
+            err = QBox_UP_Blockput(self, ret, blkProg->ctx, blkProg->offset, ri, bodyLength);
             blkProg->errCode = err.code;
 
             if (err.code == 200) {
@@ -266,7 +266,7 @@ QBox_UP_Progress* QBox_UP_NewProgress(QBox_Int64 fsize)
     prog = calloc(sizeof(*prog), 1);
 
     if (prog != NULL) {
-        prog->blockCurrentIndex = 0;
+        prog->blockNextIndex = 0;
 
         prog->blockCount = fsize / QBOX_UP_BLOCK_SIZE;
         if (fsize % QBOX_UP_BLOCK_SIZE > 0) {
@@ -302,25 +302,20 @@ QBox_Error QBox_UP_Put(QBox_Client* self, QBox_UP_PutRet* ret, QBox_ReaderAt f,
 {
     QBox_Error err;
     QBox_Json* root; 
-    int blkIndex = prog->blockCurrentIndex;
-    int blkSize = 0;
-    QBox_Int64 rest = 0;
+    int blkIndex = prog->blockNextIndex;
     int keepGoing = 1;
 
-    rest = fsize;
-    for (; blkIndex < prog->blockCount; blkIndex = ++prog->blockCurrentIndex) {
+    for (; blkIndex < prog->blockCount;) {
         ret->ctx          = NULL;
         ret->checksum     = 0;
         ret->crc32        = 0;
-
-        blkSize = (rest > QBOX_UP_BLOCK_SIZE) ? QBOX_UP_BLOCK_SIZE : rest;
 
         err = QBox_UP_ResumableBlockput(
             self,
             ret,
             f,
             blkIndex,
-            blkSize,
+            prog->progs[blkIndex].offset + prog->progs[blkIndex].restSize,
             QBOX_PUT_CHUNK_SIZE,
             QBOX_PUT_RETRY_TIMES,
             &prog->progs[blkIndex],
@@ -334,16 +329,18 @@ QBox_Error QBox_UP_Put(QBox_Client* self, QBox_UP_PutRet* ret, QBox_ReaderAt f,
 
         memcpy(prog->checksums[blkIndex].value, ret->checksum, strlen(ret->checksum));
 
-        rest -= blkSize;
+        ++prog->blockNextIndex;
 
         if (blockNotify) {
             keepGoing = blockNotify(notifyParams, blkIndex, &prog->checksums[blkIndex]);
         }
-        if (keepGoing == 0) {
+        if (keepGoing == 0 && prog->blockNextIndex < prog->blockCount) {
             err.code = 299;
             err.message = "The block has been put but the progress is aborted";
             return err;
         }
+
+        blkIndex = prog->blockNextIndex;
     } /* for */
 
     err.code = 200;
