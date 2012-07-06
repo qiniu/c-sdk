@@ -15,36 +15,24 @@
 
 static const QBox_Int64 QBOX_UP_BLOCK_SIZE = (4 * 1024 * 1024); /* Default block size is 4MB */
 
-typedef struct _QBox_UP_chunkReader {
-    QBox_Int64 blkEndOffset;
-    QBox_Int64 chkOffset;
-    int chkSize;
-
-    QBox_ReaderAt f;
-} QBox_UP_chunkReader;
-
 static QBox_Error QBox_UP_Chunkput(QBox_Client* self, QBox_UP_PutRet* ret,
-    QBox_Reader body, int bodyLength,
-    char* chkBuf, int chkRealSize, const char* url)
+    QBox_Reader body, int bodyLength, const char* url)
 {
     QBox_Error err;
 	char* mimeEncoded = NULL;
     char* url2 = NULL;
+    char* chkBuf = NULL;
 	cJSON* root = NULL;
-    QBox_UP_chunkReader* chkReader = (QBox_UP_chunkReader*) body.self;
     unsigned long chunk_crc32 = 0L;
-
-    if (body.Read(chkBuf, chkRealSize, 1, body.self) == 0) {
-        err.code = 400;
-        err.message = "Failed in reading file";
-        return err;
-    }
 
 	mimeEncoded = QBox_String_Encode("application/octet-stream");
 	url2 = QBox_String_Concat(url, "/mime/", mimeEncoded, NULL);
     free(mimeEncoded);
 
-	err = QBox_Client_CallWithBuffer(self, &root, url2, chkBuf, chkRealSize);
+    chkBuf = malloc(bodyLength);
+    body.Read(chkBuf, 1, bodyLength, body.self);
+
+	err = QBox_Client_CallWithBuffer(self, &root, url2, chkBuf, bodyLength);
 	free(url2);
 
 	if (err.code == 200) {
@@ -52,8 +40,9 @@ static QBox_Error QBox_UP_Chunkput(QBox_Client* self, QBox_UP_PutRet* ret,
 		ret->checksum = QBox_Json_GetString(root, "checksum", NULL);
 
 		ret->crc32 = QBox_Json_GetInt64(root, "crc32", 0);
+
         chunk_crc32 = crc32(0L, NULL, 0);
-        chunk_crc32 = crc32(chunk_crc32, chkBuf, chkRealSize);
+        chunk_crc32 = crc32(chunk_crc32, chkBuf, bodyLength);
 
         if (chunk_crc32 != ret->crc32) {
             err.code = 400;
@@ -62,11 +51,10 @@ static QBox_Error QBox_UP_Chunkput(QBox_Client* self, QBox_UP_PutRet* ret,
         else {
             err.code = 200;
             err.message = "OK";
-
-            /* Adjust the chunk offset only after put the chunk successfully */
-            chkReader->chkOffset += chkRealSize;
         }
 	}
+
+    free(chkBuf);
 
     return err;
 }
@@ -78,20 +66,13 @@ QBox_Error QBox_UP_Mkblock(QBox_Client* self, QBox_UP_PutRet* ret,
 {
     QBox_Error err;
     char blkSizeStr[128];
-    int chkRealSize = 0;
-    char* chkBuf = NULL;
     char* url = NULL;
-    QBox_UP_chunkReader* chkReader = (QBox_UP_chunkReader*) body.self;
     
     bzero(blkSizeStr, sizeof(blkSizeStr));
     QBox_snprintf(blkSizeStr, sizeof(blkSizeStr), "%d", blkSize);
 	url = QBox_String_Concat(QBOX_UP_HOST, "/mkblk/", blkSizeStr, NULL);
 
-    chkRealSize = (blkSize > chkReader->chkSize) ? chkReader->chkSize : blkSize;
-    chkBuf = malloc(chkRealSize);
-
-    err = QBox_UP_Chunkput(self, ret, body, bodyLength, chkBuf, chkRealSize, url);
-    free(chkBuf);
+    err = QBox_UP_Chunkput(self, ret, body, bodyLength, url);
     free(url);
 
     return err;
@@ -104,25 +85,14 @@ QBox_Error QBox_UP_Blockput(QBox_Client* self, QBox_UP_PutRet* ret,
 {
     QBox_Error err;
     char offsetStr[128];
-    int chkRealSize = 0;
-    char* chkBuf = NULL;
     char* url = NULL;
-    QBox_UP_chunkReader* chkReader = (QBox_UP_chunkReader*) body.self;
     
     bzero(offsetStr, sizeof(offsetStr));
     QBox_snprintf(offsetStr, sizeof(offsetStr), "%d", offset);
 
     url = QBox_String_Concat(QBOX_UP_HOST, "/bput/", ctx, "/", offsetStr, NULL);
 
-    chkRealSize = chkReader->blkEndOffset - chkReader->chkOffset;
-    if (chkRealSize > chkReader->chkSize) {
-        chkRealSize = chkReader->chkSize;
-    }
-
-    chkBuf = malloc(chkRealSize);
-
-    err = QBox_UP_Chunkput(self, ret, body, bodyLength, chkBuf, chkRealSize, url);
-    free(chkBuf);
+    err = QBox_UP_Chunkput(self, ret, body, bodyLength, url);
     free(url);
 
     return err;
@@ -130,46 +100,33 @@ QBox_Error QBox_UP_Blockput(QBox_Client* self, QBox_UP_PutRet* ret,
 
 /*============================================================================*/
 
-static size_t QBox_UP_read(void *buf, size_t sz, size_t n, void *self)
-{
-    QBox_UP_chunkReader* chkReader = (QBox_UP_chunkReader*) self;
-
-    if (chkReader->chkOffset < chkReader->blkEndOffset) {
-        chkReader->f.ReadAt(chkReader->f.self, buf, sz, chkReader->chkOffset);
-        return n;
-    }
-
-    return 0;
-}
-
 QBox_Error QBox_UP_ResumableBlockput(QBox_Client* self, QBox_UP_PutRet* ret,
 	QBox_ReaderAt f, int blkIndex, int blkSize, int chkSize, int retryTimes,
 	QBox_UP_BlockProgress* blkProg, QBox_UP_FnChunkNotify chunkNotify, void* notifyParams)
 {
     QBox_Error err;
     QBox_Reader ri;
-    QBox_UP_chunkReader chkReader;
+    int bodyLength = 0;
     int i = 0;
-
-    /* Do some initialization */
-    chkReader.blkEndOffset = (blkIndex * QBOX_UP_BLOCK_SIZE) + blkSize;
-    chkReader.chkOffset    = chkReader.blkEndOffset - blkProg->restSize;
-    chkReader.chkSize      = chkSize;
-    chkReader.f            = f;
-
-    ri.Read = QBox_UP_read;
-    ri.self = &chkReader;
 
     /* Try make block and put the first chunk */
     if (blkProg->restSize == blkSize) {
+        bodyLength = (blkProg->restSize > chkSize) ? chkSize : blkProg->restSize;
+
+        ri = QBox_SectionReader(
+            f,
+            (blkIndex * QBOX_UP_BLOCK_SIZE) + blkProg->offset,
+            bodyLength
+        );
+
         for (i = 0; i <= retryTimes; ++i) {
-            err = QBox_UP_Mkblock(self, ret, blkSize, ri, blkSize);
+            err = QBox_UP_Mkblock(self, ret, blkSize, ri, bodyLength);
             blkProg->errCode = err.code;
 
             if (err.code == 200) {
-                blkProg->ctx      = (char*)ret->ctx;
-                blkProg->restSize = chkReader.blkEndOffset - chkReader.chkOffset;
-                blkProg->offset   = blkSize - blkProg->restSize;
+                blkProg->ctx       = (char*)ret->ctx;
+                blkProg->restSize -= bodyLength;
+                blkProg->offset   += bodyLength;
 
                 if (chunkNotify) {
                     chunkNotify(notifyParams, blkIndex, blkProg);
@@ -178,6 +135,8 @@ QBox_Error QBox_UP_ResumableBlockput(QBox_Client* self, QBox_UP_PutRet* ret,
                 break;
             }
         } /* for retry */
+
+        QBox_SectionReader_Release(ri.self);
 
         if (err.code != 200) {
             return err;
@@ -186,14 +145,22 @@ QBox_Error QBox_UP_ResumableBlockput(QBox_Client* self, QBox_UP_PutRet* ret,
 
     /* Try put block */
     while (blkProg->restSize > 0) {
+        bodyLength = (blkProg->restSize > chkSize) ? chkSize : blkProg->restSize;
+
+        ri = QBox_SectionReader(
+            f,
+            (blkIndex * QBOX_UP_BLOCK_SIZE) + blkProg->offset,
+            bodyLength
+        );
+
         for (i = 0; i <= retryTimes; ++i) {
-            err = QBox_UP_Blockput(self, ret, ret->ctx, blkProg->offset, ri, blkSize);
+            err = QBox_UP_Blockput(self, ret, ret->ctx, blkProg->offset, ri, bodyLength);
             blkProg->errCode = err.code;
 
             if (err.code == 200) {
-                blkProg->ctx      = (char*)ret->ctx;
-                blkProg->restSize = chkReader.blkEndOffset - chkReader.chkOffset;
-                blkProg->offset   = blkSize - blkProg->restSize;
+                blkProg->ctx       = (char*)ret->ctx;
+                blkProg->restSize -= bodyLength;
+                blkProg->offset   += bodyLength;
 
                 if (chunkNotify) {
                     chunkNotify(notifyParams, blkIndex, blkProg);
@@ -202,6 +169,8 @@ QBox_Error QBox_UP_ResumableBlockput(QBox_Client* self, QBox_UP_PutRet* ret,
                 break;
             }
         } /* for retry */
+
+        QBox_SectionReader_Release(ri.self);
 
         if (err.code != 200) {
             return err;

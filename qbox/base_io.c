@@ -22,7 +22,6 @@
 
 typedef struct _QBox_sectionReader {
 	QBox_ReaderAt r;
-	off_t base;
 	off_t off;
 	off_t limit;
 } QBox_sectionReader;
@@ -50,7 +49,6 @@ QBox_Reader QBox_SectionReader(QBox_ReaderAt r, off_t off, off_t n)
 	QBox_Reader ret;
 	QBox_sectionReader* self = malloc(sizeof(QBox_sectionReader));
 	self->r = r;
-	self->base = off;
 	self->off = off;
 	self->limit = off + n;
 	ret.self = self;
