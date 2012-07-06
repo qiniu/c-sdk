@@ -90,6 +90,7 @@ typedef struct _QBox_Demo_Progress {
     QBox_UP_Progress* prog;
     const char* fl;
     int n;
+    int m;
 } QBox_Demo_Progress;
 
 int block_notify(void* self, int blockIdx, QBox_UP_Checksum* checksum)
@@ -108,12 +109,19 @@ int block_notify(void* self, int blockIdx, QBox_UP_Checksum* checksum)
 
 int chunk_notify(void* self, int blockIdx, QBox_UP_BlockProgress* prog)
 {
+    QBox_Demo_Progress* demoProg = (QBox_Demo_Progress*) self;
+
     printf("block_nofity : blockIdx=%d offset=%d restSize=%d errCode=%d ctx=[%s]\n",
             blockIdx, prog->offset, prog->restSize, prog->errCode, prog->ctx);
+
+    if (blockIdx == demoProg->n && prog->offset > demoProg->m) {
+        try_save(demoProg->fl, demoProg->prog);
+        return 0;
+    }
     return 1;
 }
 
-void put_blocks(const char* fl, int n)
+void put_blocks(const char* fl, int n, int m)
 {
     QBox_Error err;
     QBox_Client client;
@@ -166,6 +174,7 @@ void put_blocks(const char* fl, int n)
 
         demoProg.fl   = fl;
         demoProg.n    = n;
+        demoProg.m    = m;
         demoProg.prog = prog;
 
         try_resume(fl, prog);
@@ -227,12 +236,13 @@ int main(int argc, char* argv[])
 {
     char* fl = argv[1];
     int n = -1;
+    int m = -1;
 
     QBOX_ACCESS_KEY = "<Please apply your access key>";
     QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
 
     if (argc < 2) {
-        printf("Usage: up_demo_resumable FILE [ABORT_BLOCK_INDEX]\n");
+        printf("Usage: up_demo_resumable FILE [ABORT_BLOCK_INDEX] [ABORT_CHUNK_BYTES]\n");
         return 0;
     }
 
@@ -245,7 +255,16 @@ int main(int argc, char* argv[])
         }
     }
 
-    put_blocks(fl, n);
+    if (argc > 3) {
+        m = atoi(argv[3]);
+
+        if (m < 0) {
+            printf("ABORT_CHUNK_BYTES must be zero or positive numbers!\n");
+            return 0;
+        }
+    }
+
+    put_blocks(fl, n, m);
 
     QBox_Global_Cleanup();
 
