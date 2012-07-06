@@ -108,6 +108,7 @@ QBox_Error QBox_UP_ResumableBlockput(QBox_Client* self, QBox_UP_PutRet* ret,
     QBox_Reader ri;
     int bodyLength = 0;
     int i = 0;
+    int keepGoing = 1;
 
     /* Try make block and put the first chunk */
     if (blkProg->restSize == blkSize) {
@@ -129,7 +130,7 @@ QBox_Error QBox_UP_ResumableBlockput(QBox_Client* self, QBox_UP_PutRet* ret,
                 blkProg->offset   += bodyLength;
 
                 if (chunkNotify) {
-                    chunkNotify(notifyParams, blkIndex, blkProg);
+                    keepGoing = chunkNotify(notifyParams, blkIndex, blkProg);
                 }
 
                 break;
@@ -139,6 +140,11 @@ QBox_Error QBox_UP_ResumableBlockput(QBox_Client* self, QBox_UP_PutRet* ret,
         QBox_SectionReader_Release(ri.self);
 
         if (err.code != 200) {
+            return err;
+        }
+        if (keepGoing == 0) {
+            err.code = 299;
+            err.message = "The chunk has been put but the progress is aborted";
             return err;
         }
     } /* make block */
@@ -163,7 +169,7 @@ QBox_Error QBox_UP_ResumableBlockput(QBox_Client* self, QBox_UP_PutRet* ret,
                 blkProg->offset   += bodyLength;
 
                 if (chunkNotify) {
-                    chunkNotify(notifyParams, blkIndex, blkProg);
+                    keepGoing = chunkNotify(notifyParams, blkIndex, blkProg);
                 }
 
                 break;
@@ -173,6 +179,11 @@ QBox_Error QBox_UP_ResumableBlockput(QBox_Client* self, QBox_UP_PutRet* ret,
         QBox_SectionReader_Release(ri.self);
 
         if (err.code != 200) {
+            return err;
+        }
+        if (keepGoing == 0) {
+            err.code = 299;
+            err.message = "The chunk has been put but the progress is aborted";
             return err;
         }
     } /* while putting block */
@@ -294,6 +305,7 @@ QBox_Error QBox_UP_Put(QBox_Client* self, QBox_UP_PutRet* ret, QBox_ReaderAt f,
     int blkIndex = prog->blockCurrentIndex;
     int blkSize = 0;
     QBox_Int64 rest = 0;
+    int keepGoing = 1;
 
     rest = fsize;
     for (; blkIndex < prog->blockCount; blkIndex = ++prog->blockCurrentIndex) {
@@ -322,11 +334,16 @@ QBox_Error QBox_UP_Put(QBox_Client* self, QBox_UP_PutRet* ret, QBox_ReaderAt f,
 
         memcpy(prog->checksums[blkIndex].value, ret->checksum, strlen(ret->checksum));
 
-        if (blockNotify) {
-            blockNotify(notifyParams, blkIndex, &prog->checksums[blkIndex]);
-        }
-
         rest -= blkSize;
+
+        if (blockNotify) {
+            keepGoing = blockNotify(notifyParams, blkIndex, &prog->checksums[blkIndex]);
+        }
+        if (keepGoing == 0) {
+            err.code = 299;
+            err.message = "The block has been put but the progress is aborted";
+            return err;
+        }
     } /* for */
 
     err.code = 200;
