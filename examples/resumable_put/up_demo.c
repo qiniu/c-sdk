@@ -15,18 +15,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-ssize_t read_chunk(void* self, void *buf, size_t bytes, off_t offset)
-{
-    FILE* fp = (FILE*) self;
-
-    fseek(fp, offset, SEEK_SET);
-    if (fread(buf, bytes, 1, fp) == 1) {
-        return bytes;
-    }
-
-    return 0;
-}
-
 void put_blocks(const char* fl)
 {
     QBox_Error err;
@@ -79,7 +67,6 @@ void put_blocks(const char* fl)
         printf("QBox_RS_ResumablePut\n");
 
         entry = QBox_String_Concat("Bucket:", fl, NULL);
-        QBox_UP_InitPutRet(&putRet);
         err = QBox_RS_ResumablePut(
             &client,
             &putRet,
@@ -131,8 +118,6 @@ int main()
 {
     QBOX_ACCESS_KEY = "<Please apply your access key>";
     QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
-
-    QBox_Global_Init(-1);
 
     put_blocks("up_demo.c");
 
