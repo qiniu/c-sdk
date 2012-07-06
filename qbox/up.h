@@ -23,7 +23,7 @@ typedef struct _QBox_UP_BlockProgress {
 	int errCode;
 } QBox_UP_BlockProgress;
 
-typedef void (*QBox_UP_FnChunkNotify)(void* self, int blockIdx, QBox_UP_BlockProgress* prog);
+typedef int (*QBox_UP_FnChunkNotify)(void* self, int blockIdx, QBox_UP_BlockProgress* prog);
 
 typedef struct _QBox_UP_PutRet {
 	const char* ctx;
@@ -61,13 +61,13 @@ typedef struct _QBox_UP_Progress {
 	QBox_UP_Checksum* checksums;
 	QBox_UP_BlockProgress* progs;
 	int blockCount;
-    int blockCurrentIndex;
+    int blockNextIndex;
 } QBox_UP_Progress;
 
 QBox_UP_Progress* QBox_UP_NewProgress(QBox_Int64 fsize);
 void QBox_UP_Progress_Release(QBox_UP_Progress* prog);
 
-typedef void (*QBox_UP_FnBlockNotify)(void* self, int blockIdx, QBox_UP_Checksum* checksum);
+typedef int (*QBox_UP_FnBlockNotify)(void* self, int blockIdx, QBox_UP_Checksum* checksum);
 
 QBox_Error QBox_UP_Put(
 	QBox_Client* self, QBox_UP_PutRet* ret, QBox_ReaderAt f, QBox_Int64 fsize, QBox_UP_Progress* prog,
