@@ -52,7 +52,7 @@ typedef struct _QBox_UP_Checksum {
 QBox_Error QBox_UP_Mkfile(
 	QBox_Client* self, QBox_Json** ret,
     const char* cmd, const char* entry, const char* mimeType,
-	off_t fileSize, const char* params, const char* callbackParams,
+	QBox_Int64 fsize, const char* params, const char* callbackParams,
 	QBox_UP_Checksum* checksums, int blockCount);
 
 /*============================================================================*/
@@ -64,13 +64,13 @@ typedef struct _QBox_UP_Progress {
     int blockNextIndex;
 } QBox_UP_Progress;
 
-QBox_UP_Progress* QBox_UP_NewProgress(off_t fileSize);
+QBox_UP_Progress* QBox_UP_NewProgress(QBox_Int64 fsize);
 void QBox_UP_Progress_Release(QBox_UP_Progress* prog);
 
 typedef int (*QBox_UP_FnBlockNotify)(void* self, int blockIdx, QBox_UP_Checksum* checksum);
 
 QBox_Error QBox_UP_Put(
-	QBox_Client* self, QBox_UP_PutRet* ret, QBox_ReaderAt f, off_t fileSize, QBox_UP_Progress* prog,
+	QBox_Client* self, QBox_UP_PutRet* ret, QBox_ReaderAt f, QBox_Int64 fsize, QBox_UP_Progress* prog,
 	QBox_UP_FnBlockNotify blockNotify, QBox_UP_FnChunkNotify chunkNotify, void* notifyParams);
 
 #endif 
