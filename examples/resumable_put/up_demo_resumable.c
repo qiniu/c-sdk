@@ -14,6 +14,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+static const char* mimeType = NULL;
 
 void try_terminate(const char* fl)
 {
@@ -132,7 +135,6 @@ void put_blocks(const char* fl, int n, int m)
     QBox_RS_GetRet getRet;
     char* uptoken = NULL;
     char* entry = NULL;
-    QBox_Json* root = NULL;
     QBox_UP_Progress* prog = NULL;
     QBox_Int64 fsize = 0;
 
@@ -190,7 +192,7 @@ void put_blocks(const char* fl, int n, int m)
             chunk_notify,
             &demoProg,   /* notifyParams   */
             entry,
-            "text/plain",
+            mimeType,
             f,
             fsize,
             NULL, /* customMeta     */
@@ -232,7 +234,7 @@ void put_blocks(const char* fl, int n, int m)
     printf("\n");
 }
 
-int main(int argc, char* argv[])
+int main(int argc, const char* argv[])
 {
     char* fl = argv[1];
     int n = -1;
@@ -242,12 +244,19 @@ int main(int argc, char* argv[])
     QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
 
     if (argc < 2) {
-        printf("Usage: up_demo_resumable FILE [ABORT_BLOCK_INDEX] [ABORT_CHUNK_BYTES]\n");
+        printf("Usage: up_demo_resumable FILE [MIME] [ABORT_BLOCK_INDEX] [ABORT_CHUNK_BYTES]\n");
         return 0;
     }
 
     if (argc > 2) {
-        n = atoi(argv[2]);
+        mimeType = argv[2];
+    }
+    else {
+        mimeType = "text/plain";
+    }
+
+    if (argc > 3) {
+        n = atoi(argv[3]);
 
         if (n < 0) {
             printf("ABORT_BLOCK_INDEX must be zero or positive numbers!\n");
@@ -255,8 +264,8 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (argc > 3) {
-        m = atoi(argv[3]);
+    if (argc > 4) {
+        m = atoi(argv[4]);
 
         if (m < 0) {
             printf("ABORT_CHUNK_BYTES must be zero or positive numbers!\n");
