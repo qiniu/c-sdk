@@ -1,6 +1,6 @@
 /*
  ============================================================================
- Name        : up_demo.c
+ Name        : up_demo_resumable.c
  Author      : RS Author
  Version     : 1.0.0.0
  Copyright   : 2012 Shanghai Qiniu Information Technologies Co., Ltd.
@@ -111,10 +111,10 @@ int chunk_notify(void* self, int blockIdx, QBox_UP_BlockProgress* prog)
 {
     QBox_Demo_Progress* demoProg = (QBox_Demo_Progress*) self;
 
-    printf("block_nofity : blockIdx=%d offset=%d restSize=%d errCode=%d ctx=[%s]\n",
+    printf("chunk_nofity : blockIdx=%d offset=%d restSize=%d errCode=%d ctx=[%s]\n",
             blockIdx, prog->offset, prog->restSize, prog->errCode, prog->ctx);
 
-    if (blockIdx == demoProg->n && prog->offset > demoProg->m) {
+    if (blockIdx == demoProg->n && demoProg->m >= 0 && prog->offset > demoProg->m) {
         try_save(demoProg->fl, demoProg->prog);
         return 0;
     }
