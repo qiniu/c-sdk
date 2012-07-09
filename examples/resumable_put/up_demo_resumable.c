@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
 static const char* mimeType = NULL;
 
@@ -37,7 +38,9 @@ void try_save(const char* fl, QBox_UP_Progress* prog)
         fprintf(fp, "blockNextIndex=%d\n", prog->blockNextIndex);
 
         for (i = 0; i < prog->blockCount; ++i) {
-            fprintf(fp, "checksum=%s\n", prog->checksums[i].value);
+            fprintf(fp, "checksum=");
+            fwrite(prog->checksums[i].value, sizeof(prog->checksums[i].value), 1, fp);
+            fprintf(fp, "\n");
         }
 
         for (i = 0; i < prog->blockCount; ++i) {
@@ -69,7 +72,9 @@ void try_resume(const char* fl, QBox_UP_Progress* prog)
         fscanf(fp, "blockNextIndex=%d\n", &prog->blockNextIndex);
 
         for (i = 0; i < prog->blockCount; ++i) {
-            fscanf(fp, "checksum=%s\n", prog->checksums[i].value);
+            fseek(fp, strlen("checksum="), SEEK_CUR);
+            fread(prog->checksums[i].value, sizeof(prog->checksums[i].value), 1, fp);
+            fseek(fp, strlen("\n"), SEEK_CUR);
         }
 
         for (i = 0; i < prog->blockCount; ++i) {
@@ -96,11 +101,20 @@ typedef struct _QBox_Demo_Progress {
     int m;
 } QBox_Demo_Progress;
 
+size_t get_timestamp(char* buf, size_t len)
+{
+    time_t now = time(NULL);
+    bzero(buf, len);
+    return strftime(buf, len, "%Y-%m-%d %H:%M:%S", localtime(&now));
+}
+
 int block_notify(void* self, int blockIdx, QBox_UP_Checksum* checksum)
 {
     QBox_Demo_Progress* demoProg = (QBox_Demo_Progress*) self;
+    char ts[32];
 
-    printf("block_nofity : blockIdx=%d checksum=%28s\n", blockIdx, checksum->value);
+    get_timestamp(ts, sizeof(ts));
+    printf("%s : block_nofity : blockIdx=%d checksum=%28s\n", ts, blockIdx, checksum->value);
 
     try_save(demoProg->fl, demoProg->prog);
     
@@ -113,9 +127,11 @@ int block_notify(void* self, int blockIdx, QBox_UP_Checksum* checksum)
 int chunk_notify(void* self, int blockIdx, QBox_UP_BlockProgress* prog)
 {
     QBox_Demo_Progress* demoProg = (QBox_Demo_Progress*) self;
+    char ts[32];
 
-    printf("chunk_nofity : blockIdx=%d offset=%d restSize=%d errCode=%d ctx=[%s]\n",
-            blockIdx, prog->offset, prog->restSize, prog->errCode, prog->ctx);
+    get_timestamp(ts, sizeof(ts));
+    printf("%s : chunk_nofity : blockIdx=%d offset=%d restSize=%d errCode=%d ctx=[%s]\n",
+            ts, blockIdx, prog->offset, prog->restSize, prog->errCode, prog->ctx);
 
     if (blockIdx == demoProg->n && demoProg->m >= 0 && prog->offset > demoProg->m) {
         try_save(demoProg->fl, demoProg->prog);
