@@ -1,6 +1,6 @@
 /*
  ============================================================================
- Name        : up_demo.c
+ Name        : up_demo_resumable.c
  Author      : RS Author
  Version     : 1.0.0.0
  Copyright   : 2012 Shanghai Qiniu Information Technologies Co., Ltd.
@@ -14,6 +14,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <time.h>
+
+static const char* mimeType = NULL;
 
 void try_terminate(const char* fl)
 {
@@ -34,7 +38,9 @@ void try_save(const char* fl, QBox_UP_Progress* prog)
         fprintf(fp, "blockNextIndex=%d\n", prog->blockNextIndex);
 
         for (i = 0; i < prog->blockCount; ++i) {
-            fprintf(fp, "checksum=%s\n", prog->checksums[i].value);
+            fprintf(fp, "checksum=");
+            fwrite(prog->checksums[i].value, sizeof(prog->checksums[i].value), 1, fp);
+            fprintf(fp, "\n");
         }
 
         for (i = 0; i < prog->blockCount; ++i) {
@@ -66,7 +72,9 @@ void try_resume(const char* fl, QBox_UP_Progress* prog)
         fscanf(fp, "blockNextIndex=%d\n", &prog->blockNextIndex);
 
         for (i = 0; i < prog->blockCount; ++i) {
-            fscanf(fp, "checksum=%s\n", prog->checksums[i].value);
+            fseek(fp, strlen("checksum="), SEEK_CUR);
+            fread(prog->checksums[i].value, sizeof(prog->checksums[i].value), 1, fp);
+            fseek(fp, strlen("\n"), SEEK_CUR);
         }
 
         for (i = 0; i < prog->blockCount; ++i) {
@@ -93,11 +101,20 @@ typedef struct _QBox_Demo_Progress {
     int m;
 } QBox_Demo_Progress;
 
+size_t get_timestamp(char* buf, size_t len)
+{
+    time_t now = time(NULL);
+    bzero(buf, len);
+    return strftime(buf, len, "%Y-%m-%d %H:%M:%S", localtime(&now));
+}
+
 int block_notify(void* self, int blockIdx, QBox_UP_Checksum* checksum)
 {
     QBox_Demo_Progress* demoProg = (QBox_Demo_Progress*) self;
+    char ts[32];
 
-    printf("block_nofity : blockIdx=%d checksum=%28s\n", blockIdx, checksum->value);
+    get_timestamp(ts, sizeof(ts));
+    printf("%s : block_nofity : blockIdx=%d checksum=%28s\n", ts, blockIdx, checksum->value);
 
     try_save(demoProg->fl, demoProg->prog);
     
@@ -110,11 +127,13 @@ int block_notify(void* self, int blockIdx, QBox_UP_Checksum* checksum)
 int chunk_notify(void* self, int blockIdx, QBox_UP_BlockProgress* prog)
 {
     QBox_Demo_Progress* demoProg = (QBox_Demo_Progress*) self;
+    char ts[32];
 
-    printf("block_nofity : blockIdx=%d offset=%d restSize=%d errCode=%d ctx=[%s]\n",
-            blockIdx, prog->offset, prog->restSize, prog->errCode, prog->ctx);
+    get_timestamp(ts, sizeof(ts));
+    printf("%s : chunk_nofity : blockIdx=%d offset=%d restSize=%d errCode=%d ctx=[%s]\n",
+            ts, blockIdx, prog->offset, prog->restSize, prog->errCode, prog->ctx);
 
-    if (blockIdx == demoProg->n && prog->offset > demoProg->m) {
+    if (blockIdx == demoProg->n && demoProg->m >= 0 && prog->offset > demoProg->m) {
         try_save(demoProg->fl, demoProg->prog);
         return 0;
     }
@@ -132,7 +151,6 @@ void put_blocks(const char* fl, int n, int m)
     QBox_RS_GetRet getRet;
     char* uptoken = NULL;
     char* entry = NULL;
-    QBox_Json* root = NULL;
     QBox_UP_Progress* prog = NULL;
     QBox_Int64 fsize = 0;
 
@@ -190,7 +208,7 @@ void put_blocks(const char* fl, int n, int m)
             chunk_notify,
             &demoProg,   /* notifyParams   */
             entry,
-            "text/plain",
+            mimeType,
             f,
             fsize,
             NULL, /* customMeta     */
@@ -232,7 +250,7 @@ void put_blocks(const char* fl, int n, int m)
     printf("\n");
 }
 
-int main(int argc, char* argv[])
+int main(int argc, const char* argv[])
 {
     char* fl = argv[1];
     int n = -1;
@@ -242,12 +260,19 @@ int main(int argc, char* argv[])
     QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
 
     if (argc < 2) {
-        printf("Usage: up_demo_resumable FILE [ABORT_BLOCK_INDEX] [ABORT_CHUNK_BYTES]\n");
+        printf("Usage: up_demo_resumable FILE [MIME] [ABORT_BLOCK_INDEX] [ABORT_CHUNK_BYTES]\n");
         return 0;
     }
 
     if (argc > 2) {
-        n = atoi(argv[2]);
+        mimeType = argv[2];
+    }
+    else {
+        mimeType = "text/plain";
+    }
+
+    if (argc > 3) {
+        n = atoi(argv[3]);
 
         if (n < 0) {
             printf("ABORT_BLOCK_INDEX must be zero or positive numbers!\n");
@@ -255,8 +280,8 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (argc > 3) {
-        m = atoi(argv[3]);
+    if (argc > 4) {
+        m = atoi(argv[4]);
 
         if (m < 0) {
             printf("ABORT_CHUNK_BYTES must be zero or positive numbers!\n");
