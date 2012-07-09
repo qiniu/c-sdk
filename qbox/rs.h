@@ -63,7 +63,7 @@ QBox_Error QBox_RS_PutFile(
 QBox_Error QBox_RS_ResumablePut(
 	QBox_Client* self, QBox_UP_PutRet* ret, QBox_UP_Progress* prog,
 	QBox_UP_FnBlockNotify blockNotify, QBox_UP_FnChunkNotify chunkNotify, void* notifyParams,
-	const char* entryURI, const char* mimeType, QBox_ReaderAt f, QBox_Int64 fsize,
+	const char* entryURI, const char* mimeType, QBox_ReaderAt f, off_t fsize,
 	const char* customMeta, const char* callbackParams);
 
 /*============================================================================*/
