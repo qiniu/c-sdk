@@ -183,7 +183,7 @@ void put_blocks(const char* fl, int n, int m)
 
     f = QBox_FileReaderAt_Open(fl);
 
-    if ((int)f.self >= 0) {
+    if (f.self != NULL) {
         fsize = (QBox_Int64) lseek((int)f.self, 0, SEEK_END);
 
         prog = QBox_UP_NewProgress(fsize);
