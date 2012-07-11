@@ -35,7 +35,6 @@ void try_save(const char* fl, QBox_UP_Progress* prog)
     fp = fopen(prog_fl, "w");
     if (fp) {
         fprintf(fp, "blockCount=%d\n", prog->blockCount);
-        fprintf(fp, "blockNextIndex=%d\n", prog->blockNextIndex);
 
         for (i = 0; i < prog->blockCount; ++i) {
             fprintf(fp, "checksum=");
@@ -69,7 +68,6 @@ void try_resume(const char* fl, QBox_UP_Progress* prog)
     fp = fopen(prog_fl, "r");
     if (fp) {
         fscanf(fp, "blockCount=%d\n", &prog->blockCount);
-        fscanf(fp, "blockNextIndex=%d\n", &prog->blockNextIndex);
 
         for (i = 0; i < prog->blockCount; ++i) {
             fseek(fp, strlen("checksum="), SEEK_CUR);
@@ -185,7 +183,7 @@ void put_blocks(const char* fl, int n, int m)
 
     f = QBox_FileReaderAt_Open(fl);
 
-    if ((int)f.self >= 0) {
+    if (f.self != NULL) {
         fsize = (QBox_Int64) lseek((int)f.self, 0, SEEK_END);
 
         prog = QBox_UP_NewProgress(fsize);

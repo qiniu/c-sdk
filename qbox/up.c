@@ -8,6 +8,7 @@
  ============================================================================
  */
 
+#include <string.h>
 #include <zlib.h>
 #include "up.h"
 
@@ -266,8 +267,6 @@ QBox_UP_Progress* QBox_UP_NewProgress(QBox_Int64 fsize)
     prog = calloc(sizeof(*prog), 1);
 
     if (prog != NULL) {
-        prog->blockNextIndex = 0;
-
         prog->blockCount = fsize / QBOX_UP_BLOCK_SIZE;
         if (fsize % QBOX_UP_BLOCK_SIZE > 0) {
             prog->blockCount += 1;
@@ -296,16 +295,35 @@ void QBox_UP_Progress_Release(QBox_UP_Progress* prog)
 
 /*============================================================================*/
 
+static int QBox_UP_FindNextBlock(QBox_UP_Progress* prog)
+{
+    int i = 0;
+
+    for (i = 0; i < prog->blockCount; ++i) {
+        if (prog->progs[i].ctx == NULL) {
+            break;
+        }
+
+        if (strncmp(prog->progs[i].ctx, "end", 3) != 0) {
+            break;
+        }
+    } /* for */
+
+    return i;
+}
+
 QBox_Error QBox_UP_Put(QBox_Client* self, QBox_UP_PutRet* ret, QBox_ReaderAt f,
     QBox_Int64 fsize, QBox_UP_Progress* prog,
 	QBox_UP_FnBlockNotify blockNotify, QBox_UP_FnChunkNotify chunkNotify, void* notifyParams)
 {
     QBox_Error err;
     QBox_Json* root; 
-    int blkIndex = prog->blockNextIndex;
+    int blkIndex = 0;
     int keepGoing = 1;
 
-    for (; blkIndex < prog->blockCount;) {
+    blkIndex = QBox_UP_FindNextBlock(prog);
+
+    for (; blkIndex < prog->blockCount; ++blkIndex) {
         ret->ctx          = NULL;
         ret->checksum     = 0;
         ret->crc32        = 0;
@@ -329,18 +347,14 @@ QBox_Error QBox_UP_Put(QBox_Client* self, QBox_UP_PutRet* ret, QBox_ReaderAt f,
 
         memcpy(prog->checksums[blkIndex].value, ret->checksum, strlen(ret->checksum));
 
-        ++prog->blockNextIndex;
-
         if (blockNotify) {
             keepGoing = blockNotify(notifyParams, blkIndex, &prog->checksums[blkIndex]);
         }
-        if (keepGoing == 0 && prog->blockNextIndex < prog->blockCount) {
+        if (keepGoing == 0 && (blkIndex + 1) < prog->blockCount) {
             err.code = 299;
             err.message = "The block has been put but the progress is aborted";
             return err;
         }
-
-        blkIndex = prog->blockNextIndex;
     } /* for */
 
     err.code = 200;
