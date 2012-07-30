@@ -24,12 +24,8 @@ int main()
 	QBox_RS_StatRet statRet;
 	char* hash;
 
-
-	QBOX_ACCESS_KEY = "<Please apply your access key>";
-	QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
-
-	static char* Bucket = "rs_demo";
-	static char* Domain = "<Please type your publish domain>";
+	QBOX_ACCESS_KEY	= "<Please apply your access key>";
+	QBOX_SECRET_KEY	= "<Dont send your secret key to anyone>";
 
 	QBox_Zero(client);
 	QBox_Global_Init(-1);
@@ -37,30 +33,11 @@ int main()
 	printf("QBox_Client_Init_ByAccessKey\n");
 
 	QBox_Client_Init(&client, 1024);
-
-	printf("QBox_RS_Unpublish\n");
-
-	err = QBox_RS_Unpublish(&client, Domain);
-	if (err.code != 200 && err.code != 599) {
-		printf("QBox_RS_Unpublish failed: %d - %s\n", err.code, err.message);
-		goto lzDone;
-	}
-
-	printf("QBox_RS_Publish\n");
-
-	err = QBox_RS_Publish(&client, Bucket, Domain);
-	if (err.code != 200) {
-		printf("QBox_RS_Publish failed: %d - %s\n", err.code, err.message);
-		goto lzDone;
-	}
-
-
-	QBox_RS_Delete(&client, Bucket, "rs_demo.c");
+	QBox_RS_Delete(&client, "Bucket", "rs_demo.c");
 
 	printf("QBox_RS_PutFile\n");
 
-	err = QBox_RS_PutFile(&client, &putRet, Bucket,
-	 "rs_demo.c", "application/octet-stream", __FILE__, "");
+	err = QBox_RS_PutFile(&client, &putRet, "Bucket", "rs_demo.c", "application/octet-stream", __FILE__, "");
 	if (err.code != 200) {
 		printf("QBox_RS_PutFile failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -68,7 +45,7 @@ int main()
 
 	printf("QBox_RS_Get\n");
 
-	err = QBox_RS_Get(&client, &getRet, Bucket, "rs_demo.c", NULL);
+	err = QBox_RS_Get(&client, &getRet, "Bucket", "rs_demo.c", NULL);
 	if (err.code != 200) {
 		printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -82,20 +59,17 @@ int main()
 		goto lzDone;
 	}
 
-	printf("QBox_RSCli_PutFile\n");
+	printf("QBox_RS_PutFile\n");
 
-	err = QBox_RSCli_PutFile(NULL, putAuthRet.url, Bucket,
-	 "rs_demo.c", "application/octet-stream", __FILE__, "", "key=rs_demo.c", NULL);
+	err = QBox_RSCli_PutFile(NULL, putAuthRet.url, "Bucket", "rs_demo.c", "application/octet-stream", __FILE__, "", "key=rs_demo.c", NULL);
 	if (err.code != 200) {
 		printf("QBox_RSCli_PutFile failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
 	}
 
-
-
 	printf("QBox_RS_Get\n");
 
-	err = QBox_RS_Get(&client, &getRet, Bucket, "rs_demo.c", NULL);
+	err = QBox_RS_Get(&client, &getRet, "Bucket", "rs_demo.c", NULL);
 	if (err.code != 200) {
 		printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -104,7 +78,7 @@ int main()
 
 	printf("QBox_RS_GetIfNotModified: %s\n", hash);
 
-	err = QBox_RS_GetIfNotModified(&client, &getRet, Bucket, "rs_demo.c", NULL, hash);
+	err = QBox_RS_GetIfNotModified(&client, &getRet, "Bucket", "rs_demo.c", NULL, hash);
 	free(hash);
 	if (err.code != 200) {
 		printf("QBox_RS_GetIfNotModified failed: %d - %s\n", err.code, err.message);
@@ -113,15 +87,31 @@ int main()
 
 	printf("QBox_RS_Stat\n");
 
-	err = QBox_RS_Stat(&client, &statRet, Bucket, "rs_demo.c");
+	err = QBox_RS_Stat(&client, &statRet, "Bucket", "rs_demo.c");
 	if (err.code != 200) {
 		printf("QBox_RS_Stat failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
 	}
 
+	printf("QBox_RS_Publish\n");
+
+	err = QBox_RS_Publish(&client, "Bucket", "iovip.qbox.me/Bucket");
+	if (err.code != 200) {
+		printf("QBox_RS_Publish failed: %d - %s\n", err.code, err.message);
+		goto lzDone;
+	}
+
+	printf("QBox_RS_Unpublish\n");
+
+	err = QBox_RS_Unpublish(&client, "iovip.qbox.me/Bucket");
+	if (err.code != 200) {
+		printf("QBox_RS_Unpublish failed: %d - %s\n", err.code, err.message);
+		goto lzDone;
+	}
+
 	printf("QBox_RS_Delete\n");
 
-	err = QBox_RS_Delete(&client, Bucket, "rs_demo.c");
+	err = QBox_RS_Delete(&client, "Bucket", "rs_demo.c");
 	if (err.code != 200) {
 		printf("QBox_RS_Delete failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -129,7 +119,7 @@ int main()
 
 	printf("QBox_RS_Drop\n");
 
-	err = QBox_RS_Drop(&client, Bucket);
+	err = QBox_RS_Drop(&client, "Bucket");
 	if (err.code != 200) {
 		printf("QBox_RS_Drop failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
