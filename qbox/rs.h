@@ -97,5 +97,15 @@ QBox_Error QBox_RS_Drop(QBox_Client* self, const char* tableName);
 
 /*============================================================================*/
 
+
+
+QBox_Error QBox_RS_SetProtected(QBox_Client* self, char* bucketName, int protectedMode);
+QBox_Error QBox_RS_SetSeparator(QBox_Client* self, char* bucketName, char* sep);
+QBox_Error QBox_RS_SetStyle(QBox_Client* self, char* bucketName, char* name, char* style);
+QBox_Error QBox_RS_UnsetStyle(QBox_Client* self, char* bucketName, char* name);
+
+
+
+
 #endif /* QBOX_RS_H */
 

@@ -18,6 +18,7 @@ typedef struct _QBox_AuthPolicy {
 	const char* scope;
 	const char* callbackUrl;
 	const char* returnUrl;
+	const char* customer;
 	int expires;
 } QBox_AuthPolicy;
 

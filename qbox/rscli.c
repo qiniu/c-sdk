@@ -48,8 +48,9 @@ static QBox_Error QBox_RSCli_call(CURL* curl, QBox_Buffer* resp)
 /* func QBox_RSCli_PutFile */
 
 QBox_Error QBox_RSCli_PutFile(
-	QBox_Buffer* resp, const char* url, const char* tableName, const char* key,
-	const char* mimeType, const char* localFile, const char* customMeta, const char* callbackParams)
+	QBox_Buffer* resp, const char* url, const char* tableName,
+	const char* key, const char* mimeType, const char* localFile,
+	const char* customMeta, const char* callbackParams, const char* uptoken )
 {
 	char* entryURI;
 	char* entryURIEncoded;
@@ -90,6 +91,8 @@ QBox_Error QBox_RSCli_PutFile(
 	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "action", CURLFORM_COPYCONTENTS, action, CURLFORM_END);
 	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localFile, CURLFORM_END);
 	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "params", CURLFORM_COPYCONTENTS, callbackParams, CURLFORM_END);
+	if (uptoken && *uptoken != '\0')
+		curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "auth", CURLFORM_COPYCONTENTS, uptoken, CURLFORM_END);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
 
