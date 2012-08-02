@@ -27,7 +27,7 @@ extern const char* QBOX_FS_HOST;
 extern const char* QBOX_RS_HOST;
 extern const char* QBOX_UP_HOST;
 extern const char* QBOX_PU_HOST;
-extern const char* QBOX_WM_HOST;
+extern const char* QBOX_EU_HOST;
 extern const char* QBOX_UC_HOST;
 extern const char* QBOX_AC_HOST;
 

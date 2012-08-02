@@ -10,7 +10,7 @@ QBox_Error QBox_WM_Get( QBox_Client* self, char *customer, QBox_WM_Template *tpl
 	QBox_Error err;
 	cJSON* root;
 
-	char* url = QBox_String_Concat(QBOX_WM_HOST, "/get", NULL);
+	char* url = QBox_String_Concat(QBOX_WM_HOST, "/wmget", NULL);
 	char* body = QBox_String_Concat("customer=", customer, NULL);
 
 	err = QBox_Client_CallWithForm(self, &root, url, body, strlen(body));
@@ -36,7 +36,7 @@ QBox_Error QBox_WM_Set( QBox_Client* self, QBox_WM_Template *tpl, char *customer
 	cJSON* root;
 	char body[65535];
 
-	char* url = QBox_String_Concat(QBOX_WM_HOST, "/set", NULL);
+	char* url = QBox_String_Concat(QBOX_WM_HOST, "/wmset", NULL);
 
 	snprintf(body, 65535, 
 		"customer=%s&font=%s&pointsize=%d&fill=%s&text=%s&bucket=%s&dissolve=%s&gravity=%s&dx=%d&dy=%d", 
