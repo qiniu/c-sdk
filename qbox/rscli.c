@@ -97,7 +97,7 @@ QBox_Error QBox_RSCli_PutFile(
 	curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
 
 	err = QBox_RSCli_call(curl, resp);
-
+	curl_easy_cleanup(curl);
 	free(action);
 	curl_formfree(formpost);
 	return err;

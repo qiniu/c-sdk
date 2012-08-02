@@ -325,6 +325,7 @@ QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url)
 
 	err = QBox_callex((CURL*)self->curl, &self->b, &self->root, QBox_False);
 	*ret = self->root;
+	curl_slist_free_all(headers);
 	return err;
 }
 
@@ -343,6 +344,8 @@ QBox_Error QBox_Client_CallNoRet(QBox_Client* self, const char* url)
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-	return QBox_callex((CURL*)self->curl, &self->b, &self->root, QBox_False);
+	err = QBox_callex((CURL*)self->curl, &self->b, &self->root, QBox_False);
+	curl_slist_free_all(headers);
+	return err;
 }
 
