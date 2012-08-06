@@ -313,8 +313,11 @@ QBox_Error QBox_RS_SetSeparator(QBox_Client* self, char* bucketName, char* sep)
 {
 	char urlbuf[1024];
 	cJSON *root;
+	char *encodeSep;
 
-	QBox_snprintf(urlbuf,1024,"%s/separator/%s/sep/%s",QBOX_PU_HOST,bucketName,sep);
+	encodeSep = QBox_String_Encode(sep);
+	QBox_snprintf(urlbuf,1024,"%s/separator/%s/sep/%s",QBOX_PU_HOST,bucketName,encodeSep);
+	free(encodeSep);
 	return QBox_Client_Call(self,&root,urlbuf);
 }
 
