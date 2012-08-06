@@ -18,13 +18,15 @@ int main()
 	char* uptoken;
 
 
-	QBOX_ACCESS_KEY = "<Please apply your access key>";
-	QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
+	QBOX_ACCESS_KEY		= "<Please apply your access key>";
+	QBOX_SECRET_KEY		= "<Dont send your secret key to anyone>";
 
 
-	static char* customer = "Qbox end user";
-	static char* Bucket = "wm_demo";
-	static char* Domain = "<Please type your publish domain>";
+	static char* customer = "<...>";
+	static char* Bucket = "<...>";
+	static char* Domain = "<...>";
+	static char* key = "kebi";
+	static char* localFile = "kebi.jpg";
 
 
 	QBox_Zero(client);
@@ -38,7 +40,7 @@ int main()
 
 	printf("QBox_WM_Set\n");
 
-	err = QBox_WM_Set(&client, &tpl,customer);
+	err = QBox_WM_Set(&client, &tpl,"");
 	if (err.code != 200) {
 		printf("QBox_WM_Set failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -53,27 +55,9 @@ int main()
 		goto lzDone;
 	}
 
-
-	printf("QBox_RS_Unpublish\n");
-
-	err = QBox_RS_Unpublish(&client, Domain);
-	if (err.code != 200 && err.code != 599) {
-		printf("QBox_RS_Unpublish failed: %d - %s\n", err.code, err.message);
-		goto lzDone;
-	}
-
-	printf("QBox_RS_Publish\n");
-
-	err = QBox_RS_Publish(&client, Bucket, Domain);
-	if (err.code != 200) {
-		printf("QBox_RS_Publish failed: %d - %s\n", err.code, err.message);
-		goto lzDone;
-	}
-
-
 	printf("QBox_RS_SetProtected\n");
 
-	err = QBox_RS_SetProtected(&client, Bucket, 1);
+	err = QBox_RS_SetProtected(&client, Bucket, 0);
 	if (err.code != 200) {
 		printf("QBox_RS_SetProtected: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -81,7 +65,7 @@ int main()
 
 
 	printf("QBox_RS_SetSeparator\n");
-	err = QBox_RS_SetSeparator(&client, Bucket, "_");
+	err = QBox_RS_SetSeparator(&client, Bucket, "-");
 	if (err.code != 200) {
 		printf("QBox_RS_SetSeparator: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -108,7 +92,7 @@ int main()
 		goto lzDone;
 	}
 
-	printf("QBox_RS_PutAuth\n");
+	printf("QBox_RS_Put\n");
 
 	err = QBox_RS_PutAuth(&client, &putAuthRet);
 	if (err.code != 200) {
@@ -125,10 +109,17 @@ int main()
 		goto lzDone;
 	}
 	err = QBox_RSCli_PutFile(NULL, putAuthRet.url, Bucket,
-	 "wm_test.png", "application/octet-stream", __FILE__, "", "", uptoken);
+	 key, "application/octet-stream", localFile, "", "", uptoken);
 	if (err.code != 200) {
 		printf("QBox_RSCli_PutFile failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
+	}
+	free(uptoken);
+
+	printf("QBox_RS_Delete\n");
+	err = QBox_RS_Delete(&client, Bucket, key);
+	if (err.code != 200) {
+		printf("QBox_RS_Delete failed: %d - %s\n", err.code, err.message);
 	}
 
 lzDone:
