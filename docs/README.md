@@ -776,7 +776,7 @@ UpToken授权的主要用途是由业务服务器对上传端进行授权，以�
 
 <a name="watermarking-set-protected"></a>
 
-### 1. 设置原文件不可访问
+### 设置原文件不可访问
 
 源文件不可访问也就是原图保护，匿名访问只能访问到打有水印后的图片。通过给原图所在的 Bucket（资源表）设置访问控制，可以达到保护原图的目的，详情请参考 [资源表访问权限设置](#rs-protected)。设置原图保护也可以借助七牛云存储提供的命令行辅助工具 [qboxrsctl](https://github.com/qiniu/devtools/tags) 来实现：
 
@@ -785,7 +785,7 @@ UpToken授权的主要用途是由业务服务器对上传端进行授权，以�
 
 <a name="watermarking-set-style"></a>
 
-### 3. 设置友好风格
+### 设置友好风格
 
 所谓友好风格是通过对某种预览图规格设置别名从而达到让URL对用户更加友好的目的。SDK主要提供四个基本的API来实现友好风格的设置，其中`QBox_RS_SetSeparator()`函数设置有好风格分割符（下面会描述），`QBox_RS_SetStyle()`函数可以自定义友好风格，`QBox_RS_UnsetStyke()`取消某种友好风格。函数原型如下：
 
