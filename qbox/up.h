@@ -72,4 +72,11 @@ QBox_Error QBox_UP_Put(
 	QBox_Client* self, QBox_UP_PutRet* ret, QBox_ReaderAt f, QBox_Int64 fsize, QBox_UP_Progress* prog,
 	QBox_UP_FnBlockNotify blockNotify, QBox_UP_FnChunkNotify chunkNotify, void* notifyParams);
 
-#endif 
+
+QBox_Error QBox_UP_UploadFile(
+    QBox_Buffer *resp,
+    const char *uptoken, const char* bucket, const char *key, 
+    const char* mimeType, const char* localfile, 
+    const char *custommeta, const char *callbackParams, const char *crc32);
+
+#endif

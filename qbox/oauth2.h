@@ -74,6 +74,8 @@ QBox_Error QBox_Client_CallWithBinary(
 	QBox_Client* self, QBox_Json** ret, const char* url, QBox_Reader body, QBox_Int64 bodyLen);
 QBox_Error QBox_Client_CallWithBuffer(
 	QBox_Client* self, QBox_Json** ret, const char* url, const char* body, QBox_Int64 bodyLen);
+QBox_Error QBox_Client_CallWithForm(
+	QBox_Client* self, QBox_Json** ret, const char* url, const char* body, QBox_Int64 bodylen);
 
 /*============================================================================*/
 

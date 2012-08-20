@@ -13,10 +13,16 @@ int QBOX_PUT_TIMEOUT					= 300000; // 300s = 5m
 int QBOX_PUT_CHUNK_SIZE					= 256 * 1024; // 256k
 int QBOX_PUT_RETRY_TIMES				= 2;
 
+
+
+
 const char* QBOX_IO_HOST				= "http://iovip.qbox.me";
 const char* QBOX_FS_HOST				= "https://fs.qbox.me";
 const char* QBOX_RS_HOST				= "http://rs.qbox.me:10100";
 const char* QBOX_UP_HOST				= "http://up.qbox.me";
+const char* QBOX_PU_HOST				= "http://pu.qbox.me:10200";
+const char* QBOX_EU_HOST				= "http://eu.qbox.me";
+
 
 /*============================================================================*/
 

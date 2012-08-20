@@ -297,3 +297,61 @@ QBox_Error QBox_RS_Drop(QBox_Client* self, const char* tableName)
 
 /*============================================================================*/
 
+
+
+QBox_Error QBox_RS_Mkbucket(QBox_Client* self, const char* tableName)
+{
+	char *url;
+	cJSON *root;
+
+	url = QBox_String_Concat(QBOX_RS_HOST, "/mkbucket/", tableName, NULL);
+	return QBox_Client_Call(self, &root, url);
+}
+
+
+QBox_Error QBox_RS_SetProtected(QBox_Client* self, char* bucketName, int protectedMode)
+{
+	char urlbuf[1024];
+	cJSON *root;
+
+	QBox_snprintf(urlbuf,1024,"%s/accessMode/%s/mode/%d",QBOX_PU_HOST,bucketName,protectedMode);
+	return QBox_Client_Call(self,&root,urlbuf);
+}
+
+QBox_Error QBox_RS_SetSeparator(QBox_Client* self, char* bucketName, char* sep)
+{
+	char urlbuf[1024];
+	cJSON *root;
+	char *encodeSep;
+
+	encodeSep = QBox_String_Encode(sep);
+	QBox_snprintf(urlbuf,1024,"%s/separator/%s/sep/%s",QBOX_PU_HOST,bucketName,encodeSep);
+	free(encodeSep);
+	return QBox_Client_Call(self,&root,urlbuf);
+}
+
+QBox_Error QBox_RS_SetStyle(QBox_Client* self, char* bucketName, char* name, char* style)
+{
+	char urlbuf[1024];
+	cJSON *root;
+	char *encodeName,*encodeStyle;
+
+	encodeName = QBox_String_Encode(name);
+	encodeStyle = QBox_String_Encode(style);
+
+	QBox_snprintf(urlbuf,1024,"%s/style/%s/name/%s/style/%s",QBOX_PU_HOST,bucketName,encodeName,encodeStyle);
+	free(encodeName);
+	free(encodeStyle);
+	return QBox_Client_Call(self,&root,urlbuf);
+}
+
+QBox_Error QBox_RS_UnsetStyle(QBox_Client* self, char* bucketName, char* name)
+{
+	cJSON *root;
+	char urlbuf[1024], *encodeName;
+
+	encodeName = QBox_String_Encode(name);
+	QBox_snprintf(urlbuf,1024,"%s/unstyle/%s/name/%s",QBOX_PU_HOST,bucketName,encodeName);
+	free(encodeName);
+	return QBox_Client_Call(self,&root,urlbuf);
+}

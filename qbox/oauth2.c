@@ -270,6 +270,44 @@ QBox_Error QBox_Client_CallWithBuffer(
 	return QBox_Client_callWithBody(self, ret, url, bodyLen, curl, headers);
 }
 
+
+
+QBox_Error QBox_Client_CallWithForm(
+	QBox_Client* self, QBox_Json** ret, const char* url, const char* body, QBox_Int64 bodylen)
+{
+	QBox_Error err;
+	CURL* curl;
+	struct curl_slist* headers;
+	char ctxLength[64];
+
+	QBox_Client_initcall(self, url);
+
+	curl = (CURL*)self->curl;
+	curl_easy_setopt(curl, CURLOPT_POST, 1);
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, bodylen);
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
+
+	QBox_snprintf(ctxLength, 64, "Content-Length: %lld", bodylen);
+	headers = curl_slist_append(NULL, ctxLength);
+	headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
+
+	err = self->vptr->Auth(self->auth, &headers, url, body, bodylen);
+	if (err.code != 200) {
+		return err;
+	}
+
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+	err = QBox_callex(curl, &self->b, &self->root, QBox_False);
+
+	curl_slist_free_all(headers);
+
+	*ret = self->root;
+	return err;
+}
+
+
+
 QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url)
 {
 	QBox_Error err;
@@ -287,6 +325,7 @@ QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url)
 
 	err = QBox_callex((CURL*)self->curl, &self->b, &self->root, QBox_False);
 	*ret = self->root;
+	curl_slist_free_all(headers);
 	return err;
 }
 
@@ -305,6 +344,8 @@ QBox_Error QBox_Client_CallNoRet(QBox_Client* self, const char* url)
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-	return QBox_callex((CURL*)self->curl, &self->b, &self->root, QBox_False);
+	err = QBox_callex((CURL*)self->curl, &self->b, &self->root, QBox_False);
+	curl_slist_free_all(headers);
+	return err;
 }
 

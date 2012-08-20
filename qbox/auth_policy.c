@@ -32,6 +32,9 @@ static char* QBox_AuthPolicy_json(const QBox_AuthPolicy* auth)
 	if (auth->returnUrl) {
 		cJSON_AddStringToObject(root, "returnUrl", auth->returnUrl);
 	}
+	if (auth->customer) {
+		cJSON_AddStringToObject(root, "customer", auth->customer);
+	}
 
 	if (auth->expires) {
 		expires = auth->expires;

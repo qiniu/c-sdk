@@ -66,6 +66,7 @@ QBox_Error QBox_RS_ResumablePut(
 	const char* entryURI, const char* mimeType, QBox_ReaderAt f, QBox_Int64 fsize,
 	const char* customMeta, const char* callbackParams);
 
+
 /*============================================================================*/
 /* func QBox_RS_Stat */
 
@@ -96,6 +97,17 @@ QBox_Error QBox_RS_Delete(QBox_Client* self, const char* tableName, const char* 
 QBox_Error QBox_RS_Drop(QBox_Client* self, const char* tableName);
 
 /*============================================================================*/
+
+QBox_Error QBox_RS_Mkbucket(QBox_Client* self, const char* tableName);
+
+
+QBox_Error QBox_RS_SetProtected(QBox_Client* self, char* bucketName, int protectedMode);
+QBox_Error QBox_RS_SetSeparator(QBox_Client* self, char* bucketName, char* sep);
+QBox_Error QBox_RS_SetStyle(QBox_Client* self, char* bucketName, char* name, char* style);
+QBox_Error QBox_RS_UnsetStyle(QBox_Client* self, char* bucketName, char* name);
+
+
+
 
 #endif /* QBOX_RS_H */
 

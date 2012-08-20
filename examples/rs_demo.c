@@ -61,7 +61,7 @@ int main()
 
 	printf("QBox_RS_PutFile\n");
 
-	err = QBox_RSCli_PutFile(NULL, putAuthRet.url, "Bucket", "rs_demo.c", "application/octet-stream", __FILE__, "", "key=rs_demo.c");
+	err = QBox_RSCli_PutFile(NULL, putAuthRet.url, "Bucket", "rs_demo.c", "application/octet-stream", __FILE__, "", "key=rs_demo.c", NULL);
 	if (err.code != 200) {
 		printf("QBox_RSCli_PutFile failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
