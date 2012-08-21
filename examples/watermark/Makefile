@@ -3,11 +3,13 @@ SOURCE_FILES=\
 	../../cJSON/cJSON.c\
 	../../qbox/conf.c\
 	../../qbox/base.c\
+	../../qbox/base_io.c\
 	../../qbox/oauth2.c\
 	../../qbox/oauth2_digest.c\
 	../../qbox/rs.c\
 	../../qbox/rscli.c\
 	../../qbox/auth_policy.c\
+	../../qbox/up.c\
 	../../qbox/wm.c\
 	wmdemo.c\
 
