@@ -648,7 +648,7 @@ C-SDK引入了一个统一的错误处理机制。所有业务函数都会返回
 
     /* 所属头文件：rs.h */
 
-    QBox_Error QBox_RS_Mkbucket(const char* bucketName);
+    QBox_Error QBox_RS_Mkbucket(QBox_Client* self, const char* tableName);
 
 
 <a name="rs-drop"></a>
