@@ -23,10 +23,7 @@ SDK下载地址：<https://github.com/qiniu/c-sdk/tags>
     - [认证](#authentication)
     - [获得上传授权](#put-auth)
     - [获得下载授权](#get-auth)
-    - [UpToken授权](#put-uptoken)
 - [上传文件](#rs-put)
-    - [服务器端上传](#put-serverside)
-    - [客户端上传](#put-clientside)
 - [获取文件信息](#rs-stat)
 - [删除文件](#rs-delete)
 - [断点续上传文件](#rs-put-blocks)
@@ -203,37 +200,28 @@ C-SDK引入了一个统一的错误处理机制。所有业务函数都会返回
 
     void QBox_Client_Init(QBox_Client* self, size_t bufSize);
 
+
 <a name="put-auth"></a>
 
 ### 获得上传授权
 
-上传文件之前需要取得上传授权。但由于服务器端和客户端不同的定位，我们需要使用不同的授权方式和上传流程。
+要上传一个文件，首先需要调用 SDK 提供的 `QBox_MakeUpToken()` 函数来获取一个经过授权用于临时匿名上传的 upload_token，这是经过数字签名的一组数据信息，该 upload_token 作为文件上传流中 multipart/form-data 的一部分进行传输。
 
-授权成功后，调用者将得到一个在一定时间内有效的URL。之后向这个URL发出一个合乎规范的POST请求即可将文件上传。C-SDK提供了上传文件的函数，帮助开发者构建这个POST请求。我们将在[上传文件](#rs-put)这一节介绍如何使用该临时有效的URL来上传文件。
+    /* 所属头文件：auth_policy.h */
 
-要取得上传授权，只需调用`QBox_RS_PutAuth`方法。该函数原型如下：
+    typedef struct _QBox_AuthPolicy {
+        const char* scope;        /* 授权操作域（Bucket名称） */
+        const char* callbackUrl;  /* 业务服务器回调通知接口   */
+        const char* returnUrl;    /* 表单流转处理重定向接口   */
+        int         expires;      /* 授权时长（秒）
+                                   * 以调用QBox_MakeUpToken()后的时点作为起点 */
+    } QBox_AuthPolicy;
 
-    /* 所属头文件：rs.h */
-
-    /* QBox_RS_PutAuthEx的简化版，其他功能完全一致 */
-    QBox_Error QBox_RS_PutAuth(QBox_RS_Client* client,
-      	QBox_RS_PutAuthRet* putAuthRet);
-
-	QBox_Error QBox_RS_PutAuthEx(
-		QBox_Client* self, QBox_RS_PutAuthRet* ret, const char* callbackUrl, int expiresIn);
-
-
-调用者需要先定义一个`QBox_RS_PutAuthRet`结构并作为第二个参数传入以获取授权结果。该结构定义如下：
-
-    /* 所属头文件：rs.h */
-
-    typedef struct _QBox_RS_PutAuthRet {
-      const char *url;
-      QBox_Int64 expiresIn;
-    } QBox_RS_PutAuthRet;
+    /* 根据授权策略，生成一个UpToken */
+    char* QBox_MakeUpToken(const QBox_AuthPolicy* auth);
 
 
-该结构的成员比较简单，就是授权的临时URL和这个URL的有效期。之后[上传文件](#rs-put)时需要用到这些值。用户在获取上传授权时可以试图指定一个授权URL的有效期。但需要注意的是，设置成功的超时时间不一定就是传入的值，因为服务器端需要判断超市时间是否在合理的范围之内。如果不是，则会自动调整。具体设置的超时为多少，可以在返回的`QBox_RS_PutAuthRet`结构中读取。
+
 
 <a name="get-auth"></a>
 
@@ -268,87 +256,33 @@ C-SDK引入了一个统一的错误处理机制。所有业务函数都会返回
 
 该`QBox_RS_GetIfNotModified`函数对于需要判断文件内容是否被修改的场景非常有价值。对于那样的场景，如果没有该函数，则会需要先下载整个文件，然后在客户端计算SHA-1值，仅仅是为了判断是否被更改，显然非常不划算。
 
-<a name="put-uptoken"></a>
-
-### UpToken授权
-
-UpToken授权的主要用途是由业务服务器对上传端进行授权，以便其独立与上传服务器连接、完成本SDK库提供的各种文件操作。本功能由如下两个函数支持：
-
-
-    /* 所属头文件：auth_policy.h */
-
-    typedef struct _QBox_AuthPolicy {
-        const char* scope;        /* 授权操作域（Bucket名称） */
-        const char* callbackUrl;  /* 业务服务器回调通知接口   */
-        const char* returnUrl;    /* 表单流转处理重定向接口   */
-        int         expires;      /* 授权时长（秒）
-                                   * 以调用QBox_MakeUpToken()后的时点作为起点 */
-    } QBox_AuthPolicy;
-
-    /* 根据授权策略，生成一个UpToken */
-    char* QBox_MakeUpToken(
-        const QBox_AuthPolicy* auth
-    );
-
-
-    /* 所属头文件：oauth2.h */
-
-    /* 使用UpToken进行授权 */
-    void QBox_Client_InitByUpToken(
-        QBox_Client* self,
-        const char*  uptoken,
-        size_t       bufSize
-    );
 
 
 <a name="rs-put"></a>
 
 ## 上传文件
 
-客户端上传与服务器端上传的一个最大的不同，在于客户端的上传不允许覆盖文件（即不能上传2个文件到同一个key中以达到覆盖目的），而服务器端允许此操作。这是出于安全性考虑。
+上传文件目前有两种方式，一种是服务器端上传文件，一种是从客户端上传文件。所谓从服务器端上传是指企业用户使用我们七牛授权的ACCESS_KEY/SECRET_KEY生成一个UP_TOKEN用于上传文件，而客户端也就是企业用户自己的用户并没有ACCESS_KEY/SECRET_KEY，无法得到UP_TOKEN，因此可以由企业用户的业务服务器端颁发一个UP_TOKEN给自己的最终用户。最终用户利用得到的UP_TOKEN进行上传数据。
 
-<a name="put-serverside"></a>
-### 服务器端上传
+这个过程通过调用`QBox_UP_UploadFile()`来完成。关于获得上传凭证的函数`QBox_MakeUpToken()`的使用，请参见[获得上传授权](#put-auth)。
 
-服务器端上传文件相应API的规格与其他API基本一致。函数原型如下：
+在获得上传授权UP_TOKEN之后，现在我们可以开始上传文件了。上传文件的函数原型如下：
 
-    /* 所属头文件：rs.h */
+    /* 所属头文件：up.h */
 
-    QBox_Error QBox_RS_Put(
-    	QBox_Client* self, QBox_RS_PutRet* ret,
-    	const char* tableName, const char* key,
-    	const char* mimeType, FILE* source,
-    	QBox_Int64 fsize, const char* customMeta);
+    QBox_Error QBox_UP_UploadFile(
+      QBox_Buffer *resp,
+      const char *uptoken, const char* bucket, const char *key, 
+      const char* mimeType, const char* localfile, 
+      const char *custommeta, const char *callbackParams, const char *crc32);
 
-    QBox_Error QBox_RS_PutFile(
-    	QBox_Client* self, QBox_RS_PutRet* ret,
-    	const char* tableName, const char* key,
-	    const char* mimeType, const char* srcFile, const char* customMeta);
+参数`resp`可以接收函数执行的返回结果，如果上传文件成功，返回一个文件的Hash值，如果上传文件失败，这个参数没有意义。`uptoken`是指企业用户使用ACCESS_KEY/SECRET_KEY生成的上传凭证，通常最终用户不可能知道ACCESS_KEY/SECRET_KEY，所以只能由企业用户颁发。只要最终用户有`uptoken`，就能在规定的时间内往指定的Bucket上传文件。
 
-这两个API的差别仅在于一个传入的是源文件的路径，另一个是打开的`FILE*`指针。
+    注：服务端生成uptoken的时候传入的结构体 `QBox_AuthPolicy` 可以指定uptoken的有效时间，指定资源表，等等。
 
-<a name="put-clientside"></a>
-### 客户端上传
+此外，调用者可以通过设置`mimeType`来强行指定文件的类型，比如“text/plain”，也可以留为0，由服务器端按文件内容进行智能判断。`localfile`指定本地需要上传的一个文件，`crc32` 参数是一个文件的CRC校验值，用于检查文件在上传的过程中是否发生错误，七牛存储服务器根据上传的文件生成一个CRC校验值并和用户上传的文件CRC校验值进行比较，如果不一致说明文件在上传过程中已经损坏，对于已经损坏的文件七牛存储服务器不会保存，返回失败。
 
-因为服务器端已经在之前进行过认证并持有相应的安全凭证，因此可以直接进行上传。而由于客户端并不持有对RS的安全凭证，从客户端上传文件的流程要比服务器端上传复杂一些。
-
-客户端上传前，需要先请求一个有上传权限的URL。这个过程通过调用`QBox_RS_PutAuth`来完成。关于`QBox_RS_PutAuth`的使用，请参见[获得上传授权](#put-auth)。
-
-在获得上传授权URL后，现在我们可以开始上传文件了。上传文件的函数原型如下：
-
-    /* 所属头文件：rscli.h */
-
-    QBox_Error QBox_RSCli_PutFile(
-      QBox_Buffer* resp, const char* url,
-      const char* tableName, const char* key,
-      const char* mimeType, const char* localFile,
-      const char* customMeta, const char* callbackParams);
-
-调用者可以通过设置`mimeType`来强行指定文件的类型，比如“text/plain”，也可以留为0，由服务器端按文件内容进行智能判断。
-
-如果调用者希望能够获取详细的相应内容，可以传入一个`QBox_Buffer*`结构体。该结构体可以通过调用`base.h`中的一系列相关函数来初始化、使用和清理。
-
-关于最后两个参数`customMeta`和`callbackParams`，请查看[七牛云存储相关术语的基本概念](/v2/api/words/)。
+关于 `customMeta`和`callbackParams` 这两个参数，请查看[七牛云存储相关术语的基本概念](/v2/api/words/)。
 
 <a name="rs-stat"></a>
 
@@ -370,74 +304,6 @@ UpToken授权的主要用途是由业务服务器对上传端进行授权，以�
       QBox_Int64 fsize;
       QBox_Int64 putTime; /* 该文件的上传时间 */
     } QBox_RS_StatRet;
-
-
-
-<a name="rs-buckets"></a>
-
-## 资源表管理
-
-<a name="rs-mkbucket"></a>
-
-### 创建资源表
-
-可以通过调用`QBox_RS_Mkbucket`函数创建一个资源表。函数原型如下：
-
-    /* 所属头文件：rs.h */
-
-    QBox_Error QBox_RS_Mkbucket(const char* bucketName);
-
-
-<a name="rs-drop"></a>
-
-### 删除资源表
-
-调用`QBox_RS_Drop`函数可以删除整个资源表。该函数原型如下：
-
-    /* 所属头文件：rs.h */
-
-    QBox_Error QBox_RS_Drop(QBox_Client* self, const char* tableName);
-
-
-删除资源表是一个非常危险的动作，调用应非常慎重，因为此操作将导致该表包含的所有文件都不可访问。
-
-
-
-<a name="rs-publish"></a>
-
-### 发布资源表
-
-开发者可以发布七牛云存储上的一个资源表。一个被发布的资源表下所有文件都可以被直接匿名访问。该功能可以很好的满足静态网站托管和图床的需求。在发布资源表时可以通过指定一个域名，之后即可通过该域名后接文件的key直接访问对应的文件内容。比如域名指定为`cdn.example.com`的话，即可通过类似于`cdn.example.com/pic2012-5-16-001`这样的域名来直接访问名为`pic2012-5-16-001`的文件内容。
-
-开发者可通过调用`QBox_RS_Publish`函数来发布资源。该函数原型如下：
-
-    /* 所属头文件：rs.h */
-
-    QBox_Error QBox_RS_Publish(QBox_Client* self, const char* tableName, const char* domain);
-
-
-需要注意的是，开发者需要在域名DNS提供商那里对所指定的域名做一些设置才能让这个机制运作起来。同样使用以上的例子，如果 example.com 使用的是在 Godaddy.com 的DNS服务，则域名所有人需要登录 Godaddy.com 域名管理控制面板，增加一个 cdn.example.com 子域名，并针对此子域名增加一个 CNAME 记录，并将值设为`iovip.qbox.me`。
-
-<a name="rs-unpublish"></a>
-
-### 取消发布资源表
-
-可以通过调用`QBox_RS_Unpublish`函数取消发布某个资源表，从而将该资源表恢复为不可匿名访问状态。该函数的原型如下：
-
-    /* 所属头文件：rs.h */
-
-    QBox_Error QBox_RS_Unpublish(QBox_Client* self, const char* domain);
-
-
-<a name="rs-protected"></a>
-
-### 资源表访问权限设置
-
-通过`QBox_RS_SetProtected()`可以实现对可以匿名访问的资源表实施原图保护，一般在水印处理时使用。该函数的原型如下：
-
-    /* 所属头文件：rs.h */
-
-    QBox_Error QBox_RS_SetProtected(QBox_Client* self, char* bucketName, int protectedMode);
 
 
 
@@ -766,6 +632,77 @@ UpToken授权的主要用途是由业务服务器对上传端进行授权，以�
         /* 释放上传进度对象 */    
         QBox_UP_Progress_Release(prog);
     }
+
+
+
+
+<a name="rs-buckets"></a>
+
+## 资源表管理
+
+<a name="rs-mkbucket"></a>
+
+### 创建资源表
+
+可以通过调用`QBox_RS_Mkbucket`函数创建一个资源表。函数原型如下：
+
+    /* 所属头文件：rs.h */
+
+    QBox_Error QBox_RS_Mkbucket(const char* bucketName);
+
+
+<a name="rs-drop"></a>
+
+### 删除资源表
+
+调用`QBox_RS_Drop`函数可以删除整个资源表。该函数原型如下：
+
+    /* 所属头文件：rs.h */
+
+    QBox_Error QBox_RS_Drop(QBox_Client* self, const char* tableName);
+
+
+删除资源表是一个非常危险的动作，调用应非常慎重，因为此操作将导致该表包含的所有文件都不可访问。
+
+
+
+<a name="rs-publish"></a>
+
+### 发布资源表
+
+开发者可以发布七牛云存储上的一个资源表。一个被发布的资源表下所有文件都可以被直接匿名访问。该功能可以很好的满足静态网站托管和图床的需求。在发布资源表时可以通过指定一个域名，之后即可通过该域名后接文件的key直接访问对应的文件内容。比如域名指定为`cdn.example.com`的话，即可通过类似于`cdn.example.com/pic2012-5-16-001`这样的域名来直接访问名为`pic2012-5-16-001`的文件内容。
+
+开发者可通过调用`QBox_RS_Publish`函数来发布资源。该函数原型如下：
+
+    /* 所属头文件：rs.h */
+
+    QBox_Error QBox_RS_Publish(QBox_Client* self, const char* tableName, const char* domain);
+
+
+需要注意的是，开发者需要在域名DNS提供商那里对所指定的域名做一些设置才能让这个机制运作起来。同样使用以上的例子，如果 example.com 使用的是在 Godaddy.com 的DNS服务，则域名所有人需要登录 Godaddy.com 域名管理控制面板，增加一个 cdn.example.com 子域名，并针对此子域名增加一个 CNAME 记录，并将值设为`iovip.qbox.me`。
+
+<a name="rs-unpublish"></a>
+
+### 取消发布资源表
+
+可以通过调用`QBox_RS_Unpublish`函数取消发布某个资源表，从而将该资源表恢复为不可匿名访问状态。该函数的原型如下：
+
+    /* 所属头文件：rs.h */
+
+    QBox_Error QBox_RS_Unpublish(QBox_Client* self, const char* domain);
+
+
+<a name="rs-protected"></a>
+
+### 资源表访问权限设置
+
+通过`QBox_RS_SetProtected()`可以实现对可以匿名访问的资源表实施原图保护，一般在水印处理时使用。该函数的原型如下：
+
+    /* 所属头文件：rs.h */
+
+    QBox_Error QBox_RS_SetProtected(QBox_Client* self, char* bucketName, int protectedMode);
+
+其中protectedMode取值为 0/1, 0表示关闭源文件保护功能，1表示开启源文件保护功能。所谓源文件保护是指用户不能通过匿名访问的方式获得源文件，通常结合水印功能来使用，比如客户可以指定一个专门为存储水印图片的资源表(Bucket)，然后设置该资源表为 protected，这样其他用户就不能够通过匿名访问的方式获得原图片，但是可以获得添加过水印后的图片。
 
 
 
