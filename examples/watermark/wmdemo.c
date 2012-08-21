@@ -1,5 +1,5 @@
 #include "../../qbox/rs.h"
-#include "../../qbox/rscli.h"
+#include "../../qbox/up.h"
 #include "../../qbox/wm.h"
 
 #include <stdio.h>
@@ -11,10 +11,6 @@ int main()
 {
 	QBox_Error err;
 	QBox_Client client;
-	QBox_AuthPolicy Auth;
-	QBox_RS_PutAuthRet putAuthRet;
-	QBox_WM_Template tpl = 
-		{"Sans",0,NULL,"hello","","5000","8",1,19};
 	char* uptoken;
 
 
@@ -22,12 +18,17 @@ int main()
 	QBOX_SECRET_KEY		= "<Dont send your secret key to anyone>";
 
 
-	static char* customer = "<...>";
-	static char* Bucket = "<...>";
-	static char* Domain = "<...>";
-	static char* key = "kebi";
-	static char* localFile = "kebi.jpg";
+	char* customer = "";
+	char* Bucket = "";
+	char* Domain = "";
+	char* key = "test.jpg";
+	char* imgfile = "test.jpg";
+	char* imgType = "image/jpg";
 
+	QBox_AuthPolicy Auth = 
+		{Bucket, NULL, NULL, customer, 3600};
+	QBox_WM_Template tpl = 
+		{NULL, 0, NULL, "hello", Bucket, NULL, NULL, 1, 19};
 
 	QBox_Zero(client);
 	QBox_Global_Init(-1);
@@ -36,11 +37,9 @@ int main()
 
 	QBox_Client_Init(&client, 1024);
 
-
-
 	printf("QBox_WM_Set\n");
 
-	err = QBox_WM_Set(&client, &tpl,"");
+	err = QBox_WM_Set(&client, &tpl, customer);
 	if (err.code != 200) {
 		printf("QBox_WM_Set failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
@@ -55,71 +54,66 @@ int main()
 		goto lzDone;
 	}
 
-	printf("QBox_RS_SetProtected\n");
-
-	err = QBox_RS_SetProtected(&client, Bucket, 0);
+	printf("QBox_RS_Mkbucket\n");
+	err = QBox_RS_Mkbucket(&client, Bucket);
 	if (err.code != 200) {
-		printf("QBox_RS_SetProtected: %d - %s\n", err.code, err.message);
+		printf("QBox_RS_Mkbucket failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
 	}
 
+	printf("QBox_RS_SetProtected\n");
+
+	err = QBox_RS_SetProtected(&client, Bucket, 1);
+	if (err.code != 200) {
+		printf("QBox_RS_SetProtected failed: %d - %s\n", err.code, err.message);
+		goto lzDone;
+	}
 
 	printf("QBox_RS_SetSeparator\n");
 	err = QBox_RS_SetSeparator(&client, Bucket, "-");
 	if (err.code != 200) {
-		printf("QBox_RS_SetSeparator: %d - %s\n", err.code, err.message);
+		printf("QBox_RS_SetSeparator failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
 	}
 
 	printf("QBox_RS_SetStyle\n");
-	err = QBox_RS_SetStyle(&client, Bucket, "midWm", "imageView/0/w/128/h/128/watermark/1");
+	err = QBox_RS_SetStyle(&client, Bucket, "midWm", "imageView/0/w/480/h/800/watermark/1");
 	if (err.code != 200) {
-		printf("QBox_RS_SetStyle: %d - %s\n", err.code, err.message);
+		printf("QBox_RS_SetStyle failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
 	}
 
 	printf("QBox_RS_SetStyle\n");
-	err = QBox_RS_SetStyle(&client, Bucket, "midNoWm", "imageView/0/w/128/h/128/watermark/0");
+	err = QBox_RS_SetStyle(&client, Bucket, "midNoWm", "imageView/0/w/480/h/800/watermark/0");
 	if (err.code != 200) {
-		printf("QBox_RS_SetStyle: %d - %s\n", err.code, err.message);
+		printf("QBox_RS_SetStyle failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
 	}
 
 	printf("QBox_RS_UnsetStyle\n");
 	err = QBox_RS_UnsetStyle(&client, Bucket, "midNoWm");
 	if (err.code != 200) {
-		printf("QBox_RS_UnsetStyle: %d - %s\n", err.code, err.message);
+		printf("QBox_RS_UnsetStyle failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
 	}
 
-	printf("QBox_RS_Put\n");
+	QBox_RS_Delete(&client, Bucket, key);
 
-	err = QBox_RS_PutAuth(&client, &putAuthRet);
-	if (err.code != 200) {
-		printf("QBox_RS_PutAuth failed: %d - %s\n", err.code, err.message);
-		goto lzDone;
-	}
-	Auth.scope = Bucket;
-	Auth.expires = putAuthRet.expiresIn;
-	Auth.customer = customer;
-	Auth.callbackUrl = Auth.returnUrl = NULL;
+	printf("QBox_UP_UploadFile\n");
 	uptoken = QBox_MakeUpToken(&Auth);
+	err = QBox_UP_UploadFile(NULL, uptoken, Bucket, key, imgType, imgfile, NULL, NULL, NULL);
 	if (err.code != 200) {
-		printf("QBox_MakeUpToken failed: %d - %s\n", err.code, err.message);
-		goto lzDone;
-	}
-	err = QBox_RSCli_PutFile(NULL, putAuthRet.url, Bucket,
-	 key, "application/octet-stream", localFile, "", "", uptoken);
-	if (err.code != 200) {
-		printf("QBox_RSCli_PutFile failed: %d - %s\n", err.code, err.message);
+		printf("QBox_UP_UploadFile failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
 	}
 	free(uptoken);
 
-	printf("QBox_RS_Delete\n");
-	err = QBox_RS_Delete(&client, Bucket, key);
+	printf("QBox_RS_Publish\n");
+
+	err = QBox_RS_Publish(&client, Bucket, Domain);
 	if (err.code != 200) {
-		printf("QBox_RS_Delete failed: %d - %s\n", err.code, err.message);
+		printf("QBox_RS_Publish failed: %d - %s\n", err.code, err.message);
+		goto lzDone;
 	}
 
 lzDone:
