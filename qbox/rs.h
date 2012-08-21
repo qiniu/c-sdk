@@ -66,6 +66,7 @@ QBox_Error QBox_RS_ResumablePut(
 	const char* entryURI, const char* mimeType, QBox_ReaderAt f, QBox_Int64 fsize,
 	const char* customMeta, const char* callbackParams);
 
+
 /*============================================================================*/
 /* func QBox_RS_Stat */
 
@@ -97,6 +98,7 @@ QBox_Error QBox_RS_Drop(QBox_Client* self, const char* tableName);
 
 /*============================================================================*/
 
+QBox_Error QBox_RS_Mkbucket(QBox_Client* self, const char* tableName);
 
 
 QBox_Error QBox_RS_SetProtected(QBox_Client* self, char* bucketName, int protectedMode);

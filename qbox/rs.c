@@ -299,6 +299,15 @@ QBox_Error QBox_RS_Drop(QBox_Client* self, const char* tableName)
 
 
 
+QBox_Error QBox_RS_Mkbucket(QBox_Client* self, const char* tableName)
+{
+	char *url;
+	cJSON *root;
+
+	url = QBox_String_Concat(QBOX_RS_HOST, "/mkbucket/", tableName, NULL);
+	return QBox_Client_Call(self, &root, url);
+}
+
 
 QBox_Error QBox_RS_SetProtected(QBox_Client* self, char* bucketName, int protectedMode)
 {
