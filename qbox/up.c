@@ -10,7 +10,9 @@
 
 #include <string.h>
 #include <zlib.h>
+#include <curl/curl.h>
 #include "up.h"
+
 
 /*============================================================================*/
 
@@ -359,5 +361,93 @@ QBox_Error QBox_UP_Put(QBox_Client* self, QBox_UP_PutRet* ret, QBox_ReaderAt f,
 
     err.code = 200;
     err.message = "OK";
+    return err;
+}
+
+
+
+
+
+QBox_Error QBox_UP_UploadFile(
+    QBox_Buffer *resp,
+    const char *uptoken, const char* bucket, const char *key, 
+    const char* mimeType, const char* localfile, 
+    const char *custommeta, const char *callbackParams, const char *crc32)
+{
+    char *url, *entryURI, *entryURIEncoded, 
+     *mimeTypeEncoded, *customMetaEncoded, *crc32Encodeed, *action, *action2;
+    CURL* curl;
+    QBox_Error err;
+    CURLcode curlCode;
+    long httpCode;
+
+    struct curl_httppost* formpost = NULL;
+    struct curl_httppost* lastptr = NULL;
+
+    if (mimeType == NULL) {
+        mimeType = "application/octet-stream";
+    }
+
+    mimeTypeEncoded = QBox_String_Encode(mimeType);
+    entryURI = QBox_String_Concat3(bucket, ":", key);
+    entryURIEncoded = QBox_String_Encode(entryURI);
+    free(entryURI);
+
+    action = QBox_String_Concat("/rs-put/", entryURIEncoded, "/mimeType/", mimeTypeEncoded, NULL);
+    free(entryURIEncoded);
+    free(mimeTypeEncoded);
+
+    if (custommeta != NULL && *custommeta != '\0') {
+        customMetaEncoded = QBox_String_Encode(custommeta);
+        action2 = QBox_String_Concat3(action, "/meta/", customMetaEncoded);
+        free(action);
+        free(customMetaEncoded);
+        action = action2;
+    }
+
+    if (crc32 != NULL && *crc32 != '\0') {
+        crc32Encodeed = QBox_String_Encode(crc32);
+        action2 = QBox_String_Concat3(action, "/crc32/", crc32Encodeed);
+        free(action);
+        free(crc32Encodeed);
+        action = action2;
+    }
+
+    curl = curl_easy_init();
+
+    curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "action", CURLFORM_COPYCONTENTS, action, CURLFORM_END);
+    curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localfile, CURLFORM_END);
+    curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "params", CURLFORM_COPYCONTENTS, callbackParams, CURLFORM_END);
+    if (uptoken && *uptoken != '\0')
+        curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "auth", CURLFORM_COPYCONTENTS, uptoken, CURLFORM_END);
+    url = QBox_String_Concat(QBOX_UP_HOST,"/upload",NULL);
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    free(url);
+    curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+
+    if (resp != NULL) {
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, QBox_Buffer_Fwrite);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, resp);
+    } else {
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, QBox_Null_Fwrite);
+    }
+    curlCode = curl_easy_perform(curl);
+
+    if (curlCode == 0) {
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+        err.code = (int)httpCode;
+        if (httpCode / 100 != 2) {
+            err.message = "http status code is not OK";
+        } else {
+            err.message = "OK";
+        }
+    } else {
+        err.code = curlCode;
+        err.message = "curl_easy_perform error";
+    }
+
+    curl_easy_cleanup(curl);
+    free(action);
+    curl_formfree(formpost);
     return err;
 }
