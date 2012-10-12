@@ -281,7 +281,19 @@ QBox_Error QBox_RS_Delete(QBox_Client* self, const char* tableName, const char* 
 }
 
 /*============================================================================*/
-/* func QBox_RS_Drop */
+/* func QBox_RS_Create, QBox_RS_Drop */
+
+QBox_Error QBox_RS_Create(QBox_Client* self, const char* tableName)
+{
+	QBox_Error err;
+
+	char* url = QBox_String_Concat3(QBOX_RS_HOST, "/mkbucket/", tableName);
+
+	err = QBox_Client_CallNoRet(self, url);
+	free(url);
+
+	return err;
+}
 
 QBox_Error QBox_RS_Drop(QBox_Client* self, const char* tableName)
 {
