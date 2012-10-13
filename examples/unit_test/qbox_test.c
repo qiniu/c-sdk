@@ -10,6 +10,7 @@
 
 #include "qbox_test.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 
 /*============================================================================*/
@@ -29,6 +30,7 @@ typedef struct _TestNode {
 #define ADDNODE(func)	\
 	addTestCase(#func, func)
 
+static void addTestCase(const char* name, TestFunc func);
 
 /*============================================================================*/
 /* add test case node here */
@@ -39,16 +41,6 @@ DEFNODE(mkbucket);
 static void genTestCase()
 {
 	ADDNODE(mkbucket);
-}
-
-/*============================================================================*/
-/* func QBox_Test_Do */
-
-void QBox_Test_Do(QBox_Client* client)
-{
-	genTestCase();
-	runTestCase();
-	delTestCase();
 }
 
 /*============================================================================*/
@@ -67,7 +59,7 @@ static void addTestCase(const char* name, TestFunc func)
 	g_testCases = node;
 }
 
-static void runTestCase()
+static void runTestCase(QBox_Client* client)
 {
 	TestNode* node = g_testCases;
 	const char* result = "SUCCESS";
@@ -75,11 +67,12 @@ static void runTestCase()
 	printf("START...\n");
 
 	while (node != NULL) {
-		printf("%s:\n", node->name);
+		printf("%s testing...\n", node->name);
 		if ((*node->func)(client) != 0) {
 			result = "FAIL";
 			break;
 		}
+        printf("%s ok!\n");
 		node = node->next;
 	}
 
@@ -93,4 +86,31 @@ static void delTestCase()
 		free(g_testCases);
 		g_testCases = g_testCases->next;
 	}
+}
+
+/*============================================================================*/
+/* func QBT_Do */
+
+void QBT_Do(QBox_Client* client)
+{
+	genTestCase();
+	runTestCase(client);
+	delTestCase();
+}
+
+/*============================================================================*/
+/* func _QBT_Errorfln */
+
+int _QBT_Errorfln(const char* fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+
+	vprintf(fmt, args);
+	printf("\n");
+
+	va_end(args);
+
+	return -1;
 }

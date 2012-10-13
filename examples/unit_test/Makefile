@@ -10,7 +10,7 @@ SOURCE_FILES=\
 	     *.c
 
 all: $(SOURCE_FILES)
-	gcc -o qbox_test -lcurl -lm -lssl -lcrypto $^
+	gcc -o run_test -lcurl -lm -lssl -lcrypto $^
 
 install: all
 	@echo

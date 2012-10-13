@@ -13,6 +13,11 @@
 
 #include "../../qbox/oauth2.h"
 
-void QBox_Test_Do(QBox_Client* client);
+void QBT_Do(QBox_Client* client);
+
+#define QBT_Fatalfln						\
+	printf("\t[ERROR]%s:%d => ", __FILE__, __LINE__);	\
+	return _QBT_Errorfln
+int _QBT_Errorfln(const char* fmt, ...);
 
 #endif

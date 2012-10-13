@@ -1,6 +1,6 @@
 /*
  ============================================================================
- Name        : main.c
+ Name        : run_test.c
  Author      : Jiang Wen Long
  Version     : 1.0.0.0
  Copyright   : 2012 Shanghai Qiniu Information Technologies Co., Ltd.
@@ -9,6 +9,7 @@
  */
 
 #include "qbox_test.h"
+#include "../../qbox/rs.h"
 
 int main()
 {
@@ -16,17 +17,16 @@ int main()
 	QBox_Client client;
 
 	//QBOX_ACCESS_KEY = "<Please apply your access key>";
-	//QBOX_ACCESS_KEY = "<Dont send your secret key to anyone>";
+	//QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
 	QBOX_ACCESS_KEY = "iN7NgwM31j4-BZacMjPrOQBs34UG1maYCAQmhdCV";
-	QBOX_ACCESS_KEY = "6QTOr2Jg1gcZEWDQXKOGZh5PziC2MCV5KsntT70j";
+	QBOX_SECRET_KEY = "6QTOr2Jg1gcZEWDQXKOGZh5PziC2MCV5KsntT70j";
 
 	QBox_Zero(client);
 	QBox_Global_Init(-1);
 
-	QBOx_Client_Init(&client, 1024);
-	QBox_RS_Delete(&client, "Bucket", "rs_demo.c");
+	QBox_Client_Init(&client, 1024);
 
-	QBox_Test_Do(&client);
+	QBT_Do(&client);
 
 	QBox_Client_Cleanup(&client);
 	QBox_Global_Cleanup();
