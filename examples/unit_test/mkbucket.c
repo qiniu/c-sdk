@@ -14,7 +14,5 @@ int mkbucket(QBox_Client* client)
 		QBT_Fatalfln("create failed => code:%d, msg:%s", err.code, err.message);
 	}
 
-	QBox_RS_Drop(client, s_table);
-
 	return 0;
 }

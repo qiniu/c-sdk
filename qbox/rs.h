@@ -13,7 +13,6 @@
 
 #include "oauth2.h"
 #include "up.h"
-#include "image.h"
 
 /*============================================================================*/
 /* func QBox_RS_PutAuth, QBox_RS_PutAuthEx */

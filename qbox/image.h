@@ -26,4 +26,33 @@ typedef struct _QBox_IMG_InfoRet {
 QBox_Error QBox_IMG_Info(
 		QBox_Client* self, QBox_IMG_InfoRet* ret, const char* url);
 
+/*============================================================================*/
+/* func QBox_IMG_MogrifyUrl */
+
+typedef struct _QBox_IMG_MogrOpts {
+	const char* thumbnail;
+	const char* gravity;
+	const char* crop;
+	const char* quality;
+	const char* rotate;
+	const char* format;
+	QBox_Bool auto_orient;
+} QBox_IMG_MogrOpts;
+
+void QBox_IMG_InitMogrOpts(QBox_IMG_MogrOpts* opts);
+
+// remember to free the returned pointer when not needed anymore.
+char* QBox_IMG_MogrifyUrl(QBox_IMG_MogrOpts* opts, const char* url);
+
+/*============================================================================*/
+/* func QBox_IMG_SaveAs */
+
+typedef struct _QBox_IMG_SaveAsRet {
+	const char* hash;
+} QBox_IMG_SaveAsRet;
+
+QBox_Error QBox_IMG_SaveAs(QBox_Client* self, QBox_IMG_SaveAsRet* ret, 
+		QBox_IMG_MogrOpts* opts, const char* url,
+		const char* tableName, const char* key);
+
 #endif

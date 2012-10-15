@@ -16,6 +16,9 @@ int main()
 	QBox_Error err;
 	QBox_Client client;
 
+	printf("如果运行出错且错误码为401，请打开run_test.c。\n");
+	printf("将QBOX_ACCESS_KEY和QBOX_SECRET_KEY替换成您的帐号对应的key信息。\n");
+
 	//QBOX_ACCESS_KEY = "<Please apply your access key>";
 	//QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
 	QBOX_ACCESS_KEY = "iN7NgwM31j4-BZacMjPrOQBs34UG1maYCAQmhdCV";

@@ -7,6 +7,7 @@ SOURCE_FILES=\
 	     ../../qbox/oauth2_digest.c\
 	     ../../qbox/rs.c\
 	     ../../qbox/rscli.c\
+	     ../../qbox/image.c\
 	     *.c
 
 all: $(SOURCE_FILES)

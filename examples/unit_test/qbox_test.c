@@ -72,7 +72,7 @@ static void runTestCase(QBox_Client* client)
 			result = "FAIL";
 			break;
 		}
-        printf("%s ok!\n");
+		printf("%s ok!\n", node->name);
 		node = node->next;
 	}
 
