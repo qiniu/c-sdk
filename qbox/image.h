@@ -42,7 +42,7 @@ typedef struct _QBox_IMG_MogrOpts {
 void QBox_IMG_InitMogrOpts(QBox_IMG_MogrOpts* opts);
 
 // remember to free the returned pointer when not needed anymore.
-char* QBox_IMG_MogrifyUrl(QBox_IMG_MogrOpts* opts, const char* url);
+char* QBox_IMG_MogrifyURL(QBox_IMG_MogrOpts* opts, const char* url);
 
 /*============================================================================*/
 /* func QBox_IMG_SaveAs */

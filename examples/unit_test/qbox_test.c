@@ -37,10 +37,13 @@ static void addTestCase(const char* name, TestFunc func);
 /* To add a node, call DEFNODE and ADDNODE for the specified func. */
 
 DEFNODE(mkbucket);
+DEFNODE(mogrifyurl);
+DEFNODE(saveas);
 
 static void genTestCase()
 {
 	ADDNODE(mkbucket);
+	ADDNODE(saveas);
 }
 
 /*============================================================================*/
@@ -50,13 +53,21 @@ static TestNode* g_testCases = NULL;
 
 static void addTestCase(const char* name, TestFunc func)
 {
+	TestNode* tail = g_testCases;
 	TestNode* node = (TestNode*)malloc(sizeof(TestNode));
 
 	node->name = name;
 	node->func = func;
-	node->next = g_testCases;
-
-	g_testCases = node;
+	node->next = NULL;
+	
+	if (g_testCases == NULL) {
+		g_testCases = node;
+	} else {
+		while (tail->next != NULL) {
+			tail = tail->next;
+		}
+		tail->next = node;
+	}
 }
 
 static void runTestCase(QBox_Client* client)
@@ -64,7 +75,7 @@ static void runTestCase(QBox_Client* client)
 	TestNode* node = g_testCases;
 	const char* result = "SUCCESS";
 
-	printf("START...\n");
+	printf("START...\n\n");
 
 	while (node != NULL) {
 		printf("%s testing...\n", node->name);
@@ -72,7 +83,7 @@ static void runTestCase(QBox_Client* client)
 			result = "FAIL";
 			break;
 		}
-		printf("%s ok!\n", node->name);
+		printf("%s ok!\n\n", node->name);
 		node = node->next;
 	}
 
@@ -99,9 +110,9 @@ void QBT_Do(QBox_Client* client)
 }
 
 /*============================================================================*/
-/* func _QBT_Errorfln */
+/* func _QBT_Printfln */
 
-int _QBT_Errorfln(const char* fmt, ...)
+int _QBT_Printfln(const char* fmt, ...)
 {
 	va_list args;
 

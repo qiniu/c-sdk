@@ -78,7 +78,7 @@ static char* _dirtycat2(char* dst, const char* src1st, const char* src2nd)
 	return dst;
 }
 
-char* QBox_IMG_MogrifyUrl(QBox_IMG_MogrOpts* opts, const char* url)
+char* QBox_IMG_MogrifyURL(QBox_IMG_MogrOpts* opts, const char* url)
 {
 	char* ret = NULL;
 	char* mogr = "?imageMogr";
@@ -115,7 +115,7 @@ QBox_Error QBox_IMG_SaveAs(QBox_Client* self, QBox_IMG_SaveAsRet* ret,
 
 	char* entryURI = QBox_String_Concat3(tableName, ":", key);
 	char* entryURIEncoded = QBox_String_Encode(entryURI);
-	char* mogrURL = QBox_IMG_MogrifyUrl(opts, url);
+	char* mogrURL = QBox_IMG_MogrifyURL(opts, url);
 	char* saveURL = QBox_String_Concat3(mogrURL, "/save-as/", entryURIEncoded);
 
 	err = QBox_Client_Call(self, &root, saveURL);
