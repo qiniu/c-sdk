@@ -1,17 +1,15 @@
 #include "qbox_test.h"
 #include "../../qbox/rs.h"
 
-static const char* s_table = "c-test";
-
 int mkbucket(QBox_Client* client)
 {
 	QBox_Error err;
 
-	QBox_RS_Drop(client, s_table);
+	QBox_RS_Drop(client, TEST_TABLE);
 
-	err = QBox_RS_Create(client, s_table);
+	err = QBox_RS_Create(client, TEST_TABLE);
 	if (err.code != 200) {
-		QBT_Fatalfln("create failed => code:%d, msg:%s", err.code, err.message);
+		QBT_Fatalfln("code:%d, msg:%s", err.code, err.message);
 	}
 
 	return 0;

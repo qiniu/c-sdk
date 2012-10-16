@@ -53,10 +53,10 @@ int mogrifyurl(QBox_Client* client)
 	}
 	free(url);
 
-	opts.crop = "!300*400a10a10";
+	opts.crop = "!300x400a10a10";
 	url = QBox_IMG_MogrifyURL(&opts, ImgURL);
 	QBT_Infofln("%s", url);
-	if (strcmp(url, ImgURL "?imageMogr/thumbnail/50%/gravity/North/crop/!300*400a10a10/quality/60/auto-orient")) {
+	if (strcmp(url, ImgURL "?imageMogr/thumbnail/50%/gravity/North/crop/!300x400a10a10/quality/60/auto-orient")) {
 		free(url);
 		QBT_Fatalfln("unexpected url!");
 	}
@@ -65,7 +65,7 @@ int mogrifyurl(QBox_Client* client)
 	opts.rotate = "45";
 	url = QBox_IMG_MogrifyURL(&opts, ImgURL);
 	QBT_Infofln("%s", url);
-	if (strcmp(url, ImgURL "?imageMogr/thumbnail/50%/gravity/North/crop/!300*400a10a10/quality/60/rotate/45/auto-orient")) {
+	if (strcmp(url, ImgURL "?imageMogr/thumbnail/50%/gravity/North/crop/!300x400a10a10/quality/60/rotate/45/auto-orient")) {
 		free(url);
 		QBT_Fatalfln("unexpected url!");
 	}
@@ -74,7 +74,7 @@ int mogrifyurl(QBox_Client* client)
 	opts.format = "png";
 	url = QBox_IMG_MogrifyURL(&opts, ImgURL);
 	QBT_Infofln("%s", url);
-	if (strcmp(url, ImgURL "?imageMogr/thumbnail/50%/gravity/North/crop/!300*400a10a10/quality/60/rotate/45/format/png/auto-orient")) {
+	if (strcmp(url, ImgURL "?imageMogr/thumbnail/50%/gravity/North/crop/!300x400a10a10/quality/60/rotate/45/format/png/auto-orient")) {
 		free(url);
 		QBT_Fatalfln("unexpected url!");
 	}

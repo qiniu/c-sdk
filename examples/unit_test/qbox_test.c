@@ -43,6 +43,7 @@ DEFNODE(saveas);
 static void genTestCase()
 {
 	ADDNODE(mkbucket);
+	ADDNODE(mogrifyurl);
 	ADDNODE(saveas);
 }
 

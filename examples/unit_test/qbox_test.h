@@ -13,6 +13,8 @@
 
 #include "../../qbox/oauth2.h"
 
+static const char* TEST_TABLE = "c-test";
+
 void QBT_Do(QBox_Client* client);
 
 #define QBT_Fatalfln						\
