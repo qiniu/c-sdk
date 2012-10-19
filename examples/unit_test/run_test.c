@@ -15,8 +15,6 @@ int main()
 {
 	QBox_Error err;
 	QBox_Client client;
-	QBox_AuthPolicy auth = { TEST_TABLE, "", "", 3600 };
-	char* uptoken = QBox_MakeUpToken(&auth);
 
 	printf("如果运行出错且错误码为401，请打开run_test.c。\n");
 	printf("将QBOX_ACCESS_KEY和QBOX_SECRET_KEY替换成您的帐号对应的key信息。\n");
@@ -36,7 +34,6 @@ int main()
 	QBox_Global_Init(-1);
 
 	QBox_Client_Init(&client, 1024);
-	//QBox_Client_InitByUpToken(&client, uptoken, 1024);
 
 	QBT_Do(&client);
 

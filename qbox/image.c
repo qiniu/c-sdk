@@ -14,12 +14,12 @@
 /* func QBox_IMG_Info */
 
 QBox_Error QBox_IMG_Info(
-		QBox_Client* self, QBox_IMG_InfoRet* ret, const char* imgUrl)
+		QBox_Client* self, QBox_IMG_InfoRet* ret, const char* imgURL)
 {
 	QBox_Error err;
 	cJSON* root;
 
-	char* url = QBox_String_Concat2(imgUrl, "/imageInfo");
+	char* url = QBox_String_Concat2(imgURL, "/imageInfo");
 
 	err = QBox_Client_Call(self, &root, url);
 	free(url);
@@ -32,6 +32,39 @@ QBox_Error QBox_IMG_Info(
 	}
 	return err;
 }
+
+/*============================================================================*/
+/* func QBox_IMG_Exif, QBox_IMG_ExifRet_Release */
+
+QBox_Error QBox_IMG_Exif(
+		QBox_Client* client, QBox_IMG_ExifRet* ret, const char* imgURL)
+{
+	QBox_Error err;
+	QBox_UInt32 index;
+	cJSON* root;
+	cJSON* array;
+
+	char* url = QBox_String_Concat2(imgURL, "?exif");
+
+	err = QBox_Client_Call(self, &root, url);
+	free(url);
+
+	if (err.code == 200) {
+		ret->size = cJSON_GetArraySize(cJSON *array)
+		ret->info = (QBox_IMG_ExifInfo*)malloc(ret->size*sizeof(QBox_IMG_ExifInfo));
+		index = 0;
+		array = root->child;
+		while (array != NULL) {
+			ret->info[index].name = array->string;
+			ret->info[index].val = array->child;
+		}
+cJSON *c=array->child;int i=0;while(c)i++,c=c->next;return i;
+	}
+	return err;
+}
+
+QBox_Error QBox_IMG_ExifRet_Release(QBox_IMG_ExifRet* ret);
+
 
 /*============================================================================*/
 /* func QBox_IMG_MogrifyUrl */
@@ -78,16 +111,16 @@ static char* _dirtycat2(char* dst, const char* src1st, const char* src2nd)
 	return dst;
 }
 
-char* QBox_IMG_MogrifyURL(QBox_IMG_MogrOpts* opts, const char* url)
+char* QBox_IMG_MogrifyURL(QBox_IMG_MogrOpts* opts, const char* imgURL)
 {
 	char* ret = NULL;
 	char* mogr = "?imageMogr";
-	int urllen = strlen(url);
-	int mogrlen = strlen(url);
+	int urllen = strlen(imgURL);
+	int mogrlen = strlen(imgURL);
 
 	ret = (char*)calloc(urllen + mogrlen + 1, sizeof(char));
 
-	strcpy(ret, url);
+	strcpy(ret, imgURL);
 	strcat(ret, mogr);
 
 	ret = _dirtycat2(ret, "/thumbnail/", opts->thumbnail);
@@ -107,7 +140,7 @@ char* QBox_IMG_MogrifyURL(QBox_IMG_MogrOpts* opts, const char* url)
 /* func QBox_IMG_SaveAs */
 
 QBox_Error QBox_IMG_SaveAs(QBox_Client* self, QBox_IMG_SaveAsRet* ret, 
-		QBox_IMG_MogrOpts* opts, const char* url,
+		QBox_IMG_MogrOpts* opts, const char* imgURL,
 		const char* tableName, const char* key)
 {
 	QBox_Error err;
@@ -115,7 +148,7 @@ QBox_Error QBox_IMG_SaveAs(QBox_Client* self, QBox_IMG_SaveAsRet* ret,
 
 	char* entryURI = QBox_String_Concat3(tableName, ":", key);
 	char* entryURIEncoded = QBox_String_Encode(entryURI);
-	char* mogrURL = QBox_IMG_MogrifyURL(opts, url);
+	char* mogrURL = QBox_IMG_MogrifyURL(opts, imgURL);
 	char* saveURL = QBox_String_Concat3(mogrURL, "/save-as/", entryURIEncoded);
 
 	err = QBox_Client_Call(self, &root, saveURL);
