@@ -37,14 +37,20 @@ static void addTestCase(const char* name, TestFunc func);
 /* To add a node, call DEFNODE and ADDNODE for the specified func. */
 
 DEFNODE(mkbucket);
+DEFNODE(imginfo);
+DEFNODE(exif);
+DEFNODE(viewurl);
 DEFNODE(mogrifyurl);
 DEFNODE(saveas);
 
 static void genTestCase()
 {
-	ADDNODE(mkbucket);
-	ADDNODE(mogrifyurl);
-	ADDNODE(saveas);
+	//ADDNODE(mkbucket);
+	//ADDNODE(imginfo);
+	//ADDNODE(exif);
+	ADDNODE(viewurl);
+	//ADDNODE(mogrifyurl);
+	//ADDNODE(saveas);
 }
 
 /*============================================================================*/
@@ -79,12 +85,12 @@ static void runTestCase(QBox_Client* client)
 	printf("START...\n\n");
 
 	while (node != NULL) {
-		printf("%s testing...\n", node->name);
+		printf("========> %s testing...\n", node->name);
 		if ((*node->func)(client) != 0) {
 			result = "FAIL";
 			break;
 		}
-		printf("%s ok!\n\n", node->name);
+		printf("========> %s ok!\n\n", node->name);
 		node = node->next;
 	}
 
@@ -111,16 +117,15 @@ void QBT_Do(QBox_Client* client)
 }
 
 /*============================================================================*/
-/* func _QBT_Printfln */
+/* func _QBT_Printf */
 
-int _QBT_Printfln(const char* fmt, ...)
+int _QBT_Printf(const char* fmt, ...)
 {
 	va_list args;
 
 	va_start(args, fmt);
 
 	vprintf(fmt, args);
-	printf("\n");
 
 	va_end(args);
 

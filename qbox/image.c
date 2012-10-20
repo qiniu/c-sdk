@@ -19,7 +19,7 @@ QBox_Error QBox_IMG_Info(
 	QBox_Error err;
 	cJSON* root;
 
-	char* url = QBox_String_Concat2(imgURL, "/imageInfo");
+	char* url = QBox_String_Concat2(imgURL, "?imageInfo");
 
 	err = QBox_Client_Call(self, &root, url);
 	free(url);
@@ -39,39 +39,56 @@ QBox_Error QBox_IMG_Info(
 QBox_Error QBox_IMG_Exif(
 		QBox_Client* client, QBox_IMG_ExifRet* ret, const char* imgURL)
 {
-	QBox_Error err;
-	QBox_UInt32 index;
 	cJSON* root;
 	cJSON* array;
+	cJSON* object;
+	QBox_Error err;
+	QBox_Uint32 index;
 
 	char* url = QBox_String_Concat2(imgURL, "?exif");
 
-	err = QBox_Client_Call(self, &root, url);
+	err = QBox_Client_Call(client, &root, url);
 	free(url);
 
 	if (err.code == 200) {
-		ret->size = cJSON_GetArraySize(cJSON *array)
+		array = root->child;
+		ret->size = cJSON_GetArraySize(root);
 		ret->info = (QBox_IMG_ExifInfo*)malloc(ret->size*sizeof(QBox_IMG_ExifInfo));
 		index = 0;
-		array = root->child;
 		while (array != NULL) {
 			ret->info[index].name = array->string;
-			ret->info[index].val = array->child;
+			ret->info[index].val = "";
+			ret->info[index].type = 0;
+			object = array->child;
+			if (object != NULL) {
+				ret->info[index].val = object->valuestring;
+				object = object->next;
+				if (object != NULL) {
+					ret->info[index].type = (QBox_Int64)object->valuedouble;
+				}
+			}
+			index++;
+			array = array->next;
 		}
-cJSON *c=array->child;int i=0;while(c)i++,c=c->next;return i;
 	}
 	return err;
 }
 
-QBox_Error QBox_IMG_ExifRet_Release(QBox_IMG_ExifRet* ret);
-
+QBox_Error QBox_IMG_ExifRet_Release(QBox_IMG_ExifRet ret)
+{
+	free(ret.info);
+}
 
 /*============================================================================*/
-/* func QBox_IMG_MogrifyUrl */
+/* func QBox_IMG_InitViewOpts, QBox_IMG_ViewURL */
 
-void QBox_IMG_InitMogrOpts(QBox_IMG_MogrOpts* opts)
+void QBox_IMG_InitViewOpts(QBox_IMG_ViewOpts* opts)
 {
-	memset(opts, 0, sizeof(QBox_IMG_MogrOpts));
+	memset(opts, 0, sizeof(QBox_IMG_ViewOpts));
+	opts->width = -1;
+	opts->height = -1;
+	opts->quality = -1;
+	opts->sharpen = -1;
 }
 
 static char* _dirtycat(char* dst, const char* src)
@@ -111,12 +128,68 @@ static char* _dirtycat2(char* dst, const char* src1st, const char* src2nd)
 	return dst;
 }
 
+char* _dirtycat1n(char* dst, int src)
+{
+	char buffer[12] = { 0 };
+	if (src < 0) {
+		return dst;
+	}
+
+	sprintf(buffer, "%d", src);
+	return _dirtycat(dst, buffer);
+}
+
+char* _dirtycat2n(char* dst, const char* src1st, int src2nd)
+{
+	char buffer[12] = { 0 };
+	if (src2nd < 0) {
+		return dst;
+	}
+
+	sprintf(buffer, "%d", src2nd);
+	return _dirtycat2(dst, src1st, buffer);
+}
+
+// remember to free the returned pointer when not needed anymore.
+char* QBox_IMG_ViewURL(QBox_IMG_ViewOpts* opts, const char* imgURL)
+{
+	char* ret = NULL;
+	char* view = "?imageView";
+	int urllen = strlen(imgURL);
+	int viewlen = strlen(view);
+
+	ret = (char*)calloc(urllen + viewlen + 1, sizeof(char));
+
+	strcpy(ret, imgURL);
+	strcat(ret, view);
+
+	ret = _dirtycat1n(ret, opts->mode);
+	ret = _dirtycat2n(ret, "/w/", opts->width);
+	ret = _dirtycat2n(ret, "/h/", opts->height);
+	ret = _dirtycat2n(ret, "/q/", opts->quality);
+	ret = _dirtycat2(ret, "/format/", opts->format);
+	ret = _dirtycat2n(ret, "/sharpen/", opts->sharpen);
+	if (opts->watermark != 0) {
+		ret = _dirtycat2n(ret, "/watermark/", opts->watermark);
+	}
+
+	return ret;
+}
+
+/*============================================================================*/
+/* func QBox_IMG_InitMogrOpts, QBox_IMG_MogrifyUrl */
+
+void QBox_IMG_InitMogrOpts(QBox_IMG_MogrOpts* opts)
+{
+	memset(opts, 0, sizeof(QBox_IMG_MogrOpts));
+}
+
 char* QBox_IMG_MogrifyURL(QBox_IMG_MogrOpts* opts, const char* imgURL)
 {
 	char* ret = NULL;
 	char* mogr = "?imageMogr";
 	int urllen = strlen(imgURL);
-	int mogrlen = strlen(imgURL);
+	int mogrlen = strlen(mogr);
 
 	ret = (char*)calloc(urllen + mogrlen + 1, sizeof(char));
 

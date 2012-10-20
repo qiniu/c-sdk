@@ -29,24 +29,42 @@ QBox_Error QBox_IMG_Info(
 /*============================================================================*/
 /* func QBox_IMG_Exif, QBox_IMG_ExifRet_Release */
 
-struct _QBox_IMG_ExifInfo {
+typedef struct _QBox_IMG_ExifInfo {
 	char* name;
 	char* val;
 	QBox_Int64  type;
-} QBox_IMG_ExitInfo;
+} QBox_IMG_ExifInfo;
 
-struct _QBox_IMG_ExifRet {
-	QBox_UInt32 size;
+typedef struct _QBox_IMG_ExifRet {
+	QBox_Uint32 size;
 	QBox_IMG_ExifInfo* info;
 } QBox_IMG_ExifRet;
 
 QBox_Error QBox_IMG_Exif(
 		QBox_Client* client, QBox_IMG_ExifRet* ret, const char* imgURL);
 
-QBox_Error QBox_IMG_ExifRet_Release(QBox_IMG_ExifRet* ret);
+QBox_Error QBox_IMG_ExifRet_Release(QBox_IMG_ExifRet ret);
 
 /*============================================================================*/
-/* func QBox_IMG_MogrifyURL */
+/* func QBox_IMG_InitViewOpts, QBox_IMG_viewURL */
+
+typedef struct _QBox_IMG_ViewOpts {
+	int mode;
+	int width;
+	int height;
+	int quality;
+	int sharpen;
+	int watermark;
+	const char* format;
+} QBox_IMG_ViewOpts;
+
+void QBox_IMG_InitViewOpts(QBox_IMG_ViewOpts* opts);
+
+// remember to free the returned pointer when not needed anymore.
+char* QBox_IMG_ViewURL(QBox_IMG_ViewOpts* opts, const char* imgURL);
+
+/*============================================================================*/
+/* func QBox_IMG_InitMogrOpts, QBox_IMG_MogrifyURL */
 
 typedef struct _QBox_IMG_MogrOpts {
 	const char* thumbnail;

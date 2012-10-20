@@ -13,18 +13,25 @@
 
 #include "../../qbox/oauth2.h"
 
-static const char* TEST_TABLE = "c-test";
+static const char* TABLE = "c-test";
 
 void QBT_Do(QBox_Client* client);
 
-#define QBT_Fatalfln						\
+#define QBT_Fatalf						\
 	printf("\t[ERROR]%s:%d => ", __FILE__, __LINE__);	\
-	return _QBT_Printfln
+	return _QBT_Printf
 
-#define QBT_Infofln						\
+#define QBT_Infof						\
 	printf("\t[INFO]%s:%d => ", __FILE__, __LINE__);	\
-	_QBT_Printfln
+	_QBT_Printf
 
-int _QBT_Printfln(const char* fmt, ...);
+int _QBT_Printf(const char* fmt, ...);
+
+#define QBT_CheckErr(err)		\
+	do {				\
+		if (err.code != 200) {	\
+			QBT_Fatalf("code: %d, msg: %s\n", err.code, err.message);	\
+		}			\
+	}while (0)
 
 #endif

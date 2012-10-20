@@ -23,12 +23,12 @@ int main()
 	//QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
 	QBOX_ACCESS_KEY = "iN7NgwM31j4-BZacMjPrOQBs34UG1maYCAQmhdCV";
 	QBOX_SECRET_KEY = "6QTOr2Jg1gcZEWDQXKOGZh5PziC2MCV5KsntT70j";
-	QBOX_ACCESS_KEY = "qeCgeE4u5DGXr592MVxk-bTvdmw8mMOKc_Bz2WpT";
-	QBOX_SECRET_KEY = "xN_lbSbrrCRhbsuhlN-3KWq_Tefkiv0Ao5s-Uxyg";
-	QBOX_RS_HOST = "http://127.0.0.1:9400";
-	QBOX_IO_HOST = "http://127.0.0.1:9200";
-	QBOX_FS_HOST = "http://127.0.0.1:9300";
-	QBOX_UP_HOST = "http://127.0.0.1:11200";
+	//QBOX_ACCESS_KEY = "qeCgeE4u5DGXr592MVxk-bTvdmw8mMOKc_Bz2WpT";
+	//QBOX_SECRET_KEY = "xN_lbSbrrCRhbsuhlN-3KWq_Tefkiv0Ao5s-Uxyg";
+	//QBOX_RS_HOST = "http://127.0.0.1:9400";
+	//QBOX_IO_HOST = "http://127.0.0.1:9200";
+	//QBOX_FS_HOST = "http://127.0.0.1:9300";
+	//QBOX_UP_HOST = "http://127.0.0.1:11200";
 
 	QBox_Zero(client);
 	QBox_Global_Init(-1);
