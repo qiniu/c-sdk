@@ -91,8 +91,9 @@ QBox_Error QBox_RS_Unpublish(QBox_Client* self, const char* domain);
 QBox_Error QBox_RS_Delete(QBox_Client* self, const char* tableName, const char* key);
 
 /*============================================================================*/
-/* func QBox_RS_Drop */
+/* func QBox_RS_Create, QBox_RS_Drop */
 
+QBox_Error QBox_RS_Create(QBox_Client* self, const char* tableName);
 QBox_Error QBox_RS_Drop(QBox_Client* self, const char* tableName);
 
 /*============================================================================*/
