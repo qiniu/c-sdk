@@ -18,7 +18,7 @@ static const char* TABLE = "c-test";
 void QBT_Do(QBox_Client* client);
 
 #define QBT_Fatalf						\
-	printf("\t[ERROR]%s:%d => ", __FILE__, __LINE__);	\
+	printf("\t[FATAL]%s:%d => ", __FILE__, __LINE__);	\
 	return _QBT_Printf
 
 #define QBT_Infof						\

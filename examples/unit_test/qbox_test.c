@@ -45,12 +45,12 @@ DEFNODE(saveas);
 
 static void genTestCase()
 {
-	//ADDNODE(mkbucket);
-	//ADDNODE(imginfo);
-	//ADDNODE(exif);
+	ADDNODE(mkbucket);
+	ADDNODE(imginfo);
+	ADDNODE(exif);
 	ADDNODE(viewurl);
-	//ADDNODE(mogrifyurl);
-	//ADDNODE(saveas);
+	ADDNODE(mogrifyurl);
+	ADDNODE(saveas);
 }
 
 /*============================================================================*/

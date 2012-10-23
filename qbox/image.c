@@ -128,17 +128,6 @@ static char* _dirtycat2(char* dst, const char* src1st, const char* src2nd)
 	return dst;
 }
 
-char* _dirtycat1n(char* dst, int src)
-{
-	char buffer[12] = { 0 };
-	if (src < 0) {
-		return dst;
-	}
-
-	sprintf(buffer, "%d", src);
-	return _dirtycat(dst, buffer);
-}
-
 char* _dirtycat2n(char* dst, const char* src1st, int src2nd)
 {
 	char buffer[12] = { 0 };
@@ -163,7 +152,7 @@ char* QBox_IMG_ViewURL(QBox_IMG_ViewOpts* opts, const char* imgURL)
 	strcpy(ret, imgURL);
 	strcat(ret, view);
 
-	ret = _dirtycat1n(ret, opts->mode);
+	ret = _dirtycat2n(ret, "/", opts->mode);
 	ret = _dirtycat2n(ret, "/w/", opts->width);
 	ret = _dirtycat2n(ret, "/h/", opts->height);
 	ret = _dirtycat2n(ret, "/q/", opts->quality);

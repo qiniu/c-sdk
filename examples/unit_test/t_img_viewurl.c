@@ -47,7 +47,7 @@ int viewurl(QBox_Client* client)
 	opts.quality = 50;
 	url = QBox_IMG_ViewURL(&opts, IMG_URL);
 	QBT_Infof("url:%s\n", url);
-	if (strcmp(url, IMG_URL "?imageView/1/w/100/h/200/quality/50") != 0) {
+	if (strcmp(url, IMG_URL "?imageView/1/w/100/h/200/q/50") != 0) {
 		free(url);
 		QBT_Fatalf("unexpected!\n");
 	}
@@ -56,7 +56,7 @@ int viewurl(QBox_Client* client)
 	opts.format = "png";
 	url = QBox_IMG_ViewURL(&opts, IMG_URL);
 	QBT_Infof("url:%s\n", url);
-	if (strcmp(url, IMG_URL "?imageView/1/w/100/h/200/quality/50/format/png") != 0) {
+	if (strcmp(url, IMG_URL "?imageView/1/w/100/h/200/q/50/format/png") != 0) {
 		free(url);
 		QBT_Fatalf("unexpected!\n");
 	}
@@ -65,7 +65,7 @@ int viewurl(QBox_Client* client)
 	opts.sharpen = 60;
 	url = QBox_IMG_ViewURL(&opts, IMG_URL);
 	QBT_Infof("url:%s\n", url);
-	if (strcmp(url, IMG_URL "?imageView/1/w/100/h/200/quality/50/format/png/sharpen/60") != 0) {
+	if (strcmp(url, IMG_URL "?imageView/1/w/100/h/200/q/50/format/png/sharpen/60") != 0) {
 		free(url);
 		QBT_Fatalf("unexpected!\n");
 	}
@@ -74,7 +74,7 @@ int viewurl(QBox_Client* client)
 	opts.watermark = 1;
 	url = QBox_IMG_ViewURL(&opts, IMG_URL);
 	QBT_Infof("url:%s\n", url);
-	if (strcmp(url, IMG_URL "?imageView/1/w/100/h/200/quality/50/format/png/sharpen/60/watermark/1") != 0) {
+	if (strcmp(url, IMG_URL "?imageView/1/w/100/h/200/q/50/format/png/sharpen/60/watermark/1") != 0) {
 		free(url);
 		QBT_Fatalf("unexpected!\n");
 	}
