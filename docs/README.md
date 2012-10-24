@@ -31,6 +31,7 @@ SDK下载地址：<https://github.com/qiniu/c-sdk/tags>
 - [发布资源表](#rs-publish)
 - [取消资源表发布](#rs-unpublish)
 - [删除文件](#rs-delete)
+- [创建资源表](#rs_create)
 - [删除资源表](#rs-drop)
 - [断点续上传文件](#rs-put-blocks)
     - [术语](#rs-put-blocks-term)
@@ -38,6 +39,12 @@ SDK下载地址：<https://github.com/qiniu/c-sdk/tags>
     - [数据结构](#rs-put-blocks-data)
     - [API清单](#rs-put-blocks-api)
     - [示例代码](#rs-put-blocks-sample)
+- [图像处理](#img_processing)
+    - [查看图片属性信息](#img_info)
+    - [查看图片EXIF信息](#img_exif)
+    - [获取指定规格的缩略图预览地址](#img_view)
+    - [高级图像处理（缩略、裁剪、旋转、转化）](#img_mogr)
+    - [高级图像处理（缩略、裁剪、旋转、转化）并持久化](#img_saveas)
 
 <a name="overview"></a>
 
@@ -399,6 +406,16 @@ UpToken授权的主要用途是由业务服务器对上传端进行授权，以�
     /* 所属头文件：rs.h */
 
     QBox_Error QBox_RS_Delete(QBox_Client* self, const char* tableName, const char* key);
+
+
+<a name="rs-create"></a>
+## 创建资源表
+
+调用`QBox_RS_Create`函数可以删除整个资源表。该函数原型如下：
+
+	/* 所属头文件：rs.h */
+
+	QBox_Error QBox_RS_Create(QBox_Client* self, const char* tableName);
 
 
 <a name="rs-drop"></a>
