@@ -31,6 +31,7 @@ SDK下载地址：<https://github.com/qiniu/c-sdk/tags>
 - [发布资源表](#rs-publish)
 - [取消资源表发布](#rs-unpublish)
 - [删除文件](#rs-delete)
+- [创建资源表](#rs-create)
 - [删除资源表](#rs-drop)
 - [断点续上传文件](#rs-put-blocks)
     - [术语](#rs-put-blocks-term)
@@ -38,6 +39,12 @@ SDK下载地址：<https://github.com/qiniu/c-sdk/tags>
     - [数据结构](#rs-put-blocks-data)
     - [API清单](#rs-put-blocks-api)
     - [示例代码](#rs-put-blocks-sample)
+- [图像处理](#img-processing)
+    - [查看图片属性信息](#img-info)
+    - [查看图片EXIF信息](#img-exif)
+    - [获取指定规格的缩略图预览地址](#img-view)
+    - [高级图像处理（缩略、裁剪、旋转、转化）](#img-mogr)
+    - [高级图像处理（缩略、裁剪、旋转、转化）并持久化](#img-saveas)
 
 <a name="overview"></a>
 
@@ -401,6 +408,16 @@ UpToken授权的主要用途是由业务服务器对上传端进行授权，以�
     QBox_Error QBox_RS_Delete(QBox_Client* self, const char* tableName, const char* key);
 
 
+<a name="rs-create"></a>
+## 创建资源表
+
+调用`QBox_RS_Create`函数可以删除整个资源表。该函数原型如下：
+
+	/* 所属头文件：rs.h */
+
+	QBox_Error QBox_RS_Create(QBox_Client* self, const char* tableName);
+
+
 <a name="rs-drop"></a>
 
 ## 删除资源表
@@ -727,3 +744,138 @@ UpToken授权的主要用途是由业务服务器对上传端进行授权，以�
         QBox_UP_Progress_Release(prog);
     }
 
+
+<a name="img-processing"></a>
+
+## 图像处理
+
+<a name="img-info"></a>
+
+###查看图片属性信息
+
+调用`QBox_IMG_Info`函数可以获得图片的属性信息，相关结构定义和函数原型如下：
+
+	/* 所属头文件：image.h */
+
+	typedef struct _QBox_IMG_InfoRet {
+		const char* format;	// "png", "jpeg", "gif", "bmp", etc.
+		const char* colorModel;	// "palette16", "ycbcr", etc.
+		QBox_Int64 width;
+		QBox_Int64 height;
+	} QBox_IMG_InfoRet;
+
+	QBox_Error QBox_IMG_Info(QBox_Client* self, QBox_IMG_InfoRet* ret, const char* imgURL);
+
+其中获得的属性信息通过`QBox_IMG_InfoRet`结构返回。
+
+<a name="img-exif"></a>
+
+###查看图片EXIF信息
+
+调用`QBox_IMG_Exif`函数可以获得图片的EXIF信息，相关结构定义和函数原型如下：
+
+	/* 所属头文件：image.h */
+
+	typedef struct _QBox_IMG_ExifInfo {
+		char* name;
+		char* val;
+		QBox_Int64  type;
+	} QBox_IMG_ExifInfo;
+	
+	typedef struct _QBox_IMG_ExifRet {
+		QBox_Uint32 size;
+		QBox_IMG_ExifInfo* info;
+	} QBox_IMG_ExifRet;
+	
+	QBox_Error QBox_IMG_Exif(
+			QBox_Client* client, QBox_IMG_ExifRet* ret, const char* imgURL);
+	
+	QBox_Error QBox_IMG_ExifRet_Release(QBox_IMG_ExifRet ret);
+
+其中`QBox_IMG_ExifInfo`定义了一个EXIF信息的结构，获得的所有EXIF信息通过`QBox_IMG_ExifRet`结构返回。
+
+`QBox_IMG_ExifRet`结构中的size表示EXIF信息的个数，info指向第一个EXIF信息的内存地址。
+
+注意info所指向的内存由`QBox_IMG_Exif`内部分配，因此在使用完之后需要调用`QBox_IMG_ExifRet_Release`来释放。
+
+<a name="img-view"></a>
+
+###获取指定规格的缩略图预览地址
+
+调用`QBox_IMG_ViewURL`来获得缩略图预览地址，相关结构定义和函数原型如下：
+
+	/* 所属头文件：image.h */
+
+	typedef struct _QBox_IMG_ViewOpts {
+		int mode;
+		int width;
+		int height;
+		int quality;
+		int sharpen;
+		int watermark;
+		const char* format;
+	} QBox_IMG_ViewOpts;
+	
+	void QBox_IMG_InitViewOpts(QBox_IMG_ViewOpts* opts);
+
+	// remember to free the returned pointer when not needed anymore.
+	char* QBox_IMG_ViewURL(QBox_IMG_ViewOpts* opts, const char* imgURL);
+	
+其中`QBox_IMG_ViewOpts`用于指定缩略图的规格，具体参数含义见：[http://docs.qiniutek.com/v3/api/foimg/#fo-imageView](http://docs.qiniutek.com/v3/api/foimg/#fo-imageView)。
+
+函数`QBox_IMG_InitViewOpts`用于初始化指定的`QBox_IMG_ViewOpts`结构体。
+
+如果希望忽略`QBox_IMG_ViewOpts`中的某些字段，可以将其赋值为-1，`QBox_IMG_InitViewOpts`函数的作用就是忽略所有字段。
+
+注意，`QBox_IMG_ViewURL`返回的char*，其内存空间是由`QBox_IMG_ViewURL`内部分配的，在使用完之后需要调用`free`函数来释放。
+
+<a name="img-mogr"></a>
+
+###高级图像处理（缩略、裁剪、旋转、转化）
+
+调用`QBox_IMG_MogrifyURL`来获得图像处理后的访问地址，相关结构定义和函数原型如下：
+
+	/* 所属头文件：image.h */
+
+	typedef struct _QBox_IMG_MogrOpts {
+		const char* thumbnail;
+		const char* gravity;
+		const char* crop;
+		const char* quality;
+		const char* rotate;
+		const char* format;
+		QBox_Bool auto_orient;
+	} QBox_IMG_MogrOpts;
+	
+	void QBox_IMG_InitMogrOpts(QBox_IMG_MogrOpts* opts);
+	
+	// remember to free the returned pointer when not needed anymore.
+	char* QBox_IMG_MogrifyURL(QBox_IMG_MogrOpts* opts, const char* imgURL);
+
+其中`QBox_IMG_MogrOpts`用于指定图像处理的参数，具体参数含义见：[http://docs.qiniutek.com/v3/api/foimg/#fo-imageMogr](http://docs.qiniutek.com/v3/api/foimg/#fo-imageMogr)。
+
+函数`QBox_IMG_InitMogrOpts`用于初始化指定的`QBox_IMG_MogrOpts`结构体。
+
+如果希望忽略`QBox_IMG_MogrOpts`中的某些字段，可以将其赋值为NULL或""，`QBox_IMG_InitMogrOpts`函数的作用就是忽略所有字段。
+
+注意，`QBox_IMG_MogrifyURL`返回的char*，其内存空间是由`QBox_IMG_MogrifyURL`内部分配的，在使用完之后需要调用`free`函数来释放。
+
+<a name="img-saveas"></a>
+
+###高级图像处理（缩略、裁剪、旋转、转化）并持久化
+
+调用`QBox_IMG_SaveAs`来进行图像处理并持久化，相关结构定义和函数原型如下：
+
+	/* 所属头文件：image.h */
+
+	typedef struct _QBox_IMG_SaveAsRet {
+		const char* hash;
+	} QBox_IMG_SaveAsRet;
+	
+	QBox_Error QBox_IMG_SaveAs(QBox_Client* self, QBox_IMG_SaveAsRet* ret, 
+			QBox_IMG_MogrOpts* opts, const char* imgURL,
+			const char* tableName, const char* key);
+
+其中`QBox_IMG_SaveAsRet`定义了操作成功时的返回内容，它包含一个char*类型的hash值。
+
+这里的`QBox_IMG_MogrOpts`与上一节的`QBox_IMG_MogrOpts`含义一致。
