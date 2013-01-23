@@ -85,7 +85,7 @@ QBox_Error QBox_RS_Put(
 	}
 
 	mimeEncoded = QBox_String_Encode(mimeType);
-	url = QBox_String_Concat(QBOX_IO_HOST, "/rs-put/", entryURIEncoded, "/mime/", mimeEncoded, NULL);
+	url = QBox_String_Concat(QBOX_UP_HOST, "/rs-put/", entryURIEncoded, "/mime/", mimeEncoded, NULL);
 	free(mimeEncoded);
 	free(entryURIEncoded);
 
@@ -123,6 +123,46 @@ QBox_Error QBox_RS_PutFile(
 	fseek(fp, 0, SEEK_SET);
 	err = QBox_RS_Put(self, ret, tableName, key, mimeType, QBox_FILE_Reader(fp), fsize, customMeta);
 	fclose(fp);
+	return err;
+}
+
+QBox_Error QBox_RS_PutStream(
+	QBox_Client* self, QBox_RS_PutRet* ret, const char* tableName, const char* key,
+	const char* mimeType, const char* stream, int bytes, const char* customMeta)
+{
+	QBox_Error err;
+	cJSON* root;
+
+	char* entryURI = QBox_String_Concat3(tableName, ":", key);
+	char* entryURIEncoded = QBox_String_Encode(entryURI);
+	char* customMetaEncoded;
+	char* mimeEncoded;
+	char* url;
+	char* url2;
+
+	if (mimeType == NULL) {
+		mimeType = "application/octet-stream";
+	}
+
+	mimeEncoded = QBox_String_Encode(mimeType);
+	url = QBox_String_Concat(QBOX_UP_HOST, "/rs-put/", entryURIEncoded, "/mime/", mimeEncoded, NULL);
+	free(mimeEncoded);
+	free(entryURIEncoded);
+
+	if (customMeta != NULL && *customMeta != '\0') {
+		customMetaEncoded = QBox_String_Encode(customMeta);
+		url2 = QBox_String_Concat3(url, "/meta/", customMetaEncoded);
+		free(url);
+		free(customMetaEncoded);
+		url = url2;
+	}
+
+	err = QBox_Client_CallWithBuffer(self, &root, url, stream, bytes);
+	free(url);
+
+	if (err.code == 200) {
+		ret->hash = QBox_Json_GetString(root, "hash", NULL);
+	}
 	return err;
 }
 

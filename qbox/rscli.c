@@ -102,3 +102,55 @@ QBox_Error QBox_RSCli_PutFile(
 
 /*============================================================================*/
 
+QBox_Error QBox_RSCli_PutStream( 
+    QBox_Buffer* resp, const char* url, const char* tableName, const char* key, 
+    const char* mimeType, const char* pStream, int bytes, const char* customMeta, const char* callbackParams)
+{
+	char* entryURI;
+	char* entryURIEncoded;
+	char* mimeTypeEncoded;
+	char* customMetaEncoded;
+	char* action;
+	char* action2;
+	CURL* curl;
+	QBox_Error err;
+
+	struct curl_httppost* formpost = NULL;
+	struct curl_httppost* lastptr = NULL;
+
+	if (mimeType == NULL) {
+		mimeType = "application/octet-stream";
+	}
+
+	mimeTypeEncoded = QBox_String_Encode(mimeType);
+
+	entryURI = QBox_String_Concat3(tableName, ":", key);
+	entryURIEncoded = QBox_String_Encode(entryURI);
+	free(entryURI);
+
+	action = QBox_String_Concat("/rs-put/", entryURIEncoded, "/mimeType/", mimeTypeEncoded, NULL);
+	free(entryURIEncoded);
+	free(mimeTypeEncoded);
+
+	if (customMeta != NULL && *customMeta != '\0') {
+		customMetaEncoded = QBox_String_Encode(customMeta);
+		action2 = QBox_String_Concat3(action, "/meta/", customMetaEncoded);
+		free(action);
+		free(customMetaEncoded);
+		action = action2;
+	}
+
+	curl = curl_easy_init();
+
+	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "action", CURLFORM_COPYCONTENTS, action, CURLFORM_END);
+	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "file", CURLFORM_BUFFER, "content", CURLFORM_BUFFERPTR, pStream, CURLFORM_BUFFERLENGTH, bytes, CURLFORM_END);
+	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "params", CURLFORM_COPYCONTENTS, callbackParams, CURLFORM_END);
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+
+	err = QBox_RSCli_call(curl, resp);
+
+	free(action);
+	curl_formfree(formpost);
+	return err;
+}
