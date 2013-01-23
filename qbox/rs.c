@@ -85,7 +85,7 @@ QBox_Error QBox_RS_Put(
 	}
 
 	mimeEncoded = QBox_String_Encode(mimeType);
-	url = QBox_String_Concat(QBOX_IO_HOST, "/rs-put/", entryURIEncoded, "/mime/", mimeEncoded, NULL);
+	url = QBox_String_Concat(QBOX_UP_HOST, "/rs-put/", entryURIEncoded, "/mime/", mimeEncoded, NULL);
 	free(mimeEncoded);
 	free(entryURIEncoded);
 
