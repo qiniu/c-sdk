@@ -13,10 +13,10 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Automated.h>
 #include <CUnit/TestDB.h>
-#include "../../c-sdk-2.2.0/qbox/base.h"
-#include "../../c-sdk-2.2.0/qbox/rs.h"
-#include "../../c-sdk-2.2.0/qbox/rscli.h"
-#include "../../c-sdk-2.2.0/qbox/oauth2_passwd.h"
+#include "..//qbox/base.h"
+#include "..//qbox/rs.h"
+#include "..//qbox/rscli.h"
+#include "..//qbox/oauth2_passwd.h"
 #include "c_unit_test_main.h"
 
 

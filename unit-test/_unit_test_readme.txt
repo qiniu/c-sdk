@@ -11,3 +11,6 @@
   i  lcov --directory .   --capture --output-file rs_app.info
   ii genhtml -o result rs_app.info
   生成的文件在result中查看
+5.AddTestsUpDemoResumable用例中
+  test_by_up_demo_resumable_err18测试会占用大量时间，可以在下面代码处注释掉
+  {"Testing up_resumable expecting err18:", test_by_up_demo_resumable_err18}

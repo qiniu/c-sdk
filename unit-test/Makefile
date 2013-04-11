@@ -1,15 +1,15 @@
 SOURCE_FILES=\
-	     ../../c-sdk-2.2.0/b64/urlsafe_b64.c\
-	     ../../c-sdk-2.2.0/cJSON/cJSON.c\
-	     ../../c-sdk-2.2.0/qbox/conf.c\
-	     ../../c-sdk-2.2.0/qbox/base.c\
-	     ../../c-sdk-2.2.0/qbox/oauth2.c\
-	     ../../c-sdk-2.2.0/qbox/oauth2_digest.c\
-	     ../../c-sdk-2.2.0/qbox/rs.c\
-	     ../../c-sdk-2.2.0/qbox/rscli.c\
-	     ../../c-sdk-2.2.0/qbox/image.c\
-	     ../../c-sdk-2.2.0/qbox/up.c\
-	     ../../c-sdk-2.2.0/qbox/*.c\
+	     ../b64/urlsafe_b64.c\
+	     ../cJSON/cJSON.c\
+	     ../qbox/conf.c\
+	     ../qbox/base.c\
+	     ../qbox/oauth2.c\
+	     ../qbox/oauth2_digest.c\
+	     ../qbox/rs.c\
+	     ../qbox/rscli.c\
+	     ../qbox/image.c\
+	     ../qbox/up.c\
+	     ../qbox/*.c\
 	     *.c
 
 all: $(SOURCE_FILES)

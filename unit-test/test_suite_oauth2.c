@@ -15,10 +15,10 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Automated.h>
 #include <CUnit/TestDB.h>
-#include "../../c-sdk-2.2.0/qbox/base.h"
-#include "../../c-sdk-2.2.0/qbox/rs.h"
-#include "../../c-sdk-2.2.0/qbox/oauth2.h"
-#include "../../c-sdk-2.2.0/cJSON/cJSON.h"
+#include "..//qbox/base.h"
+#include "..//qbox/rs.h"
+#include "..//qbox/oauth2.h"
+#include "..//cJSON/cJSON.h"
 #include "c_unit_test_main.h"
 
 

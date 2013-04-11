@@ -13,8 +13,8 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Automated.h>
 #include <CUnit/TestDB.h>
-#include "../../c-sdk-2.2.0/qbox/rs.h"
-#include "../../c-sdk-2.2.0/qbox/base.h"
+#include "..//qbox/rs.h"
+#include "..//qbox/base.h"
 #include "c_unit_test_main.h"
 
 
@@ -98,7 +98,8 @@ void test_QBox_RS_Put(){
 	QBox_RS_Delete(&client,tableName,key);
     err=QBox_RS_Put(&client,ret,tableName,key,NULL,source,size,NULL);
     //CU_ASSERT_EQUAL(err.code,200);
-    CU_ASSERT_EQUAL(err.code,631);
+    //printf("\n\n%d\n",err.code);
+    CU_ASSERT_EQUAL(err.code,599);
     //printf("\n%d\n%s\n",err.code,err.message);
     //*/
     //*
