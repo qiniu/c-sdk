@@ -1,0 +1,388 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - rs_app.info - c-sdk-2.2.0/qbox/base.c</title>
+  <link rel="stylesheet" type="text/css" href="../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../index.html">top level</a> - <a href="index.html">c-sdk-2.2.0/qbox</a> - base.c<span style="font-size: 80%;"> (source / <a href="base.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">rs_app.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">145</td>
+            <td class="headerCovTableEntry">145</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2013-04-11</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">21</td>
+            <td class="headerCovTableEntry">21</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td class="headerItem">Branches:</td>
+            <td class="headerCovTableEntry">47</td>
+            <td class="headerCovTableEntry">48</td>
+            <td class="headerCovTableEntryHi">97.9 %</td>
+          </tr>
+          <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">           Branch data     Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>                :            : /*</a>
+<span class="lineNum">       2 </span>                :            :  ============================================================================
+<span class="lineNum">       3 </span>                :            :  Name        : base.c
+<span class="lineNum">       4 </span>                :            :  Author      : Qiniu Developers
+<span class="lineNum">       5 </span>                :            :  Version     : 1.0.0.0
+<span class="lineNum">       6 </span>                :            :  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
+<span class="lineNum">       7 </span>                :            :  Description : 
+<span class="lineNum">       8 </span>                :            :  ============================================================================
+<span class="lineNum">       9 </span>                :            :  */
+<span class="lineNum">      10 </span>                :            : 
+<span class="lineNum">      11 </span>                :            : #include &quot;base.h&quot;
+<span class="lineNum">      12 </span>                :            : #include &quot;../b64/urlsafe_b64.h&quot;
+<span class="lineNum">      13 </span>                :            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      14 </span>                :            : #include &lt;assert.h&gt;
+<span class="lineNum">      15 </span>                :            : #include &lt;stdarg.h&gt;
+<span class="lineNum">      16 </span>                :            : #include &lt;string.h&gt;
+<span class="lineNum">      17 </span>                :            : #include &lt;time.h&gt;
+<span class="lineNum">      18 </span>                :            : 
+<span class="lineNum">      19 </span>                :            : /*============================================================================*/
+<span class="lineNum">      20 </span>                :            : /* type QBox_Count */
+<span class="lineNum">      21 </span>                :            : 
+<span class="lineNum">      22 </span>                :            : #if defined(_WIN32)
+<span class="lineNum">      23 </span>                :            : 
+<span class="lineNum">      24 </span>                :            : QBox_Count QBox_Count_Inc(QBox_Count* self)
+<span class="lineNum">      25 </span>                :            : {
+<span class="lineNum">      26 </span>                :            :         return InterlockedIncrement(self);
+<span class="lineNum">      27 </span>                :            : }
+<span class="lineNum">      28 </span>                :            : 
+<span class="lineNum">      29 </span>                :            : QBox_Count QBox_Count_Dec(QBox_Count* self)
+<span class="lineNum">      30 </span>                :            : {
+<span class="lineNum">      31 </span>                :            :         return InterlockedDecrement(self);
+<span class="lineNum">      32 </span>                :            : }
+<span class="lineNum">      33 </span>                :            : 
+<a name="34"><span class="lineNum">      34 </span>                :            : #else</a>
+<span class="lineNum">      35 </span>                :            : 
+<span class="lineNum">      36 </span>                :<span class="lineCov">          5 : QBox_Count QBox_Count_Inc(QBox_Count* self)</span>
+<span class="lineNum">      37 </span>                :            : {
+<span class="lineNum">      38 </span>                :<span class="lineCov">          5 :         return __sync_add_and_fetch(self, 1);</span>
+<a name="39"><span class="lineNum">      39 </span>                :            : }</a>
+<span class="lineNum">      40 </span>                :            : 
+<span class="lineNum">      41 </span>                :<span class="lineCov">         13 : QBox_Count QBox_Count_Dec(QBox_Count* self)</span>
+<span class="lineNum">      42 </span>                :            : {
+<span class="lineNum">      43 </span>                :<span class="lineCov">         13 :     return __sync_sub_and_fetch(self, 1);</span>
+<span class="lineNum">      44 </span>                :            : }
+<span class="lineNum">      45 </span>                :            : 
+<span class="lineNum">      46 </span>                :            : #endif
+<span class="lineNum">      47 </span>                :            : 
+<span class="lineNum">      48 </span>                :            : /*============================================================================*/
+<a name="49"><span class="lineNum">      49 </span>                :            : /* func QBox_Seconds */</a>
+<span class="lineNum">      50 </span>                :            : 
+<span class="lineNum">      51 </span>                :<span class="lineCov">         29 : QBox_Int64 QBox_Seconds()</span>
+<span class="lineNum">      52 </span>                :            : {
+<span class="lineNum">      53 </span>                :<span class="lineCov">         29 :         return (QBox_Int64)time(NULL);</span>
+<span class="lineNum">      54 </span>                :            : }
+<span class="lineNum">      55 </span>                :            : 
+<span class="lineNum">      56 </span>                :            : /*============================================================================*/
+<a name="57"><span class="lineNum">      57 </span>                :            : /* func QBox_QueryEscape */</a>
+<span class="lineNum">      58 </span>                :            : 
+<span class="lineNum">      59 </span>                :<span class="lineCov">        272 : static int QBox_shouldEscape(int c)</span>
+<span class="lineNum">      60 </span>                :            : {
+<span class="lineNum">      61 </span>[<span class="branchCov" title="Branch 0 was taken 224 times"> + </span><span class="branchCov" title="Branch 1 was taken 48 times"> + </span>][<span class="branchCov" title="Branch 2 was taken 220 times"> + </span><span class="branchCov" title="Branch 3 was taken 4 times"> + </span>]:<span class="lineCov">        272 :         if (('A' &lt;= c &amp;&amp; c &lt;= 'Z') || ('a' &lt;= c &amp;&amp; c &lt;= 'z') || ('0' &lt;= c &amp;&amp; c &lt;= '9')) {</span>
+<span class="lineNum">         </span>[<span class="branchCov" title="Branch 4 was taken 220 times"> + </span><span class="branchCov" title="Branch 5 was taken 48 times"> + </span>][<span class="branchCov" title="Branch 6 was taken 4 times"> + </span><span class="branchCov" title="Branch 7 was taken 216 times"> + </span>]
+<span class="lineNum">         </span>[<span class="branchCov" title="Branch 8 was taken 28 times"> + </span><span class="branchCov" title="Branch 9 was taken 24 times"> + </span>][<span class="branchCov" title="Branch 10 was taken 8 times"> + </span><span class="branchCov" title="Branch 11 was taken 20 times"> + </span>]
+<span class="lineNum">      62 </span>                :<span class="lineCov">        228 :                 return 0;</span>
+<span class="lineNum">      63 </span>                :            :         }
+<span class="lineNum">      64 </span>                :            : 
+<span class="lineNum">      65 </span>        [<span class="branchCov" title="Branch 0 was taken 20 times"> + </span><span class="branchCov" title="Branch 1 was taken 24 times"> + </span>]:<span class="lineCov">         44 :         switch (c) {</span>
+<span class="lineNum">      66 </span>                :            :         case '-': case '_': case '.': case '!': case '~':
+<span class="lineNum">      67 </span>                :            :         case '*': case '\'': case '(': case ')':
+<span class="lineNum">      68 </span>                :<span class="lineCov">         20 :                 return 0;</span>
+<span class="lineNum">      69 </span>                :            :         }
+<span class="lineNum">      70 </span>                :            : 
+<span class="lineNum">      71 </span>                :<span class="lineCov">        272 :         return 1;</span>
+<span class="lineNum">      72 </span>                :            : }
+<span class="lineNum">      73 </span>                :            : 
+<a name="74"><span class="lineNum">      74 </span>                :            : static const char QBox_hexTable[] = &quot;0123456789ABCDEF&quot;; </a>
+<span class="lineNum">      75 </span>                :            : 
+<span class="lineNum">      76 </span>                :<span class="lineCov">         18 : char* QBox_QueryEscape(const char* s, QBox_Bool* fesc)</span>
+<span class="lineNum">      77 </span>                :            : {
+<span class="lineNum">      78 </span>                :<span class="lineCov">         18 :         int spaceCount = 0;</span>
+<span class="lineNum">      79 </span>                :<span class="lineCov">         18 :         int hexCount = 0;</span>
+<span class="lineNum">      80 </span>                :<span class="lineCov">         18 :         int i, j, len = strlen(s);</span>
+<span class="lineNum">      81 </span>                :            :         int c;
+<span class="lineNum">      82 </span>                :            :         char* t;
+<span class="lineNum">      83 </span>                :            : 
+<span class="lineNum">      84 </span>        [<span class="branchCov" title="Branch 0 was taken 150 times"> + </span><span class="branchCov" title="Branch 1 was taken 18 times"> + </span>]:<span class="lineCov">        168 :         for (i = 0; i &lt; len; i++) {</span>
+<span class="lineNum">      85 </span>                :<span class="lineCov">        150 :                 c = s[i];</span>
+<span class="lineNum">      86 </span>        [<span class="branchCov" title="Branch 1 was taken 12 times"> + </span><span class="branchCov" title="Branch 2 was taken 138 times"> + </span>]:<span class="lineCov">        150 :                 if (QBox_shouldEscape(c)) {</span>
+<span class="lineNum">      87 </span>        [<span class="branchCov" title="Branch 0 was taken 4 times"> + </span><span class="branchCov" title="Branch 1 was taken 8 times"> + </span>]:<span class="lineCov">         12 :                         if (c == ' ') {</span>
+<span class="lineNum">      88 </span>                :<span class="lineCov">          4 :                                 spaceCount++;</span>
+<span class="lineNum">      89 </span>                :            :                         } else {
+<span class="lineNum">      90 </span>                :<span class="lineCov">          8 :                                 hexCount++;</span>
+<span class="lineNum">      91 </span>                :            :                         }
+<span class="lineNum">      92 </span>                :            :                 }
+<span class="lineNum">      93 </span>                :            :         }
+<span class="lineNum">      94 </span>                :            : 
+<span class="lineNum">      95 </span>[<span class="branchCov" title="Branch 0 was taken 16 times"> + </span><span class="branchCov" title="Branch 1 was taken 2 times"> + </span>][<span class="branchCov" title="Branch 2 was taken 8 times"> + </span><span class="branchCov" title="Branch 3 was taken 8 times"> + </span>]:<span class="lineCov">         18 :         if (spaceCount == 0 &amp;&amp; hexCount == 0) {</span>
+<span class="lineNum">      96 </span>                :<span class="lineCov">          8 :                 *fesc = QBox_False;</span>
+<span class="lineNum">      97 </span>                :<span class="lineCov">          8 :                 return (char*)s;</span>
+<span class="lineNum">      98 </span>                :            :         }
+<span class="lineNum">      99 </span>                :            : 
+<span class="lineNum">     100 </span>                :<span class="lineCov">         10 :         t = (char*)malloc(len + 2*hexCount + 1);</span>
+<span class="lineNum">     101 </span>                :<span class="lineCov">         10 :         j = 0;</span>
+<span class="lineNum">     102 </span>        [<span class="branchCov" title="Branch 0 was taken 122 times"> + </span><span class="branchCov" title="Branch 1 was taken 10 times"> + </span>]:<span class="lineCov">        132 :         for (i = 0; i &lt; len; i++) {</span>
+<span class="lineNum">     103 </span>                :<span class="lineCov">        122 :                 c = s[i];</span>
+<span class="lineNum">     104 </span>        [<span class="branchCov" title="Branch 1 was taken 12 times"> + </span><span class="branchCov" title="Branch 2 was taken 110 times"> + </span>]:<span class="lineCov">        122 :                 if (QBox_shouldEscape(c)) {</span>
+<span class="lineNum">     105 </span>        [<span class="branchCov" title="Branch 0 was taken 4 times"> + </span><span class="branchCov" title="Branch 1 was taken 8 times"> + </span>]:<span class="lineCov">         12 :                         if (c == ' ') {</span>
+<span class="lineNum">     106 </span>                :<span class="lineCov">          4 :                                 t[j] = '+';</span>
+<span class="lineNum">     107 </span>                :<span class="lineCov">          4 :                                 j++;</span>
+<span class="lineNum">     108 </span>                :            :                         } else {
+<span class="lineNum">     109 </span>                :<span class="lineCov">          8 :                                 t[j] = '%';</span>
+<span class="lineNum">     110 </span>                :<span class="lineCov">          8 :                                 t[j+1] = QBox_hexTable[c&gt;&gt;4];</span>
+<span class="lineNum">     111 </span>                :<span class="lineCov">          8 :                                 t[j+2] = QBox_hexTable[c&amp;15];</span>
+<span class="lineNum">     112 </span>                :<span class="lineCov">          8 :                                 j += 3;</span>
+<span class="lineNum">     113 </span>                :            :                         }
+<span class="lineNum">     114 </span>                :            :                 } else {
+<span class="lineNum">     115 </span>                :<span class="lineCov">        110 :                         t[j] = s[i];</span>
+<span class="lineNum">     116 </span>                :<span class="lineCov">        110 :                         j++;</span>
+<span class="lineNum">     117 </span>                :            :                 }
+<span class="lineNum">     118 </span>                :            :         }
+<span class="lineNum">     119 </span>                :<span class="lineCov">         10 :         t[j] = '\0';</span>
+<span class="lineNum">     120 </span>                :<span class="lineCov">         10 :         *fesc = QBox_True;</span>
+<span class="lineNum">     121 </span>                :<span class="lineCov">         18 :         return t;</span>
+<span class="lineNum">     122 </span>                :            : }
+<span class="lineNum">     123 </span>                :            : 
+<span class="lineNum">     124 </span>                :            : /*============================================================================*/
+<a name="125"><span class="lineNum">     125 </span>                :            : /* func QBox_String_Concat */</a>
+<span class="lineNum">     126 </span>                :            : 
+<span class="lineNum">     127 </span>                :<span class="lineCov">         13 : char* QBox_String_Concat2(const char* s1, const char* s2)</span>
+<span class="lineNum">     128 </span>                :            : {
+<span class="lineNum">     129 </span>                :<span class="lineCov">         13 :         size_t len1 = strlen(s1);</span>
+<span class="lineNum">     130 </span>                :<span class="lineCov">         13 :         size_t len2 = strlen(s2);</span>
+<span class="lineNum">     131 </span>                :<span class="lineCov">         13 :         char* p = (char*)malloc(len1 + len2 + 1);</span>
+<span class="lineNum">     132 </span>                :<span class="lineCov">         13 :         memcpy(p, s1, len1);</span>
+<span class="lineNum">     133 </span>                :<span class="lineCov">         13 :         memcpy(p + len1, s2, len2);</span>
+<span class="lineNum">     134 </span>                :<span class="lineCov">         13 :         p[len1 + len2] = '\0';</span>
+<span class="lineNum">     135 </span>                :<span class="lineCov">         13 :         return p;</span>
+<a name="136"><span class="lineNum">     136 </span>                :            : }</a>
+<span class="lineNum">     137 </span>                :            : 
+<span class="lineNum">     138 </span>                :<span class="lineCov">        169 : char* QBox_String_Concat3(const char* s1, const char* s2, const char* s3)</span>
+<span class="lineNum">     139 </span>                :            : {
+<span class="lineNum">     140 </span>                :<span class="lineCov">        169 :         size_t len1 = strlen(s1);</span>
+<span class="lineNum">     141 </span>                :<span class="lineCov">        169 :         size_t len2 = strlen(s2);</span>
+<span class="lineNum">     142 </span>                :<span class="lineCov">        169 :         size_t len3 = strlen(s3);</span>
+<span class="lineNum">     143 </span>                :<span class="lineCov">        169 :         char* p = (char*)malloc(len1 + len2 + len3 + 1);</span>
+<span class="lineNum">     144 </span>                :<span class="lineCov">        169 :         memcpy(p, s1, len1);</span>
+<span class="lineNum">     145 </span>                :<span class="lineCov">        169 :         memcpy(p + len1, s2, len2);</span>
+<span class="lineNum">     146 </span>                :<span class="lineCov">        169 :         memcpy(p + len1 + len2, s3, len3);</span>
+<span class="lineNum">     147 </span>                :<span class="lineCov">        169 :         p[len1 + len2 + len3] = '\0';</span>
+<span class="lineNum">     148 </span>                :<span class="lineCov">        169 :         return p;</span>
+<a name="149"><span class="lineNum">     149 </span>                :            : }</a>
+<span class="lineNum">     150 </span>                :            : 
+<span class="lineNum">     151 </span>                :<span class="lineCov">        562 : char* QBox_String_Concat(const char* s1, ...)</span>
+<span class="lineNum">     152 </span>                :            : {
+<span class="lineNum">     153 </span>                :            :         va_list ap;
+<span class="lineNum">     154 </span>                :            :         char* p;
+<span class="lineNum">     155 </span>                :            :         const char* s;
+<span class="lineNum">     156 </span>                :<span class="lineCov">        562 :         size_t len, slen, len1 = strlen(s1);</span>
+<span class="lineNum">     157 </span>                :            : 
+<span class="lineNum">     158 </span>                :<span class="lineCov">        562 :         va_start(ap, s1);</span>
+<span class="lineNum">     159 </span>                :<span class="lineCov">        562 :         len = len1;</span>
+<span class="lineNum">     160 </span>                :            :         for (;;) {
+<span class="lineNum">     161 </span>        [<span class="branchCov" title="Branch 0 was taken 2167 times"> + </span><span class="branchCov" title="Branch 1 was taken 39 times"> + </span>]:<span class="lineCov">       2206 :                 s = va_arg(ap, const char*);</span>
+<span class="lineNum">     162 </span>        [<span class="branchCov" title="Branch 0 was taken 562 times"> + </span><span class="branchCov" title="Branch 1 was taken 1644 times"> + </span>]:<span class="lineCov">       2206 :                 if (s == NULL) {</span>
+<span class="lineNum">     163 </span>                :<span class="lineCov">        562 :                         break;</span>
+<span class="lineNum">     164 </span>                :            :                 }
+<span class="lineNum">     165 </span>                :<span class="lineCov">       1644 :                 len += strlen(s);</span>
+<span class="lineNum">     166 </span>                :<span class="lineCov">       1644 :         }</span>
+<span class="lineNum">     167 </span>                :            : 
+<span class="lineNum">     168 </span>                :<span class="lineCov">        562 :         p = (char*)malloc(len + 1);</span>
+<span class="lineNum">     169 </span>                :            : 
+<span class="lineNum">     170 </span>                :<span class="lineCov">        562 :         va_start(ap, s1);</span>
+<span class="lineNum">     171 </span>                :<span class="lineCov">        562 :         memcpy(p, s1, len1);</span>
+<span class="lineNum">     172 </span>                :<span class="lineCov">        562 :         len = len1;</span>
+<span class="lineNum">     173 </span>                :            :         for (;;) {
+<span class="lineNum">     174 </span>        [<span class="branchCov" title="Branch 0 was taken 2167 times"> + </span><span class="branchCov" title="Branch 1 was taken 39 times"> + </span>]:<span class="lineCov">       2206 :                 s = va_arg(ap, const char*);</span>
+<span class="lineNum">     175 </span>        [<span class="branchCov" title="Branch 0 was taken 562 times"> + </span><span class="branchCov" title="Branch 1 was taken 1644 times"> + </span>]:<span class="lineCov">       2206 :                 if (s == NULL) {</span>
+<span class="lineNum">     176 </span>                :<span class="lineCov">        562 :                         break;</span>
+<span class="lineNum">     177 </span>                :            :                 }
+<span class="lineNum">     178 </span>                :<span class="lineCov">       1644 :                 slen = strlen(s);</span>
+<span class="lineNum">     179 </span>                :<span class="lineCov">       1644 :                 memcpy(p + len, s, slen);</span>
+<span class="lineNum">     180 </span>                :<span class="lineCov">       1644 :                 len += slen;</span>
+<span class="lineNum">     181 </span>                :<span class="lineCov">       1644 :         }</span>
+<span class="lineNum">     182 </span>                :<span class="lineCov">        562 :         p[len] = '\0';</span>
+<span class="lineNum">     183 </span>                :<span class="lineCov">        562 :         return p;</span>
+<span class="lineNum">     184 </span>                :            : }
+<span class="lineNum">     185 </span>                :            : 
+<span class="lineNum">     186 </span>                :            : /*============================================================================*/
+<a name="187"><span class="lineNum">     187 </span>                :            : /* func QBox_String_Encode */</a>
+<span class="lineNum">     188 </span>                :            : 
+<span class="lineNum">     189 </span>                :<span class="lineCov">        305 : char* QBox_String_Encode(const char* buf)</span>
+<span class="lineNum">     190 </span>                :            : {
+<span class="lineNum">     191 </span>                :<span class="lineCov">        305 :         const size_t cb = strlen(buf);</span>
+<span class="lineNum">     192 </span>                :<span class="lineCov">        305 :         const size_t cbDest = urlsafe_b64_encode(buf, cb, NULL, 0);</span>
+<span class="lineNum">     193 </span>                :<span class="lineCov">        305 :         char* dest = (char*)malloc(cbDest + 1);</span>
+<span class="lineNum">     194 </span>                :<span class="lineCov">        305 :         const size_t cbReal = urlsafe_b64_encode(buf, cb, dest, cbDest);</span>
+<span class="lineNum">     195 </span>                :<span class="lineCov">        305 :         dest[cbReal] = '\0';</span>
+<span class="lineNum">     196 </span>                :<span class="lineCov">        305 :         return dest;</span>
+<a name="197"><span class="lineNum">     197 </span>                :            : }</a>
+<span class="lineNum">     198 </span>                :            : 
+<span class="lineNum">     199 </span>                :<span class="lineCov">        112 : char* QBox_Memory_Encode(const char* buf, const size_t cb)</span>
+<span class="lineNum">     200 </span>                :            : {
+<span class="lineNum">     201 </span>                :<span class="lineCov">        112 :         const size_t cbDest = urlsafe_b64_encode(buf, cb, NULL, 0);</span>
+<span class="lineNum">     202 </span>                :<span class="lineCov">        112 :         char* dest = (char*)malloc(cbDest + 1);</span>
+<span class="lineNum">     203 </span>                :<span class="lineCov">        112 :         const size_t cbReal = urlsafe_b64_encode(buf, cb, dest, cbDest);</span>
+<span class="lineNum">     204 </span>                :<span class="lineCov">        112 :         dest[cbReal] = '\0';</span>
+<span class="lineNum">     205 </span>                :<span class="lineCov">        112 :         return dest;</span>
+<a name="206"><span class="lineNum">     206 </span>                :            : }</a>
+<span class="lineNum">     207 </span>                :            : 
+<span class="lineNum">     208 </span>                :<span class="lineCov">         14 : char* QBox_String_Decode(const char* buf)</span>
+<span class="lineNum">     209 </span>                :            : {
+<span class="lineNum">     210 </span>                :<span class="lineCov">         14 :         const size_t cb = strlen(buf);</span>
+<span class="lineNum">     211 </span>                :<span class="lineCov">         14 :         const size_t cbDest = urlsafe_b64_decode(buf, cb, NULL, 0);</span>
+<span class="lineNum">     212 </span>                :<span class="lineCov">         14 :         char* dest = (char*)malloc(cbDest + 1);</span>
+<span class="lineNum">     213 </span>                :<span class="lineCov">         14 :         const size_t cbReal = urlsafe_b64_decode(buf, cb, dest, cbDest);</span>
+<span class="lineNum">     214 </span>                :<span class="lineCov">         14 :         dest[cbReal] = '\0';</span>
+<span class="lineNum">     215 </span>                :<span class="lineCov">         14 :         return dest;</span>
+<span class="lineNum">     216 </span>                :            : }
+<span class="lineNum">     217 </span>                :            : 
+<span class="lineNum">     218 </span>                :            : /*============================================================================*/
+<a name="219"><span class="lineNum">     219 </span>                :            : /* type QBox_Buffer */</a>
+<span class="lineNum">     220 </span>                :            : 
+<span class="lineNum">     221 </span>                :<span class="lineCov">          3 : static void QBox_Buffer_expand(QBox_Buffer* self, size_t expandSize)</span>
+<span class="lineNum">     222 </span>                :            : {
+<span class="lineNum">     223 </span>                :<span class="lineCov">          3 :         size_t oldSize = self-&gt;curr - self-&gt;buf;</span>
+<span class="lineNum">     224 </span>                :<span class="lineCov">          3 :         size_t newSize = (self-&gt;bufEnd - self-&gt;buf) &lt;&lt; 1;</span>
+<span class="lineNum">     225 </span>                :<span class="lineCov">          3 :         expandSize += oldSize;</span>
+<span class="lineNum">     226 </span>        [<span class="branchCov" title="Branch 0 was taken 2 times"> + </span><span class="branchCov" title="Branch 1 was taken 3 times"> + </span>]:<span class="lineCov">          5 :         while (newSize &lt; expandSize) {</span>
+<span class="lineNum">     227 </span>                :<span class="lineCov">          2 :                 newSize &lt;&lt;= 1;</span>
+<span class="lineNum">     228 </span>                :            :         }
+<span class="lineNum">     229 </span>                :<span class="lineCov">          3 :         self-&gt;buf = realloc(self-&gt;buf, newSize);</span>
+<span class="lineNum">     230 </span>                :<span class="lineCov">          3 :         self-&gt;curr = self-&gt;buf + oldSize;</span>
+<span class="lineNum">     231 </span>                :<span class="lineCov">          3 :         self-&gt;bufEnd = self-&gt;buf + newSize;</span>
+<a name="232"><span class="lineNum">     232 </span>                :<span class="lineCov">          3 : }</span></a>
+<span class="lineNum">     233 </span>                :            : 
+<span class="lineNum">     234 </span>                :<span class="lineCov">         51 : void QBox_Buffer_Init(QBox_Buffer* self, size_t initSize)</span>
+<span class="lineNum">     235 </span>                :            : {
+<span class="lineNum">     236 </span>                :<span class="lineCov">         51 :         self-&gt;buf = self-&gt;curr = (char*)malloc(initSize);</span>
+<span class="lineNum">     237 </span>                :<span class="lineCov">         51 :         self-&gt;bufEnd = self-&gt;buf + initSize;</span>
+<a name="238"><span class="lineNum">     238 </span>                :<span class="lineCov">         51 : }</span></a>
+<span class="lineNum">     239 </span>                :            : 
+<span class="lineNum">     240 </span>                :<span class="lineCov">        304 : void QBox_Buffer_Reset(QBox_Buffer* self)</span>
+<span class="lineNum">     241 </span>                :            : {
+<span class="lineNum">     242 </span>                :<span class="lineCov">        304 :         self-&gt;curr = self-&gt;buf;</span>
+<a name="243"><span class="lineNum">     243 </span>                :<span class="lineCov">        304 : }</span></a>
+<span class="lineNum">     244 </span>                :            : 
+<span class="lineNum">     245 </span>                :<span class="lineCov">         41 : void QBox_Buffer_Cleanup(QBox_Buffer* self)</span>
+<span class="lineNum">     246 </span>                :            : {
+<span class="lineNum">     247 </span>        [<span class="branchCov" title="Branch 0 was taken 37 times"> + </span><span class="branchCov" title="Branch 1 was taken 4 times"> + </span>]:<span class="lineCov">         41 :         if (self-&gt;buf != NULL) {</span>
+<span class="lineNum">     248 </span>                :<span class="lineCov">         37 :                 free(self-&gt;buf);</span>
+<span class="lineNum">     249 </span>                :<span class="lineCov">         37 :                 self-&gt;buf = NULL;</span>
+<span class="lineNum">     250 </span>                :            :         }
+<a name="251"><span class="lineNum">     251 </span>                :<span class="lineCov">         41 : }</span></a>
+<span class="lineNum">     252 </span>                :            : 
+<span class="lineNum">     253 </span>                :<span class="lineCov">        309 : size_t QBox_Buffer_Len(QBox_Buffer* self)</span>
+<span class="lineNum">     254 </span>                :            : {
+<span class="lineNum">     255 </span>                :<span class="lineCov">        309 :         return self-&gt;curr - self-&gt;buf;</span>
+<a name="256"><span class="lineNum">     256 </span>                :            : }</a>
+<span class="lineNum">     257 </span>                :            : 
+<span class="lineNum">     258 </span>                :<span class="lineCov">        260 : const char* QBox_Buffer_CStr(QBox_Buffer* self)</span>
+<span class="lineNum">     259 </span>                :            : {
+<span class="lineNum">     260 </span>        [<span class="branchCov" title="Branch 0 was taken 1 time"> + </span><span class="branchCov" title="Branch 1 was taken 259 times"> + </span>]:<span class="lineCov">        260 :         if (self-&gt;curr &gt;= self-&gt;bufEnd) {</span>
+<span class="lineNum">     261 </span>                :<span class="lineCov">          1 :                 QBox_Buffer_expand(self, 1);</span>
+<span class="lineNum">     262 </span>                :            :         }
+<span class="lineNum">     263 </span>                :<span class="lineCov">        260 :         *self-&gt;curr = '\0';</span>
+<span class="lineNum">     264 </span>                :<span class="lineCov">        260 :         return self-&gt;buf;</span>
+<a name="265"><span class="lineNum">     265 </span>                :            : }</a>
+<span class="lineNum">     266 </span>                :            : 
+<span class="lineNum">     267 </span>                :<span class="lineCov">        261 : size_t QBox_Buffer_Write(QBox_Buffer* self, const void* buf, size_t n)</span>
+<span class="lineNum">     268 </span>                :            : {
+<span class="lineNum">     269 </span>        [<span class="branchCov" title="Branch 0 was taken 2 times"> + </span><span class="branchCov" title="Branch 1 was taken 259 times"> + </span>]:<span class="lineCov">        261 :         if (self-&gt;curr + n &gt; self-&gt;bufEnd) {</span>
+<span class="lineNum">     270 </span>                :<span class="lineCov">          2 :                 QBox_Buffer_expand(self, n);</span>
+<span class="lineNum">     271 </span>                :            :         }
+<span class="lineNum">     272 </span>                :<span class="lineCov">        261 :         memcpy(self-&gt;curr, buf, n);</span>
+<span class="lineNum">     273 </span>                :<span class="lineCov">        261 :         self-&gt;curr += n;</span>
+<span class="lineNum">     274 </span>                :<span class="lineCov">        261 :         return n;</span>
+<a name="275"><span class="lineNum">     275 </span>                :            : }</a>
+<span class="lineNum">     276 </span>                :            : 
+<span class="lineNum">     277 </span>                :<span class="lineCov">        259 : size_t QBox_Buffer_Fwrite(void *buf, size_t size, size_t nmemb, void *self)</span>
+<span class="lineNum">     278 </span>                :            : {
+<span class="lineNum">     279 </span>        [<span class="branchNoCov" title="Branch 0 was not taken"> - </span><span class="branchCov" title="Branch 1 was taken 259 times"> + </span>]:<span class="lineCov">        259 :         assert(size == 1);</span>
+<span class="lineNum">     280 </span>                :<span class="lineCov">        259 :         return QBox_Buffer_Write((QBox_Buffer*)self, buf, nmemb);</span>
+<span class="lineNum">     281 </span>                :            : }
+<span class="lineNum">     282 </span>                :            : 
+<span class="lineNum">     283 </span>                :            : /*============================================================================*/
+<a name="284"><span class="lineNum">     284 </span>                :            : /* func QBox_Null_Fwrite */</a>
+<span class="lineNum">     285 </span>                :            : 
+<span class="lineNum">     286 </span>                :<span class="lineCov">          3 : size_t QBox_Null_Fwrite(void *buf, size_t size, size_t nmemb, void *self)</span>
+<span class="lineNum">     287 </span>                :            : {
+<span class="lineNum">     288 </span>                :<span class="lineCov">          3 :         return nmemb;</span>
+<span class="lineNum">     289 </span>                :            : }
+<span class="lineNum">     290 </span>                :            : 
+<span class="lineNum">     291 </span>                :            : /*============================================================================*/
+<a name="292"><span class="lineNum">     292 </span>                :            : /* func QBox_FILE_Reader */</a>
+<span class="lineNum">     293 </span>                :            : 
+<span class="lineNum">     294 </span>                :<span class="lineCov">         15 : QBox_Reader QBox_FILE_Reader(FILE* fp)</span>
+<span class="lineNum">     295 </span>                :            : {
+<span class="lineNum">     296 </span>                :<span class="lineCov">         15 :         QBox_Reader reader = { fp, (QBox_FnRead)fread };</span>
+<span class="lineNum">     297 </span>                :<span class="lineCov">         15 :         return reader;</span>
+<span class="lineNum">     298 </span>                :            : }
+<span class="lineNum">     299 </span>                :            : 
+<span class="lineNum">     300 </span>                :            : /*============================================================================*/
+<span class="lineNum">     301 </span>                :            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.9</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - rs_app.info - c-sdk-2.2.0/unit-test/test_suite_base.c</title>
+  <link rel="stylesheet" type="text/css" href="../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../index.html">top level</a> - <a href="index.html">c-sdk-2.2.0/unit-test</a> - test_suite_base.c<span style="font-size: 80%;"> (source / <a href="test_suite_base.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">rs_app.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">44</td>
+            <td class="headerCovTableEntry">46</td>
+            <td class="headerCovTableEntryHi">95.7 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2013-04-11</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td class="headerItem">Branches:</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">6</td>
+            <td class="headerCovTableEntryLo">50.0 %</td>
+          </tr>
+          <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">           Branch data     Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>                :            : /*</a>
+<span class="lineNum">       2 </span>                :            :  ============================================================================
+<span class="lineNum">       3 </span>                :            :  Name        : qbox_test.h
+<span class="lineNum">       4 </span>                :            : 
+<span class="lineNum">       5 </span>                :            :  Author      : Wu Shi Yu
+<span class="lineNum">       6 </span>                :            :  Version     : 1.0.0.0
+<span class="lineNum">       7 </span>                :            :  Copyright   : 2012 Shanghai Qiniu Information Technologies Co., Ltd.
+<span class="lineNum">       8 </span>                :            :  Description : QBOX TEST
+<span class="lineNum">       9 </span>                :            :  ============================================================================
+<span class="lineNum">      10 </span>                :            :  */
+<span class="lineNum">      11 </span>                :            : #include &lt;stdio.h&gt;
+<span class="lineNum">      12 </span>                :            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      13 </span>                :            : #include &lt;assert.h&gt;
+<span class="lineNum">      14 </span>                :            : #include &lt;CUnit/CUnit.h&gt;
+<span class="lineNum">      15 </span>                :            : #include &lt;CUnit/Automated.h&gt;
+<span class="lineNum">      16 </span>                :            : #include &lt;CUnit/TestDB.h&gt;
+<span class="lineNum">      17 </span>                :            : #include &quot;../../c-sdk-2.2.0/qbox/base.h&quot;
+<span class="lineNum">      18 </span>                :            : #include &quot;../../c-sdk-2.2.0/qbox/rs.h&quot;
+<span class="lineNum">      19 </span>                :            : #include &quot;c_unit_test_main.h&quot;
+<span class="lineNum">      20 </span>                :            : 
+<span class="lineNum">      21 </span>                :            : 
+<span class="lineNum">      22 </span>                :            : QBox_Error err;
+<span class="lineNum">      23 </span>                :            : QBox_Client client;
+<span class="lineNum">      24 </span>                :            : 
+<span class="lineNum">      25 </span>                :            : #define TESTFILE &quot;/home/wsy/文档/SDKUnitTest/src/test_file.txt&quot;
+<a name="26"><span class="lineNum">      26 </span>                :            : </a>
+<span class="lineNum">      27 </span>                :            : 
+<span class="lineNum">      28 </span>                :<span class="lineCov">          1 : void test_QBox_Buffer(){</span>
+<span class="lineNum">      29 </span>                :<span class="lineCov">          1 :     QBox_Buffer* buff=malloc(sizeof(QBox_Buffer));</span>
+<span class="lineNum">      30 </span>                :<span class="lineCov">          1 :     QBox_Buffer_Init(buff,2);</span>
+<span class="lineNum">      31 </span>                :<span class="lineCov">          1 :     char* s=&quot;12345678901234567890&quot;;</span>
+<span class="lineNum">      32 </span>                :<span class="lineCov">          1 :     QBox_Buffer_Write(buff,s,2);</span>
+<span class="lineNum">      33 </span>                :            :     //test branch self-&gt;curr == self-&gt;bufEnd in CStr()
+<span class="lineNum">      34 </span>                :<span class="lineCov">          1 :     char* str=QBox_Buffer_CStr(buff);</span>
+<span class="lineNum">      35 </span>                :<span class="lineCov">          1 :     CU_ASSERT_EQUAL(strlen(str),2);</span>
+<span class="lineNum">      36 </span>                :            : 
+<span class="lineNum">      37 </span>                :            :     //test branch snewSize &lt; expandSize in expend()
+<span class="lineNum">      38 </span>                :<span class="lineCov">          1 :     QBox_Buffer_Write(buff,s,16);</span>
+<span class="lineNum">      39 </span>                :<span class="lineCov">          1 :     str=QBox_Buffer_CStr(buff);</span>
+<span class="lineNum">      40 </span>                :<span class="lineCov">          1 :     CU_ASSERT_EQUAL(strlen(str),18);</span>
+<span class="lineNum">      41 </span>                :            : 
+<span class="lineNum">      42 </span>                :            :     //test branch self-&gt;buf==NULL in Cleanup()
+<span class="lineNum">      43 </span>                :<span class="lineCov">          1 :     free(buff-&gt;buf);</span>
+<span class="lineNum">      44 </span>                :<span class="lineCov">          1 :     buff-&gt;buf = NULL;</span>
+<span class="lineNum">      45 </span>                :<span class="lineCov">          1 :     QBox_Buffer_Cleanup(buff);</span>
+<span class="lineNum">      46 </span>                :<span class="lineCov">          1 :     CU_ASSERT_EQUAL(buff-&gt;buf,NULL);</span>
+<span class="lineNum">      47 </span>                :            : 
+<span class="lineNum">      48 </span>                :            :     //test branch fd==-1 in QBox_FileReaderAt_Open
+<span class="lineNum">      49 </span>                :<span class="lineCov">          1 :     CU_ASSERT_EQUAL(QBox_FileReaderAt_Open(&quot;err&quot;).self,NULL);</span>
+<a name="50"><span class="lineNum">      50 </span>                :<span class="lineCov">          1 : }</span></a>
+<span class="lineNum">      51 </span>                :            : 
+<span class="lineNum">      52 </span>                :<span class="lineCov">          1 : void test_QBox_SectionReader(){</span>
+<span class="lineNum">      53 </span>                :<span class="lineCov">          1 :     QBox_Buffer* buff=malloc(sizeof(QBox_Buffer));</span>
+<span class="lineNum">      54 </span>                :            :     QBox_Reader reader;
+<span class="lineNum">      55 </span>                :            :     QBox_ReaderAt readerAt;
+<span class="lineNum">      56 </span>                :<span class="lineCov">          1 :     int result=-1;</span>
+<span class="lineNum">      57 </span>                :<span class="lineCov">          1 :     QBox_Buffer_Init(buff,256);</span>
+<span class="lineNum">      58 </span>                :<span class="lineCov">          1 :     readerAt=QBox_FileReaderAt_Open(TESTFILE);</span>
+<span class="lineNum">      59 </span>                :<span class="lineCov">          1 :     reader=QBox_SectionReader(readerAt,0,0);</span>
+<span class="lineNum">      60 </span>                :<span class="lineCov">          1 :     result=reader.Read(buff,0,0,reader.self);</span>
+<span class="lineNum">      61 </span>                :<span class="lineCov">          1 :     CU_ASSERT_EQUAL(result,0);</span>
+<span class="lineNum">      62 </span>                :<span class="lineCov">          1 :     reader=QBox_SectionReader(readerAt,0,100);</span>
+<span class="lineNum">      63 </span>                :<span class="lineCov">          1 :     result=reader.Read(buff,0,256,reader.self);</span>
+<span class="lineNum">      64 </span>                :<span class="lineCov">          1 :     CU_ASSERT_EQUAL(result,100);</span>
+<span class="lineNum">      65 </span>                :<span class="lineCov">          1 : }</span>
+<span class="lineNum">      66 </span>                :            : 
+<span class="lineNum">      67 </span>                :            : CU_TestInfo testcases_base[] = {
+<span class="lineNum">      68 </span>                :            :         {&quot;Testing QBox_Buffer:&quot;, test_QBox_Buffer},
+<span class="lineNum">      69 </span>                :            :         {&quot;Testing QBox_SectionReader:&quot;, test_QBox_SectionReader},
+<span class="lineNum">      70 </span>                :            :         CU_TEST_INFO_NULL
+<span class="lineNum">      71 </span>                :            : };
+<span class="lineNum">      72 </span>                :            : 
+<a name="73"><span class="lineNum">      73 </span>                :            : </a>
+<span class="lineNum">      74 </span>                :            : /**//*---- test suites ------------------*/
+<span class="lineNum">      75 </span>                :<span class="lineCov">          1 : int suite_base_init(void)</span>
+<span class="lineNum">      76 </span>                :            : {
+<span class="lineNum">      77 </span>                :            :         //printf(&quot;error401 solution: Update QBOX_ACCESS_KEY &amp; QBOX_SECRET_KEY in \&quot;run_test.c\&quot;。\n&quot;);
+<span class="lineNum">      78 </span>                :<span class="lineCov">          1 :         QBOX_ACCESS_KEY = &quot;cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z&quot;;</span>
+<span class="lineNum">      79 </span>                :<span class="lineCov">          1 :         QBOX_SECRET_KEY = &quot;yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze&quot;;</span>
+<span class="lineNum">      80 </span>                :            : 
+<span class="lineNum">      81 </span>                :<span class="lineCov">          1 :         QBox_Zero(client);</span>
+<span class="lineNum">      82 </span>                :<span class="lineCov">          1 :         QBox_Global_Init(-1);</span>
+<span class="lineNum">      83 </span>                :            : 
+<span class="lineNum">      84 </span>                :<span class="lineCov">          1 :         QBox_Client_Init(&amp;client, 1024);</span>
+<span class="lineNum">      85 </span>                :            : 
+<span class="lineNum">      86 </span>                :<span class="lineCov">          1 :         return 0;</span>
+<a name="87"><span class="lineNum">      87 </span>                :            : }</a>
+<span class="lineNum">      88 </span>                :            : 
+<span class="lineNum">      89 </span>                :<span class="lineCov">          1 : int suite_base_clean(void)</span>
+<span class="lineNum">      90 </span>                :            : {
+<span class="lineNum">      91 </span>                :<span class="lineCov">          1 :         QBox_Client_Cleanup(&amp;client);</span>
+<span class="lineNum">      92 </span>                :<span class="lineCov">          1 :         QBox_Global_Cleanup();</span>
+<span class="lineNum">      93 </span>                :            : 
+<span class="lineNum">      94 </span>                :<span class="lineCov">          1 :     return 0;</span>
+<span class="lineNum">      95 </span>                :            : }
+<span class="lineNum">      96 </span>                :            : 
+<span class="lineNum">      97 </span>                :            : CU_SuiteInfo suites_base[] = {
+<span class="lineNum">      98 </span>                :            :         {&quot;Testing the qbox.base:&quot;, suite_base_init, suite_base_clean, testcases_base},
+<span class="lineNum">      99 </span>                :            :         CU_SUITE_INFO_NULL
+<span class="lineNum">     100 </span>                :            : };
+<span class="lineNum">     101 </span>                :            : 
+<span class="lineNum">     102 </span>                :            : 
+<a name="103"><span class="lineNum">     103 </span>                :            : /**//*---- setting enviroment -----------*/</a>
+<span class="lineNum">     104 </span>                :            : 
+<span class="lineNum">     105 </span>                :<span class="lineCov">          1 : void AddTestsBase(void)</span>
+<span class="lineNum">     106 </span>                :            : {
+<span class="lineNum">     107 </span>        [<span class="branchNoCov" title="Branch 1 was not taken"> - </span><span class="branchCov" title="Branch 2 was taken 1 time"> + </span>]:<span class="lineCov">          1 :         assert(NULL != CU_get_registry());</span>
+<span class="lineNum">     108 </span>        [<span class="branchNoCov" title="Branch 1 was not taken"> - </span><span class="branchCov" title="Branch 2 was taken 1 time"> + </span>]:<span class="lineCov">          1 :         assert(!CU_is_test_running());</span>
+<span class="lineNum">     109 </span>                :            :         /**//* shortcut regitry */
+<span class="lineNum">     110 </span>                :            : 
+<span class="lineNum">     111 </span>        [<span class="branchNoCov" title="Branch 1 was not taken"> - </span><span class="branchCov" title="Branch 2 was taken 1 time"> + </span>]:<span class="lineCov">          1 :         if(CUE_SUCCESS != CU_register_suites(suites_base)){</span>
+<span class="lineNum">     112 </span>                :<span class="lineNoCov">          0 :                 fprintf(stderr, &quot;Register suites_base failed - %s &quot;, CU_get_error_msg());</span>
+<span class="lineNum">     113 </span>                :<span class="lineNoCov">          0 :                 exit(EXIT_FAILURE);</span>
+<span class="lineNum">     114 </span>                :            :         }
+<span class="lineNum">     115 </span>                :<span class="lineCov">          1 : }</span>
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.9</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>
