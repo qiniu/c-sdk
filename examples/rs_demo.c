@@ -24,8 +24,17 @@ int main()
 	QBox_RS_StatRet statRet;
 	char* hash;
 
-	QBOX_ACCESS_KEY	= "<Please apply your access key>";
-	QBOX_SECRET_KEY	= "<Dont send your secret key to anyone>";
+	QBOX_ACCESS_KEY	= getenv("QINIU_ACCESS_KEY");
+	if (QBOX_ACCESS_KEY == NULL) {
+		printf("找不到环境变量: QINIU_ACCESS_KEY\n");
+		return;
+	}
+
+	QBOX_SECRET_KEY	= getenv("QINIU_SECRET_KEY");
+	if (QBOX_SECRET_KEY == NULL) {
+		printf("找不到环境变量: QINIU_SECRET_KEY\n");
+		return;
+	}
 
 	QBox_Zero(client);
 	QBox_Global_Init(-1);
@@ -114,14 +123,6 @@ int main()
 	err = QBox_RS_Delete(&client, "Bucket", "rs_demo.c");
 	if (err.code != 200) {
 		printf("QBox_RS_Delete failed: %d - %s\n", err.code, err.message);
-		goto lzDone;
-	}
-
-	printf("QBox_RS_Drop\n");
-
-	err = QBox_RS_Drop(&client, "Bucket");
-	if (err.code != 200) {
-		printf("QBox_RS_Drop failed: %d - %s\n", err.code, err.message);
 		goto lzDone;
 	}
 
