@@ -24,8 +24,8 @@ int main()
 	QBox_RS_StatRet statRet;
 	char* hash;
 
-	QBOX_ACCESS_KEY	= "<Please apply your access key>";
-	QBOX_SECRET_KEY	= "<Dont send your secret key to anyone>";
+	QBOX_ACCESS_KEY	= getenv("QINIU_ACCESS_KEY");
+	QBOX_SECRET_KEY	= getenv("QINIU_SECRET_KEY");
 
 	QBox_Zero(client);
 	QBox_Global_Init(-1);

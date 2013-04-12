@@ -17,4 +17,4 @@ install: all
 	@echo
 
 clean:
-	rm -f qbox_test
+	rm -f run_test

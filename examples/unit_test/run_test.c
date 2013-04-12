@@ -8,6 +8,7 @@
  ============================================================================
  */
 
+#include "stdlib.h"
 #include "qbox_test.h"
 #include "../../qbox/rs.h"
 
@@ -16,11 +17,10 @@ int main()
 	QBox_Error err;
 	QBox_Client client;
 
-	printf("如果运行出错且错误码为401，请打开run_test.c。\n");
-	printf("将QBOX_ACCESS_KEY和QBOX_SECRET_KEY替换成您的帐号对应的key信息。\n");
+	printf("如果运行出错且错误码为401，请将QINIU_ACCESS_KEY和QINIU_SECRET_KEY加到环境变量中\n");
 
-	QBOX_ACCESS_KEY = "<Please apply your access key>";
-	QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
+	QBOX_ACCESS_KEY = getenv("QINIU_ACCESS_KEY");
+	QBOX_SECRET_KEY = getenv("QINIU_SECRET_KEY");
 
 	QBox_Zero(client);
 	QBox_Global_Init(-1);
