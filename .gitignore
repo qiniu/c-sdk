@@ -7,3 +7,5 @@ examples/resumable_put/rs_demo
 
 examples/resumable_put/up_demo
 examples/resumable_put/huge_file.txt
+
+examples/unit_test/run_test

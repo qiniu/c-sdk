@@ -17,10 +17,17 @@ int main()
 	QBox_Error err;
 	QBox_Client client;
 
-	printf("如果运行出错且错误码为401，请将QINIU_ACCESS_KEY和QINIU_SECRET_KEY加到环境变量中\n");
-
 	QBOX_ACCESS_KEY = getenv("QINIU_ACCESS_KEY");
+	if (QBOX_ACCESS_KEY == NULL) {
+		printf("找不到环境变量: QINIU_ACCESS_KEY\n");
+		return;
+	}
+
 	QBOX_SECRET_KEY = getenv("QINIU_SECRET_KEY");
+	if (QBOX_SECRET_KEY == NULL) {
+		printf("找不到环境变量: QINIU_SECRET_KEY\n");
+		return;
+	}
 
 	QBox_Zero(client);
 	QBox_Global_Init(-1);
