@@ -68,16 +68,16 @@ int main(int argc, char* argv[])
     AddTestsRsDemo();//*
     AddTestsImage();//*
     AddTestsUp();//*
-    AddTestsUpDemo();//*
+    AddTestsUpDemo();//*/
     AddTestsUpDemoResumable();//*
     AddTestsBase();//*
-    AddTestsOauth2();//*/
+    AddTestsOauth2();//*
     AddTestsOauth2Passwd();//*/
     //*/
     CU_basic_set_mode(mode);
     CU_set_error_action(error_action);
-    //printf("\nTests completed with return value %d.\n", CU_basic_run_tests());
-    //***使用自动产生XML文件的模式********
+    printf("\nTests completed with return value %d.\n", CU_basic_run_tests());
+    /***使用自动产生XML文件的模式********
     CU_set_output_filename("c-sdk-unit-test");
     CU_list_tests_to_file();
     CU_automated_run_tests();

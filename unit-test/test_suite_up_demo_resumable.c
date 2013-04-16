@@ -15,14 +15,16 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Automated.h>
 #include <CUnit/TestDB.h>
-#include "..//qbox/base.h"
-#include "..//qbox/rs.h"
-#include "..//qbox/up.h"
-#include "..//qbox/oauth2.h"
+#include "../qbox/base.h"
+#include "../qbox/rs.h"
+#include "../qbox/up.h"
+#include "../qbox/oauth2.h"
 #include "c_unit_test_main.h"
 
-#define TESTFILE_16M "/home/wsy/文档/SDKUnitTest/src/test_file_16M.txt"
-#define TESTFILE_1M "/home/wsy/文档/SDKUnitTest/src/test_file_1M .txt"
+//#define TESTFILE_16M "/home/wsy/文档/SDKUnitTest/src/test_file_16M.txt"
+//#define TESTFILE_1M "/home/wsy/文档/SDKUnitTest/src/test_file_1M .txt"
+#define TESTFILE_16M "test_file_16M.txt"
+#define TESTFILE_1M "test_file_1M.txt"
 #define MESSAGE_LEVEL 0
 //MESSAGE_LEVEL: used to set the level of output message
 static const char* mimeType = NULL;
@@ -376,7 +378,7 @@ CU_TestInfo testcases_up_demo_resumable[] = {
         {"Testing up_resumable fsize=16M:", test_by_up_demo_resumable_16M},
         {"Testing up_resumable fsize=1M:", test_by_up_demo_resumable_1M},
         {"Testing up_resumable expecting err299:", test_by_up_demo_resumable_err299},
-        //*test some braches which are hardly be reached , cost so much time! can be cut depend on test time;
+        /*test some braches which are hardly be reached , cost so much time! can be cut depend on test time;
         {"Testing up_resumable expecting err18:", test_by_up_demo_resumable_err18},
         //*/
         {"Testing QBox_UP_NewProgress :", test_QBox_UP_NewProgress},

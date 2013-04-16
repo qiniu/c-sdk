@@ -13,10 +13,10 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Automated.h>
 #include <CUnit/TestDB.h>
-#include "..//qbox/base.h"
-#include "..//qbox/rs.h"
-#include "..//qbox/rscli.h"
-#include "..//qbox/oauth2_passwd.h"
+#include "../qbox/base.h"
+#include "../qbox/rs.h"
+#include "../qbox/rscli.h"
+#include "../qbox/oauth2_passwd.h"
 #include "c_unit_test_main.h"
 
 
@@ -56,6 +56,24 @@ void test_by_rs_demo(){
 	//printf("    QBox_RS_PutAuth\n");
 	err = QBox_RS_PutAuth(&client, &putAuthRet);
 	CU_ASSERT_EQUAL(err.code,200);
+
+    //*
+    char* pStream = NULL;
+    int bytes=128;
+    pStream = malloc(bytes);
+	err=QBox_RSCli_PutStream(NULL,putAuthRet.url,tableName,"rs_demo4.c","application/octet-stream",pStream,bytes,"","key=rs_demo.c");
+    CU_ASSERT_EQUAL(err.code,200);
+	err=QBox_RSCli_PutStream(NULL,putAuthRet.url,tableName,"rs_demo4.c","application/octet-stream",pStream,bytes,"test","key=rs_demo.c");
+    CU_ASSERT_EQUAL(err.code,200);
+	err=QBox_RSCli_PutStream(NULL,putAuthRet.url,tableName,"rs_demo4.c","application/octet-stream",pStream,bytes,NULL,"key=rs_demo.c");
+    CU_ASSERT_EQUAL(err.code,200);
+	err=QBox_RSCli_PutStream(NULL,putAuthRet.url,tableName,"rs_demo4.c",NULL,pStream,bytes,NULL,"key=rs_demo.c");
+    CU_ASSERT_EQUAL(err.code,200);
+    free(pStream);
+    //*/
+
+	err = QBox_RSCli_PutFile(NULL, putAuthRet.url, tableName, "rs_demo.c", "application/octet-stream", __FILE__, "", "key=rs_demo.c");
+    CU_ASSERT_EQUAL(err.code,200);
 
 	//printf("    QBox_RSCli_PutFile\n");
 	err = QBox_RSCli_PutFile(NULL, putAuthRet.url, tableName, "rs_demo.c", "application/octet-stream", __FILE__, "", "key=rs_demo.c");

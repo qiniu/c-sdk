@@ -16,16 +16,17 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Automated.h>
 #include <CUnit/TestDB.h>
-#include "..//qbox/base.h"
-#include "..//qbox/rs.h"
-#include "..//qbox/oauth2_passwd.h"
+#include "../qbox/base.h"
+#include "../qbox/rs.h"
+#include "../qbox/oauth2_passwd.h"
 #include "c_unit_test_main.h"
 
 
 QBox_Error err;
 QBox_Client client;
 
-#define TESTFILE "/home/wsy/文档/SDKUnitTest/src/test_file.txt"
+//#define TESTFILE "/home/wsy/文档/SDKUnitTest/src/test_file.txt"
+#define TESTFILE "test_file.txt"
 
 
 void test_QBox_Token_set(){
@@ -120,6 +121,10 @@ void test_QBox_PasswordAuth_Auth(){
     CU_ASSERT_EQUAL(err.code,200);
 	err = QBox_RS_PutFile(&client, &putRet, tableName, "rs/demo.c", "application/octet-stream", __FILE__, "");
 	CU_ASSERT_EQUAL(err.code,200);
+	if(err.code!=200)
+	{
+	    printf("\nQBox_RS_PutFile Erroe!\nerr %d:%s\n",err.code,err.message);
+	}
 	//printf("    QBox_RS_Drop\n");
 	err = QBox_RS_Drop(&client, tableName);
 	CU_ASSERT_EQUAL(err.code,200);

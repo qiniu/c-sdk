@@ -13,14 +13,17 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Automated.h>
 #include <CUnit/TestDB.h>
-#include "..//qbox/base.h"
-#include "..//qbox/rs.h"
-#include "..//qbox/up.h"
-#include "..//qbox/oauth2.h"
+#include "../qbox/base.h"
+#include "../qbox/rs.h"
+#include "../qbox/up.h"
+#include "../qbox/oauth2.h"
 #include "c_unit_test_main.h"
 
-#define TESTFILE_16M "/home/wsy/文档/SDKUnitTest/src/test_file_16M.txt"
-#define TESTFILE_1M "/home/wsy/文档/SDKUnitTest/src/test_file_1M .txt"
+//#define TESTFILE_16M "/home/wsy/文档/SDKUnitTest/src/test_file_16M.txt"
+//#define TESTFILE_1M "/home/wsy/文档/SDKUnitTest/src/test_file_1M .txt"
+
+#define TESTFILE_16M "test_file_16M.txt"
+#define TESTFILE_1M "test_file_1M.txt"
 
 #define NORMAL 0
 #define TEST_NOT_NULL_OR_END 1

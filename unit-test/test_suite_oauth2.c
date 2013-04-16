@@ -15,28 +15,33 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Automated.h>
 #include <CUnit/TestDB.h>
-#include "..//qbox/base.h"
-#include "..//qbox/rs.h"
-#include "..//qbox/oauth2.h"
-#include "..//cJSON/cJSON.h"
+#include "../qbox/base.h"
+#include "../qbox/rs.h"
+#include "../qbox/oauth2.h"
+#include "../cJSON/cJSON.h"
 #include "c_unit_test_main.h"
 
 
 QBox_Error err;
 QBox_Client client;
 
-#define TESTFILE "/home/wsy/文档/SDKUnitTest/src/test_file.txt"
+//#define TESTFILE "/home/wsy/文档/SDKUnitTest/src/test_file.txt"
+#define TESTFILE "test_file.txt"
 
 
-void test_QBox_Oauth2(){    CU_ASSERT_EQUAL(QBox_Json_GetInt64(NULL,"test",16),16);
-
-    err=QBox_Client_CallWithBuffer(&client, NULL, "err", "err", 5);
+void test_QBox_Oauth2(){
+    CU_ASSERT_EQUAL(QBox_Json_GetInt64(NULL,"test",16),16);
+    int bodyLength=128;
+    char* chkBuf = NULL;
+    chkBuf = malloc(bodyLength);
+    err=QBox_Client_CallWithBuffer(&client, NULL, "err", chkBuf, bodyLength);
     CU_ASSERT_EQUAL(err.code,400);
     err=QBox_Client_Call(&client, NULL, "err");
     CU_ASSERT_EQUAL(err.code,400);
     err=QBox_Client_CallNoRet(&client, "err");
     CU_ASSERT_EQUAL(err.code,400);
 
+    free(chkBuf);
 }
 
 void test_QBox_Oauth2_digest(){

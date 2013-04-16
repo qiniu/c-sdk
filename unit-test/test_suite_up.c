@@ -13,15 +13,16 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Automated.h>
 #include <CUnit/TestDB.h>
-#include "..//qbox/up.h"
-#include "..//qbox/base.h"
+#include "../qbox/up.h"
+#include "../qbox/base.h"
 #include "c_unit_test_main.h"
 
 
 QBox_Error err;
 QBox_Client client;
 
-#define TESTFILE "/home/wsy/文档/SDKUnitTest/src/test_file.txt"
+//#define TESTFILE "/home/wsy/文档/SDKUnitTest/src/test_file.txt"
+#define TESTFILE "test_file.txt"
 
 void test_QBox_UP_Mkblock(){
     QBox_UP_PutRet* ret=malloc(sizeof(QBox_UP_PutRet));

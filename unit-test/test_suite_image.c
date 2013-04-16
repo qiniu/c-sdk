@@ -13,9 +13,9 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Automated.h>
 #include <CUnit/TestDB.h>
-#include "..//qbox/image.h"
-#include "..//qbox/rs.h"
-#include "..//qbox/base.h"
+#include "../qbox/image.h"
+#include "../qbox/rs.h"
+#include "../qbox/base.h"
 #include "c_unit_test_main.h"
 
 
@@ -24,6 +24,8 @@ QBox_Client client;
 
 #define MY_TRUE 0
 #define MY_FALSE -1
+//#define PICTURE "/home/wsy/文档/SDKUnitTest/src/gogopher.jpg"
+#define PICTURE "gogopher.jpg"
 
 //extern char* _dirtycat(char* dst, const char* src);
 void test_QBox_IMG_Info(){
@@ -223,7 +225,7 @@ void test_QBox_IMG_SaveAs(){
     const char* tableName="c_testImage_table_0";
 	char* imgURL = NULL;
     err = QBox_RS_Create(&client,tableName);
-	char* file="/home/wsy/文档/SDKUnitTest/src/gogopher.jpg";
+	char* file=PICTURE;
 	err = QBox_RS_PutFile(&client, &putRet, tableName, "gogopher.jpg", "image/jpeg", file, "");
 	CU_ASSERT_EQUAL(err.code,200);
 
