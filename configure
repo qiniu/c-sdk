@@ -1,2 +1,4 @@
-echo "configure"
+cd CUnit
+configure
+make
 
