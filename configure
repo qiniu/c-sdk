@@ -1,4 +1,2 @@
-cd CUnit
-configure
-make
+cd CUnit; ./configure; make
 
