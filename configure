@@ -1,2 +1,2 @@
+make --version
 cd CUnit; aclocal; autoconf; ./configure; make
-
