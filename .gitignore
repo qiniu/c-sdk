@@ -13,6 +13,7 @@ examples/resumable_put/huge_file.txt
 
 .deps/
 .libs/
+autom4te.cache/
 
 CUnit/CUnit.spec
 CUnit/CUnit/Headers/Makefile
