@@ -2,4 +2,4 @@ autoconf --version
 automake --version
 libtool --version
 make --version
-cd CUnit; aclocal; autoconf; ./configure; make
+cd CUnit; aclocal; autoconf; autoreconf; ./configure; make
