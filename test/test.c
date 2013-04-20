@@ -16,7 +16,7 @@
 #include <string.h>
 #include <assert.h>
 
-const char bucket[] = "bucket";
+const char bucket[] = "a";
 const char key[] = "key";
 
 static void clientIoPut(const char* uptoken)
@@ -36,11 +36,11 @@ static void clientIoPut(const char* uptoken)
 	body = QBox_Buffer_Reader(&bufr, text, sizeof(text)-1);
 	extra.bucket = bucket;
 
-	err = QBox_Io_Put(&client, &putRet, uptoken, key, body, &extra);
+	err = QBox_Io_PutFile(&client, &putRet, uptoken, key, __FILE__, &extra);
 	CU_ASSERT(err.code == 200);
 
-	printf("code: %d, msg: %s, hash: %s\n", err.code, err.message, putRet.hash);
-	printf("resp: %s\n", QBox_Buffer_CStr(&client.respHeader));
+	printf("%s\n", QBox_Buffer_CStr(&client.respHeader));
+	printf("hash: %s\n", putRet.hash);
 
 	QBox_Client_Cleanup(&client);
 }
