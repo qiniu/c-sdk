@@ -2,5 +2,5 @@ all:
 	@echo "OK"
 
 test:
-	@echo "Test OK"
+	cd tests; make test
 
