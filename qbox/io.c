@@ -85,9 +85,11 @@ static QBox_Error QBox_Io_call(
 
 	CURL* curl = QBox_Client_reset(self);
 	char* url = QBox_String_Concat2(QBOX_UP_HOST, "/upload");
+	struct curl_slist* headers = curl_slist_append(NULL, "Expect:");
 
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
 	err = QBox_callex(curl, &self->b, &self->root, QBox_False, &self->respHeader);
 	if (err.code == 200 && ret != NULL) {
