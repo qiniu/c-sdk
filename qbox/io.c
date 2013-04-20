@@ -81,7 +81,7 @@ QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool
 static QBox_Error QBox_Io_putRet(
 	CURL* curl, QBox_Client* self, QBox_Io_PutRet* ret)
 {
-	QBox_Error err = QBox_callex(curl, &self->b, &self->root, QBox_False, &self->bheader);
+	QBox_Error err = QBox_callex(curl, &self->b, &self->root, QBox_False, &self->respHeader);
 	if (err.code == 200 && ret != NULL) {
 		ret->hash = QBox_Json_GetString(self->root, "hash", NULL);
 	}

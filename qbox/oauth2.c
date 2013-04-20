@@ -169,7 +169,7 @@ void QBox_Client_InitEx(QBox_Client* self, QBox_Auth auth, size_t bufSize)
 	self->auth = auth;
 
 	QBox_Buffer_Init(&self->b, bufSize);
-	QBox_Buffer_Init(&self->bheader, bufSize);
+	QBox_Buffer_Init(&self->respHeader, bufSize);
 }
 
 void QBox_Client_InitNoAuth(QBox_Client* self, size_t bufSize)
@@ -192,7 +192,7 @@ void QBox_Client_Cleanup(QBox_Client* self)
 		self->root = NULL;
 	}
 	QBox_Buffer_Cleanup(&self->b);
-	QBox_Buffer_Cleanup(&self->bheader);
+	QBox_Buffer_Cleanup(&self->respHeader);
 }
 
 CURL* QBox_Client_reset(QBox_Client* self)
@@ -201,7 +201,7 @@ CURL* QBox_Client_reset(QBox_Client* self)
 
 	curl_easy_reset(curl);
 	QBox_Buffer_Reset(&self->b);
-	QBox_Buffer_Reset(&self->bheader);
+	QBox_Buffer_Reset(&self->respHeader);
 	if (self->root != NULL) {
 		cJSON_Delete(self->root);
 		self->root = NULL;
@@ -242,7 +242,7 @@ static QBox_Error QBox_Client_callWithBody(
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-	err = QBox_callex(curl, &self->b, &self->root, QBox_False, &self->bheader);
+	err = QBox_callex(curl, &self->b, &self->root, QBox_False, &self->respHeader);
 
 	curl_slist_free_all(headers);
 
@@ -300,7 +300,7 @@ QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url)
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-	err = QBox_callex(curl, &self->b, &self->root, QBox_False, &self->bheader);
+	err = QBox_callex(curl, &self->b, &self->root, QBox_False, &self->respHeader);
 	*ret = self->root;
 	return err;
 }
@@ -322,6 +322,6 @@ QBox_Error QBox_Client_CallNoRet(QBox_Client* self, const char* url)
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-	return QBox_callex(curl, &self->b, &self->root, QBox_False, &self->bheader);
+	return QBox_callex(curl, &self->b, &self->root, QBox_False, &self->respHeader);
 }
 

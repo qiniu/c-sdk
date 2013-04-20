@@ -56,8 +56,6 @@ enum {
 typedef struct _QBox_Error {
 	int code;
 	const char* message;
-	const char* reqId;
-	const char* details;
 } QBox_Error;
 
 /*============================================================================*/

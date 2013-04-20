@@ -40,6 +40,7 @@ static void clientIoPut(const char* uptoken)
 	CU_ASSERT(err.code == 200);
 
 	printf("code: %d, msg: %s, hash: %s\n", err.code, err.message, putRet.hash);
+	printf("resp: %s\n", QBox_Buffer_CStr(&client.respHeader));
 
 	QBox_Client_Cleanup(&client);
 }
