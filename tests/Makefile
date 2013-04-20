@@ -4,11 +4,10 @@ SOURCE_FILES=\
 	../qbox/conf.c\
 	../qbox/base.c\
 	../qbox/base_io.c\
-	../qbox/auth_policy.c\
 	../qbox/oauth2.c\
 	../qbox/oauth2_digest.c\
 	../qbox/rs.c\
-	../qbox/rscli.c\
+	../qbox/rs_token.c\
 	../qbox/io.c\
 	test.c\
 

@@ -15,9 +15,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <curl/curl.h>
 
 const char bucket[] = "a";
 const char key[] = "key";
+const char domain[] = "aatest.qiniudn.com";
 
 static void clientIoPutFile(const char* uptoken)
 {
@@ -65,17 +67,39 @@ static void clientIoPutBuffer(const char* uptoken)
 	QBox_Client_Cleanup(&client);
 }
 
+static void clientIoGet(const char* dntoken)
+{
+	const char text[] = "Hello, world!";
+	char* url = QBox_String_Concat("http://", domain, "/", key, "?token=", dntoken, NULL);
+
+	long code;
+	CURL* curl = curl_easy_init();
+	QBox_Buffer resp;
+	QBox_Buffer_Init(&resp, 1024);
+	printf("url: %s\n", url);
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, QBox_Buffer_Fwrite);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp);
+	code = curl_easy_perform(curl);
+	curl_easy_cleanup(curl);
+	CU_ASSERT(code == 0);
+	CU_ASSERT_STRING_EQUAL(QBox_Buffer_CStr(&resp), text);
+}
+
 static void testIoPut()
 {
+	QBox_Error err;
 	QBox_Client client;
-	QBox_AuthPolicy putPolicy;
+	QBox_RS_PutPolicy putPolicy;
+	QBox_RS_GetPolicy getPolicy;
 	char* uptoken;
+	char* dntoken;
 
 	QBox_Client_Init(&client, 1024);
 
 	QBox_Zero(putPolicy);
 	putPolicy.scope = bucket;
-	uptoken = QBox_MakeUpToken(&putPolicy);
+	uptoken = QBox_RS_PutPolicy_Token(&putPolicy);
 
 	QBox_RS_Delete(&client, bucket, key);
 	clientIoPutFile(uptoken);
@@ -84,6 +108,15 @@ static void testIoPut()
 	clientIoPutBuffer(uptoken);
 
 	free(uptoken);
+
+	QBox_Zero(getPolicy);
+	getPolicy.scope = "*/*";
+	dntoken = QBox_RS_GetPolicy_Token(&getPolicy);
+
+	clientIoGet(dntoken);
+
+	free(dntoken);
+
 	QBox_Client_Cleanup(&client);
 }
 
