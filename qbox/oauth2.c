@@ -119,18 +119,6 @@ QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool
 	return err;
 }
 
-QBox_Error QBox_call(CURL* curl, int bufSize, QBox_Json** ret, QBox_Bool simpleError)
-{
-	QBox_Error err;
-	QBox_Buffer resp;
-	QBox_Buffer_Init(&resp, bufSize);
-
-	err = QBox_callex(curl, &resp, ret, simpleError);
-
-	QBox_Buffer_Cleanup(&resp);
-	return err;
-}
-
 /*============================================================================*/
 /* type QBox_Json */
 
@@ -201,7 +189,7 @@ void QBox_Client_Cleanup(QBox_Client* self)
 	QBox_Buffer_Cleanup(&self->b);
 }
 
-static void QBox_Client_initcall(QBox_Client* self, const char* url)
+CURL* QBox_Client_reset(QBox_Client* self)
 {
 	CURL* curl = (CURL*)self->curl;
 
@@ -211,6 +199,13 @@ static void QBox_Client_initcall(QBox_Client* self, const char* url)
 		cJSON_Delete(self->root);
 		self->root = NULL;
 	}
+
+	return curl;
+}
+
+static void QBox_Client_initcall(QBox_Client* self, const char* url)
+{
+	CURL* curl = QBox_Client_reset(self);
 
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
