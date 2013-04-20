@@ -1,2 +1,5 @@
 language: c
+before_script:
+  - export QINIU_ACCESS_KEY="tGf47MBl1LyT9uaNv-NZV4XZe7sKxOIa9RE2Lp8B"
+  - export QINIU_SECRET_KEY="zhbiA6gcQMEi22uZ8CBGvmbnD2sR8SO-5S8qlLCG"
 

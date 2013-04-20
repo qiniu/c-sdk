@@ -16,7 +16,22 @@ static const char* QBOX_CLIENT_SECRET	= "75df554a39f58accb7eb293b550fa59618674b7
 
 #define QBox_initBufSize	1024
 
-QBox_Error QBox_call(CURL* curl, int bufSize, QBox_Json** ret, QBox_Bool simpleError);
+/*============================================================================*/
+/* type QBox_call */
+
+QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError, QBox_Buffer *resph);
+
+static QBox_Error QBox_call(CURL* curl, int bufSize, QBox_Json** ret, QBox_Bool simpleError)
+{
+	QBox_Error err;
+	QBox_Buffer resp;
+	QBox_Buffer_Init(&resp, bufSize);
+
+	err = QBox_callex(curl, &resp, ret, simpleError, NULL);
+
+	QBox_Buffer_Cleanup(&resp);
+	return err;
+}
 
 /*============================================================================*/
 /* type QBox_Token */
@@ -267,15 +282,15 @@ QBox_PasswordAuth* QBox_PasswordAuth_New(QBox_Token* token)
 
 /*============================================================================*/
 
-static QBox_Auth_Vtable QBox_PasswordAuth_Vtable = {
+static QBox_Auth_Itbl QBox_PasswordAuth_Itbl = {
 	QBox_PasswordAuth_Auth,
 	QBox_PasswordAuth_Release
 };
 
 void QBox_Client_InitByPassword(QBox_Client* self, QBox_Token* token, size_t bufSize)
 {
-	QBox_PasswordAuth* auth = QBox_PasswordAuth_New(token);
-	QBox_Client_InitEx(self, auth, &QBox_PasswordAuth_Vtable, bufSize);
+	QBox_Auth auth = {QBox_PasswordAuth_New(token), &QBox_PasswordAuth_Itbl};
+	QBox_Client_InitEx(self, auth, bufSize);
 }
 
 /*============================================================================*/

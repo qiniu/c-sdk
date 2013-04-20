@@ -7,13 +7,17 @@
 examples/rs_demo
 examples/auth_passwd/rs_demo
 examples/resumable_put/rs_demo
+examples/unit_test/run_test
 
 examples/resumable_put/up_demo
 examples/resumable_put/huge_file.txt
 
+test/qiniutest
+
 .deps/
 .libs/
 autom4te.cache/
+libcunit.so.1
 
 CUnit/CUnit.spec
 CUnit/CUnit/Headers/Makefile

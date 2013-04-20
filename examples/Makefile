@@ -5,7 +5,10 @@ SOURCE_FILES=\
 	../qbox/base.c\
 	../qbox/oauth2.c\
 	../qbox/oauth2_digest.c\
+	../qbox/oauth2_passwd.c\
+	../qbox/oauth2_uptoken.c\
 	../qbox/rs.c\
+	../qbox/io.c\
 	../qbox/rscli.c\
 	rs_demo.c\
 
