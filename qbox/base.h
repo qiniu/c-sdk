@@ -39,6 +39,7 @@ typedef long long QBox_Int64;
 #endif
 
 typedef unsigned int QBox_Uint32;
+typedef unsigned short QBox_Uint16;
 
 /*============================================================================*/
 /* type QBox_Bool */
