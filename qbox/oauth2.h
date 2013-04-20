@@ -52,20 +52,25 @@ QBox_Int64 QBox_Json_GetInt64(QBox_Json* self, const char* key, QBox_Int64 defva
 
 typedef struct curl_slist QBox_Header;
 
-typedef struct _QBox_Auth_Vtable {
+typedef struct _QBox_Auth_Itbl {
 	QBox_Error (*Auth)(void* self, QBox_Header** header, const char* url, const char* addition, size_t addlen);
 	void (*Release)(void* self);
-} QBox_Auth_Vtable;
+} QBox_Auth_Itbl;
+
+typedef struct _QBox_Auth {
+	void* self;
+	QBox_Auth_Itbl* itbl;
+} QBox_Auth;
 
 typedef struct _QBox_Client {
 	void* curl;
-	void* auth;
-	QBox_Auth_Vtable* vptr;
+	QBox_Auth auth;
 	QBox_Json* root;
 	QBox_Buffer b;
+	QBox_Buffer respHeader;
 } QBox_Client;
 
-void QBox_Client_InitEx(QBox_Client* self, void* auth, QBox_Auth_Vtable* vptr, size_t bufSize);
+void QBox_Client_InitEx(QBox_Client* self, QBox_Auth auth, size_t bufSize);
 void QBox_Client_Cleanup(QBox_Client* self);
 
 QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url);
@@ -78,6 +83,7 @@ QBox_Error QBox_Client_CallWithBuffer(
 /*============================================================================*/
 
 void QBox_Client_Init(QBox_Client* self, size_t bufSize);
+void QBox_Client_InitNoAuth(QBox_Client* self, size_t bufSize);
 void QBox_Client_InitByUpToken(QBox_Client* self, const char* uptoken, size_t bufSize);
 
 /*============================================================================*/
