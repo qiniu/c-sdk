@@ -14,7 +14,7 @@ SOURCE_FILES=\
 
 all: $(SOURCE_FILES)
 	ln -s -f ../CUnit/CUnit/Sources/.libs/libcunit.so.1 libcunit.so.1
-	gcc -o qiniutest -L../CUnit/CUnit/Sources/.libs -lcurl -lm -lssl -lcrypto -lcunit $^
+	gcc $^ -o qiniutest -L../CUnit/CUnit/Sources/.libs -lcurl -lssl -lcrypto -lcunit -lm
 
 install: all
 	@echo
