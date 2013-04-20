@@ -19,6 +19,52 @@
 const char bucket[] = "a";
 const char key[] = "key";
 
+static void clientIoPutFile(const char* uptoken)
+{
+	QBox_Error err;
+	QBox_Client client;
+	QBox_Io_PutExtra extra;
+	QBox_Io_PutRet putRet;
+
+	QBox_Client_InitNoAuth(&client, 1024);
+
+	QBox_Zero(extra);
+	extra.bucket = bucket;
+
+	err = QBox_Io_PutFile(&client, &putRet, uptoken, key, __FILE__, &extra);
+	CU_ASSERT(err.code == 200);
+
+	printf("\n%s\n", QBox_Buffer_CStr(&client.respHeader));
+	printf("hash: %s\n", putRet.hash);
+
+	QBox_Client_Cleanup(&client);
+}
+
+static void clientIoPutBuffer(const char* uptoken)
+{
+	const char text[] = "Hello, world!";
+
+	QBox_Error err;
+	QBox_Client client;
+	QBox_Io_PutExtra extra;
+	QBox_Io_PutRet putRet;
+
+	QBox_Client_InitNoAuth(&client, 1024);
+
+	QBox_Zero(extra);
+	extra.bucket = bucket;
+
+	err = QBox_Io_PutBuffer(&client, &putRet, uptoken, key, text, sizeof(text)-1, &extra);
+
+	printf("\n%s", QBox_Buffer_CStr(&client.respHeader));
+	printf("hash: %s\n", putRet.hash);
+
+	CU_ASSERT(err.code == 200);
+	CU_ASSERT_STRING_EQUAL(putRet.hash, "FpQ6cC0G80WZruH42o759ylgMdaZ");
+
+	QBox_Client_Cleanup(&client);
+}
+
 static void clientIoPut(const char* uptoken)
 {
 	const char text[] = "Hello, world!";
@@ -30,17 +76,19 @@ static void clientIoPut(const char* uptoken)
 	QBox_Io_PutExtra extra;
 	QBox_Io_PutRet putRet;
 
-	QBox_Zero(extra);
 	QBox_Client_InitNoAuth(&client, 1024);
 
-	body = QBox_Buffer_Reader(&bufr, text, sizeof(text)-1);
+	QBox_Zero(extra);
 	extra.bucket = bucket;
 
-	err = QBox_Io_PutFile(&client, &putRet, uptoken, key, __FILE__, &extra);
-	CU_ASSERT(err.code == 200);
+	body = QBox_Buffer_Reader(&bufr, text, sizeof(text)-1);
+	err = QBox_Io_Put(&client, &putRet, uptoken, key, body, bufr.limit, &extra);
 
-	printf("%s\n", QBox_Buffer_CStr(&client.respHeader));
+	printf("\n%s", QBox_Buffer_CStr(&client.respHeader));
 	printf("hash: %s\n", putRet.hash);
+
+	CU_ASSERT(err.code == 200);
+	CU_ASSERT_STRING_EQUAL(putRet.hash, "FpQ6cC0G80WZruH42o759ylgMdaZ");
 
 	QBox_Client_Cleanup(&client);
 }
@@ -52,14 +100,20 @@ static void testIoPut()
 	char* uptoken;
 
 	QBox_Client_Init(&client, 1024);
-	QBox_RS_Delete(&client, bucket, key);
 
 	QBox_Zero(putPolicy);
 	putPolicy.scope = bucket;
 	uptoken = QBox_MakeUpToken(&putPolicy);
 
+	QBox_RS_Delete(&client, bucket, key);
 	clientIoPut(uptoken);
 
+/*	QBox_RS_Delete(&client, bucket, key);
+	clientIoPutFile(uptoken);
+
+	QBox_RS_Delete(&client, bucket, key);
+	clientIoPutBuffer(uptoken);
+*/
 	free(uptoken);
 	QBox_Client_Cleanup(&client);
 }

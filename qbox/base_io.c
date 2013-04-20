@@ -22,6 +22,8 @@
 
 static size_t QBox_BufReader_Read(void *buf, size_t unused, size_t n, void *self1)
 {
+	printf("QBox_BufReader_Read: %d\n", n);
+
 	QBox_BufReader* self = (QBox_BufReader*)self1;
 	size_t max = self->limit - self->off;
 	if (max <= 0) {
