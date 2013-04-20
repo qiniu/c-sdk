@@ -127,6 +127,17 @@ typedef struct _QBox_Reader {
 QBox_Reader QBox_FILE_Reader(FILE* fp);
 
 /*============================================================================*/
+/* type QBox_BufReader */
+
+typedef struct _QBox_BufReader {
+	const char* buf;
+	size_t off;
+	size_t limit;
+} QBox_BufReader;
+
+QBox_Reader QBox_Buffer_Reader(QBox_BufReader* self, const char* buf, size_t bytes);
+
+/*============================================================================*/
 /* type QBox_ReaderAt */
 
 typedef	ssize_t (*QBox_FnReadAt)(void* self, void *buf, size_t bytes, off_t offset);

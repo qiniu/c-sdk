@@ -18,6 +18,33 @@
 #endif
 
 /*============================================================================*/
+/* QBox_Buffer_Reader */
+
+static size_t QBox_BufReader_Read(void *buf, size_t unused, size_t n, void *self1)
+{
+	QBox_BufReader* self = (QBox_BufReader*)self1;
+	size_t max = self->limit - self->off;
+	if (max <= 0) {
+		return 0;
+	}
+	if (n > max) {
+		n = (size_t)max;
+	}
+	memcpy(buf, self->buf + self->off, n);
+	self->off += n;
+	return n;
+}
+
+QBox_Reader QBox_Buffer_Reader(QBox_BufReader* self, const char* buf, size_t bytes)
+{
+	QBox_Reader ret = {self, QBox_BufReader_Read};
+	self->buf = buf;
+	self->off = 0;
+	self->limit = bytes;
+	return ret;
+}
+
+/*============================================================================*/
 /* QBox_Section_Reader */
 
 typedef struct _QBox_sectionReader {
