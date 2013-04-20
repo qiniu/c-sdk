@@ -1,5 +1,12 @@
 ## CHANGE LOG
 
+### v2.2.2
+
+2013-04-20 issue [#36](https://github.com/qiniu/c-sdk/pull/36)
+
+- 增加 QBox_RS_PutPolicy_Token, QBox_RS_GetPolicy_Token (不建议继续使用 QBox_MakeUpToken)
+
+
 ### v2.2.1
 
 2013-04-19 issue [#24](https://github.com/qiniu/c-sdk/pull/24)
