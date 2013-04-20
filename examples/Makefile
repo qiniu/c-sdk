@@ -8,6 +8,7 @@ SOURCE_FILES=\
 	../qbox/oauth2_passwd.c\
 	../qbox/oauth2_uptoken.c\
 	../qbox/rs.c\
+	../qbox/rs_token.c\
 	../qbox/io.c\
 	../qbox/rscli.c\
 	rs_demo.c\
