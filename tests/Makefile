@@ -12,9 +12,10 @@ SOURCE_FILES=\
 	../qbox/io.c\
 	test.c\
 
+CUNIT_LIB=../CUnit/CUnit/Sources/.libs
+
 all: $(SOURCE_FILES)
-	ln -s -f ../CUnit/CUnit/Sources/.libs/libcunit.so.1 libcunit.so.1
-	gcc -o qiniutest -L../CUnit/CUnit/Sources/.libs -lcurl -lm -lssl -lcrypto -lcunit $^
+	gcc $^ -o qiniutest -L$(CUNIT_LIB) -lcurl -lssl -lcrypto -lcunit -lm
 
 install: all
 	@echo
@@ -23,5 +24,5 @@ clean:
 	rm -f test
 
 test: all
-	./qiniutest
+	LD_LIBRARY_PATH=$(CUNIT_LIB) ./qiniutest
 
