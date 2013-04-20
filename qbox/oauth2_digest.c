@@ -71,14 +71,19 @@ static void QBox_DigestAuth_Release(void* self)
 
 /*============================================================================*/
 
-static QBox_Auth_Vtable QBox_DigestAuth_Vtable = {
+static QBox_Auth_Itbl QBox_DigestAuth_Itbl = {
 	QBox_DigestAuth_Auth,
 	QBox_DigestAuth_Release
 };
 
+static QBox_Auth QBox_DigestAuth = {
+	NULL,
+	&QBox_DigestAuth_Itbl
+};
+
 void QBox_Client_Init(QBox_Client* self, size_t bufSize)
 {
-	QBox_Client_InitEx(self, NULL, &QBox_DigestAuth_Vtable, bufSize);
+	QBox_Client_InitEx(self, QBox_DigestAuth, bufSize);
 }
 
 /*============================================================================*/

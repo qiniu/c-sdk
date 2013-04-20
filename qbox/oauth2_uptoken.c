@@ -32,7 +32,7 @@ static void QBox_UpTokenAuth_Release(void* self)
 
 /*============================================================================*/
 
-static QBox_Auth_Vtable QBox_UpTokenAuth_Vtable = {
+static QBox_Auth_Itbl QBox_UpTokenAuth_Itbl = {
 	QBox_UpTokenAuth_Auth,
 	QBox_UpTokenAuth_Release
 };
@@ -40,12 +40,11 @@ static QBox_Auth_Vtable QBox_UpTokenAuth_Vtable = {
 void QBox_Client_InitByUpToken(QBox_Client* self, const char* uptoken, size_t bufSize)
 {
 	QBox_Error err;
-	char* auth = NULL;
 
 	/* Set appropriate HTTP header */
-	auth = QBox_String_Concat("Authorization: UpToken ", uptoken, NULL);
+	QBox_Auth auth = {QBox_String_Concat("Authorization: UpToken ", uptoken, NULL), &QBox_UpTokenAuth_Itbl};
 
-	QBox_Client_InitEx(self, auth, &QBox_UpTokenAuth_Vtable, bufSize);
+	QBox_Client_InitEx(self, auth, bufSize);
 }
 
 /*============================================================================*/
