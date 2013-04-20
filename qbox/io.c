@@ -78,6 +78,44 @@ static void QBox_Io_form_init(
 CURL* QBox_Client_reset(QBox_Client* self);
 QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError);
 
+static QBox_Error QBox_Io_putRet(
+	CURL* curl, QBox_Client* self, QBox_Io_PutRet* ret)
+{
+	QBox_Error err = QBox_callex(curl, &self->b, &self->root, QBox_False);
+	if (err.code == 200 && ret != NULL) {
+		ret->hash = QBox_Json_GetString(self->root, "hash", NULL);
+	}
+	return err;
+}
+
+QBox_Error QBox_Io_Put(
+	QBox_Client* self, QBox_Io_PutRet* ret,
+	const char* uptoken, const char* key, QBox_Reader body, QBox_Io_PutExtra* extra)
+{
+	CURL* curl = QBox_Client_reset(self);
+    char* url = QBox_String_Concat2(QBOX_UP_HOST, "/upload");
+	QBox_Io_form form;
+	QBox_Error err;
+
+	QBox_Io_form_init(&form, uptoken, key, extra);
+
+	curl_easy_setopt(curl, CURLOPT_READFUNCTION, body.Read);
+	curl_formadd(
+		&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file",
+		CURLFORM_FILENAME, key, CURLFORM_STREAM, body.self, CURLFORM_END);
+
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_HTTPPOST, form.formpost);
+
+	err = QBox_Io_putRet(curl, self, ret);
+
+	curl_formfree(form.formpost);
+	free(form.action);
+    free(url);
+
+	return err;
+}
+
 QBox_Error QBox_Io_PutFile(
 	QBox_Client* self, QBox_Io_PutRet* ret,
 	const char* uptoken, const char* key, const char* localFile, QBox_Io_PutExtra* extra)
@@ -95,10 +133,7 @@ QBox_Error QBox_Io_PutFile(
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_HTTPPOST, form.formpost);
 
-	err = QBox_callex(curl, &self->b, &self->root, QBox_False);
-	if (err.code == 200 && ret != NULL) {
-		ret->hash = QBox_Json_GetString(self->root, "hash", NULL);
-	}
+	err = QBox_Io_putRet(curl, self, ret);
 
 	curl_formfree(form.formpost);
 	free(form.action);
@@ -120,15 +155,12 @@ QBox_Error QBox_Io_PutBuffer(
 
 	curl_formadd(
 		&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file",
-		CURLFORM_BUFFER, "content", CURLFORM_BUFFERPTR, buf, CURLFORM_BUFFERLENGTH, fsize, CURLFORM_END);
+		CURLFORM_BUFFER, key, CURLFORM_BUFFERPTR, buf, CURLFORM_BUFFERLENGTH, fsize, CURLFORM_END);
 
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_HTTPPOST, form.formpost);
 
-	err = QBox_callex(curl, &self->b, &self->root, QBox_False);
-	if (err.code == 200 && ret != NULL) {
-		ret->hash = QBox_Json_GetString(self->root, "hash", NULL);
-	}
+	err = QBox_Io_putRet(curl, self, ret);
 
 	curl_formfree(form.formpost);
 	free(form.action);
