@@ -12,7 +12,7 @@ examples/unit_test/run_test
 examples/resumable_put/up_demo
 examples/resumable_put/huge_file.txt
 
-test/qiniutest
+tests/qiniutest
 
 .deps/
 .libs/
