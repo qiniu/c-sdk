@@ -80,7 +80,7 @@ void QBox_Global_Cleanup()
 
 static const char g_statusCodeError[] = "http status code is not OK";
 
-static QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError)
+QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError)
 {
 	QBox_Error err;
 	CURLcode curlCode;
@@ -165,21 +165,30 @@ QBox_Int64 QBox_Json_GetInt64(QBox_Json* self, const char* key, QBox_Int64 defva
 /*============================================================================*/
 /* type QBox_Client */
 
-void QBox_Client_InitEx(QBox_Client* self, void* auth, QBox_Auth_Vtable* vptr, size_t bufSize)
+static QBox_Auth QBox_NoAuth = {
+	NULL,
+	NULL
+};
+
+void QBox_Client_InitEx(QBox_Client* self, QBox_Auth auth, size_t bufSize)
 {
 	self->curl = curl_easy_init();
 	self->root = NULL;
 	self->auth = auth;
-    self->vptr = vptr;
 
 	QBox_Buffer_Init(&self->b, bufSize);
 }
 
+void QBox_Client_InitNoAuth(QBox_Client* self, size_t bufSize)
+{
+	QBox_Client_InitEx(self, QBox_NoAuth, bufSize);
+}
+
 void QBox_Client_Cleanup(QBox_Client* self)
 {
-	if (self->auth != NULL) {
-		self->vptr->Release(self->auth);
-		self->auth = NULL;
+	if (self->auth.itbl != NULL) {
+		self->auth.itbl->Release(self->auth.self);
+		self->auth.itbl = NULL;
 	}
 	if (self->curl != NULL) {
 		curl_easy_cleanup((CURL*)self->curl);
@@ -222,9 +231,11 @@ static QBox_Error QBox_Client_callWithBody(
 	headers = curl_slist_append(NULL, ctxLength);
 	headers = curl_slist_append(headers, "Content-Type: application/octet-stream");
 
-	err = self->vptr->Auth(self->auth, &headers, url, NULL, 0);
-	if (err.code != 200) {
-		return err;
+	if (self->auth.itbl != NULL) {
+		err = self->auth.itbl->Auth(self->auth.self, &headers, url, NULL, 0);
+		if (err.code != 200) {
+			return err;
+		}
 	}
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -278,14 +289,16 @@ QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url)
 
 	QBox_Client_initcall(self, url);
 
-	err = self->vptr->Auth(self->auth, &headers, url, NULL, 0);
-	if (err.code != 200) {
-		return err;
+	if (self->auth.itbl != NULL) {
+		err = self->auth.itbl->Auth(self->auth.self, &headers, url, NULL, 0);
+		if (err.code != 200) {
+			return err;
+		}
 	}
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-	err = QBox_callex((CURL*)self->curl, &self->b, &self->root, QBox_False);
+	err = QBox_callex(curl, &self->b, &self->root, QBox_False);
 	*ret = self->root;
 	return err;
 }
@@ -298,13 +311,15 @@ QBox_Error QBox_Client_CallNoRet(QBox_Client* self, const char* url)
 
 	QBox_Client_initcall(self, url);
 
-	err = self->vptr->Auth(self->auth, &headers, url, NULL, 0);
-	if (err.code != 200) {
-		return err;
+	if (self->auth.itbl != NULL) {
+		err = self->auth.itbl->Auth(self->auth.self, &headers, url, NULL, 0);
+		if (err.code != 200) {
+			return err;
+		}
 	}
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-	return QBox_callex((CURL*)self->curl, &self->b, &self->root, QBox_False);
+	return QBox_callex(curl, &self->b, &self->root, QBox_False);
 }
 

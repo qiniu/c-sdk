@@ -267,15 +267,15 @@ QBox_PasswordAuth* QBox_PasswordAuth_New(QBox_Token* token)
 
 /*============================================================================*/
 
-static QBox_Auth_Vtable QBox_PasswordAuth_Vtable = {
+static QBox_Auth_Itbl QBox_PasswordAuth_Itbl = {
 	QBox_PasswordAuth_Auth,
 	QBox_PasswordAuth_Release
 };
 
 void QBox_Client_InitByPassword(QBox_Client* self, QBox_Token* token, size_t bufSize)
 {
-	QBox_PasswordAuth* auth = QBox_PasswordAuth_New(token);
-	QBox_Client_InitEx(self, auth, &QBox_PasswordAuth_Vtable, bufSize);
+	QBox_Auth auth = {QBox_PasswordAuth_New(token), &QBox_PasswordAuth_Itbl};
+	QBox_Client_InitEx(self, auth, bufSize);
 }
 
 /*============================================================================*/
