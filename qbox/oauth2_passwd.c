@@ -19,7 +19,7 @@ static const char* QBOX_CLIENT_SECRET	= "75df554a39f58accb7eb293b550fa59618674b7
 /*============================================================================*/
 /* type QBox_call */
 
-QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError);
+QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError, QBox_Buffer *resph);
 
 static QBox_Error QBox_call(CURL* curl, int bufSize, QBox_Json** ret, QBox_Bool simpleError)
 {
@@ -27,7 +27,7 @@ static QBox_Error QBox_call(CURL* curl, int bufSize, QBox_Json** ret, QBox_Bool 
 	QBox_Buffer resp;
 	QBox_Buffer_Init(&resp, bufSize);
 
-	err = QBox_callex(curl, &resp, ret, simpleError);
+	err = QBox_callex(curl, &resp, ret, simpleError, NULL);
 
 	QBox_Buffer_Cleanup(&resp);
 	return err;

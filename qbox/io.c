@@ -76,12 +76,12 @@ static void QBox_Io_form_init(
 /* func QBox_Io_PutXXX */
 
 CURL* QBox_Client_reset(QBox_Client* self);
-QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError);
+QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError, QBox_Buffer *resph);
 
 static QBox_Error QBox_Io_putRet(
 	CURL* curl, QBox_Client* self, QBox_Io_PutRet* ret)
 {
-	QBox_Error err = QBox_callex(curl, &self->b, &self->root, QBox_False);
+	QBox_Error err = QBox_callex(curl, &self->b, &self->root, QBox_False, &self->bheader);
 	if (err.code == 200 && ret != NULL) {
 		ret->hash = QBox_Json_GetString(self->root, "hash", NULL);
 	}

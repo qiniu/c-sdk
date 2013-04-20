@@ -80,15 +80,19 @@ void QBox_Global_Cleanup()
 
 static const char g_statusCodeError[] = "http status code is not OK";
 
-QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError)
+QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError, QBox_Buffer *resph)
 {
-	QBox_Error err;
+	QBox_Error err = {};
 	CURLcode curlCode;
 	long httpCode;
 	QBox_Json* root;
 
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, QBox_Buffer_Fwrite);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, resp);
+	if (resph != NULL) {
+		curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, QBox_Buffer_Fwrite);
+		curl_easy_setopt(curl, CURLOPT_WRITEHEADER, resph);
+	}
 
 	curlCode = curl_easy_perform(curl);
 
@@ -165,6 +169,7 @@ void QBox_Client_InitEx(QBox_Client* self, QBox_Auth auth, size_t bufSize)
 	self->auth = auth;
 
 	QBox_Buffer_Init(&self->b, bufSize);
+	QBox_Buffer_Init(&self->bheader, bufSize);
 }
 
 void QBox_Client_InitNoAuth(QBox_Client* self, size_t bufSize)
@@ -187,6 +192,7 @@ void QBox_Client_Cleanup(QBox_Client* self)
 		self->root = NULL;
 	}
 	QBox_Buffer_Cleanup(&self->b);
+	QBox_Buffer_Cleanup(&self->bheader);
 }
 
 CURL* QBox_Client_reset(QBox_Client* self)
@@ -195,6 +201,7 @@ CURL* QBox_Client_reset(QBox_Client* self)
 
 	curl_easy_reset(curl);
 	QBox_Buffer_Reset(&self->b);
+	QBox_Buffer_Reset(&self->bheader);
 	if (self->root != NULL) {
 		cJSON_Delete(self->root);
 		self->root = NULL;
@@ -235,7 +242,7 @@ static QBox_Error QBox_Client_callWithBody(
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-	err = QBox_callex(curl, &self->b, &self->root, QBox_False);
+	err = QBox_callex(curl, &self->b, &self->root, QBox_False, &self->bheader);
 
 	curl_slist_free_all(headers);
 
@@ -293,7 +300,7 @@ QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url)
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-	err = QBox_callex(curl, &self->b, &self->root, QBox_False);
+	err = QBox_callex(curl, &self->b, &self->root, QBox_False, &self->bheader);
 	*ret = self->root;
 	return err;
 }
@@ -315,6 +322,6 @@ QBox_Error QBox_Client_CallNoRet(QBox_Client* self, const char* url)
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-	return QBox_callex(curl, &self->b, &self->root, QBox_False);
+	return QBox_callex(curl, &self->b, &self->root, QBox_False, &self->bheader);
 }
 

@@ -67,6 +67,7 @@ typedef struct _QBox_Client {
 	QBox_Auth auth;
 	QBox_Json* root;
 	QBox_Buffer b;
+	QBox_Buffer bheader;
 } QBox_Client;
 
 void QBox_Client_InitEx(QBox_Client* self, QBox_Auth auth, size_t bufSize);
