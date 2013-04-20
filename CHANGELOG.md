@@ -5,7 +5,7 @@
 2013-04-19 issue [#24](https://github.com/qiniu/c-sdk/pull/24)
 
 - 增加 QBox_Client_InitNoAuth
-- 增加 QBox_Io_Put, QBox_Io_PutFile, QBox_Io_PutBuffer
+- 增加 QBox_Io_PutFile, QBox_Io_PutBuffer
 - 增加 QBox_RS_PutStream, QBox_RSCli_PutStream, QBox_RSCli_UploadStream (但不推荐，推荐 QBox_Io_PutXXX)
 - 支持 Travis-CI，引入 CUnit 做单元测试
 
