@@ -79,18 +79,13 @@ CURL* QBox_Client_reset(QBox_Client* self);
 QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError, QBox_Buffer *resph);
 
 static QBox_Error QBox_Io_call(
-	QBox_Client* self, QBox_Io_PutRet* ret, struct curl_httppost* formpost, char* action, void* readFn)
+	QBox_Client* self, QBox_Io_PutRet* ret, struct curl_httppost* formpost, char* action)
 {
 	QBox_Error err;
 
 	CURL* curl = QBox_Client_reset(self);
 	char* url = QBox_String_Concat2(QBOX_UP_HOST, "/upload");
 	struct curl_slist* headers = curl_slist_append(NULL, "Expect:");
-
-	if (readFn != NULL) {
-		curl_easy_setopt(curl, CURLOPT_POST, 1L);
-		curl_easy_setopt(curl, CURLOPT_READFUNCTION, readFn);
-	}
 
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
@@ -108,20 +103,6 @@ static QBox_Error QBox_Io_call(
 	return err;
 }
 
-QBox_Error QBox_Io_Put(
-	QBox_Client* self, QBox_Io_PutRet* ret,
-	const char* uptoken, const char* key, QBox_Reader body, QBox_Int64 fsize, QBox_Io_PutExtra* extra)
-{
-	QBox_Io_form form;
-	QBox_Io_form_init(&form, uptoken, key, extra);
-
-	curl_formadd(
-		&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file",
-		CURLFORM_FILENAME, key, CURLFORM_STREAM, body.self, CURLFORM_CONTENTSLENGTH, fsize, CURLFORM_END);
-
-	return QBox_Io_call(self, ret, form.formpost, form.action, body.Read);
-}
-
 QBox_Error QBox_Io_PutFile(
 	QBox_Client* self, QBox_Io_PutRet* ret,
 	const char* uptoken, const char* key, const char* localFile, QBox_Io_PutExtra* extra)
@@ -132,7 +113,7 @@ QBox_Error QBox_Io_PutFile(
 	curl_formadd(
 		&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localFile, CURLFORM_END);
 
-	return QBox_Io_call(self, ret, form.formpost, form.action, NULL);
+	return QBox_Io_call(self, ret, form.formpost, form.action);
 }
 
 QBox_Error QBox_Io_PutBuffer(
@@ -146,6 +127,6 @@ QBox_Error QBox_Io_PutBuffer(
 		&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file",
 		CURLFORM_BUFFER, key, CURLFORM_BUFFERPTR, buf, CURLFORM_BUFFERLENGTH, fsize, CURLFORM_END);
 
-	return QBox_Io_call(self, ret, form.formpost, form.action, NULL);
+	return QBox_Io_call(self, ret, form.formpost, form.action);
 }
 

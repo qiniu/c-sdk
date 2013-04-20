@@ -34,10 +34,6 @@ typedef struct _QBox_Io_PutRet {
 /*============================================================================*/
 /* func QBox_Io_PutXXX */
 
-QBox_Error QBox_Io_Put(
-	QBox_Client* self, QBox_Io_PutRet* ret,
-	const char* uptoken, const char* key, QBox_Reader body, QBox_Int64 fsize, QBox_Io_PutExtra* extra);
-
 QBox_Error QBox_Io_PutFile(
 	QBox_Client* self, QBox_Io_PutRet* ret,
 	const char* uptoken, const char* key, const char* localFile, QBox_Io_PutExtra* extra);
