@@ -63,7 +63,7 @@ C-SDK 以开源方式提供。开发者可以随时从本文档提供的下载�
 
 C-SDK 使用 [cURL](http://curl.haxx.se/) 进行网络相关操作。无论是作为客户端还是服务端，都需要依赖 [cURL](http://curl.haxx.se/)。如果作为服务端，C-SDK 因为需要用 HMAC 进行数字签名做授权（简称签名授权），所以依赖了 [OpenSSL](http://www.openssl.org/) 库。C-SDK 并没有带上这两个外部库，因此在使用 C-SDK 之前需要先确认您的当前开发环境中是否已经安装了这所需的外部库，并且已经将它们的头文件目录和库文件目录都加入到了项目工程的设置。
 
-在主流的*nix环境下，通常 [cURL](http://curl.haxx.se/) 和 [OpenSSL](http://www.openssl.org/) 都已经随系统默认安装到`/usr/include`和`/usr/lib`目录下。如果你的系统还没有这些库，请自行安装。如何安装这些第三方库不在本文讨论范围，请自行查阅相关文档。
+在主流的 *nix 环境下，通常 [cURL](http://curl.haxx.se/) 和 [OpenSSL](http://www.openssl.org/) 都已经随系统默认安装到`/usr/include`和`/usr/lib`目录下。如果你的系统还没有这些库，请自行安装。如何安装这些第三方库不在本文讨论范围，请自行查阅相关文档。
 
 如果你使用 gcc 进行编译，服务端典型的链接选项是：`-lcurl -lssl -lcrypto -lm`，客户端则是：`-lcurl -lm`。
 
