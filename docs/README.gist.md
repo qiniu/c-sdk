@@ -190,7 +190,7 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 
 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 实际上是用 AccessKey/SecretKey 进行数字签名的上传策略(`Qiniu_RS_PutPolicy`)，它控制则整个上传流程的行为。让我们快速过一遍你都能够决策啥：
 
-* 一个 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 可以被用于多次上传（只要它还没有过期）。
+* `expires` 指定 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 有效期（默认1小时）。一个 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 可以被用于多次上传（只要它还没有过期）。
 * `scope` 限定客户端的权限。如果 `scope` 是 bucket，则客户端只能新增文件到指定的 bucket，不能修改文件。如果 `scope` 为 bucket:key，则客户端可以修改指定的文件。
 * `callbackUrl` 设定业务服务器的回调地址，这样业务服务器才能感知到上传行为的发生。可选。
 * `asyncOps` 可指定上传完成后，需要自动执行哪些数据处理。这是因为有些数据处理操作（比如音视频转码）比较慢，如果不进行预转可能第一次访问的时候效果不理想，预转可以很大程度改善这一点。
