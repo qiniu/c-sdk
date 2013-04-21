@@ -14,11 +14,10 @@ SDK下载地址：<https://github.com/qiniu/c-sdk/tags>
 - [准备开发环境](#prepare)
     - [环境依赖](#dependences)
     - [ACCESS_KEY 和 SECRET_KEY](#appkey)
-- [初始化与环境清理](#init)
-    - [全局初始化](#global-init)
-    - [客户端初始化](#client-init)
-- [错误处理](#error-handling)
-- [内存管理](#memory-management)
+- [初始化环境与清理](#init)
+- [C-SDK惯例](#convention)
+    - [HTTP客户端](#http-client)
+    - [错误处理与调试](#error-handling)
 - [认证与授权](#authorization)
     - [认证](#authentication)
     - [获得上传授权](#put-auth)
@@ -76,125 +75,88 @@ C-SDK以开源方式提供。开发者可以随时从本文档提供的下载地
 
 ### 环境依赖
 
-C-SDK 使用 cURL 操作 HTTP 网络协议。无论是作为客户端还是服务端，都需要依赖 cURL。如果作为服务端，C-SDK 因为需要用 HMAC 进行数字签名，所以依赖了 OpenSSL 库。C-SDK 并没有带上这两个外部库，因此在使用C-SDK之前需要先确认您的当前开发环境中是否已经安装了这所需的外部库，并且已经将它们的头文件目录和库文件目录都加入到了项目工程的设置。
+C-SDK 使用[cURL](http://curl.haxx.se/)进行网络相关操作。无论是作为客户端还是服务端，都需要依赖[cURL](http://curl.haxx.se/)。如果作为服务端，C-SDK 因为需要用HMAC进行数字签名做授权（简称签名授权），所以依赖了[OpenSSL](http://www.openssl.org/)库。C-SDK 并没有带上这两个外部库，因此在使用C-SDK之前需要先确认您的当前开发环境中是否已经安装了这所需的外部库，并且已经将它们的头文件目录和库文件目录都加入到了项目工程的设置。
 
-在主流的*nix环境下，通常cURL和OpenSSL都已经随系统默认安装到`/usr/include`和`/usr/lib`目录下。头文件分别在`/usr/include/curl`和`/usr/include/openssl`目录下，对应的库文件直接位于`/usr/lib`下，分别命名为libcurl和libssl。如何安装这些第三方库不在本文讨论范围，请自行查阅相关文档。
-开发者在初始化工程时需要记得将两个include目录都加入到头文件查找路径中，并将`/usr/lib`加入到库文件的查找路径中，此外还需要在库的链接列表中加入相应的库名称。因为内置的cJSON依赖于数学库，因此也需要链接libm。
+在主流的*nix环境下，通常[cURL](http://curl.haxx.se/)和[OpenSSL](http://www.openssl.org/)都已经随系统默认安装到`/usr/include`和`/usr/lib`目录下。如果你的系统还没有这些库，请自行安装。如何安装这些第三方库不在本文讨论范围，请自行查阅相关文档。
 
-在配置完成后，最终的Makefile应该已包含这些选项：`-I/usr/include/curl -I/usr/include/openssl -L/usr/lib/ -lcurl -lssl -lm`。
+如果你使用gcc进行编译，服务端典型的编译选项是这样的 `-lcurl -lssl -lcrypto -lm`，客户端则是这样的 `-lcurl -lm`。
 
 如果在项目构建过程中出现环境相关的编译错误和链接错误，请确认这些选项是否都已经正确配置，以及所依赖的库是否都已经正确的安装。
+
 
 <a name="appkey"></a>
 
 ### ACCESS_KEY 和 SECRET_KEY
 
-要接入七牛云存储，您需要拥有一对有效的 Access Key 和 Secret Key 用来进行签名认证。可以通过如下步骤获得：
+如果你的服务端采用C-SDK，那么使用C-SDK前，您需要拥有一对有效的 AccessKey 和 SecretKey 用来进行签名授权。可以通过如下步骤获得：
 
 1. [开通七牛开发者帐号](https://dev.qiniutek.com/signup)
-2. [登录七牛开发者自助平台，查看 Access Key 和 Secret Key](https://dev.qiniutek.com/account/keys) 。
+2. [登录七牛开发者自助平台，查看 AccessKey 和 SecretKey](https://dev.qiniutek.com/account/keys) 。
 
-C-SDK 的 conf.h 文件中声明了对应的两个变量：`QBOX_ACCESS_KEY`和`QBOX_SECRET_KEY`，用于存储上面提到的AccessKey 和 SecretKey。一般情况下，开发者也只需要处理 conf.h 中这两个变量，其他变量不需要修改其默认值。
+C-SDK 的 conf.h 文件中声明了对应的两个变量：`QINIU_ACCESS_KEY`和`QINIU_SECRET_KEY`。你需要在启动程序之初初始化这两个变量为七牛颁发的 AccessKey 和 SecretKey。
+
 
 <a name="init"></a>
 
-## 初始化与环境清理
+## 初始化环境与清理
 
-在调用各个函数之前，我们需要先初始化调用环境。C-SDK提供了几个初始化的函数供在不同的场合下调用，并提供了匹配的清理函数。在结束使用本SDK后，需要调用相应的清理函数，以避免发生资源泄漏的问题。
+对于服务端而言，常规程序流程是：
 
-下面我们给出一个常规的程序流程：
+    @gist(gist/server.c#init)
 
-    /* Key值存储 */
-    QBOX_ACCESS_KEY = "<Please apply your access key>";
-    QBOX_SECRET_KEY = "<Dont send your secret key to anyone>";
+对于客户端而言，常规程序流程是：
 
-    /* 全局初始化函数，整个进程只需要调用一次 */
-    QBox_Global_Init(-1);
+    @gist(gist/client.c#init)
 
-    /* 客户端初始化，每个线程只需要调用一次 */
-    QBox_Client_Init(&client, bufSize); // thread
+两者主要的区别在于：
 
-    /* 初始化完成，现在可以开始调用业务函数了，比如PutAuth, Get, PutFile等 */
-
-    /* 调用业务函数 */
-    QBox_RS_PutAuth(&client, &putAuthRet);
-
-    QBox_RS_Get(&client, &getRet, tableName, key, NULL);
-
-    /* 其他业务函数 … */
-
-    /* 调用结束，现在开始释放资源 */
-
-    /* 每个线程结束时需要调用一次QBox_Client_Cleanup以释放相应资源 */
-    QBox_Client_Cleanup(&client);
-
-    /* 全局清理函数，只需要在进程退出时调用一次 */
-    QBox_Global_Cleanup();
+1. 客户端没有 AccessKey/SecretKey，所以不需要初始化 QINIU_ACCESS_KEY, QINIU_SECRET_KEY 变量。
+2. 客户端没有签名授权，所以初始化 Qiniu_Client 对象应该用 Qiniu_Client_InitNoAuth 而不是 Qiniu_Client_Init。
 
 
-<a name="global-init"></a>
+<a name="convention"></a>
 
-### 全局初始化
+## C-SDK惯例
 
-全局初始化函数原型如下：
+C语言是一个非常底层的语言，相比其他高级语言来说，它的代码通常看起来会更啰嗦。为了尽量让大家理解我们的C-SDK，这里需要解释下我们在SDK中的一些惯例做法。
 
-    /* 所属头文件：oauth2.h */
+<a name="http-client"></a>
 
-    void QBox_Global_Init(long flags);
+### HTTP客户端
 
-该函数的flags参数与cURL的`curl_global_init`的参数规格一致，参见<http://curl.haxx.se/libcurl/c/curl_global_init.html>以了解参数的可选值。一般情况下，只需使用CURL_GLOBAL_ALL作为传入参数。
+在C-SDK中，HTTP客户端叫`Qiniu_Client`。在某些语言环境中，这个类是线程安全的，多个线程可以共享同一份实例，但在C-SDK中它被设计为线程不安全的。直接原因是我们所基于的[cURL](http://curl.haxx.se/)库中HTTP客户端类（CURL）已经是线程不安全的。但个重要的原因是我们试图简化内存管理的负担。HTTP请求结果的生命周期被设计成由`Qiniu_Client`负责，在下一次请求时会自动释放上一次HTTP请求的结果。这有点粗暴，但在多数场合是合理的。如果有个HTTP请求结果的数据需要长期使用，你应该复制一份。例如：
 
-<a name="client-init"></a>
+    @gist(gist/server.c#stat)
 
-### 客户端初始化
+这个例子中，`Qiniu_RS_Stat`请求返回了`Qiniu_Error`和`Qiniu_RS_StatRet`两个结构。其中的 `Qiniu_Error` 类型是这样的：
 
-为了保证多线程场景下使用的安全性，C-SDK提供的函数进行了针对性的设计。C-SDK使用名为`QBox_Client`的结构体来管理单个客户端的数据。这个结构体包含了一些线程敏感的数据，比如在单次HTTP POST过程中的缓冲区，不能被多个POST过程重用。如果直接在多个线程中共用同一结构体对象，很可能会发生POST数据错乱的情况。因此，在多线程场景下，开发者需要确认不发生共用的情况，或为每个线程构建一个`QBox_Client`结构体，并只在这个线程中使用。
+    @gist(../qiniu/base.c#error)
 
-我们在[认证与授权](#authorization)这一节会对如何初始化`QBox_Client`对象做详细介绍。
+`Qiniu_RS_StatRet` 类型是这样的：
 
-对于简单的使用场景，`QBox_Client`对象可以作为一个线程函数的临时变量初始化，而对于一些比较复杂的场景，则可以考虑将这个对象指针放置到TLS（线程局部存储）中。
+    @gitst(../qiniu/rs.c#statret)
+
+值得注意的是，`Qiniu_Error.message`、`Qiniu_RS_StatRet.hash`、`Qiniu_RS_StatRet.mimeType` 都声明为 `const char*` 类型，是个只读字符串，并不管理字符串内容的生命周期。这些字符串什么时候失效？下次 `Qiniu_Client` 发生网络API请求时失效。如果你需要长久使用，应该复制一份，比如：
+
+    hash = strdup(ret.hash);
+
 
 <a name="error-handling"></a>
 
-## 错误处理
+### 错误处理与调试
 
-C-SDK引入了一个统一的错误处理机制。所有业务函数都会返回一个`QBox_Error`类型的返回值。该类型的定义如下：
+在HTTP请求出错的时候，C-SDK统一返回了一个`Qiniu_Error`结构体：
 
-    typedef struct _QBox_Error {
-      int code;
-      const char* message;
-    } QBox_Error;
+    @gist(../qiniu/base.c#error)
 
-可以得到一个错误码和对应的读者友好的消息。这个错误码有可能是cURL的错误码，表示请求发送环节发生了意外，或者是一个HTTP错误码，表示请求发送正常，服务器端处理请求后返回的HTTP错误码。
+即一个错误码和对应的读者友好的消息。这个错误码有可能是cURL的错误码，表示请求发送环节发生了意外，或者是一个HTTP错误码，表示请求发送正常，服务器端处理请求后返回了HTTP错误码。
 
 如果一切正常，`code`应该是200，即HTTP的OK状态码。如果不是200，则需要对`code`的值进行相应分析。对于低于200的值，可以查看[cURL错误码](http://curl.haxx.se/libcurl/c/libcurl-errors.html)，否则应查看[七牛云存储错误码](http://docs.qiniutek.com/v2/api/code/)。
 
-在打印到控制台或者输出到日志文件时，除了错误码开发者也可以考虑包含对读者友好的错误消息`message`，以降低理解错误的难度并提高解决问题的效率。
+如果`message`指示的信息还不够友好，也可以尝试把整个HTTP返回包打印出来看看：
 
-<a name="memory-management"></a>
+    @gist(gist/server.c#debug)
 
-## 内存管理
-
-开发者在使用C-SDK之前，需要非常详细的了解C-SDK的内存管理模型，以避免代码中出现很难理解和解决的问题。
-
-一个非常重要的原则是，一次C-SDK的业务函数调用所返回的数据，在下一次业务函数调用之初就会失效。因此如果有一些返回的信息希望能够比较持久的使用的话，应在函数调用返回后立即拷贝数据内容。我们来用具体的例子说明这个原则。
-
-以下是一个有问题的实现：
-
-	QBox_RS_Get(&client, &getRet, "Bucket", "rs_demo.c", NULL);
-	QBox_RS_GetIfNotModified(&client, &getRet, "Bucket", "rs_demo.c", NULL, getRet.hash);
-
-问题在于调用`QBox_RS_GetIfNotModified`函数时传入的最后一个参数`getRet.hash`。业务函数所返回的结构体只包含了若干个指针，而这些指针指向的内存区域在每一次新的业务函数调用时将被清空。比如上面的这个调用，函数`QBox_RS_GetIfNotModified`的实现为先清空相应的内存，然后才会去取getRet.hash所指向的内容。很显然，这将导致无法取到正确的内容。
-
-因此，我们需要将代码调整为如下的结构：
-
-	QBox_RS_Get(&client, &getRet, "Bucket", "rs_demo.c", NULL);
-	hash = strdup(getRet.hash); /* 对于需要使用的数据getRet.hash，应该马上复制一份 */
-
-	QBox_RS_GetIfNotModified(&client, &getRet, "Bucket", "rs_demo.c", NULL, hash);
-	free(hash); /* strdup返回的指针，需要在使用完成后明确释放相应资源 */
-
-只要认真理解了C-SDK这个内存管理的原则，开发者就可以写出又高效又健壮的代码。
 
 <a name="authorization"></a>
 
