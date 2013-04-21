@@ -24,6 +24,7 @@ SDK下载地址：<https://github.com/qiniu/c-sdk/tags>
     - [断点续上传](#resumable-io-put)
 - [下载文件](#io-get)
     - [下载私有文件](io-get-private)
+    - [HTTPS 支持](io-https-get)
     - [断点续下载](#resumable-io-get)
 - [资源操作](#rs)
     - [获取文件信息](#rs-stat)
@@ -175,7 +176,7 @@ C语言是一个非常底层的语言，相比其他高级语言来说，它的�
 2. 凭借uptoken上传文件到七牛
 3. 善后工作，比如保存相关的一些信息
 
-服务端生成uptoken代码如下：
+服务端生成 uptoken 代码如下：
 
     @gist(gist/server.c#uptoken)
 
@@ -187,7 +188,7 @@ C语言是一个非常底层的语言，相比其他高级语言来说，它的�
 
 ### 上传策略
 
-[uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 实际上是用AccessKey/SecretKey进行数字签名的上传策略（`Qiniu_RS_PutPolicy`），它控制则整个上传流程的行为。让我们看看你都能够决策啥：
+[uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 实际上是用 AccessKey/SecretKey 进行数字签名的上传策略(`Qiniu_RS_PutPolicy`)，它控制则整个上传流程的行为。让我们快速过一遍你都能够决策啥：
 
 * 一个 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 可以被用于多次上传（只要它还没有过期）。
 * `scope` 限定客户端的权限。如果 `scope` 是 bucket，则客户端只能新增文件到指定的 bucket，不能修改文件。如果 `scope` 为 bucket:key，则客户端可以修改指定的文件。
@@ -197,7 +198,7 @@ C语言是一个非常底层的语言，相比其他高级语言来说，它的�
 * `escape` 为真（非0）时，表示客户端传入的 `callbackParams` 中含有转义符。通过这个特性，可以很方便地把上传文件的某些元信息如 `fsize`（文件大小）、`imageInfo.width/height`（图片宽度/高度）、`exif`（图片EXIF信息）等传给业务服务器。
 * `detectMime` 为真（非0）时，表示服务端忽略客户端传入的 `mimeType`，自己自行检测。
 
-更完整的说明，请参考 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token)。
+关于上传策略更完整的说明，请参考 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token)。
 
 
 <a name="resumable-io-put"></a>
@@ -209,9 +210,36 @@ C语言是一个非常底层的语言，相比其他高级语言来说，它的�
 
 ## 下载文件
 
+每个 bucket 都会绑定一个或多个域名（domain）。如果这个 bucket 是公开的，那么可以通过一个公开的下载 url 可以访问到：
+
+    http://<domain>/<key>
+
+domain 可以是七牛的二级域名，如 hello.qiniudn.com，也可以是自定义域名（需要备案），如 hello.com。假设 key 为 a/b/c.htm，则该资源可以通过 http://hello.qiniudn.com/a/b/c.htm 或 http://hello.com/a/b/c.htm 可以访问。
+
 <a name="io-get-private"></a>
 
 ### 下载私有文件
+
+如果某个 bucket 是私有的，那么我们说这个 bucket 中的所有文件只能通过一个的临时有效的 url 访问：
+
+    http://<domain>/<key>?token=<dntoken>
+
+其中 dntoken 是由业务服务器签发的下载授权凭证。生成 dntoken 代码如下：
+
+    @gist(gist/server.c#dntoken)
+
+生成 dntoken 后，服务端可以下发 dntoken，也可以选择直接下发临时的 downloadUrl（看起来更灵活）。客户端收到 dntoken(自己组装完整的 downloadUrl) 或者 downloadUrl 后，和公有资源类似，直接用任意的 HTTP 客户端就可以下载该资源了。
+
+无论公有资源还是私有资源，下载过程中客户端并不需要七牛 C-SDK 参与其中。
+
+<a name="io-https-get"></a>
+
+### HTTPS 支持
+
+如果你的资源希望支持 https 下载，则有如下限制：
+
+1. 不能用 xxx.qiniudn.com 这样的二级域名，只能用 dn-xxx.qbox.me 域名。样例：https://dn-abc.qbox.me/1.txt
+2. 使用自定义域名是付费的。我们并不建议使用自定义域名，但如确有需要，请联系我们的销售人员。
 
 <a name="resumable-io-get"></a>
 
