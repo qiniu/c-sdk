@@ -79,8 +79,8 @@ char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* auth)
 	} else {
 		expires = 3600; // 1小时
 	}
-    time(&deadline);
-    deadline += expires;
+	time(&deadline);
+	deadline += expires;
 	cJSON_AddNumberToObject(root, "deadline", deadline);
 
 	if (auth->escape) {
@@ -110,8 +110,8 @@ char* Qiniu_RS_GetPolicy_Token(Qiniu_RS_GetPolicy* auth)
 	} else {
 		expires = 3600; // 1小时
 	}
-    time(&deadline);
-    deadline += expires;
+	time(&deadline);
+	deadline += expires;
 	cJSON_AddNumberToObject(root, "E", deadline);
 
 	authstr = cJSON_PrintUnformatted(root);

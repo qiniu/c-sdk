@@ -54,10 +54,14 @@ enum {
 /*============================================================================*/
 /* type Qiniu_Error */
 
+/* @gist error */
+
 typedef struct _Qiniu_Error {
 	int code;
 	const char* message;
 } Qiniu_Error;
+
+/* @endgist */
 
 /*============================================================================*/
 /* type Qiniu_Count */

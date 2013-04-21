@@ -39,6 +39,8 @@ char* Qiniu_RS_GetPolicy_Token(Qiniu_RS_GetPolicy* policy);
 /*============================================================================*/
 /* func Qiniu_RS_Stat */
 
+/* @gist statret */
+
 typedef struct _Qiniu_RS_StatRet {
 	const char* hash;
 	const char* mimeType;
@@ -46,13 +48,15 @@ typedef struct _Qiniu_RS_StatRet {
 	Qiniu_Int64 putTime;
 } Qiniu_RS_StatRet;
 
+/* @endgist */
+
 Qiniu_Error Qiniu_RS_Stat(
-	Qiniu_Client* self, Qiniu_RS_StatRet* ret, const char* tableName, const char* key);
+	Qiniu_Client* self, Qiniu_RS_StatRet* ret, const char* bucket, const char* key);
 
 /*============================================================================*/
 /* func Qiniu_RS_Delete */
 
-Qiniu_Error Qiniu_RS_Delete(Qiniu_Client* self, const char* tableName, const char* key);
+Qiniu_Error Qiniu_RS_Delete(Qiniu_Client* self, const char* bucket, const char* key);
 
 /*============================================================================*/
 
