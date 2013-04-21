@@ -62,7 +62,7 @@ C-SDK 使用[cURL](http://curl.haxx.se/)进行网络相关操作。无论是作�
 
 在主流的*nix环境下，通常[cURL](http://curl.haxx.se/)和[OpenSSL](http://www.openssl.org/)都已经随系统默认安装到`/usr/include`和`/usr/lib`目录下。如果你的系统还没有这些库，请自行安装。如何安装这些第三方库不在本文讨论范围，请自行查阅相关文档。
 
-如果你使用gcc进行编译，服务端典型的编译选项是这样的 `-lcurl -lssl -lcrypto -lm`，客户端则是这样的 `-lcurl -lm`。
+如果你使用gcc进行编译，服务端典型的链接选项是：`-lcurl -lssl -lcrypto -lm`，客户端则是：`-lcurl -lm`。
 
 如果在项目构建过程中出现环境相关的编译错误和链接错误，请确认这些选项是否都已经正确配置，以及所依赖的库是否都已经正确的安装。
 
