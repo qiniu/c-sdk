@@ -46,6 +46,7 @@ SDK下载地址：<https://github.com/qiniu/c-sdk/tags>
     - [高级图像处理（缩略、裁剪、旋转、转化）](#img-mogr)
     - [高级图像处理（缩略、裁剪、旋转、转化）并持久化](#img-saveas)
 
+
 <a name="overview"></a>
 
 ## 概述
@@ -54,7 +55,17 @@ SDK下载地址：<https://github.com/qiniu/c-sdk/tags>
 
 C-SDK以开源方式提供。开发者可以随时从本文档提供的下载地址查看和下载SDK的源代码，并按自己的工程现状进行合理使用，比如编译为静态库或者动态库后进行链接，或者直接将SDK的源代码加入到自己的工程中一起编译，以保持工程设置的简单性。
 
-由于C语言的通用性，C-SDK被设计为同时适合服务器端和客户端使用。服务端是指开发者自己的业务服务器。服务端有
+由于C语言的通用性，C-SDK被设计为同时适合服务器端和客户端使用。服务端是指开发者自己的业务服务器，客户端是指开发者提供给终端用户的软件，通常运行在iPhone/iPad/Android移动设备，或者运行在Windows/Mac/Linux这样的桌面上。服务端因为有七牛颁发的 AccessKey/SecretKey，可以做很多客户端做不了的事情，比如删除文件、移动/复制文件等操作。除非开发者将文件设置为公开，客服端操作私有文件需要获得服务端的授权。客户端上传文件需要获得服务端颁发的uptoken（上传授权凭证），客户端下载文件（包括下载处理过的文件，比如下载图片的缩略图）需要获得服务端颁发的dntoken（下载授权凭证）。
+
+注意从v5.0.0版本开始，我们对SDK的内容进行了精简。所有管理操作，比如：创建Bucket、删除Bucket、为Bucket绑定域名（publish）、设置数据处理的样式分隔符（fop seperator）和样式（fop style）等都去除了，统一建议到[开发者后台](https://dev.qiniutek.com/)来完成。另外，此前服务端还有自己独有的上传API，现在也推荐统一成基于客户端上传的工作方式。
+
+从内容上来说，C-SDK 主要包含如下几方面的内容：
+
+* 公共部分，所有用况下都用到：qiniu/base.c, qiniu/conf.c, qiniu/oauth2.c
+* 客户端上传文件：qiniu/base_io.c, qiniu/io.c
+* 客户端断点续上传：qiniu/base_io.c, qiniu/resumable_io.c
+* 数据处理：qiniu/fop.c
+* 服务端操作：qiniu/oauth2_digest.c (授权), qiniu/rs.c (资源操作), qiniu/rs_token.c (uptoken/dntoken颁发)
 
 
 <a name="prepare"></a>
@@ -65,9 +76,10 @@ C-SDK以开源方式提供。开发者可以随时从本文档提供的下载地
 
 ### 环境依赖
 
-C-SDK不对客户的开发环境和运行环境做过多假设。由于C-SDK依赖于cURL和OpenSSL（需支持哈希运算消息认证码，即HMAC），因此在使用C-SDK之前需要先确认您的当前开发环境中是否已经安装了这两个库，并且已经将它们的头文件目录和库文件目录都加入到了项目工程的设置。
+C-SDK 使用 cURL 操作 HTTP 网络协议。无论是作为客户端还是服务端，都需要依赖 cURL。如果作为服务端，C-SDK 因为需要用 HMAC 进行数字签名，所以依赖了 OpenSSL 库。C-SDK 并没有带上这两个外部库，因此在使用C-SDK之前需要先确认您的当前开发环境中是否已经安装了这所需的外部库，并且已经将它们的头文件目录和库文件目录都加入到了项目工程的设置。
 
-在主流的*nix环境下，通常cURL和OpenSSL已经随系统默认安装到`/usr/include`和`/usr/lib`目录下。头文件分别在`/usr/include/curl`和`/usr/include/openssl`目录下，对应的库文件直接位于`/usr/lib`下，分别命名为libcurl和libssl。开发者在初始化工程时需要记得将两个include目录都加入到头文件查找路径中，并将`/usr/lib`加入到库文件的查找路径中，此外还需要在库的链接列表中加入相应的库名称。因为内置的cJSON依赖于数学库，因此也需要链接libm。
+在主流的*nix环境下，通常cURL和OpenSSL都已经随系统默认安装到`/usr/include`和`/usr/lib`目录下。头文件分别在`/usr/include/curl`和`/usr/include/openssl`目录下，对应的库文件直接位于`/usr/lib`下，分别命名为libcurl和libssl。如何安装这些第三方库不在本文讨论范围，请自行查阅相关文档。
+开发者在初始化工程时需要记得将两个include目录都加入到头文件查找路径中，并将`/usr/lib`加入到库文件的查找路径中，此外还需要在库的链接列表中加入相应的库名称。因为内置的cJSON依赖于数学库，因此也需要链接libm。
 
 在配置完成后，最终的Makefile应该已包含这些选项：`-I/usr/include/curl -I/usr/include/openssl -L/usr/lib/ -lcurl -lssl -lm`。
 
