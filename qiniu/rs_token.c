@@ -15,7 +15,7 @@
 #include <openssl/hmac.h>
 #include "../cJSON/cJSON.h"
 
-static char* QBox_makeToken(char* policy_str)
+static char* Qiniu_makeToken(char* policy_str)
 {
 	char* token;
 	char* encoded_digest;
@@ -28,26 +28,26 @@ static char* QBox_makeToken(char* policy_str)
 	ENGINE_load_builtin_engines();
 	ENGINE_register_all_complete();
 
-	encoded_policy_str = QBox_String_Encode(policy_str);
+	encoded_policy_str = Qiniu_String_Encode(policy_str);
 	free(policy_str);
 
 	bzero(digest, sizeof(digest));
 
 	HMAC_CTX_init(&ctx);
-	HMAC_Init_ex(&ctx, QBOX_SECRET_KEY, strlen(QBOX_SECRET_KEY), EVP_sha1(), NULL);
+	HMAC_Init_ex(&ctx, QINIU_SECRET_KEY, strlen(QINIU_SECRET_KEY), EVP_sha1(), NULL);
 	HMAC_Update(&ctx, encoded_policy_str, strlen(encoded_policy_str));
 	HMAC_Final(&ctx, digest, &dgtlen);
 	HMAC_CTX_cleanup(&ctx);
 
-	encoded_digest = QBox_Memory_Encode(digest, dgtlen);
-	token = QBox_String_Concat(QBOX_ACCESS_KEY, ":", encoded_digest, ":", encoded_policy_str, NULL);
+	encoded_digest = Qiniu_Memory_Encode(digest, dgtlen);
+	token = Qiniu_String_Concat(QINIU_ACCESS_KEY, ":", encoded_digest, ":", encoded_policy_str, NULL);
 	free(encoded_policy_str);
 	free(encoded_digest);
 
 	return token;
 }
 
-char* QBox_RS_PutPolicy_Token(QBox_RS_PutPolicy* auth)
+char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* auth)
 {
 	int expires;
 	time_t deadline;
@@ -93,10 +93,10 @@ char* QBox_RS_PutPolicy_Token(QBox_RS_PutPolicy* auth)
 	authstr = cJSON_PrintUnformatted(root);
 	cJSON_Delete(root);
 
-	return QBox_makeToken(authstr);
+	return Qiniu_makeToken(authstr);
 }
 
-char* QBox_RS_GetPolicy_Token(QBox_RS_GetPolicy* auth)
+char* Qiniu_RS_GetPolicy_Token(Qiniu_RS_GetPolicy* auth)
 {
 	int expires;
 	time_t deadline;
@@ -117,7 +117,7 @@ char* QBox_RS_GetPolicy_Token(QBox_RS_GetPolicy* auth)
 	authstr = cJSON_PrintUnformatted(root);
 	cJSON_Delete(root);
 
-	return QBox_makeToken(authstr);
+	return Qiniu_makeToken(authstr);
 }
 
 /*============================================================================*/

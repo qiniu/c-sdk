@@ -14,9 +14,10 @@
 
 /*============================================================================*/
 
-static QBox_Error QBox_DigestAuth_Auth(void* self, QBox_Header** header, const char* url, const char* addition, size_t addlen)
+static Qiniu_Error Qiniu_DigestAuth_Auth(
+	void* self, Qiniu_Header** header, const char* url, const char* addition, size_t addlen)
 {
-	QBox_Error err;
+	Qiniu_Error err;
 	char const* path = NULL;
 	char* auth = NULL;
 	char digest[EVP_MAX_MD_SIZE + 1];
@@ -40,7 +41,7 @@ static QBox_Error QBox_DigestAuth_Auth(void* self, QBox_Header** header, const c
 	/* Do digest calculation */
 	HMAC_CTX_init(&ctx);
 
-	HMAC_Init_ex(&ctx, QBOX_SECRET_KEY, strlen(QBOX_SECRET_KEY), EVP_sha1(), NULL);
+	HMAC_Init_ex(&ctx, QINIU_SECRET_KEY, strlen(QINIU_SECRET_KEY), EVP_sha1(), NULL);
 	HMAC_Update(&ctx, path, strlen(path));
 	HMAC_Update(&ctx, "\n", 1);
 
@@ -51,10 +52,10 @@ static QBox_Error QBox_DigestAuth_Auth(void* self, QBox_Header** header, const c
 	HMAC_Final(&ctx, digest, &dgtlen);
 	HMAC_CTX_cleanup(&ctx);
 
-	enc_digest = QBox_Memory_Encode(digest, dgtlen);
+	enc_digest = Qiniu_Memory_Encode(digest, dgtlen);
 
 	/* Set appopriate HTTP header */
-	auth = QBox_String_Concat("Authorization: QBox ", QBOX_ACCESS_KEY, ":", enc_digest, NULL);
+	auth = Qiniu_String_Concat("Authorization: QBox ", QINIU_ACCESS_KEY, ":", enc_digest, NULL);
 	free(enc_digest);
 
 	*header = curl_slist_append(*header, auth);
@@ -65,25 +66,25 @@ static QBox_Error QBox_DigestAuth_Auth(void* self, QBox_Header** header, const c
 	return err;
 }
 
-static void QBox_DigestAuth_Release(void* self)
+static void Qiniu_DigestAuth_Release(void* self)
 {
 }
 
 /*============================================================================*/
 
-static QBox_Auth_Itbl QBox_DigestAuth_Itbl = {
-	QBox_DigestAuth_Auth,
-	QBox_DigestAuth_Release
+static Qiniu_Auth_Itbl Qiniu_DigestAuth_Itbl = {
+	Qiniu_DigestAuth_Auth,
+	Qiniu_DigestAuth_Release
 };
 
-static QBox_Auth QBox_DigestAuth = {
+static Qiniu_Auth Qiniu_DigestAuth = {
 	NULL,
-	&QBox_DigestAuth_Itbl
+	&Qiniu_DigestAuth_Itbl
 };
 
-void QBox_Client_Init(QBox_Client* self, size_t bufSize)
+void Qiniu_Client_Init(Qiniu_Client* self, size_t bufSize)
 {
-	QBox_Client_InitEx(self, QBox_DigestAuth, bufSize);
+	Qiniu_Client_InitEx(self, Qiniu_DigestAuth, bufSize);
 }
 
 /*============================================================================*/

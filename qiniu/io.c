@@ -13,16 +13,16 @@
 #include <curl/curl.h>
 
 /*============================================================================*/
-/* func QBox_Io_form */
+/* func Qiniu_Io_form */
 
-typedef struct _QBox_Io_form {
+typedef struct _Qiniu_Io_form {
 	struct curl_httppost* formpost;
 	struct curl_httppost* lastptr;
 	char* action;
-} QBox_Io_form;
+} Qiniu_Io_form;
 
-static void QBox_Io_form_init(
-	QBox_Io_form* self, const char* uptoken, const char* key, QBox_Io_PutExtra* extra)
+static void Qiniu_Io_form_init(
+	Qiniu_Io_form* self, const char* uptoken, const char* key, Qiniu_Io_PutExtra* extra)
 {
 	const char* mimeType = extra->mimeType;
 	const char* customMeta = extra->customMeta;
@@ -34,7 +34,7 @@ static void QBox_Io_form_init(
 	char* customMetaEncoded;
 	char* action;
 	char* action2;
-	QBox_Error err;
+	Qiniu_Error err;
 
 	struct curl_httppost* formpost = NULL;
 	struct curl_httppost* lastptr = NULL;
@@ -42,19 +42,19 @@ static void QBox_Io_form_init(
 	if (mimeType == NULL) {
 		mimeType = "application/octet-stream";
 	}
-	mimeTypeEncoded = QBox_String_Encode(mimeType);
+	mimeTypeEncoded = Qiniu_String_Encode(mimeType);
 
-	entryURI = QBox_String_Concat3(extra->bucket, ":", key);
-	entryURIEncoded = QBox_String_Encode(entryURI);
+	entryURI = Qiniu_String_Concat3(extra->bucket, ":", key);
+	entryURIEncoded = Qiniu_String_Encode(entryURI);
 	free(entryURI);
 
-	action = QBox_String_Concat("/rs-put/", entryURIEncoded, "/mimeType/", mimeTypeEncoded, NULL);
+	action = Qiniu_String_Concat("/rs-put/", entryURIEncoded, "/mimeType/", mimeTypeEncoded, NULL);
 	free(entryURIEncoded);
 	free(mimeTypeEncoded);
 
 	if (customMeta != NULL && *customMeta != '\0') {
-		customMetaEncoded = QBox_String_Encode(customMeta);
-		action2 = QBox_String_Concat3(action, "/meta/", customMetaEncoded);
+		customMetaEncoded = Qiniu_String_Encode(customMeta);
+		action2 = Qiniu_String_Concat3(action, "/meta/", customMetaEncoded);
 		free(action);
 		free(customMetaEncoded);
 		action = action2;
@@ -73,27 +73,27 @@ static void QBox_Io_form_init(
 }
 
 /*============================================================================*/
-/* func QBox_Io_PutXXX */
+/* func Qiniu_Io_PutXXX */
 
-CURL* QBox_Client_reset(QBox_Client* self);
-QBox_Error QBox_callex(CURL* curl, QBox_Buffer *resp, QBox_Json** ret, QBox_Bool simpleError, QBox_Buffer *resph);
+CURL* Qiniu_Client_reset(Qiniu_Client* self);
+Qiniu_Error Qiniu_callex(CURL* curl, Qiniu_Buffer *resp, Qiniu_Json** ret, Qiniu_Bool simpleError, Qiniu_Buffer *resph);
 
-static QBox_Error QBox_Io_call(
-	QBox_Client* self, QBox_Io_PutRet* ret, struct curl_httppost* formpost, char* action)
+static Qiniu_Error Qiniu_Io_call(
+	Qiniu_Client* self, Qiniu_Io_PutRet* ret, struct curl_httppost* formpost, char* action)
 {
-	QBox_Error err;
+	Qiniu_Error err;
 
-	CURL* curl = QBox_Client_reset(self);
-	char* url = QBox_String_Concat2(QBOX_UP_HOST, "/upload");
+	CURL* curl = Qiniu_Client_reset(self);
+	char* url = Qiniu_String_Concat2(QINIU_UP_HOST, "/upload");
 	struct curl_slist* headers = curl_slist_append(NULL, "Expect:");
 
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-	err = QBox_callex(curl, &self->b, &self->root, QBox_False, &self->respHeader);
+	err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
 	if (err.code == 200 && ret != NULL) {
-		ret->hash = QBox_Json_GetString(self->root, "hash", NULL);
+		ret->hash = Qiniu_Json_GetString(self->root, "hash", NULL);
 	}
 
 	curl_formfree(formpost);
@@ -103,30 +103,30 @@ static QBox_Error QBox_Io_call(
 	return err;
 }
 
-QBox_Error QBox_Io_PutFile(
-	QBox_Client* self, QBox_Io_PutRet* ret,
-	const char* uptoken, const char* key, const char* localFile, QBox_Io_PutExtra* extra)
+Qiniu_Error Qiniu_Io_PutFile(
+	Qiniu_Client* self, Qiniu_Io_PutRet* ret,
+	const char* uptoken, const char* key, const char* localFile, Qiniu_Io_PutExtra* extra)
 {
-	QBox_Io_form form;
-	QBox_Io_form_init(&form, uptoken, key, extra);
+	Qiniu_Io_form form;
+	Qiniu_Io_form_init(&form, uptoken, key, extra);
 
 	curl_formadd(
 		&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localFile, CURLFORM_END);
 
-	return QBox_Io_call(self, ret, form.formpost, form.action);
+	return Qiniu_Io_call(self, ret, form.formpost, form.action);
 }
 
-QBox_Error QBox_Io_PutBuffer(
-	QBox_Client* self, QBox_Io_PutRet* ret,
-	const char* uptoken, const char* key, const char* buf, size_t fsize, QBox_Io_PutExtra* extra)
+Qiniu_Error Qiniu_Io_PutBuffer(
+	Qiniu_Client* self, Qiniu_Io_PutRet* ret,
+	const char* uptoken, const char* key, const char* buf, size_t fsize, Qiniu_Io_PutExtra* extra)
 {
-	QBox_Io_form form;
-	QBox_Io_form_init(&form, uptoken, key, extra);
+	Qiniu_Io_form form;
+	Qiniu_Io_form_init(&form, uptoken, key, extra);
 
 	curl_formadd(
 		&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file",
 		CURLFORM_BUFFER, key, CURLFORM_BUFFERPTR, buf, CURLFORM_BUFFERLENGTH, fsize, CURLFORM_END);
 
-	return QBox_Io_call(self, ret, form.formpost, form.action);
+	return Qiniu_Io_call(self, ret, form.formpost, form.action);
 }
 
