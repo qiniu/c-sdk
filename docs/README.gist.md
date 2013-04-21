@@ -42,7 +42,7 @@ C-SDK 以开源方式提供。开发者可以随时从本文档提供的下载�
 
 由于 C 语言的通用性，C-SDK 被设计为同时适合服务器端和客户端使用。服务端是指开发者自己的业务服务器，客户端是指开发者提供给终端用户的软件，通常运行在 iPhone/iPad/Android 移动设备，或者运行在 Windows/Mac/Linux 这样的桌面平台上。服务端因为有七牛颁发的 AccessKey/SecretKey，可以做很多客户端做不了的事情，比如删除文件、移动/复制文件等操作。除非开发者将文件设置为公开，客服端操作私有文件需要获得服务端的授权。客户端上传文件需要获得服务端颁发的 [uptoken（上传授权凭证）](http://docs.qiniutek.com/v3/api/io/#upload-token)，客户端下载文件（包括下载处理过的文件，比如下载图片的缩略图）需要获得服务端颁发的 [dntoken（下载授权凭证）](http://docs.qiniutek.com/v3/api/io/#private-download)。
 
-注意从 v5.0.0 版本开始，我们对 SDK 的内容进行了精简。所有管理操作，比如：创建Bucket、删除Bucket、为Bucket绑定域名（publish）、设置数据处理的样式分隔符（fop seperator）、新增数据处理样式（fop style）等都去除了，统一建议到[开发者后台](https://dev.qiniutek.com/)来完成。另外，此前服务端还有自己独有的上传 API，现在也推荐统一成基于客户端上传的工作方式。
+注意从 v5.0.0 版本开始，我们对 SDK 的内容进行了精简。所有管理操作，比如：创建 Bucket、删除 Bucket、为 Bucket 绑定域名（publish）、设置数据处理的样式分隔符（fop seperator）、新增数据处理样式（fop style）等都去除了，统一建议到[开发者后台](https://dev.qiniutek.com/)来完成。另外，此前服务端还有自己独有的上传 API，现在也推荐统一成基于客户端上传的工作方式。
 
 从内容上来说，C-SDK 主要包含如下几方面的内容：
 
