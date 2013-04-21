@@ -18,11 +18,11 @@
 #endif
 
 /*============================================================================*/
-/* QBox_Buffer_Reader */
+/* Qiniu_Buffer_Reader */
 
-static size_t QBox_BufReader_Read(void *buf, size_t unused, size_t n, void *self1)
+static size_t Qiniu_BufReader_Read(void *buf, size_t unused, size_t n, void *self1)
 {
-	QBox_BufReader* self = (QBox_BufReader*)self1;
+	Qiniu_BufReader* self = (Qiniu_BufReader*)self1;
 	size_t max = self->limit - self->off;
 	if (max <= 0) {
 		return 0;
@@ -35,9 +35,9 @@ static size_t QBox_BufReader_Read(void *buf, size_t unused, size_t n, void *self
 	return n;
 }
 
-QBox_Reader QBox_Buffer_Reader(QBox_BufReader* self, const char* buf, size_t bytes)
+Qiniu_Reader Qiniu_Buffer_Reader(Qiniu_BufReader* self, const char* buf, size_t bytes)
 {
-	QBox_Reader ret = {self, QBox_BufReader_Read};
+	Qiniu_Reader ret = {self, Qiniu_BufReader_Read};
 	self->buf = buf;
 	self->off = 0;
 	self->limit = bytes;
@@ -45,17 +45,17 @@ QBox_Reader QBox_Buffer_Reader(QBox_BufReader* self, const char* buf, size_t byt
 }
 
 /*============================================================================*/
-/* QBox_Section_Reader */
+/* Qiniu_Section_Reader */
 
-typedef struct _QBox_sectionReader {
-	QBox_ReaderAt r;
+typedef struct _Qiniu_sectionReader {
+	Qiniu_ReaderAt r;
 	off_t off;
 	off_t limit;
-} QBox_sectionReader;
+} Qiniu_sectionReader;
 
-static size_t QBox_sectionReader_Read(void *buf, size_t unused, size_t n, void *self1)
+static size_t Qiniu_sectionReader_Read(void *buf, size_t unused, size_t n, void *self1)
 {
-	QBox_sectionReader* self = (QBox_sectionReader*)self1;
+	Qiniu_sectionReader* self = (Qiniu_sectionReader*)self1;
 	off_t max = self->limit - self->off;
 	if (max <= 0) {
 		return 0;
@@ -71,45 +71,45 @@ static size_t QBox_sectionReader_Read(void *buf, size_t unused, size_t n, void *
 	return n;
 }
 
-QBox_Reader QBox_SectionReader(QBox_ReaderAt r, off_t off, off_t n)
+Qiniu_Reader Qiniu_SectionReader(Qiniu_ReaderAt r, off_t off, off_t n)
 {
-	QBox_Reader ret;
-	QBox_sectionReader* self = malloc(sizeof(QBox_sectionReader));
+	Qiniu_Reader ret;
+	Qiniu_sectionReader* self = malloc(sizeof(Qiniu_sectionReader));
 	self->r = r;
 	self->off = off;
 	self->limit = off + n;
 	ret.self = self;
-	ret.Read = QBox_sectionReader_Read;
+	ret.Read = Qiniu_sectionReader_Read;
 	return ret;
 }
 
-void QBox_SectionReader_Release(void* f)
+void Qiniu_SectionReader_Release(void* f)
 {
 	free(f);
 }
 
 /*============================================================================*/
-/* QBox_File_ReaderAt */
+/* Qiniu_File_ReaderAt */
 
-static ssize_t QBox_file_ReadAt(void* self, void *buf, size_t count, off_t offset)
+static ssize_t Qiniu_file_ReadAt(void* self, void *buf, size_t count, off_t offset)
 {
 	return pread((int)(size_t)self, buf, count, offset);
 }
 
-QBox_ReaderAt QBox_FileReaderAt_Open(const char* file)
+Qiniu_ReaderAt Qiniu_FileReaderAt_Open(const char* file)
 {
-	QBox_ReaderAt ret;
+	Qiniu_ReaderAt ret;
 	int fd = open(file, O_BINARY | O_RDONLY, 0644);
 	if (fd != -1) {
 		ret.self = (void*)(size_t)fd;
-		ret.ReadAt = QBox_file_ReadAt;
+		ret.ReadAt = Qiniu_file_ReadAt;
 		return ret;
 	}
 	ret.self = NULL;
 	return ret;
 }
 
-void QBox_FileReaderAt_Close(void* self)
+void Qiniu_FileReaderAt_Close(void* self)
 {
 	close((int)(size_t)self);
 }
