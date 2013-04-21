@@ -4,9 +4,9 @@ title: C/C++ SDK 使用指南 | 七牛云存储
 
 # C/C++ SDK 使用指南
 
-本SDK使用符合C89标准的C语言实现。由于C语言的普适性，原则上此SDK可以跨所有主流平台，不仅可以直接在C和C++的工程中使用，也可以用于与C语言交互性较好的语言中，比如C#（使用P/Invoke交互）、Java（使用JNI交互）、Lua等。本开发指南假设开发者使用的开发语言是C/C++。
+本SDK使用符合 C89 标准的 C 语言实现。由于 C 语言的普适性，原则上此 SDK 可以跨所有主流平台，不仅可以直接在 C 和 C++ 的工程中使用，也可以用于与 C 语言交互性较好的语言中，比如 C#（使用P/Invoke交互）、Java（使用JNI交互）、Lua 等。本开发指南假设开发者使用的开发语言是 C/C++。
 
-SDK下载地址：<https://github.com/qiniu/c-sdk/tags>
+SDK 下载地址：<https://github.com/qiniu/c-sdk/tags>
 
 **文档大纲**
 
@@ -36,13 +36,13 @@ SDK下载地址：<https://github.com/qiniu/c-sdk/tags>
 
 ## 概述
 
-七牛云存储的C语言版本SDK（本文以下称C-SDK）是对七牛云存储API协议的一层封装，以提供一套对于C/C++开发者而言简单易用的原生C语言函数。C/C++开发者在对接C-SDK时无需理解七牛云存储API协议的细节，原则上也不需要对HTTP协议和原理做非常深入的了解，但如果拥有基础的HTTP知识，对于出错场景的处理可以更加高效。
+七牛云存储的 C 语言版本 SDK（本文以下称 C-SDK）是对七牛云存储API协议的一层封装，以提供一套对于 C/C++ 开发者而言简单易用的原生C语言函数。C/C++ 开发者在对接 C-SDK 时无需理解七牛云存储 API 协议的细节，原则上也不需要对 HTTP 协议和原理做非常深入的了解，但如果拥有基础的 HTTP 知识，对于出错场景的处理可以更加高效。
 
-C-SDK以开源方式提供。开发者可以随时从本文档提供的下载地址查看和下载SDK的源代码，并按自己的工程现状进行合理使用，比如编译为静态库或者动态库后进行链接，或者直接将SDK的源代码加入到自己的工程中一起编译，以保持工程设置的简单性。
+C-SDK 以开源方式提供。开发者可以随时从本文档提供的下载地址查看和下载 SDK 的源代码，并按自己的工程现状进行合理使用，比如编译为静态库或者动态库后进行链接，或者直接将 SDK 的源代码加入到自己的工程中一起编译，以保持工程设置的简单性。
 
-由于C语言的通用性，C-SDK被设计为同时适合服务器端和客户端使用。服务端是指开发者自己的业务服务器，客户端是指开发者提供给终端用户的软件，通常运行在iPhone/iPad/Android移动设备，或者运行在Windows/Mac/Linux这样的桌面上。服务端因为有七牛颁发的 AccessKey/SecretKey，可以做很多客户端做不了的事情，比如删除文件、移动/复制文件等操作。除非开发者将文件设置为公开，客服端操作私有文件需要获得服务端的授权。客户端上传文件需要获得服务端颁发的uptoken（上传授权凭证），客户端下载文件（包括下载处理过的文件，比如下载图片的缩略图）需要获得服务端颁发的dntoken（下载授权凭证）。
+由于 C 语言的通用性，C-SDK 被设计为同时适合服务器端和客户端使用。服务端是指开发者自己的业务服务器，客户端是指开发者提供给终端用户的软件，通常运行在 iPhone/iPad/Android 移动设备，或者运行在 Windows/Mac/Linux 这样的桌面平台上。服务端因为有七牛颁发的 AccessKey/SecretKey，可以做很多客户端做不了的事情，比如删除文件、移动/复制文件等操作。除非开发者将文件设置为公开，客服端操作私有文件需要获得服务端的授权。客户端上传文件需要获得服务端颁发的 [uptoken（上传授权凭证）](http://docs.qiniutek.com/v3/api/io/#upload-token)，客户端下载文件（包括下载处理过的文件，比如下载图片的缩略图）需要获得服务端颁发的 [dntoken（下载授权凭证）](http://docs.qiniutek.com/v3/api/io/#private-download)。
 
-注意从v5.0.0版本开始，我们对SDK的内容进行了精简。所有管理操作，比如：创建Bucket、删除Bucket、为Bucket绑定域名（publish）、设置数据处理的样式分隔符（fop seperator）和样式（fop style）等都去除了，统一建议到[开发者后台](https://dev.qiniutek.com/)来完成。另外，此前服务端还有自己独有的上传API，现在也推荐统一成基于客户端上传的工作方式。
+注意从 v5.0.0 版本开始，我们对 SDK 的内容进行了精简。所有管理操作，比如：创建Bucket、删除Bucket、为Bucket绑定域名（publish）、设置数据处理的样式分隔符（fop seperator）、新增数据处理样式（fop style）等都去除了，统一建议到[开发者后台](https://dev.qiniutek.com/)来完成。另外，此前服务端还有自己独有的上传 API，现在也推荐统一成基于客户端上传的工作方式。
 
 从内容上来说，C-SDK 主要包含如下几方面的内容：
 
@@ -61,11 +61,11 @@ C-SDK以开源方式提供。开发者可以随时从本文档提供的下载地
 
 ### 环境依赖
 
-C-SDK 使用[cURL](http://curl.haxx.se/)进行网络相关操作。无论是作为客户端还是服务端，都需要依赖[cURL](http://curl.haxx.se/)。如果作为服务端，C-SDK 因为需要用HMAC进行数字签名做授权（简称签名授权），所以依赖了[OpenSSL](http://www.openssl.org/)库。C-SDK 并没有带上这两个外部库，因此在使用C-SDK之前需要先确认您的当前开发环境中是否已经安装了这所需的外部库，并且已经将它们的头文件目录和库文件目录都加入到了项目工程的设置。
+C-SDK 使用 [cURL](http://curl.haxx.se/) 进行网络相关操作。无论是作为客户端还是服务端，都需要依赖 [cURL](http://curl.haxx.se/)。如果作为服务端，C-SDK 因为需要用 HMAC 进行数字签名做授权（简称签名授权），所以依赖了 [OpenSSL](http://www.openssl.org/) 库。C-SDK 并没有带上这两个外部库，因此在使用 C-SDK 之前需要先确认您的当前开发环境中是否已经安装了这所需的外部库，并且已经将它们的头文件目录和库文件目录都加入到了项目工程的设置。
 
-在主流的*nix环境下，通常[cURL](http://curl.haxx.se/)和[OpenSSL](http://www.openssl.org/)都已经随系统默认安装到`/usr/include`和`/usr/lib`目录下。如果你的系统还没有这些库，请自行安装。如何安装这些第三方库不在本文讨论范围，请自行查阅相关文档。
+在主流的*nix环境下，通常 [cURL](http://curl.haxx.se/) 和 [OpenSSL](http://www.openssl.org/) 都已经随系统默认安装到`/usr/include`和`/usr/lib`目录下。如果你的系统还没有这些库，请自行安装。如何安装这些第三方库不在本文讨论范围，请自行查阅相关文档。
 
-如果你使用gcc进行编译，服务端典型的链接选项是：`-lcurl -lssl -lcrypto -lm`，客户端则是：`-lcurl -lm`。
+如果你使用 gcc 进行编译，服务端典型的链接选项是：`-lcurl -lssl -lcrypto -lm`，客户端则是：`-lcurl -lm`。
 
 如果在项目构建过程中出现环境相关的编译错误和链接错误，请确认这些选项是否都已经正确配置，以及所依赖的库是否都已经正确的安装。
 
@@ -74,7 +74,7 @@ C-SDK 使用[cURL](http://curl.haxx.se/)进行网络相关操作。无论是作�
 
 ### ACCESS_KEY 和 SECRET_KEY
 
-如果你的服务端采用C-SDK，那么使用C-SDK前，您需要拥有一对有效的 AccessKey 和 SecretKey 用来进行签名授权。可以通过如下步骤获得：
+如果你的服务端采用 C-SDK，那么使用 C-SDK 前，您需要拥有一对有效的 AccessKey 和 SecretKey 用来进行签名授权。可以通过如下步骤获得：
 
 1. [开通七牛开发者帐号](https://dev.qiniutek.com/signup)
 2. [登录七牛开发者自助平台，查看 AccessKey 和 SecretKey](https://dev.qiniutek.com/account/keys) 。
@@ -102,19 +102,19 @@ C-SDK 的 conf.h 文件中声明了对应的两个变量：`QINIU_ACCESS_KEY`和
 
 <a name="convention"></a>
 
-## C-SDK惯例
+## C-SDK 惯例
 
-C语言是一个非常底层的语言，相比其他高级语言来说，它的代码通常看起来会更啰嗦。为了尽量让大家理解我们的C-SDK，这里需要解释下我们在SDK中的一些惯例做法。
+C 语言是一个非常底层的语言，相比其他高级语言来说，它的代码通常看起来会更啰嗦。为了尽量让大家理解我们的 C-SDK，这里需要解释下我们在 SDK 中的一些惯例做法。
 
 <a name="http-client"></a>
 
-### HTTP客户端
+### HTTP 客户端
 
-在C-SDK中，HTTP客户端叫`Qiniu_Client`。在某些语言环境中，这个类是线程安全的，多个线程可以共享同一份实例，但在C-SDK中它被设计为线程不安全的。一个重要的原因是我们试图简化内存管理的负担。HTTP请求结果的生命周期被设计成由`Qiniu_Client`负责，在下一次请求时会自动释放上一次HTTP请求的结果。这有点粗暴，但在多数场合是合理的。如果有个HTTP请求结果的数据需要长期使用，你应该复制一份。例如：
+在 C-SDK 中，HTTP 客户端叫`Qiniu_Client`。在某些语言环境中，这个类是线程安全的，多个线程可以共享同一份实例，但在 C-SDK 中它被设计为线程不安全的。一个重要的原因是我们试图简化内存管理的负担。HTTP 请求结果的生命周期被设计成由`Qiniu_Client`负责，在下一次请求时会自动释放上一次 HTTP 请求的结果。这有点粗暴，但在多数场合是合理的。如果某个 HTTP 请求结果的数据需要长期使用，你应该复制一份。例如：
 
     @gist(gist/server.c#stat)
 
-这个例子中，`Qiniu_RS_Stat`请求返回了`Qiniu_Error`和`Qiniu_RS_StatRet`两个结构。其中的 `Qiniu_Error` 类型是这样的：
+这个例子中，`Qiniu_RS_Stat`请求返回了`Qiniu_Error`和`Qiniu_RS_StatRet`两个结构体。其中的 `Qiniu_Error` 类型是这样的：
 
     @gist(../qiniu/base.c#error)
 
@@ -122,7 +122,7 @@ C语言是一个非常底层的语言，相比其他高级语言来说，它的�
 
     @gitst(../qiniu/rs.c#statret)
 
-值得注意的是，`Qiniu_Error.message`、`Qiniu_RS_StatRet.hash`、`Qiniu_RS_StatRet.mimeType` 都声明为 `const char*` 类型，是个只读字符串，并不管理字符串内容的生命周期。这些字符串什么时候失效？下次 `Qiniu_Client` 发生网络API请求时失效。如果你需要长久使用，应该复制一份，比如：
+值得注意的是，`Qiniu_Error.message`、`Qiniu_RS_StatRet.hash`、`Qiniu_RS_StatRet.mimeType` 都声明为 `const char*` 类型，是个只读字符串，并不管理字符串内容的生命周期。这些字符串什么时候失效？下次 `Qiniu_Client` 发生网络 API 请求时失效。如果你需要长久使用，应该复制一份，比如：
 
     hash = strdup(ret.hash);
 
@@ -131,15 +131,15 @@ C语言是一个非常底层的语言，相比其他高级语言来说，它的�
 
 ### 错误处理与调试
 
-在HTTP请求出错的时候，C-SDK统一返回了一个`Qiniu_Error`结构体：
+在 HTTP 请求出错的时候，C-SDK 统一返回了一个`Qiniu_Error`结构体：
 
     @gist(../qiniu/base.c#error)
 
-即一个错误码和对应的读者友好的消息。这个错误码有可能是cURL的错误码，表示请求发送环节发生了意外，或者是一个HTTP错误码，表示请求发送正常，服务器端处理请求后返回了HTTP错误码。
+即一个错误码和对应的读者友好的消息。这个错误码有可能是 cURL 的错误码，表示请求发送环节发生了意外，或者是一个 HTTP 错误码，表示请求发送正常，服务器端处理请求后返回了 HTTP 错误码。
 
-如果一切正常，`code`应该是200，即HTTP的OK状态码。如果不是200，则需要对`code`的值进行相应分析。对于低于200的值，可以查看[cURL错误码](http://curl.haxx.se/libcurl/c/libcurl-errors.html)，否则应查看[七牛云存储错误码](http://docs.qiniutek.com/v2/api/code/)。
+如果一切正常，`code`应该是 200，即 HTTP 的 OK 状态码。如果不是 200，则需要对`code`的值进行相应分析。对于低于 200 的值，可以查看 [cURL 错误码](http://curl.haxx.se/libcurl/c/libcurl-errors.html)，否则应查看[七牛云存储错误码](http://docs.qiniutek.com/v2/api/code/)。
 
-如果`message`指示的信息还不够友好，也可以尝试把整个HTTP返回包打印出来看看：
+如果`message`指示的信息还不够友好，也可以尝试把整个 HTTP 返回包打印出来看看：
 
     @gist(gist/server.c#debug)
 
@@ -164,19 +164,19 @@ C语言是一个非常底层的语言，相比其他高级语言来说，它的�
 
 在七牛云存储中，整个上传流程大体分为这样几步：
 
-1. 业务服务器颁发uptoken（上传授权凭证）给客户端（终端用户）
-2. 客户端凭借uptoken上传文件到七牛
-3. 在七牛获得完整数据后，发起一个http请求回调到业务服务器
+1. 业务服务器颁发 [uptoken（上传授权凭证）](http://docs.qiniutek.com/v3/api/io/#upload-token)给客户端（终端用户）
+2. 客户端凭借 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 上传文件到七牛
+3. 在七牛获得完整数据后，发起一个 HTTP 请求回调到业务服务器
 4. 业务服务器保存相关信息，并返回一些信息给七牛
 5. 七牛原封不动地将这些信息转发给客户端（终端用户）
 
-需要注意的是，回调到业务服务器的过程是可选的，它取决于业务服务器颁发的uptoken。如果没有回调，七牛会返回一些标准的信息（比如文件的hash）给客户端。如果上传发生在业务服务器，以上流程可以自然简化为：
+需要注意的是，回调到业务服务器的过程是可选的，它取决于业务服务器颁发的 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token)。如果没有回调，七牛会返回一些标准的信息（比如文件的 hash）给客户端。如果上传发生在业务服务器，以上流程可以自然简化为：
 
-1. 业务服务器生成uptoken（不设置回调，自己回调到自己这里没有意义）
-2. 凭借uptoken上传文件到七牛
+1. 业务服务器生成 uptoken（不设置回调，自己回调到自己这里没有意义）
+2. 凭借 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 上传文件到七牛
 3. 善后工作，比如保存相关的一些信息
 
-服务端生成 uptoken 代码如下：
+服务端生成 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 代码如下：
 
     @gist(gist/server.c#uptoken)
 
@@ -224,7 +224,7 @@ C语言是一个非常底层的语言，相比其他高级语言来说，它的�
 
     http://<domain>/<key>?token=<dntoken>
 
-其中 dntoken 是由业务服务器签发的一个临时下载授权凭证。生成 dntoken 代码如下：
+其中 dntoken 是由业务服务器签发的一个[临时下载授权凭证](http://docs.qiniutek.com/v3/api/io/#private-download)。生成 dntoken 代码如下：
 
     @gist(gist/server.c#dntoken)
 
