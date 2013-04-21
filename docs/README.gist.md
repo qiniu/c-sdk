@@ -23,8 +23,8 @@ SDK下载地址：<https://github.com/qiniu/c-sdk/tags>
     - [上传策略](#io-put-policy)
     - [断点续上传](#resumable-io-put)
 - [下载文件](#io-get)
-    - [下载私有文件](io-get-private)
-    - [HTTPS 支持](io-https-get)
+    - [下载私有文件](#io-get-private)
+    - [HTTPS 支持](#io-https-get)
     - [断点续下载](#resumable-io-get)
 - [资源操作](#rs)
     - [获取文件信息](#rs-stat)
@@ -210,25 +210,25 @@ C语言是一个非常底层的语言，相比其他高级语言来说，它的�
 
 ## 下载文件
 
-每个 bucket 都会绑定一个或多个域名（domain）。如果这个 bucket 是公开的，那么可以通过一个公开的下载 url 可以访问到：
+每个 bucket 都会绑定一个或多个域名（domain）。如果这个 bucket 是公开的，那么该 bucket 中的所有文件可以通过一个公开的下载 url 可以访问到：
 
     http://<domain>/<key>
 
-domain 可以是七牛的二级域名，如 hello.qiniudn.com，也可以是自定义域名（需要备案），如 hello.com。假设 key 为 a/b/c.htm，则该资源可以通过 http://hello.qiniudn.com/a/b/c.htm 或 http://hello.com/a/b/c.htm 可以访问。
+假设某个 bucket 既绑定了七牛的二级域名，如 hello.qiniudn.com，也绑定了自定义域名（需要备案），如 hello.com。那么该 bucket 中 key 为 a/b/c.htm 的文件可以通过 http://hello.qiniudn.com/a/b/c.htm 或 http://hello.com/a/b/c.htm 中任意一个 url 进行访问。
 
 <a name="io-get-private"></a>
 
 ### 下载私有文件
 
-如果某个 bucket 是私有的，那么我们说这个 bucket 中的所有文件只能通过一个的临时有效的 url 访问：
+如果某个 bucket 是私有的，那么这个 bucket 中的所有文件只能通过一个的临时有效的 url 访问：
 
     http://<domain>/<key>?token=<dntoken>
 
-其中 dntoken 是由业务服务器签发的下载授权凭证。生成 dntoken 代码如下：
+其中 dntoken 是由业务服务器签发的一个临时下载授权凭证。生成 dntoken 代码如下：
 
     @gist(gist/server.c#dntoken)
 
-生成 dntoken 后，服务端可以下发 dntoken，也可以选择直接下发临时的 downloadUrl（看起来更灵活）。客户端收到 dntoken(自己组装完整的 downloadUrl) 或者 downloadUrl 后，和公有资源类似，直接用任意的 HTTP 客户端就可以下载该资源了。
+生成 dntoken 后，服务端可以下发 dntoken，也可以选择直接下发临时的 downloadUrl（推荐这种方式，看起来灵活性更好，避免了客户端自己组装 url）。客户端收到 downloadUrl 后，和公有资源类似，直接用任意的 HTTP 客户端就可以下载该资源了。唯一需要注意的是，在 downloadUrl 失效却还没有完成下载时，需要重新向服务器申请授权。
 
 无论公有资源还是私有资源，下载过程中客户端并不需要七牛 C-SDK 参与其中。
 
@@ -244,6 +244,8 @@ domain 可以是七牛的二级域名，如 hello.qiniudn.com，也可以是自�
 <a name="resumable-io-get"></a>
 
 ### 断点续下载
+
+无论是公有资源还是私有资源，获得的下载 url 支持标准的 HTTP 断点续传协议。考虑到多数语言都有相应的断点续下载支持的成熟方法，七牛 C-SDK 并不提供断点续下载相关代码。
 
 
 <a name="rs"></a>
