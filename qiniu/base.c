@@ -17,28 +17,28 @@
 #include <time.h>
 
 /*============================================================================*/
-/* type QBox_Count */
+/* type Qiniu_Count */
 
 #if defined(_WIN32)
 
-QBox_Count QBox_Count_Inc(QBox_Count* self)
+Qiniu_Count Qiniu_Count_Inc(Qiniu_Count* self)
 {
 	return InterlockedIncrement(self);
 }
 
-QBox_Count QBox_Count_Dec(QBox_Count* self)
+Qiniu_Count Qiniu_Count_Dec(Qiniu_Count* self)
 {
 	return InterlockedDecrement(self);
 }
 
 #else
 
-QBox_Count QBox_Count_Inc(QBox_Count* self)
+Qiniu_Count Qiniu_Count_Inc(Qiniu_Count* self)
 {
 	return __sync_add_and_fetch(self, 1);
 }
 
-QBox_Count QBox_Count_Dec(QBox_Count* self)
+Qiniu_Count Qiniu_Count_Dec(Qiniu_Count* self)
 {
     return __sync_sub_and_fetch(self, 1);
 }
@@ -46,17 +46,17 @@ QBox_Count QBox_Count_Dec(QBox_Count* self)
 #endif
 
 /*============================================================================*/
-/* func QBox_Seconds */
+/* func Qiniu_Seconds */
 
-QBox_Int64 QBox_Seconds()
+Qiniu_Int64 Qiniu_Seconds()
 {
-	return (QBox_Int64)time(NULL);
+	return (Qiniu_Int64)time(NULL);
 }
 
 /*============================================================================*/
-/* func QBox_QueryEscape */
+/* func Qiniu_QueryEscape */
 
-static int QBox_shouldEscape(int c)
+static int Qiniu_shouldEscape(int c)
 {
 	if (('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') || ('0' <= c && c <= '9')) {
 		return 0;
@@ -71,9 +71,9 @@ static int QBox_shouldEscape(int c)
 	return 1;
 }
 
-static const char QBox_hexTable[] = "0123456789ABCDEF"; 
+static const char Qiniu_hexTable[] = "0123456789ABCDEF"; 
 
-char* QBox_QueryEscape(const char* s, QBox_Bool* fesc)
+char* Qiniu_QueryEscape(const char* s, Qiniu_Bool* fesc)
 {
 	int spaceCount = 0;
 	int hexCount = 0;
@@ -83,7 +83,7 @@ char* QBox_QueryEscape(const char* s, QBox_Bool* fesc)
 
 	for (i = 0; i < len; i++) {
 		c = s[i];
-		if (QBox_shouldEscape(c)) {
+		if (Qiniu_shouldEscape(c)) {
 			if (c == ' ') {
 				spaceCount++;
 			} else {
@@ -93,7 +93,7 @@ char* QBox_QueryEscape(const char* s, QBox_Bool* fesc)
 	}
 
 	if (spaceCount == 0 && hexCount == 0) {
-		*fesc = QBox_False;
+		*fesc = Qiniu_False;
 		return (char*)s;
 	}
 
@@ -101,14 +101,14 @@ char* QBox_QueryEscape(const char* s, QBox_Bool* fesc)
 	j = 0;
 	for (i = 0; i < len; i++) {
 		c = s[i];
-		if (QBox_shouldEscape(c)) {
+		if (Qiniu_shouldEscape(c)) {
 			if (c == ' ') {
 				t[j] = '+';
 				j++;
 			} else {
 				t[j] = '%';
-				t[j+1] = QBox_hexTable[c>>4];
-				t[j+2] = QBox_hexTable[c&15];
+				t[j+1] = Qiniu_hexTable[c>>4];
+				t[j+2] = Qiniu_hexTable[c&15];
 				j += 3;
 			}
 		} else {
@@ -117,14 +117,14 @@ char* QBox_QueryEscape(const char* s, QBox_Bool* fesc)
 		}
 	}
 	t[j] = '\0';
-	*fesc = QBox_True;
+	*fesc = Qiniu_True;
 	return t;
 }
 
 /*============================================================================*/
-/* func QBox_String_Concat */
+/* func Qiniu_String_Concat */
 
-char* QBox_String_Concat2(const char* s1, const char* s2)
+char* Qiniu_String_Concat2(const char* s1, const char* s2)
 {
 	size_t len1 = strlen(s1);
 	size_t len2 = strlen(s2);
@@ -135,7 +135,7 @@ char* QBox_String_Concat2(const char* s1, const char* s2)
 	return p;
 }
 
-char* QBox_String_Concat3(const char* s1, const char* s2, const char* s3)
+char* Qiniu_String_Concat3(const char* s1, const char* s2, const char* s3)
 {
 	size_t len1 = strlen(s1);
 	size_t len2 = strlen(s2);
@@ -148,7 +148,7 @@ char* QBox_String_Concat3(const char* s1, const char* s2, const char* s3)
 	return p;
 }
 
-char* QBox_String_Concat(const char* s1, ...)
+char* Qiniu_String_Concat(const char* s1, ...)
 {
 	va_list ap;
 	char* p;
@@ -184,9 +184,9 @@ char* QBox_String_Concat(const char* s1, ...)
 }
 
 /*============================================================================*/
-/* func QBox_String_Encode */
+/* func Qiniu_String_Encode */
 
-char* QBox_String_Encode(const char* buf)
+char* Qiniu_String_Encode(const char* buf)
 {
 	const size_t cb = strlen(buf);
 	const size_t cbDest = urlsafe_b64_encode(buf, cb, NULL, 0);
@@ -196,7 +196,7 @@ char* QBox_String_Encode(const char* buf)
 	return dest;
 }
 
-char* QBox_Memory_Encode(const char* buf, const size_t cb)
+char* Qiniu_Memory_Encode(const char* buf, const size_t cb)
 {
 	const size_t cbDest = urlsafe_b64_encode(buf, cb, NULL, 0);
 	char* dest = (char*)malloc(cbDest + 1);
@@ -205,7 +205,7 @@ char* QBox_Memory_Encode(const char* buf, const size_t cb)
 	return dest;
 }
 
-char* QBox_String_Decode(const char* buf)
+char* Qiniu_String_Decode(const char* buf)
 {
 	const size_t cb = strlen(buf);
 	const size_t cbDest = urlsafe_b64_decode(buf, cb, NULL, 0);
@@ -216,9 +216,9 @@ char* QBox_String_Decode(const char* buf)
 }
 
 /*============================================================================*/
-/* type QBox_Buffer */
+/* type Qiniu_Buffer */
 
-static void QBox_Buffer_expand(QBox_Buffer* self, size_t expandSize)
+static void Qiniu_Buffer_expand(Qiniu_Buffer* self, size_t expandSize)
 {
 	size_t oldSize = self->curr - self->buf;
 	size_t newSize = (self->bufEnd - self->buf) << 1;
@@ -231,18 +231,18 @@ static void QBox_Buffer_expand(QBox_Buffer* self, size_t expandSize)
 	self->bufEnd = self->buf + newSize;
 }
 
-void QBox_Buffer_Init(QBox_Buffer* self, size_t initSize)
+void Qiniu_Buffer_Init(Qiniu_Buffer* self, size_t initSize)
 {
 	self->buf = self->curr = (char*)malloc(initSize);
 	self->bufEnd = self->buf + initSize;
 }
 
-void QBox_Buffer_Reset(QBox_Buffer* self)
+void Qiniu_Buffer_Reset(Qiniu_Buffer* self)
 {
 	self->curr = self->buf;
 }
 
-void QBox_Buffer_Cleanup(QBox_Buffer* self)
+void Qiniu_Buffer_Cleanup(Qiniu_Buffer* self)
 {
 	if (self->buf != NULL) {
 		free(self->buf);
@@ -250,50 +250,50 @@ void QBox_Buffer_Cleanup(QBox_Buffer* self)
 	}
 }
 
-size_t QBox_Buffer_Len(QBox_Buffer* self)
+size_t Qiniu_Buffer_Len(Qiniu_Buffer* self)
 {
 	return self->curr - self->buf;
 }
 
-const char* QBox_Buffer_CStr(QBox_Buffer* self)
+const char* Qiniu_Buffer_CStr(Qiniu_Buffer* self)
 {
 	if (self->curr >= self->bufEnd) {
-		QBox_Buffer_expand(self, 1);
+		Qiniu_Buffer_expand(self, 1);
 	}
 	*self->curr = '\0';
 	return self->buf;
 }
 
-size_t QBox_Buffer_Write(QBox_Buffer* self, const void* buf, size_t n)
+size_t Qiniu_Buffer_Write(Qiniu_Buffer* self, const void* buf, size_t n)
 {
 	if (self->curr + n > self->bufEnd) {
-		QBox_Buffer_expand(self, n);
+		Qiniu_Buffer_expand(self, n);
 	}
 	memcpy(self->curr, buf, n);
 	self->curr += n;
 	return n;
 }
 
-size_t QBox_Buffer_Fwrite(void *buf, size_t size, size_t nmemb, void *self)
+size_t Qiniu_Buffer_Fwrite(void *buf, size_t size, size_t nmemb, void *self)
 {
 	assert(size == 1);
-	return QBox_Buffer_Write((QBox_Buffer*)self, buf, nmemb);
+	return Qiniu_Buffer_Write((Qiniu_Buffer*)self, buf, nmemb);
 }
 
 /*============================================================================*/
-/* func QBox_Null_Fwrite */
+/* func Qiniu_Null_Fwrite */
 
-size_t QBox_Null_Fwrite(void *buf, size_t size, size_t nmemb, void *self)
+size_t Qiniu_Null_Fwrite(void *buf, size_t size, size_t nmemb, void *self)
 {
 	return nmemb;
 }
 
 /*============================================================================*/
-/* func QBox_FILE_Reader */
+/* func Qiniu_FILE_Reader */
 
-QBox_Reader QBox_FILE_Reader(FILE* fp)
+Qiniu_Reader Qiniu_FILE_Reader(FILE* fp)
 {
-	QBox_Reader reader = { fp, (QBox_FnRead)fread };
+	Qiniu_Reader reader = { fp, (Qiniu_FnRead)fread };
 	return reader;
 }
 
