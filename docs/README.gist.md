@@ -88,11 +88,15 @@ C-SDK 的 conf.h 文件中声明了对应的两个变量：`QINIU_ACCESS_KEY`和
 
 对于服务端而言，常规程序流程是：
 
-    @gist(gist/server.c#init)
+```{c}
+@gist(gist/server.c#init)
+```
 
 对于客户端而言，常规程序流程是：
 
-    @gist(gist/client.c#init)
+```{c}
+@gist(gist/client.c#init)
+```
 
 两者主要的区别在于：
 
@@ -112,15 +116,21 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 
 在 C-SDK 中，HTTP 客户端叫`Qiniu_Client`。在某些语言环境中，这个类是线程安全的，多个线程可以共享同一份实例，但在 C-SDK 中它被设计为线程不安全的。一个重要的原因是我们试图简化内存管理的负担。HTTP 请求结果的生命周期被设计成由`Qiniu_Client`负责，在下一次请求时会自动释放上一次 HTTP 请求的结果。这有点粗暴，但在多数场合是合理的。如果某个 HTTP 请求结果的数据需要长期使用，你应该复制一份。例如：
 
-    @gist(gist/server.c#stat)
+```{c}
+@gist(gist/server.c#stat)
+```
 
 这个例子中，`Qiniu_RS_Stat`请求返回了`Qiniu_Error`和`Qiniu_RS_StatRet`两个结构体。其中的 `Qiniu_Error` 类型是这样的：
 
-    @gist(../qiniu/base.h#error)
+```{c}
+@gist(../qiniu/base.h#error)
+```
 
 `Qiniu_RS_StatRet` 类型是这样的：
 
-    @gist(../qiniu/rs.h#statret)
+```{c}
+@gist(../qiniu/rs.h#statret)
+```
 
 值得注意的是，`Qiniu_Error.message`、`Qiniu_RS_StatRet.hash`、`Qiniu_RS_StatRet.mimeType` 都声明为 `const char*` 类型，是个只读字符串，并不管理字符串内容的生命周期。这些字符串什么时候失效？下次 `Qiniu_Client` 发生网络 API 请求时失效。如果你需要长久使用，应该复制一份，比如：
 
@@ -133,7 +143,9 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 
 在 HTTP 请求出错的时候，C-SDK 统一返回了一个`Qiniu_Error`结构体：
 
-    @gist(../qiniu/base.h#error)
+```{c}
+@gist(../qiniu/base.h#error)
+```
 
 即一个错误码和对应的读者友好的消息。这个错误码有可能是 cURL 的错误码，表示请求发送环节发生了意外，或者是一个 HTTP 错误码，表示请求发送正常，服务器端处理请求后返回了 HTTP 错误码。
 
@@ -141,8 +153,9 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 
 如果`message`指示的信息还不够友好，也可以尝试把整个 HTTP 返回包打印出来看看：
 
-    @gist(gist/server.c#debug)
-
+```{c}
+@gist(gist/server.c#debug)
+```
 
 <a name="io-put"></a>
 
@@ -178,15 +191,21 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 
 服务端生成 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 代码如下：
 
-    @gist(gist/server.c#uptoken)
+```{c}
+@gist(gist/server.c#uptoken)
+```
 
 上传文件到七牛（通常是客户端完成，但也可以发生在服务端）：
 
-    @gist(gist/client.c#upload)
+```{c}
+@gist(gist/client.c#upload)
+```
 
 如果不感兴趣返回的 hash 值，还可以更简单：
 
-    @gist(gist/client.c#simple-upload)
+```{c}
+@gist(gist/client.c#simple-upload)
+```
 
 <a name="io-put-policy"></a>
 
@@ -230,7 +249,9 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 
 其中 dntoken 是由业务服务器签发的一个[临时下载授权凭证](http://docs.qiniutek.com/v3/api/io/#private-download)。生成 dntoken 代码如下：
 
-    @gist(gist/server.c#dntoken)
+```{c}
+@gist(gist/server.c#dntoken)
+```
 
 生成 dntoken 后，服务端可以下发 dntoken，也可以选择直接下发临时的 downloadUrl（推荐这种方式，看起来灵活性更好，避免了客户端自己组装 url）。客户端收到 downloadUrl 后，和公有资源类似，直接用任意的 HTTP 客户端就可以下载该资源了。唯一需要注意的是，在 downloadUrl 失效却还没有完成下载时，需要重新向服务器申请授权。
 
@@ -271,3 +292,4 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 <a name="rs-batch"></a>
 
 ### 批量操作
+
