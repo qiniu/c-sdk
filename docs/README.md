@@ -131,16 +131,18 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 
 在 C-SDK 中，HTTP 客户端叫`Qiniu_Client`。在某些语言环境中，这个类是线程安全的，多个线程可以共享同一份实例，但在 C-SDK 中它被设计为线程不安全的。一个重要的原因是我们试图简化内存管理的负担。HTTP 请求结果的生命周期被设计成由`Qiniu_Client`负责，在下一次请求时会自动释放上一次 HTTP 请求的结果。这有点粗暴，但在多数场合是合理的。如果某个 HTTP 请求结果的数据需要长期使用，你应该复制一份。例如：
 
-    void stat(Qiniu_Client* client, const char* bucket)
-    {
-    	Qiniu_RS_StatRet ret;
-    	Qiniu_Error err = Qiniu_RS_Stat(client, &ret, bucket, "key");
-    	if (err.code != 200) {
-    		debug(client, err);
-    		return;
-    	}
-    	printf("hash: %s, fsize: %lld, mimeType: %s\n", ret.hash, ret.fsize, ret.mimeType);
-    }
+```{c}
+void stat(Qiniu_Client* client, const char* bucket)
+{
+	Qiniu_RS_StatRet ret;
+	Qiniu_Error err = Qiniu_RS_Stat(client, &ret, bucket, "key");
+	if (err.code != 200) {
+		debug(client, err);
+		return;
+	}
+	printf("hash: %s, fsize: %lld, mimeType: %s\n", ret.hash, ret.fsize, ret.mimeType);
+}
+```
 
 这个例子中，`Qiniu_RS_Stat`请求返回了`Qiniu_Error`和`Qiniu_RS_StatRet`两个结构体。其中的 `Qiniu_Error` 类型是这样的：
 
