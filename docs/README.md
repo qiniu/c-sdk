@@ -98,7 +98,7 @@ C-SDK 的 conf.h 文件中声明了对应的两个变量：`QINIU_ACCESS_KEY`和
     
     ...
     
-    Qiniu_Client_Cleanup(&client);           /* 每个HTTP客户端使用完后释放 */
+    Qiniu_Client_Cleanup(&client);          /* 每个HTTP客户端使用完后释放 */
     Qiniu_Global_Cleanup();                 /* 全局清理函数，只需要在进程退出时调用一次 */
 
 对于客户端而言，常规程序流程是：
