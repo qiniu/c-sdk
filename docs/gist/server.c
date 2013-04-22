@@ -22,6 +22,30 @@ void stat(Qiniu_Client* client, const char* bucket)
 }
 /* @endgist */
 
+/* @gist uptoken */
+char* uptoken(Qiniu_Client* client, const char* bucket)
+{
+	Qiniu_RS_PutPolicy putPolicy;
+	Qiniu_Zero(putPolicy);
+	putPolicy.scope = bucket;
+	return Qiniu_RS_PutPolicy_Token(&putPolicy);
+}
+/* @endgist */
+
+/* @gist dntoken */
+char* dntoken(Qiniu_Client* client, const char* key)
+{
+	char* token;
+	Qiniu_RS_GetPolicy getPolicy;
+	Qiniu_Zero(getPolicy);
+	getPolicy.scope = "*/*"; /* 错！！！下载授权切记不要授权范围过大，否则容易导致安全隐患 */
+	getPolicy.scope = Qiniu_String_Concat2("*/", key); /* 正确！只授权这一个资源可以被访问 */
+	token = Qiniu_RS_GetPolicy_Token(&getPolicy);
+	free((void*)getPolicy.scope);
+	return token;
+}
+/* @endgist */
+
 int main()
 {
 	/* @gist init */
