@@ -89,7 +89,6 @@ C-SDK 的 conf.h 文件中声明了对应的两个变量：`QINIU_ACCESS_KEY`和
 对于服务端而言，常规程序流程是：
 
 ```{c}
-
 Qiniu_Client client;
 
 QINIU_ACCESS_KEY = "<Please apply your access key>";
@@ -107,7 +106,6 @@ Qiniu_Global_Cleanup();                 /* 全局清理函数，只需要在进�
 对于客户端而言，常规程序流程是：
 
 ```{c}
-
 Qiniu_Client client;
 
 Qiniu_Global_Init(-1);                  /* 全局初始化函数，整个进程只需要调用一次 */
@@ -138,7 +136,6 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 在 C-SDK 中，HTTP 客户端叫`Qiniu_Client`。在某些语言环境中，这个类是线程安全的，多个线程可以共享同一份实例，但在 C-SDK 中它被设计为线程不安全的。一个重要的原因是我们试图简化内存管理的负担。HTTP 请求结果的生命周期被设计成由`Qiniu_Client`负责，在下一次请求时会自动释放上一次 HTTP 请求的结果。这有点粗暴，但在多数场合是合理的。如果某个 HTTP 请求结果的数据需要长期使用，你应该复制一份。例如：
 
 ```{c}
-
 void stat(Qiniu_Client* client, const char* bucket)
 {
 	Qiniu_RS_StatRet ret;
@@ -154,25 +151,21 @@ void stat(Qiniu_Client* client, const char* bucket)
 这个例子中，`Qiniu_RS_Stat`请求返回了`Qiniu_Error`和`Qiniu_RS_StatRet`两个结构体。其中的 `Qiniu_Error` 类型是这样的：
 
 ```{c}
-
 typedef struct _Qiniu_Error {
 	int code;
 	const char* message;
 } Qiniu_Error;
-
 ```
 
 `Qiniu_RS_StatRet` 类型是这样的：
 
 ```{c}
-
 typedef struct _Qiniu_RS_StatRet {
 	const char* hash;
 	const char* mimeType;
 	Qiniu_Int64 fsize;	
 	Qiniu_Int64 putTime;
 } Qiniu_RS_StatRet;
-
 ```
 
 值得注意的是，`Qiniu_Error.message`、`Qiniu_RS_StatRet.hash`、`Qiniu_RS_StatRet.mimeType` 都声明为 `const char*` 类型，是个只读字符串，并不管理字符串内容的生命周期。这些字符串什么时候失效？下次 `Qiniu_Client` 发生网络 API 请求时失效。如果你需要长久使用，应该复制一份，比如：
@@ -187,12 +180,10 @@ typedef struct _Qiniu_RS_StatRet {
 在 HTTP 请求出错的时候，C-SDK 统一返回了一个`Qiniu_Error`结构体：
 
 ```{c}
-
 typedef struct _Qiniu_Error {
 	int code;
 	const char* message;
 } Qiniu_Error;
-
 ```
 
 即一个错误码和对应的读者友好的消息。这个错误码有可能是 cURL 的错误码，表示请求发送环节发生了意外，或者是一个 HTTP 错误码，表示请求发送正常，服务器端处理请求后返回了 HTTP 错误码。
@@ -202,7 +193,6 @@ typedef struct _Qiniu_Error {
 如果`message`指示的信息还不够友好，也可以尝试把整个 HTTP 返回包打印出来看看：
 
 ```{c}
-
 void debug(Qiniu_Client* client, Qiniu_Error err)
 {
 	printf("error code: %d, message: %s\n", err.code, err.message);
@@ -246,7 +236,6 @@ void debug(Qiniu_Client* client, Qiniu_Error err)
 服务端生成 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 代码如下：
 
 ```{c}
-
 char* uptoken(Qiniu_Client* client, const char* bucket)
 {
 	Qiniu_RS_PutPolicy putPolicy;
@@ -259,7 +248,6 @@ char* uptoken(Qiniu_Client* client, const char* bucket)
 上传文件到七牛（通常是客户端完成，但也可以发生在服务端）：
 
 ```{c}
-
 char* upload(Qiniu_Client* client, char* uptoken, const char* key, const char* localFile)
 {
 	Qiniu_Error err;
@@ -279,7 +267,6 @@ char* upload(Qiniu_Client* client, char* uptoken, const char* key, const char* l
 如果不感兴趣返回的 hash 值，还可以更简单：
 
 ```{c}
-
 int simple_upload(Qiniu_Client* client, char* uptoken, const char* key, const char* localFile)
 {
 	Qiniu_Error err;
@@ -334,7 +321,6 @@ int simple_upload(Qiniu_Client* client, char* uptoken, const char* key, const ch
 其中 dntoken 是由业务服务器签发的一个[临时下载授权凭证](http://docs.qiniutek.com/v3/api/io/#private-download)。生成 dntoken 代码如下：
 
 ```{c}
-
 char* dntoken(Qiniu_Client* client, const char* key)
 {
 	char* token;
