@@ -61,7 +61,7 @@ int main()
 	stat(&client, "a");
 
 	/* @gist init */
-	Qiniu_Client_Cleanup(&client);           /* 每个HTTP客户端使用完后释放 */
+	Qiniu_Client_Cleanup(&client);          /* 每个HTTP客户端使用完后释放 */
 	Qiniu_Global_Cleanup();                 /* 全局清理函数，只需要在进程退出时调用一次 */
 	/* @endgist */
 }
