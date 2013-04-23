@@ -143,6 +143,19 @@ typedef struct _Qiniu_BufReader {
 Qiniu_Reader Qiniu_Buffer_Reader(Qiniu_BufReader* self, const char* buf, size_t bytes);
 
 /*============================================================================*/
+/* type Qiniu_File */
+
+typedef struct _Qiniu_File Qiniu_File;
+typedef struct stat Qiniu_FileInfo;
+
+Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file);
+Qiniu_Error Qiniu_File_Stat(Qiniu_File* self, Qiniu_FileInfo* fi);
+
+void Qiniu_File_Close(void* self);
+
+ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, off_t offset);
+
+/*============================================================================*/
 /* type Qiniu_ReaderAt */
 
 typedef	ssize_t (*Qiniu_FnReadAt)(void* self, void *buf, size_t bytes, off_t offset);
@@ -153,10 +166,9 @@ typedef struct _Qiniu_ReaderAt {
 } Qiniu_ReaderAt;
 
 Qiniu_Reader Qiniu_SectionReader(Qiniu_ReaderAt readerAt, off_t off, off_t n);
-void Qiniu_SectionReader_Release(void* f);
+void Qiniu_SectionReader_Release(void* self);
 
-Qiniu_ReaderAt Qiniu_FileReaderAt_Open(const char* file);
-void Qiniu_FileReaderAt_Close(void* f);
+Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self);
 
 /*============================================================================*/
 

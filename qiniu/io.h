@@ -11,7 +11,6 @@
 #ifndef QINIU_IO_H
 #define QINIU_IO_H
 
-#include "base.h"
 #include "oauth2.h"
 
 /*============================================================================*/
