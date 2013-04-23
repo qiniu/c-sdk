@@ -1,0 +1,1 @@
+cd CUnit; aclocal; autoconf; autoreconf; ./configure; make

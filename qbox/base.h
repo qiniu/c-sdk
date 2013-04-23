@@ -39,6 +39,7 @@ typedef long long QBox_Int64;
 #endif
 
 typedef unsigned int QBox_Uint32;
+typedef unsigned short QBox_Uint16;
 
 /*============================================================================*/
 /* type QBox_Bool */
@@ -125,6 +126,17 @@ typedef struct _QBox_Reader {
 } QBox_Reader;
 
 QBox_Reader QBox_FILE_Reader(FILE* fp);
+
+/*============================================================================*/
+/* type QBox_BufReader */
+
+typedef struct _QBox_BufReader {
+	const char* buf;
+	size_t off;
+	size_t limit;
+} QBox_BufReader;
+
+QBox_Reader QBox_Buffer_Reader(QBox_BufReader* self, const char* buf, size_t bytes);
 
 /*============================================================================*/
 /* type QBox_ReaderAt */
