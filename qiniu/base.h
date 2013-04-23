@@ -151,6 +151,8 @@ typedef struct stat Qiniu_FileInfo;
 Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file);
 Qiniu_Error Qiniu_File_Stat(Qiniu_File* self, Qiniu_FileInfo* fi);
 
+#define Qiniu_FileInfo_Fsize(fi) ((fi).st_size)
+
 void Qiniu_File_Close(void* self);
 
 ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, off_t offset);

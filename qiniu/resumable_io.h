@@ -1,0 +1,47 @@
+/*
+ ============================================================================
+ Name        : resumable_io.h
+ Author      : Qiniu Developers
+ Version     : 1.0.0.0
+ Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
+ Description : 
+ ============================================================================
+ */
+
+#ifndef QINIU_RESUMABLE_IO_H
+#define QINIU_RESUMABLE_IO_H
+
+#include "oauth2.h"
+
+/*============================================================================*/
+/* type Qiniu_Rio_PutExtra */
+
+typedef struct _Qiniu_Rio_PutExtra {
+	const char* callbackParams;	// 当 uptoken 指定了 CallbackUrl，则 CallbackParams 必须非空
+	const char* bucket; 		// 当前是必选项，但未来会去掉
+	const char* customMeta;		// 可选。用户自定义 Meta，不能超过 256 字节
+	const char* mimeType;		// 可选。在 uptoken 没有指定 DetectMime 时，用户客户端可自己指定 MimeType
+} Qiniu_Rio_PutExtra;
+
+/*============================================================================*/
+/* type Qiniu_Rio_PutRet */
+
+typedef struct _Qiniu_Rio_PutRet {
+	const char* hash;			// 如果 uptoken 没有指定 ReturnBody，那么返回值是标准的 PutRet 结构
+} Qiniu_Rio_PutRet;
+
+/*============================================================================*/
+/* func Qiniu_Rio_PutXXX */
+
+Qiniu_Error Qiniu_Rio_Put(
+	Qiniu_Client* self, Qiniu_Rio_PutRet* ret,
+	const char* uptoken, const char* key, Qiniu_ReaderAt f, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra* extra);
+
+Qiniu_Error Qiniu_Rio_PutFile(
+	Qiniu_Client* self, Qiniu_Rio_PutRet* ret,
+	const char* uptoken, const char* key, const char* localFile, Qiniu_Rio_PutExtra* extra);
+
+/*============================================================================*/
+
+#endif // QINIU_RESUMABLE_IO_H
+
