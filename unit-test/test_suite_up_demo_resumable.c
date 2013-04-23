@@ -31,6 +31,8 @@ static const char* mimeType = NULL;
 QBox_Client *client_usedToDestroy;
 char* uptoken_usedToDestroy = NULL;
 
+static int mode;
+
 void try_terminate(const char* fl)
 {
     char* prog_fl = QBox_String_Concat(fl, ".prog", NULL);
@@ -173,8 +175,8 @@ int chunk_notify_error299_otherBlock(void* self, int blockIdx, QBox_UP_Checksum*
 }
 int chunk_notify_error401(void* self, int blockIdx, QBox_UP_Checksum* checksum)
 {
-    QBOX_ACCESS_KEY = "err401";
-    //QBox_Zero(client);
+	QBOX_SECRET_KEY = "err401";
+
     QBox_AuthPolicy auth;
     QBox_Zero(auth);
 
@@ -183,7 +185,10 @@ int chunk_notify_error401(void* self, int blockIdx, QBox_UP_Checksum* checksum)
 		printf("Cannot generate UpToken!\n");
 		return;
 	}
-    QBox_Client_InitByUpToken(client_usedToDestroy, uptoken_usedToDestroy, 1024);
+
+	uptoken_usedToDestroy = QBox_String_Concat("Authorization: UpToken ", uptoken_usedToDestroy, NULL);
+    client_usedToDestroy->auth.self = uptoken_usedToDestroy;
+
     return 1;
 }
 
@@ -342,18 +347,27 @@ void test_by_up_demo_resumable_err299(){
     CU_ASSERT_EQUAL(err.code,299);
 }
 void test_by_up_demo_resumable_err18(){
+    if((mode&ADD_BAD_TEST)==0)
+        return;
     mimeType = "text/plain";
     QBox_Error err;
     err=put_blocks(TESTFILE_16M, -1, -1,block_notify,chunk_notify_error401);
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,18);
+    if(err.code!=18){
+        printf("\n\n\nerr %d:%s\n\n",err.code,err.message);
+    }
+	QBOX_SECRET_KEY = "yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze";
+
+
+	QBOX_SECRET_KEY = "err401";
     err=put_blocks(TESTFILE_16M, -1, -1,block_notify,chunk_notify);
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,18);
     if(err.code!=18){
         printf("\n\n\nerr %d:%s\n\n",err.code,err.message);
     }
-    QBOX_ACCESS_KEY = "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";
+	QBOX_SECRET_KEY = "yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze";
 }
 void test_QBox_UP_NewProgress(){
     QBox_UP_Progress* prog = NULL;
@@ -374,51 +388,40 @@ void test_QBox_UP_NewProgress(){
     prog=NULL;
     QBox_UP_Progress_Release(prog);
 }
-CU_TestInfo testcases_up_demo_resumable[] = {
-        {"Testing up_resumable fsize=16M:", test_by_up_demo_resumable_16M},
-        {"Testing up_resumable fsize=1M:", test_by_up_demo_resumable_1M},
-        {"Testing up_resumable expecting err299:", test_by_up_demo_resumable_err299},
-        /*test some braches which are hardly be reached , cost so much time! can be cut depend on test time;
-        {"Testing up_resumable expecting err18:", test_by_up_demo_resumable_err18},
-        //*/
-        {"Testing QBox_UP_NewProgress :", test_QBox_UP_NewProgress},
-
-        CU_TEST_INFO_NULL
-};
 
 
 /**//*---- test suites ------------------*/
-int suite_up_demo_resumable_init(void)
+int suite_init_up_demo_resumable(void)
 {
-
     QBOX_ACCESS_KEY = "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";
 	QBOX_SECRET_KEY = "yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze";
 
 	return 0;
 }
 
-int suite_up_demo_resumable_clean(void)
+int suite_clean_up_demo_resumable(void)
 {
 	QBox_Global_Cleanup();
     return 0;
 }
 
-CU_SuiteInfo suites_up_demo_resumable[] = {
-        {"Testing the qbox.up(demo_resumable):", suite_up_demo_resumable_init, suite_up_demo_resumable_clean, testcases_up_demo_resumable},
-        CU_SUITE_INFO_NULL
-};
+QBOX_TESTS_BEGIN(up_demo_resumable)
+QBOX_TEST(test_by_up_demo_resumable_16M)
+QBOX_TEST(test_by_up_demo_resumable_1M)
+QBOX_TEST(test_by_up_demo_resumable_err299)
+QBOX_TEST(test_by_up_demo_resumable_err18)
+QBOX_TEST(test_QBox_UP_NewProgress)
+QBOX_TESTS_END()
+
+QBOX_SUITES_BEGIN()
+QBOX_SUITE_EX(up_demo_resumable,suite_init_up_demo_resumable,suite_clean_up_demo_resumable)
+QBOX_SUITES_END()
 
 
 /**//*---- setting enviroment -----------*/
 
-void AddTestsUpDemoResumable(void)
+void AddTestsUpDemoResumable(int myMode)
 {
-        assert(NULL != CU_get_registry());
-        assert(!CU_is_test_running());
-        /**//* shortcut regitry */
-
-        if(CUE_SUCCESS != CU_register_suites(suites_up_demo_resumable)){
-                fprintf(stderr, "Register suites qbox.rs_demo.c failed - %s ", CU_get_error_msg());
-                exit(EXIT_FAILURE);
-        }
+        mode=myMode;
+        QBOX_TEST_REGISTE(up_demo_resumable)
 }

@@ -86,16 +86,9 @@ void test_QBox_UP_Blockput(){
 }
 */
 
-CU_TestInfo testcases_up[] = {
-        {"Testing QBox_UP_Mkblock:", test_QBox_UP_Mkblock},
-        //{"Testing QBox_UP_Blockput:", test_QBox_UP_Blockput},
-
-        CU_TEST_INFO_NULL
-};
-
 
 /**//*---- test suites ------------------*/
-int suite_up_init(void)
+int suite_init_up(void)
 {
     QBOX_ACCESS_KEY = "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";
 	QBOX_SECRET_KEY = "yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze";
@@ -104,33 +97,28 @@ int suite_up_init(void)
 	QBox_Global_Init(-1);
 
 	QBox_Client_Init(&client, 1024);
-
-	return 0;
 }
 
-int suite_up_clean(void)
+int suite_clean_up(void)
 {
 	QBox_Client_Cleanup(&client);
 	QBox_Global_Cleanup();
+
     return 0;
 }
 
-CU_SuiteInfo suites_up[] = {
-        {"Testing the qbox.up:", suite_up_init, suite_up_clean, testcases_up},
-        CU_SUITE_INFO_NULL
-};
+QBOX_TESTS_BEGIN(up)
+//QBOX_TEST(test_QBox_UP_Mkblock)
+QBOX_TESTS_END()
+
+QBOX_SUITES_BEGIN()
+QBOX_SUITE_EX(up,suite_init_up,suite_clean_up)
+QBOX_SUITES_END()
 
 
 /**//*---- setting enviroment -----------*/
 
 void AddTestsUp(void)
 {
-        assert(NULL != CU_get_registry());
-        assert(!CU_is_test_running());
-        /**//* shortcut regitry */
-
-        if(CUE_SUCCESS != CU_register_suites(suites_up)){
-                fprintf(stderr, "Register suites qbox.up failed - %s ", CU_get_error_msg());
-                exit(EXIT_FAILURE);
-        }
+        QBOX_TEST_REGISTE(up)
 }

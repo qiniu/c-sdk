@@ -90,7 +90,7 @@ void test_QBox_PasswordAuth(){
 	err = QBox_Token_ExchangeByPassword(&token, "test@qbox.net", "test");
 	CU_ASSERT_EQUAL(err.code,200);
     QBox_Client_InitByPassword(&client,token,1024);
-    QBox_PasswordAuth* self = (QBox_PasswordAuth*)client.auth;
+    QBox_PasswordAuth* self = (QBox_PasswordAuth*)client.auth.self;
     self->token = NULL;
     self->authHeader = NULL;
 	QBox_Client_Cleanup(&client);
@@ -145,7 +145,7 @@ void test_QBox_PasswordAuth_Auth_err(){
     QBox_Client_InitByPassword(&client,token,1024);
 	QBox_Token_Release(token);
 
-    QBox_PasswordAuth* auth=(QBox_PasswordAuth*)(client.auth);
+    QBox_PasswordAuth* auth=(QBox_PasswordAuth*)(client.auth.self);
     strcpy(auth->token->refreshToken,"err");
 
 	err = QBox_RS_Drop(&client, tableName);
@@ -159,56 +159,42 @@ void test_QBox_PasswordAuth_Auth_err(){
 	QBox_Global_Init(-1);
 }
 
-CU_TestInfo testcases_oauth2_passwd[] = {
-        {"Testing QBox_Token_set:", test_QBox_Token_set},
-        {"Testing QBox_Token_Release:", test_QBox_Token_Release},
-        {"Testing QBox_Token_ExchangeByPassword:", test_QBox_Token_ExchangeByPassword},
-        {"Testing QBox_Token_Refresh:", test_Token_Refresh},
-        {"Testing QBox_Token_ExchangeByRefreshToken:", test_QBox_Token_ExchangeByRefreshToken},
-        {"Testing QBox_PasswordAuth:", test_QBox_PasswordAuth},
-        {"Testing QBox_PasswordAuth_Auth:", test_QBox_PasswordAuth_Auth},
-        {"Testing QBox_PasswordAuth_Auth_err:", test_QBox_PasswordAuth_Auth_err},
-        CU_TEST_INFO_NULL
-};
-
-
 /**//*---- test suites ------------------*/
-int suite_oauth2_passwd_init(void)
+int suite_init_oauth2_passwd(void)
 {
-	//printf("error401 solution: Update QBOX_ACCESS_KEY & QBOX_SECRET_KEY in \"run_test.c\"。\n");
-
 	QBox_Zero(client);
 	QBox_Global_Init(-1);
-
 
 	return 0;
 }
 
-int suite_oauth2_passwd_clean(void)
+int suite_clean_oauth2_passwd(void)
 {
 	QBox_Client_Cleanup(&client);
-
 	QBox_Global_Cleanup();
 
     return 0;
 }
 
-CU_SuiteInfo suites_oauth2_passwd[] = {
-        {"Testing the qbox.oauth2_passwd:", suite_oauth2_passwd_init, suite_oauth2_passwd_clean, testcases_oauth2_passwd},
-        CU_SUITE_INFO_NULL
-};
+QBOX_TESTS_BEGIN(oauth2_passwd)
+QBOX_TEST(test_QBox_Token_set)
+QBOX_TEST(test_QBox_Token_Release)
+QBOX_TEST(test_QBox_Token_ExchangeByPassword)
+QBOX_TEST(test_Token_Refresh)
+QBOX_TEST(test_QBox_Token_ExchangeByRefreshToken)
+QBOX_TEST(test_QBox_PasswordAuth)
+QBOX_TEST(test_QBox_PasswordAuth_Auth)
+QBOX_TEST(test_QBox_PasswordAuth_Auth_err)
+QBOX_TESTS_END()
+
+QBOX_SUITES_BEGIN()
+QBOX_SUITE_EX(oauth2_passwd,suite_init_oauth2_passwd,suite_clean_oauth2_passwd)
+QBOX_SUITES_END()
 
 
 /**//*---- setting enviroment -----------*/
 
 void AddTestsOauth2Passwd(void)
 {
-        assert(NULL != CU_get_registry());
-        assert(!CU_is_test_running());
-        /**//* shortcut regitry */
-
-        if(CUE_SUCCESS != CU_register_suites(suites_oauth2_passwd)){
-                fprintf(stderr, "Register suites_oauth2 failed - %s ", CU_get_error_msg());
-                exit(EXIT_FAILURE);
-        }
+        QBOX_TEST_REGISTE(oauth2_passwd)
 }

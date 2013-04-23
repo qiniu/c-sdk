@@ -62,13 +62,13 @@ void test_QBox_Oauth2_digest(){
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 
-    err=client.vptr->Auth(client.auth,&headers, url, "test", 4);
+    err=client.auth.itbl->Auth(client.auth.self,&headers, url, "test", 4);
     //printf("\n%s\n",*headers);
     CU_ASSERT_EQUAL(err.code,200);
-    client.auth=malloc(64);
+    client.auth.self=malloc(64);
 	QBox_Client_Cleanup(&client);
-	free(client.auth);
-	client.auth=NULL;
+	free(client.auth.self);
+	client.auth.self=NULL;
 }
 
 void test_QBox_Json_GetString(){
@@ -114,19 +114,11 @@ void test_QBox_Json_GetInt64(){
     CU_ASSERT_EQUAL(rlt,999);
 }
 
-CU_TestInfo testcases_oauth2[] = {
-        {"Testing QBox_Oauth2:", test_QBox_Oauth2},
-        {"Testing QBox_Oauth2_digest:", test_QBox_Oauth2_digest},
-        {"Testing QBox_Json_GetString:", test_QBox_Json_GetString},
-        {"Testing QBox_Json_GetInt64:", test_QBox_Json_GetInt64},
-        CU_TEST_INFO_NULL
-};
 
 
 /**//*---- test suites ------------------*/
-int suite_oauth2_init(void)
+int suite_init_oauth2(void)
 {
-	//printf("error401 solution: Update QBOX_ACCESS_KEY & QBOX_SECRET_KEY in \"run_test.c\"。\n");
 	QBOX_ACCESS_KEY = "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";
 	QBOX_SECRET_KEY = "yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze";
 
@@ -138,32 +130,29 @@ int suite_oauth2_init(void)
 	return 0;
 }
 
-int suite_oauth2_clean(void)
+int suite_clean_oauth2(void)
 {
 	QBox_Client_Cleanup(&client);
-	QBox_Client_Cleanup(&client);
-
 	QBox_Global_Cleanup();
 
     return 0;
 }
 
-CU_SuiteInfo suites_oauth2[] = {
-        {"Testing the qbox.oauth2:", suite_oauth2_init, suite_oauth2_clean, testcases_oauth2},
-        CU_SUITE_INFO_NULL
-};
+QBOX_TESTS_BEGIN(oauth2)
+QBOX_TEST(test_QBox_Oauth2)
+QBOX_TEST(test_QBox_Oauth2_digest)
+QBOX_TEST(test_QBox_Json_GetString)
+QBOX_TEST(test_QBox_Json_GetInt64)
+QBOX_TESTS_END()
+
+QBOX_SUITES_BEGIN()
+QBOX_SUITE_EX(oauth2,suite_init_oauth2,suite_clean_oauth2)
+QBOX_SUITES_END()
 
 
 /**//*---- setting enviroment -----------*/
 
 void AddTestsOauth2(void)
 {
-        assert(NULL != CU_get_registry());
-        assert(!CU_is_test_running());
-        /**//* shortcut regitry */
-
-        if(CUE_SUCCESS != CU_register_suites(suites_oauth2)){
-                fprintf(stderr, "Register suites_oauth2 failed - %s ", CU_get_error_msg());
-                exit(EXIT_FAILURE);
-        }
+        QBOX_TEST_REGISTE(oauth2)
 }

@@ -13,7 +13,7 @@ SOURCE_FILES=\
 	     *.c
 
 all: $(SOURCE_FILES)
-	gcc $^ -o test -lcurl -lm -lssl -lcrypto -lcunit -lcurses
+	gcc $^ -o test -lcurl -lm -lssl -lcrypto -lcunit -lcurses -fprofile-arcs -ftest-coverage
 
 install: all
 	@echo

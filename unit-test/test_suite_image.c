@@ -285,20 +285,9 @@ void test__dirtycat(){
 }
 */
 
-CU_TestInfo testcases_image[] = {
-        {"Testing QBox_IMG_Info:", test_QBox_IMG_Info},
-        {"Testing QBox_IMG_Exif:", test_QBox_IMG_Exif},
-        {"Testing QBox_IMG_InitViewOpts:", test_QBox_IMG_InitViewOpts},
-        {"Testing QBox_IMG_ViewURL:", test_QBox_IMG_ViewURL},
-        {"Testing QBox_IMG_MogrifyURL:", test_QBox_IMG_MogrifyURL},
-        {"Testing QBox_IMG_SaveAs:", test_QBox_IMG_SaveAs},
-        //{"Testing _dirtycat:", test__dirtycat},
-        CU_TEST_INFO_NULL
-};
-
 
 /**//*---- test suites ------------------*/
-int suite_image_init(void)
+int suite_init_image(void)
 {
     QBOX_ACCESS_KEY = "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";
 	QBOX_SECRET_KEY = "yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze";
@@ -311,29 +300,31 @@ int suite_image_init(void)
 	return 0;
 }
 
-int suite_image_clean(void)
+int suite_clean_image(void)
 {
 	QBox_Client_Cleanup(&client);
 	QBox_Global_Cleanup();
+
     return 0;
 }
 
-CU_SuiteInfo suites_image[] = {
-        {"Testing the qbox.image:", suite_image_init, suite_image_clean, testcases_image},
-        CU_SUITE_INFO_NULL
-};
+QBOX_TESTS_BEGIN(image)
+QBOX_TEST(test_QBox_IMG_Info)
+QBOX_TEST(test_QBox_IMG_Exif)
+QBOX_TEST(test_QBox_IMG_InitViewOpts)
+QBOX_TEST(test_QBox_IMG_ViewURL)
+QBOX_TEST(test_QBox_IMG_MogrifyURL)
+QBOX_TEST(test_QBox_IMG_SaveAs)
+QBOX_TESTS_END()
+
+QBOX_SUITES_BEGIN()
+QBOX_SUITE_EX(image,suite_init_image,suite_clean_image)
+QBOX_SUITES_END()
 
 
 /**//*---- setting enviroment -----------*/
 
 void AddTestsImage(void)
 {
-        assert(NULL != CU_get_registry());
-        assert(!CU_is_test_running());
-        /**//* shortcut regitry */
-
-        if(CUE_SUCCESS != CU_register_suites(suites_image)){
-                fprintf(stderr, "Register suites failed - %s ", CU_get_error_msg());
-                exit(EXIT_FAILURE);
-        }
+        QBOX_TEST_REGISTE(image)
 }

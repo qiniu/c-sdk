@@ -65,17 +65,10 @@ void test_QBox_SectionReader(){
     CU_ASSERT_EQUAL(result,100);
 }
 
-CU_TestInfo testcases_base[] = {
-        {"Testing QBox_Buffer:", test_QBox_Buffer},
-        {"Testing QBox_SectionReader:", test_QBox_SectionReader},
-        CU_TEST_INFO_NULL
-};
-
 
 /**//*---- test suites ------------------*/
-int suite_base_init(void)
+int suite_init_base(void)
 {
-	//printf("error401 solution: Update QBOX_ACCESS_KEY & QBOX_SECRET_KEY in \"run_test.c\"。\n");
 	QBOX_ACCESS_KEY = "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";
 	QBOX_SECRET_KEY = "yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze";
 
@@ -87,7 +80,7 @@ int suite_base_init(void)
 	return 0;
 }
 
-int suite_base_clean(void)
+int suite_clean_base(void)
 {
 	QBox_Client_Cleanup(&client);
 	QBox_Global_Cleanup();
@@ -95,22 +88,20 @@ int suite_base_clean(void)
     return 0;
 }
 
-CU_SuiteInfo suites_base[] = {
-        {"Testing the qbox.base:", suite_base_init, suite_base_clean, testcases_base},
-        CU_SUITE_INFO_NULL
-};
+QBOX_TESTS_BEGIN(testcases_base)
+QBOX_TEST(test_QBox_Buffer)
+QBOX_TEST(test_QBox_SectionReader)
+QBOX_TESTS_END()
+
+QBOX_SUITES_BEGIN()
+QBOX_SUITE_EX(testcases_base,suite_init_base,suite_clean_base)
+QBOX_SUITES_END()
 
 
 /**//*---- setting enviroment -----------*/
 
 void AddTestsBase(void)
 {
-        assert(NULL != CU_get_registry());
-        assert(!CU_is_test_running());
-        /**//* shortcut regitry */
-
-        if(CUE_SUCCESS != CU_register_suites(suites_base)){
-                fprintf(stderr, "Register suites_base failed - %s ", CU_get_error_msg());
-                exit(EXIT_FAILURE);
-        }
+        QBOX_TEST_REGISTE(base)
 }
+

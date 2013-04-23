@@ -130,44 +130,40 @@ void test_by_rs_demo(){
 lzDone:
 	return ;
 }
-CU_TestInfo testcases_rs_demo[] = {
-        {"Testing rs_demo.c:", test_by_rs_demo},
 
-        CU_TEST_INFO_NULL
-};
+
 
 
 /**//*---- test suites ------------------*/
-int suite_rs_demo_init(void)
+int suite_init_rs_demo(void)
 {
 	QBox_Zero(client);
 	QBox_Global_Init(-1);
+
 	return 0;
 }
 
-int suite_rs_demo_clean(void)
+int suite_clean_rs_demo(void)
 {
 	QBox_Client_Cleanup(&client);
 	QBox_Global_Cleanup();
+
     return 0;
 }
 
-CU_SuiteInfo suites_rs_demo[] = {
-        {"Testing the qbox.up:", suite_rs_demo_init, suite_rs_demo_clean, testcases_rs_demo},
-        CU_SUITE_INFO_NULL
-};
+QBOX_TESTS_BEGIN(rs_demo)
+QBOX_TEST(test_by_rs_demo)
+QBOX_TESTS_END()
+
+QBOX_SUITES_BEGIN()
+QBOX_SUITE_EX(rs_demo,suite_init_rs_demo,suite_clean_rs_demo)
+QBOX_SUITES_END()
 
 
 /**//*---- setting enviroment -----------*/
 
 void AddTestsRsDemo(void)
 {
-        assert(NULL != CU_get_registry());
-        assert(!CU_is_test_running());
-        /**//* shortcut regitry */
-
-        if(CUE_SUCCESS != CU_register_suites(suites_rs_demo)){
-                fprintf(stderr, "Register suites qbox.rs_demo.c failed - %s ", CU_get_error_msg());
-                exit(EXIT_FAILURE);
-        }
+        QBOX_TEST_REGISTE(oauth2_passwd)
 }
+

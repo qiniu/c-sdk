@@ -181,46 +181,36 @@ void test_auth_policy(){
 	///how to judge?
 }
 
-CU_TestInfo testcases_up_demo[] = {
-        {"Testing up_demo.c:", test_by_up_demo},
-        {"Testing up ctx!=end or ctx=end:", test_ctx},
-        {"Testing auth_policy.c:", test_auth_policy},
-        CU_TEST_INFO_NULL
-};
-
 
 /**//*---- test suites ------------------*/
-int suite_up_demo_init(void)
+int suite_init_up_demo(void)
 {
-
     QBOX_ACCESS_KEY = "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";
 	QBOX_SECRET_KEY = "yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze";
 
 	return 0;
 }
 
-int suite_up_demo_clean(void)
+int suite_clean_up_demo(void)
 {
 	QBox_Global_Cleanup();
     return 0;
 }
 
-CU_SuiteInfo suites_up_demo[] = {
-        {"Testing the qbox.up(demo):", suite_up_demo_init, suite_up_demo_clean, testcases_up_demo},
-        CU_SUITE_INFO_NULL
-};
+QBOX_TESTS_BEGIN(up_demo)
+QBOX_TEST(test_by_up_demo)
+QBOX_TEST(test_ctx)
+QBOX_TEST(test_auth_policy)
+QBOX_TESTS_END()
+
+QBOX_SUITES_BEGIN()
+QBOX_SUITE_EX(up_demo,suite_init_up_demo,suite_clean_up_demo)
+QBOX_SUITES_END()
 
 
 /**//*---- setting enviroment -----------*/
 
 void AddTestsUpDemo(void)
 {
-        assert(NULL != CU_get_registry());
-        assert(!CU_is_test_running());
-        /**//* shortcut regitry */
-
-        if(CUE_SUCCESS != CU_register_suites(suites_up_demo)){
-                fprintf(stderr, "Register suites qbox.rs_demo.c failed - %s ", CU_get_error_msg());
-                exit(EXIT_FAILURE);
-        }
+        QBOX_TEST_REGISTE(up_demo)
 }

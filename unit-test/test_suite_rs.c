@@ -17,6 +17,7 @@
 #include "../qbox/base.h"
 #include "c_unit_test_main.h"
 
+#include <curl/curl.h>
 
 QBox_Error err;
 QBox_Client client;
@@ -30,11 +31,12 @@ void test_QBox_RS_PutAuth(){
     QBox_RS_PutAuthRet* ret=malloc(sizeof(QBox_RS_PutAuthRet));
 
 	//test branch: err.code!=200
-	QBOX_ACCESS_KEY = "err.code!=200 branch";
+	QBOX_ACCESS_KEY = "err401";
     err=QBox_RS_PutAuth(&client,ret);
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,401);
 	QBOX_ACCESS_KEY = "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";
+
 
 	//test branch: err.code=200
     err=QBox_RS_PutAuth(&client,ret);
@@ -83,8 +85,8 @@ void test_QBox_RS_PutAuthEx(){
 }
 
 void test_QBox_RS_Put(){
-    const char* tableName="c_test_table_11";
-    const char* key="c_test_key_1";
+    const char* tableName="c_test_table_0";
+    const char* key="c_test_key_0";
     QBox_RS_PutRet* ret=malloc(sizeof(QBox_RS_PutRet));
     const char* mimeType="application/octet-stream";
     FILE* file;
@@ -165,8 +167,8 @@ void test_QBox_RS_Put(){
 
 
 void test_QBox_RS_PutFile(){
-    const char* tableName="c_test_table_11";
-    const char* key="c_test_key_1";
+    const char* tableName="c_test_table_0";
+    const char* key="c_test_key_0";
     QBox_RS_PutRet* ret=malloc(sizeof(QBox_RS_PutRet));
     const char* mimeType="application/octet-stream";
     const char* srcFile;
@@ -188,8 +190,8 @@ void test_QBox_RS_PutFile(){
 
 void test_QBox_RS_Get(){
     QBox_RS_GetRet* ret=malloc(sizeof(QBox_RS_GetRet));
-    const char* tableName="c_test_table_11";
-    const char* key="c_test_key_1";
+    const char* tableName="c_test_table_0";
+    const char* key="c_test_key_0";
     const char* attName;
     //test branch: attName=NULL and err.code!=200
     attName=NULL;
@@ -203,16 +205,18 @@ void test_QBox_RS_Get(){
     QBox_RS_PutRet* putRet=malloc(sizeof(QBox_RS_PutRet));
     const char* srcFile=TESTFILE1;
     err=QBox_RS_PutFile(&client,putRet,tableName,key,NULL,srcFile,NULL);
+    const char* hash=malloc(sizeof(char)*64);
+    strcpy(hash,putRet->hash);
     if(err.code!=200){
         CU_ASSERT_EQUAL(err.code,200);}
     else{
         err=QBox_RS_Get(&client,ret,tableName,key,attName);
         CU_ASSERT_EQUAL(err.code,200);
+        CU_ASSERT_EQUAL(strcmp(hash,ret->hash),0);
     }
+
     free(putRet);
     QBox_RS_Drop(&client,tableName);
-    //printf("\n  ret=\n    url=%s\n    hash=%s\n    mimetype=%s\n    size=%ld\n    expriseIn=%ld\n    ",ret->url,ret->hash,ret->mimeType,(long)ret->fsize,(long)ret->expiresIn);
-
     free(ret);
 }
 
@@ -221,12 +225,12 @@ void test_QBox_RS_GetIfNotModified(){
     const char* tableName="c_test_table_0";
     const char* key="c_test_key_0";
     const char* attName;
-    const char* base="";
+    const char* base=malloc(sizeof(char)*64);
     //test branch: attName=NULL and err.code!=200
     attName=NULL;
-    err=QBox_RS_GetIfNotModified(&client,ret,tableName,"no",attName,base);
+    err=QBox_RS_GetIfNotModified(&client,ret,tableName,"no",attName,"");
     CU_ASSERT_NOT_EQUAL(err.code,200);
-    //*
+
     //test branch:attName!=NULL and err.code=200
     attName="attName.txt";
     QBox_RS_Create(&client, tableName);
@@ -237,22 +241,22 @@ void test_QBox_RS_GetIfNotModified(){
         CU_ASSERT_EQUAL(err.code,200);}
     else{
         QBox_RS_Get(&client,ret,tableName,key,attName);
-        base=(const char*)ret->hash;
+        strcpy(base,(const char*)ret->hash);
+        err=QBox_RS_GetIfNotModified(&client,ret,tableName,key,attName,"err");
+        CU_ASSERT_NOT_EQUAL(err.code,200);
         err=QBox_RS_GetIfNotModified(&client,ret,tableName,key,attName,base);
-        //printf("\n\n%d\n%s\n",err.code,err.message);
         CU_ASSERT_EQUAL(err.code,200);
     }
     free(putRet);
     QBox_RS_Drop(&client,tableName);
-    //printf("\n  ret=\n    url=%s\n    hash=%s\n    mimetype=%s\n    size=%ld\n    expriseIn=%ld\n    ",ret->url,ret->hash,ret->mimeType,(long)ret->fsize,(long)ret->expiresIn);
-    //*/
+
     free(ret);
 }
 
 void test_QBox_RS_Stat(){
     QBox_RS_StatRet* ret=malloc(sizeof(QBox_RS_StatRet));
-    const char* tableName="c_test_table_11";
-    const char* key="c_test_key_1";
+    const char* tableName="c_test_table_0";
+    const char* key="c_test_key_0";
     //test branch:err!=200 expected err.code=631
     err=QBox_RS_Stat(&client,ret,tableName,key);
     CU_ASSERT_NOT_EQUAL(err.code,200);
@@ -297,8 +301,8 @@ void test_QBox_RS_Unpublish(){
 }
 
 void test_QBox_RS_Delete(){
-    const char* tableName="c_test_table_11";
-    const char* key="c_test_key_1";
+    const char* tableName="c_test_table_0";
+    const char* key="c_test_key_0";
 
     QBox_RS_Create(&client, tableName);
     QBox_RS_PutRet* putRet=malloc(sizeof(QBox_RS_PutRet));
@@ -339,8 +343,8 @@ void test_QBox_RS_Create_and_Drop(){
 
 void test_QBox_RS_PutStream(){
     QBox_RS_PutRet* ret=malloc(sizeof(QBox_RS_PutRet));
-    const char* tableName="c_test_table_22";
-    const char* key="c_test_key_22";
+    const char* tableName="c_test_table_0";
+    const char* key="c_test_key_0";
     const char* mimeType="application/octet-stream";
     char* stream = NULL;
     int bytes=128;
@@ -368,29 +372,72 @@ void test_QBox_RS_PutStream(){
     free(ret);
 }
 
-//void test_QBox_RS_ResumablePut(){}
+void test_0(){/*
+    const char* tableName="c_test_table_2165452";
+    const char* key="c_test_key_2142";
 
-CU_TestInfo testcases_rs[] = {
-        {"Testing QBox_RS_PutAuth:", test_QBox_RS_PutAuth},
-        {"Testing QBox_RS_PutAuthEx:", test_QBox_RS_PutAuthEx},
-        {"Testing QBox_RS_Put:", test_QBox_RS_Put},
-        {"Testing QBox_RS_PutFile:", test_QBox_RS_PutFile},
-        {"Testing QBox_RS_Get:", test_QBox_RS_Get},
-        {"Testing QBox_RS_GetIfNotModified:", test_QBox_RS_GetIfNotModified},
-        {"Testing QBox_RS_Stat:", test_QBox_RS_Stat},
-        {"Testing QBox_RS_Publish:", test_QBox_RS_Publish},
-        {"Testing QBox_RS_Unpublish:", test_QBox_RS_Unpublish},
-        {"Testing QBox_RS_Delete:", test_QBox_RS_Delete},
-        {"Testing QBox_RS_Create and QBox_RS_Drop:", test_QBox_RS_Create_and_Drop},
-        {"Testing QBox_RS_PutStream:", test_QBox_RS_PutStream},
-        CU_TEST_INFO_NULL
-};
+	QBox_RS_Drop(&client, tableName);
+
+
+    QBox_RS_GetRet* ret=malloc(sizeof(QBox_RS_GetRet));
+    const char* attName;
+    const char* base="xxxx";
+    //test branch: attName=NULL and err.code!=200
+    attName=NULL;
+
+    QBox_RS_StatRet* ret2=malloc(sizeof(QBox_RS_StatRet));
+
+
+
+    err=QBox_RS_Stat(&client,ret2,tableName,key);
+    CU_ASSERT_NOT_EQUAL(err.code,200);
+    CU_ASSERT_EQUAL(err.code,631);
+    QBox_RS_Create(&client, tableName);
+    err=QBox_RS_Stat(&client,ret2,tableName,key);
+    CU_ASSERT_NOT_EQUAL(err.code,200);
+    CU_ASSERT_EQUAL(err.code,612);
+	QBox_RS_Drop(&client, tableName);
+
+
+    err=QBox_RS_GetIfNotModified(&client,ret,tableName,"no",attName,base);
+    CU_ASSERT_NOT_EQUAL(err.code,200);
+    //*
+    //test branch:attName!=NULL and err.code=200
+    attName="attName.txt";
+    QBox_RS_Create(&client, tableName);
+    QBox_RS_PutRet* putRet=malloc(sizeof(QBox_RS_PutRet));
+    const char* srcFile=TESTFILE1;
+    err=QBox_RS_PutFile(&client,putRet,tableName,key,NULL,srcFile,NULL);
+    if(err.code!=200){
+        CU_ASSERT_EQUAL(err.code,200);}
+    else{
+        err=QBox_RS_GetIfNotModified(&client,ret,tableName,key,attName,base);
+        //printf("\n\n%d\n%s\n",err.code,err.message);
+        CU_ASSERT_EQUAL(err.code,200);
+    }
+	QBox_RS_Drop(&client, tableName);
+
+
+    err=QBox_RS_Stat(&client,ret2,tableName,key);
+    CU_ASSERT_NOT_EQUAL(err.code,200);
+    CU_ASSERT_EQUAL(err.code,631);
+    QBox_RS_Create(&client, tableName);
+    err=QBox_RS_Stat(&client,ret2,tableName,key);
+    CU_ASSERT_NOT_EQUAL(err.code,200);
+    CU_ASSERT_EQUAL(err.code,612);
+	QBox_RS_Drop(&client, tableName);
+    free(ret2);
+
+    free(putRet);
+    free(ret);
+*/
+}
+
 
 
 /**//*---- test suites ------------------*/
-int suite_rs_init(void)
+int suite_init_rs(void)
 {
-	//printf("error401 solution: Update QBOX_ACCESS_KEY & QBOX_SECRET_KEY in \"run_test.c\"。\n");
 	QBOX_ACCESS_KEY = "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";
 	QBOX_SECRET_KEY = "yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze";
 
@@ -402,7 +449,7 @@ int suite_rs_init(void)
 	return 0;
 }
 
-int suite_rs_clean(void)
+int suite_clean_rs(void)
 {
 	QBox_Client_Cleanup(&client);
 	QBox_Global_Cleanup();
@@ -410,22 +457,31 @@ int suite_rs_clean(void)
     return 0;
 }
 
-CU_SuiteInfo suites_rs[] = {
-        {"Testing the qbox.rs:", suite_rs_init, suite_rs_clean, testcases_rs},
-        CU_SUITE_INFO_NULL
-};
+QBOX_TESTS_BEGIN(rs)
+QBOX_TEST(test_0)
+QBOX_TEST(test_QBox_RS_PutAuth)
+QBOX_TEST(test_QBox_RS_PutAuthEx)
+QBOX_TEST(test_QBox_RS_Put)
+QBOX_TEST(test_QBox_RS_PutFile)
+QBOX_TEST(test_QBox_RS_Get)
+QBOX_TEST(test_QBox_RS_GetIfNotModified)
+QBOX_TEST(test_QBox_RS_Stat)
+QBOX_TEST(test_QBox_RS_Publish)
+QBOX_TEST(test_QBox_RS_Unpublish)
+QBOX_TEST(test_QBox_RS_Delete)
+QBOX_TEST(test_QBox_RS_Create_and_Drop)
+QBOX_TEST(test_QBox_RS_PutStream)
+QBOX_TESTS_END()
+
+QBOX_SUITES_BEGIN()
+QBOX_SUITE_EX(rs,suite_init_rs,suite_clean_rs)
+QBOX_SUITES_END()
 
 
 /**//*---- setting enviroment -----------*/
 
 void AddTestsRS(void)
 {
-        assert(NULL != CU_get_registry());
-        assert(!CU_is_test_running());
-        /**//* shortcut regitry */
-
-        if(CUE_SUCCESS != CU_register_suites(suites_rs)){
-                fprintf(stderr, "Register suites failed - %s ", CU_get_error_msg());
-                exit(EXIT_FAILURE);
-        }
+        QBOX_TEST_REGISTE(rs)
 }
+
