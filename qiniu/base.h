@@ -190,6 +190,18 @@ typedef struct _Qiniu_ReadBuf {
 Qiniu_Reader Qiniu_BufReader(Qiniu_ReadBuf* self, const char* buf, size_t bytes);
 
 /*============================================================================*/
+/* type Qiniu_Tee */
+
+typedef struct _Qiniu_Tee {
+	Qiniu_Reader r;
+	Qiniu_Writer w;
+} Qiniu_Tee;
+
+size_t Qiniu_Tee_Read(void* buf, size_t unused, size_t n, Qiniu_Tee* self);
+
+Qiniu_Reader Qiniu_TeeReader(Qiniu_Tee* self, Qiniu_Reader r, Qiniu_Writer w);
+
+/*============================================================================*/
 /* type Qiniu_Section */
 
 typedef struct _Qiniu_Section {

@@ -146,6 +146,26 @@ Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, off_t of
 }
 
 /*============================================================================*/
+/* type Qiniu_Tee */
+
+size_t Qiniu_Tee_Read(void* buf, size_t unused, size_t n, Qiniu_Tee* self)
+{
+	size_t nr = self->r.Read(buf, unused, n, self->r.self);
+	if (nr > 0) {
+		return self->w.Write(buf, unused, nr, self->w.self);
+	}
+	return nr;
+}
+
+Qiniu_Reader Qiniu_TeeReader(Qiniu_Tee* self, Qiniu_Reader r, Qiniu_Writer w)
+{
+	Qiniu_Reader ret = {self, (Qiniu_FnRead)Qiniu_Tee_Read};
+	self->r = r;
+	self->w = w;
+	return ret;
+}
+
+/*============================================================================*/
 /* type Qiniu_File */
 
 Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file)
