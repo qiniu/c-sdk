@@ -20,13 +20,55 @@
 #define defaultChunkSize	(256 * 1024) // 256k
 
 /*============================================================================*/
+/* type Qiniu_Rio_ST - SingleThread */
+
+static void Qiniu_Rio_STWG_Add(void* self, int n) {}
+static void Qiniu_Rio_STWG_Done(void* self)	{}
+static void Qiniu_Rio_STWG_Wait(void* self)	{}
+static void Qiniu_Rio_STWG_Release(void* self) {}
+
+static Qiniu_Rio_WaitGroup_Itbl Qiniu_Rio_STWG_Itbl = {
+	Qiniu_Rio_STWG_Add,
+	Qiniu_Rio_STWG_Done,
+	Qiniu_Rio_STWG_Wait,
+	Qiniu_Rio_STWG_Release
+};
+
+static Qiniu_Rio_WaitGroup Qiniu_Rio_STWG = {
+	NULL, &Qiniu_Rio_STWG_Itbl
+};
+
+static Qiniu_Rio_WaitGroup Qiniu_Rio_ST_WaitGroup(void* self) {
+	return Qiniu_Rio_STWG;
+}
+
+static Qiniu_Client* Qiniu_Rio_ST_ClientTls(void* self, Qiniu_Client* mc) {
+	return mc;
+}
+
+static void Qiniu_Rio_ST_RunTask(void* self, void (*task)(void* params), void* params) {
+	task(params);
+}
+
+static Qiniu_Rio_ThreadModel_Itbl Qiniu_Rio_ST_Itbl = {
+	Qiniu_Rio_ST_WaitGroup,
+	Qiniu_Rio_ST_ClientTls,
+	Qiniu_Rio_ST_RunTask
+};
+
+Qiniu_Rio_ThreadModel Qiniu_Rio_ST = {
+	NULL, &Qiniu_Rio_ST_Itbl
+};
+
+/*============================================================================*/
 /* type Qiniu_Rio_Settings */
 
 static Qiniu_Rio_Settings settings = {
 	defaultWorkers * 4,
 	defaultWorkers,
 	defaultChunkSize,
-	defaultTryTimes
+	defaultTryTimes,
+	{NULL, &Qiniu_Rio_ST_Itbl}
 };
 
 void Qiniu_Rio_SetSettings(Qiniu_Rio_Settings* v)
@@ -43,6 +85,9 @@ void Qiniu_Rio_SetSettings(Qiniu_Rio_Settings* v)
 	}
 	if (settings.tryTimes == 0) {
 		settings.tryTimes = defaultTryTimes;
+	}
+	if (settings.threadModel.itbl == NULL) {
+		settings.threadModel = Qiniu_Rio_ST;
 	}
 }
 
@@ -310,6 +355,7 @@ int Qiniu_Rio_BlockCount(Qiniu_Int64 fsize)
 typedef struct _Qiniu_Rio_task {
 	Qiniu_ReaderAt f;
 	Qiniu_Auth auth;
+	Qiniu_Client* mc;
 	Qiniu_Rio_PutExtra* extra;
 	Qiniu_Rio_WaitGroup wg;
 	int* nfails;
@@ -327,7 +373,7 @@ static void Qiniu_Rio_doTask(void* params)
 	Qiniu_Rio_WaitGroup wg = task->wg;
 	Qiniu_Rio_PutExtra* extra = task->extra;
 	Qiniu_Rio_ThreadModel tm = extra->threadModel;
-	Qiniu_Client* c = tm.itbl->ClientTls(tm.self);
+	Qiniu_Client* c = tm.itbl->ClientTls(tm.self, task->mc);
 	int blkIdx = task->blkIdx;
 	int tryTimes = extra->tryTimes;
 
@@ -400,6 +446,9 @@ Qiniu_Error Qiniu_Rio_Put(
 	if (extra->notifyErr == NULL) {
 		extra->notifyErr = notifyErrNil;
 	}
+	if (extra->threadModel.itbl == NULL) {
+		extra->threadModel = settings.threadModel;
+	}
 
 	wg = tm.itbl->WaitGroup(tm.self);
 	wg.itbl->Add(wg.self, blockCnt);
@@ -415,6 +464,7 @@ Qiniu_Error Qiniu_Rio_Put(
 		task->f = f;
 		task->auth = self->auth;
 		task->extra = extra;
+		task->mc = self;
 		task->wg = wg;
 		task->nfails = &nfails;
 		task->blkIdx = i;

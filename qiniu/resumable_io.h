@@ -39,7 +39,7 @@ typedef struct _Qiniu_Rio_WaitGroup {
 
 typedef struct _Qiniu_Rio_ThreadModel_Itbl {
 	Qiniu_Rio_WaitGroup (*WaitGroup)(void* self);
-	Qiniu_Client* (*ClientTls)(void* self);
+	Qiniu_Client* (*ClientTls)(void* self, Qiniu_Client* mc);
 	void (*RunTask)(void* self, void (*task)(void* params), void* params);
 } Qiniu_Rio_ThreadModel_Itbl;
 
@@ -48,14 +48,17 @@ typedef struct _Qiniu_Rio_ThreadModel {
 	Qiniu_Rio_ThreadModel_Itbl* itbl;
 } Qiniu_Rio_ThreadModel;
 
+extern Qiniu_Rio_ThreadModel Qiniu_Rio_ST;
+
 /*============================================================================*/
 /* type Qiniu_Rio_Settings */
 
 typedef struct _Qiniu_Rio_Settings {
-    int taskQsize;		// 可选。任务队列大小。为 0 表示取 Workers * 4。 
-    int workers;		// 并行 Goroutine 数目。
+	int taskQsize;		// 可选。任务队列大小。为 0 表示取 Workers * 4。 
+	int workers;		// 并行 Goroutine 数目。
 	int chunkSize;		// 默认的Chunk大小，不设定则为256k
 	int tryTimes;		// 默认的尝试次数，不设定则为3
+	Qiniu_Rio_ThreadModel threadModel;
 } Qiniu_Rio_Settings;
 
 void Qiniu_Rio_SetSettings(Qiniu_Rio_Settings* v);
