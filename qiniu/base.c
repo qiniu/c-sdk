@@ -280,10 +280,16 @@ size_t Qiniu_Buffer_Write(Qiniu_Buffer* self, const void* buf, size_t n)
 	return n;
 }
 
-size_t Qiniu_Buffer_Fwrite(void *buf, size_t size, size_t nmemb, void *self)
+size_t Qiniu_Buffer_Fwrite(const void *buf, size_t size, size_t nmemb, void *self)
 {
 	assert(size == 1);
 	return Qiniu_Buffer_Write((Qiniu_Buffer*)self, buf, nmemb);
+}
+
+Qiniu_Writer Qiniu_BufWriter(Qiniu_Buffer* self)
+{
+	Qiniu_Writer writer = { self, Qiniu_Buffer_Fwrite };
+	return writer;
 }
 
 /*============================================================================*/
@@ -474,7 +480,7 @@ char* Qiniu_String_Format(size_t initSize, const char* fmt, ...)
 /*============================================================================*/
 /* func Qiniu_Null_Fwrite */
 
-size_t Qiniu_Null_Fwrite(void *buf, size_t size, size_t nmemb, void *self)
+size_t Qiniu_Null_Fwrite(const void *buf, size_t size, size_t nmemb, void *self)
 {
 	return nmemb;
 }
@@ -486,6 +492,12 @@ Qiniu_Reader Qiniu_FILE_Reader(FILE* fp)
 {
 	Qiniu_Reader reader = { fp, (Qiniu_FnRead)fread };
 	return reader;
+}
+
+Qiniu_Writer Qiniu_FILE_Writer(FILE* fp)
+{
+	Qiniu_Writer writer = { fp, (Qiniu_FnWrite)fwrite };
+	return writer;
 }
 
 /*============================================================================*/
