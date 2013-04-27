@@ -84,7 +84,7 @@ size_t Qiniu_Crc32_Fwrite(const void* buf, size_t cbelem, size_t n, Qiniu_Crc32*
 
 Qiniu_Writer Qiniu_Crc32Writer(Qiniu_Crc32* self, unsigned long inCrc32)
 {
-	Qiniu_Writer writer = { self, (Qiniu_FnWrite)Qiniu_Crc32_Fwrite };
+	Qiniu_Writer writer = {self, (Qiniu_FnWrite)Qiniu_Crc32_Fwrite};
 	self->val = inCrc32;
 	return writer;
 }
@@ -113,6 +113,35 @@ Qiniu_Reader Qiniu_BufReader(Qiniu_ReadBuf* self, const char* buf, size_t bytes)
 	self->buf = buf;
 	self->off = 0;
 	self->limit = bytes;
+	return ret;
+}
+
+/*============================================================================*/
+/* type Qiniu_Section */
+
+size_t Qiniu_Section_Read(void* buf, size_t unused, size_t n, Qiniu_Section* self)
+{
+	off_t max = self->limit - self->off;
+	if (max <= 0) {
+		return 0;
+	}
+	if (n > max) {
+		n = (size_t)max;
+	}
+	n = self->r.ReadAt(self->r.self, buf, n, self->off);
+	if (n < 0) {
+		n = 0;
+	}
+	self->off += n;
+	return n;
+}
+
+Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, off_t off, off_t n)
+{
+	Qiniu_Reader ret = {self, (Qiniu_FnRead)Qiniu_Section_Read};
+	self->r = r;
+	self->off = off;
+	self->limit = off + n;
 	return ret;
 }
 
@@ -156,50 +185,6 @@ Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self)
 {
 	Qiniu_ReaderAt ret = {self, Qiniu_File_ReadAt};
 	return ret;
-}
-
-/*============================================================================*/
-/* func Qiniu_SectionReader */
-
-typedef struct _Qiniu_sectionReader {
-	Qiniu_ReaderAt r;
-	off_t off;
-	off_t limit;
-} Qiniu_sectionReader;
-
-static size_t Qiniu_sectionReader_Read(void *buf, size_t unused, size_t n, void *self1)
-{
-	Qiniu_sectionReader* self = (Qiniu_sectionReader*)self1;
-	off_t max = self->limit - self->off;
-	if (max <= 0) {
-		return 0;
-	}
-	if (n > max) {
-		n = (size_t)max;
-	}
-	n = self->r.ReadAt(self->r.self, buf, n, self->off);
-	if (n < 0) {
-		n = 0;
-	}
-	self->off += n;
-	return n;
-}
-
-Qiniu_Reader Qiniu_SectionReader(Qiniu_ReaderAt r, off_t off, off_t n)
-{
-	Qiniu_Reader ret;
-	Qiniu_sectionReader* self = malloc(sizeof(Qiniu_sectionReader));
-	self->r = r;
-	self->off = off;
-	self->limit = off + n;
-	ret.self = self;
-	ret.Read = Qiniu_sectionReader_Read;
-	return ret;
-}
-
-void Qiniu_SectionReader_Release(void* f)
-{
-	free(f);
 }
 
 /*============================================================================*/

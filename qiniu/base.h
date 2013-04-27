@@ -179,7 +179,7 @@ void Qiniu_Format_Register(char esc, Qiniu_FnAppender appender);
 size_t Qiniu_Null_Fwrite(const void* buf, size_t, size_t n, void* self);
 
 /*============================================================================*/
-/* type Qiniu_BufReader */
+/* type Qiniu_ReadBuf */
 
 typedef struct _Qiniu_ReadBuf {
 	const char* buf;
@@ -188,6 +188,19 @@ typedef struct _Qiniu_ReadBuf {
 } Qiniu_ReadBuf;
 
 Qiniu_Reader Qiniu_BufReader(Qiniu_ReadBuf* self, const char* buf, size_t bytes);
+
+/*============================================================================*/
+/* type Qiniu_Section */
+
+typedef struct _Qiniu_Section {
+	Qiniu_ReaderAt r;
+	off_t off;
+	off_t limit;
+} Qiniu_Section;
+
+size_t Qiniu_Section_Read(void* buf, size_t unused, size_t n, Qiniu_Section* self);
+
+Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, off_t off, off_t n);
 
 /*============================================================================*/
 /* type Qiniu_Crc32 */
@@ -218,12 +231,6 @@ void Qiniu_File_Close(void* self);
 ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, off_t offset);
 
 Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self);
-
-/*============================================================================*/
-/* type Qiniu_SectionReader */
-
-Qiniu_Reader Qiniu_SectionReader(Qiniu_ReaderAt readerAt, off_t off, off_t n);
-void Qiniu_SectionReader_Release(void* self);
 
 /*============================================================================*/
 
