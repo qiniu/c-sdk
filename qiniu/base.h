@@ -100,6 +100,13 @@ char* Qiniu_QueryEscape(const char* s, Qiniu_Bool* fesc);
 Qiniu_Int64 Qiniu_Seconds();
 
 /*============================================================================*/
+/* type Qiniu_Log */
+
+#define Qiniu_Log_Info(msg)
+#define Qiniu_Log_Warn(msg)
+#define Qiniu_Log_WarnErr(msg, err)
+
+/*============================================================================*/
 /* type Qiniu_Reader */
 
 typedef size_t (*Qiniu_FnRead)(void *buf, size_t, size_t n, void *self);
@@ -179,7 +186,7 @@ void Qiniu_Format_Register(char esc, Qiniu_FnAppender appender);
 size_t Qiniu_Null_Fwrite(const void* buf, size_t, size_t n, void* self);
 
 /*============================================================================*/
-/* type Qiniu_BufReader */
+/* type Qiniu_ReadBuf */
 
 typedef struct _Qiniu_ReadBuf {
 	const char* buf;
@@ -188,6 +195,28 @@ typedef struct _Qiniu_ReadBuf {
 } Qiniu_ReadBuf;
 
 Qiniu_Reader Qiniu_BufReader(Qiniu_ReadBuf* self, const char* buf, size_t bytes);
+Qiniu_ReaderAt Qiniu_BufReaderAt(Qiniu_ReadBuf* self, const char* buf, size_t bytes);
+
+/*============================================================================*/
+/* type Qiniu_Tee */
+
+typedef struct _Qiniu_Tee {
+	Qiniu_Reader r;
+	Qiniu_Writer w;
+} Qiniu_Tee;
+
+Qiniu_Reader Qiniu_TeeReader(Qiniu_Tee* self, Qiniu_Reader r, Qiniu_Writer w);
+
+/*============================================================================*/
+/* type Qiniu_Section */
+
+typedef struct _Qiniu_Section {
+	Qiniu_ReaderAt r;
+	off_t off;
+	off_t limit;
+} Qiniu_Section;
+
+Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, off_t off, off_t n);
 
 /*============================================================================*/
 /* type Qiniu_Crc32 */
@@ -197,8 +226,6 @@ unsigned long Qiniu_Crc32_Update(unsigned long inCrc32, const void *buf, size_t 
 typedef struct _Qiniu_Crc32 {
 	unsigned long val;
 } Qiniu_Crc32;
-
-size_t Qiniu_Crc32_Fwrite(const void* buf, size_t, size_t n, Qiniu_Crc32* self);
 
 Qiniu_Writer Qiniu_Crc32Writer(Qiniu_Crc32* self, unsigned long inCrc32);
 
@@ -218,12 +245,6 @@ void Qiniu_File_Close(void* self);
 ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, off_t offset);
 
 Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self);
-
-/*============================================================================*/
-/* type Qiniu_SectionReader */
-
-Qiniu_Reader Qiniu_SectionReader(Qiniu_ReaderAt readerAt, off_t off, off_t n);
-void Qiniu_SectionReader_Release(void* self);
 
 /*============================================================================*/
 

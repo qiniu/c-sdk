@@ -159,7 +159,7 @@ Qiniu_Int64 Qiniu_Json_GetInt64(Qiniu_Json* self, const char* key, Qiniu_Int64 d
 /*============================================================================*/
 /* type Qiniu_Client */
 
-static Qiniu_Auth Qiniu_NoAuth = {
+Qiniu_Auth Qiniu_NoAuth = {
 	NULL,
 	NULL
 };

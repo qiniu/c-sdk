@@ -82,6 +82,9 @@ Qiniu_Error Qiniu_Client_CallWithBuffer(
 
 /*============================================================================*/
 
+extern Qiniu_Auth Qiniu_NoAuth;
+extern Qiniu_Auth Qiniu_DigestAuth;
+
 void Qiniu_Client_Init(Qiniu_Client* self, size_t bufSize);
 void Qiniu_Client_InitNoAuth(Qiniu_Client* self, size_t bufSize);
 
