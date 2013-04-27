@@ -12,7 +12,6 @@
 #include "../b64/urlsafe_b64.h"
 #include <stdlib.h>
 #include <assert.h>
-#include <stdarg.h>
 #include <string.h>
 #include <time.h>
 
@@ -264,6 +263,14 @@ const char* Qiniu_Buffer_CStr(Qiniu_Buffer* self)
 	return self->buf;
 }
 
+void Qiniu_Buffer_PutChar(Qiniu_Buffer* self, char ch)
+{
+	if (self->curr >= self->bufEnd) {
+		Qiniu_Buffer_expand(self, 1);
+	}
+	*self->curr++ = ch;
+}
+
 size_t Qiniu_Buffer_Write(Qiniu_Buffer* self, const void* buf, size_t n)
 {
 	if (self->curr + n > self->bufEnd) {
@@ -278,6 +285,201 @@ size_t Qiniu_Buffer_Fwrite(void *buf, size_t size, size_t nmemb, void *self)
 {
 	assert(size == 1);
 	return Qiniu_Buffer_Write((Qiniu_Buffer*)self, buf, nmemb);
+}
+
+/*============================================================================*/
+/* Qiniu Format Functions */
+
+char* Qiniu_Buffer_Expand(Qiniu_Buffer* self, size_t n)
+{
+	if (self->curr + n > self->bufEnd) {
+		Qiniu_Buffer_expand(self, n);
+	}
+	return self->curr;
+}
+
+void Qiniu_Buffer_Commit(Qiniu_Buffer* self, char* p)
+{
+	assert(p >= self->curr);
+	assert(p <= self->bufEnd);
+	self->curr = p;
+}
+
+void Qiniu_Buffer_AppendUint(Qiniu_Buffer* self, Qiniu_Uint64 v)
+{
+	char buf[32];
+	char* p = buf+32;
+	for (;;) {
+		*--p = '0' + v % 10;
+		v /= 10;
+		if (v == 0) {
+			break;
+		}
+	}
+	Qiniu_Buffer_Write(self, p, buf+32-p);
+}
+
+void Qiniu_Buffer_AppendInt(Qiniu_Buffer* self, Qiniu_Int64 v)
+{
+	if (v < 0) {
+		v = -v;
+		Qiniu_Buffer_PutChar(self, '-');
+	}
+	Qiniu_Buffer_AppendUint(self, v);
+}
+
+void Qiniu_Buffer_AppendEncodedBinary(Qiniu_Buffer* self, const char* buf, size_t cb)
+{
+	const size_t cbDest = urlsafe_b64_encode(buf, cb, NULL, 0);
+	char* dest = Qiniu_Buffer_Expand(self, cbDest);
+	const size_t cbReal = urlsafe_b64_encode(buf, cb, dest, cbDest);
+	Qiniu_Buffer_Commit(self, dest + cbReal);
+}
+
+void Qiniu_Buffer_appendUint(Qiniu_Buffer* self, Qiniu_Valist* ap)
+{
+	unsigned v = va_arg(ap->items, unsigned);
+	Qiniu_Buffer_AppendUint(self, v);
+}
+
+void Qiniu_Buffer_appendInt(Qiniu_Buffer* self, Qiniu_Valist* ap)
+{
+	int v = va_arg(ap->items, int);
+	Qiniu_Buffer_AppendInt(self, v);
+}
+
+void Qiniu_Buffer_appendUint64(Qiniu_Buffer* self, Qiniu_Valist* ap)
+{
+	Qiniu_Uint64 v = va_arg(ap->items, Qiniu_Uint64);
+	Qiniu_Buffer_AppendUint(self, v);
+}
+
+void Qiniu_Buffer_appendInt64(Qiniu_Buffer* self, Qiniu_Valist* ap)
+{
+	Qiniu_Int64 v = va_arg(ap->items, Qiniu_Int64);
+	Qiniu_Buffer_AppendInt(self, v);
+}
+
+void Qiniu_Buffer_appendString(Qiniu_Buffer* self, Qiniu_Valist* ap)
+{
+	const char* v = va_arg(ap->items, const char*);
+	Qiniu_Buffer_Write(self, v, strlen(v));
+}
+
+void Qiniu_Buffer_appendEncodedString(Qiniu_Buffer* self, Qiniu_Valist* ap)
+{
+	const char* v = va_arg(ap->items, const char*);
+	size_t n = strlen(v);
+	Qiniu_Buffer_AppendEncodedBinary(self, v, n);
+}
+
+void Qiniu_Buffer_appendPercent(Qiniu_Buffer* self, Qiniu_Valist* ap)
+{
+	Qiniu_Buffer_PutChar(self, '%');
+}
+
+/*============================================================================*/
+/* Qiniu Format */
+
+typedef struct _Qiniu_formatProc {
+	Qiniu_FnAppender Append;
+	char esc;
+} Qiniu_formatProc;
+
+static Qiniu_formatProc qiniu_formatProcs[] = {
+	{ Qiniu_Buffer_appendInt, 'd' },
+	{ Qiniu_Buffer_appendUint, 'u' },
+	{ Qiniu_Buffer_appendInt64, 'D' },
+	{ Qiniu_Buffer_appendUint64, 'U' },
+	{ Qiniu_Buffer_appendString, 's' },
+	{ Qiniu_Buffer_appendEncodedString, 'S' },
+	{ Qiniu_Buffer_appendPercent, '%' },
+};
+
+static Qiniu_FnAppender qiniu_Appenders[128];
+
+void Qiniu_Format_Register(char esc, Qiniu_FnAppender appender)
+{
+	if ((unsigned)esc < 128) {
+		qiniu_Appenders[esc] = appender;
+	}
+}
+
+void Qiniu_Buffer_formatInit()
+{
+	Qiniu_formatProc* p;
+	Qiniu_formatProc* pEnd = (Qiniu_formatProc*)((char*)qiniu_formatProcs + sizeof(qiniu_formatProcs));
+	for (p = qiniu_formatProcs; p < pEnd; p++) {
+		qiniu_Appenders[p->esc] = p->Append;
+	}
+}
+
+void Qiniu_Buffer_AppendFormatV(Qiniu_Buffer* self, const char* fmt, Qiniu_Valist* args)
+{
+	unsigned char ch;
+	const char* p;
+	Qiniu_FnAppender appender;
+
+	for (;;) {
+		p = strchr(fmt, '%');
+		if (p == NULL) {
+			break;
+		}
+		if (p > fmt) {
+			Qiniu_Buffer_Write(self, fmt, p - fmt);
+		}
+		p++;
+		ch = *p++;
+		fmt = p;
+		if (ch < 128) {
+			appender = qiniu_Appenders[ch];
+			if (appender != NULL) {
+				appender(self, args);
+				continue;
+			}
+		}
+		Qiniu_Buffer_PutChar(self, '%');
+		Qiniu_Buffer_PutChar(self, ch);
+	}
+	if (*fmt) {
+		Qiniu_Buffer_Write(self, fmt, strlen(fmt));
+	}
+}
+
+void Qiniu_Buffer_AppendFormat(Qiniu_Buffer* self, const char* fmt, ...)
+{
+	Qiniu_Valist args;
+	va_start(args.items, fmt);
+	Qiniu_Buffer_AppendFormatV(self, fmt, &args);
+}
+
+const char* Qiniu_Buffer_FormatV(Qiniu_Buffer* self, const char* fmt, Qiniu_Valist* args)
+{
+	Qiniu_Buffer_Reset(self);
+	Qiniu_Buffer_AppendFormatV(self, fmt, args);
+	return Qiniu_Buffer_CStr(self);
+}
+
+const char* Qiniu_Buffer_Format(Qiniu_Buffer* self, const char* fmt, ...)
+{
+	Qiniu_Valist args;
+	va_start(args.items, fmt);
+	return Qiniu_Buffer_FormatV(self, fmt, &args);
+}
+
+char* Qiniu_String_FormatV(size_t initSize, const char* fmt, Qiniu_Valist* args)
+{
+	Qiniu_Buffer buf;
+	Qiniu_Buffer_Init(&buf, initSize);
+	Qiniu_Buffer_AppendFormatV(&buf, fmt, args);
+	return (char*)Qiniu_Buffer_CStr(&buf);
+}
+
+char* Qiniu_String_Format(size_t initSize, const char* fmt, ...)
+{
+	Qiniu_Valist args;
+	va_start(args.items, fmt);
+	return Qiniu_String_FormatV(initSize, fmt, &args);
 }
 
 /*============================================================================*/

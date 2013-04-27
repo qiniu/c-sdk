@@ -65,8 +65,11 @@ void Qiniu_Mutex_Unlock(Qiniu_Mutex* self)
 /*============================================================================*/
 /* Global */
 
+void Qiniu_Buffer_formatInit();
+
 void Qiniu_Global_Init(long flags)
 {
+	Qiniu_Buffer_formatInit();
 	curl_global_init(CURL_GLOBAL_ALL);
 }
 
@@ -210,7 +213,7 @@ CURL* Qiniu_Client_reset(Qiniu_Client* self)
 	return curl;
 }
 
-static void Qiniu_Client_initcall(Qiniu_Client* self, const char* url)
+static CURL* Qiniu_Client_initcall(Qiniu_Client* self, const char* url)
 {
 	CURL* curl = Qiniu_Client_reset(self);
 
@@ -218,20 +221,30 @@ static void Qiniu_Client_initcall(Qiniu_Client* self, const char* url)
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
+
+	return curl;
 }
 
 static Qiniu_Error Qiniu_Client_callWithBody(
-	Qiniu_Client* self, Qiniu_Json** ret, const char* url, Qiniu_Int64 bodyLen,
-    CURL* curl, struct curl_slist* headers)
+	Qiniu_Client* self, Qiniu_Json** ret, const char* url, Qiniu_Int64 bodyLen, const char* mimeType)
 {
 	Qiniu_Error err;
+	const char* ctxType;
 	char ctxLength[64];
+	Qiniu_Header* headers = NULL;
+	CURL* curl = (CURL*)self->curl;
 
 	curl_easy_setopt(curl, CURLOPT_POST, 1);
 
+	if (mimeType == NULL) {
+		ctxType = "Content-Type: application/octet-stream";
+	} else {
+		ctxType = Qiniu_String_Concat2("Content-Type: ", mimeType);
+	}
+
 	Qiniu_snprintf(ctxLength, 64, "Content-Length: %lld", bodyLen);
 	headers = curl_slist_append(NULL, ctxLength);
-	headers = curl_slist_append(headers, "Content-Type: application/octet-stream");
+	headers = curl_slist_append(headers, ctxType);
 
 	if (self->auth.itbl != NULL) {
 		err = self->auth.itbl->Auth(self->auth.self, &headers, url, NULL, 0);
@@ -245,51 +258,44 @@ static Qiniu_Error Qiniu_Client_callWithBody(
 	err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
 
 	curl_slist_free_all(headers);
+	if (mimeType != NULL) {
+		free((void*)ctxType);
+	}
 
 	*ret = self->root;
 	return err;
 }
 
 Qiniu_Error Qiniu_Client_CallWithBinary(
-	Qiniu_Client* self, Qiniu_Json** ret, const char* url, Qiniu_Reader body, Qiniu_Int64 bodyLen)
+	Qiniu_Client* self, Qiniu_Json** ret, const char* url,
+	Qiniu_Reader body, Qiniu_Int64 bodyLen, const char* mimeType)
 {
-	CURL* curl;
-	struct curl_slist* headers;
-	Qiniu_Error err;
+	CURL* curl = Qiniu_Client_initcall(self, url);
 
-	Qiniu_Client_initcall(self, url);
-
-	curl = (CURL*)self->curl;
-	curl_easy_setopt(curl, CURLOPT_INFILESIZE, bodyLen);
+	curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, bodyLen);
 	curl_easy_setopt(curl, CURLOPT_READFUNCTION, body.Read);
 	curl_easy_setopt(curl, CURLOPT_READDATA, body.self);
 
-	return Qiniu_Client_callWithBody(self, ret, url, bodyLen, curl, headers);
+	return Qiniu_Client_callWithBody(self, ret, url, bodyLen, mimeType);
 }
 
 Qiniu_Error Qiniu_Client_CallWithBuffer(
-	Qiniu_Client* self, Qiniu_Json** ret, const char* url, const char* body, Qiniu_Int64 bodyLen)
+	Qiniu_Client* self, Qiniu_Json** ret, const char* url,
+	const char* body, size_t bodyLen, const char* mimeType)
 {
-	CURL* curl;
-	struct curl_slist* headers;
-	Qiniu_Error err;
+	CURL* curl = Qiniu_Client_initcall(self, url);
 
-	Qiniu_Client_initcall(self, url);
-
-	curl = (CURL*)self->curl;
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, bodyLen);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
 
-	return Qiniu_Client_callWithBody(self, ret, url, bodyLen, curl, headers);
+	return Qiniu_Client_callWithBody(self, ret, url, bodyLen, mimeType);
 }
 
 Qiniu_Error Qiniu_Client_Call(Qiniu_Client* self, Qiniu_Json** ret, const char* url)
 {
 	Qiniu_Error err;
 	Qiniu_Header* headers = NULL;
-	CURL* curl = (CURL*)self->curl;
-
-	Qiniu_Client_initcall(self, url);
+	CURL* curl = Qiniu_Client_initcall(self, url);
 
 	if (self->auth.itbl != NULL) {
 		err = self->auth.itbl->Auth(self->auth.self, &headers, url, NULL, 0);
@@ -309,9 +315,7 @@ Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client* self, const char* url)
 {
 	Qiniu_Error err;
 	Qiniu_Header* headers = NULL;
-	CURL* curl = (CURL*)self->curl;
-
-	Qiniu_Client_initcall(self, url);
+	CURL* curl = Qiniu_Client_initcall(self, url);
 
 	if (self->auth.itbl != NULL) {
 		err = self->auth.itbl->Auth(self->auth.self, &headers, url, NULL, 0);

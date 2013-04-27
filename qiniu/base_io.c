@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 #ifndef O_BINARY
 #define O_BINARY	0
@@ -45,7 +46,43 @@ Qiniu_Reader Qiniu_Buffer_Reader(Qiniu_BufReader* self, const char* buf, size_t 
 }
 
 /*============================================================================*/
-/* Qiniu_Section_Reader */
+/* type Qiniu_File */
+
+Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file)
+{
+	Qiniu_Error err = {};
+	int fd = open(file, O_BINARY | O_RDONLY, 0644);
+	if (fd != -1) {
+		*pp = (Qiniu_File*)(size_t)fd;
+	} else {
+		err.code = errno;
+		err.message = "open file failed";
+	}
+	return err;
+}
+
+Qiniu_Error Qiniu_File_Stat(Qiniu_File* self, Qiniu_FileInfo* fi)
+{
+	Qiniu_Error err = {};
+	if (fstat((int)(size_t)self, fi) != 0) {
+		err.code = errno;
+		err.message = "fstat failed";
+	}
+	return err;
+}
+
+void Qiniu_File_Close(void* self)
+{
+	close((int)(size_t)self);
+}
+
+ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, off_t offset)
+{
+	return pread((int)(size_t)self, buf, bytes, offset);
+}
+
+/*============================================================================*/
+/* func Qiniu_SectionReader */
 
 typedef struct _Qiniu_sectionReader {
 	Qiniu_ReaderAt r;
@@ -91,27 +128,10 @@ void Qiniu_SectionReader_Release(void* f)
 /*============================================================================*/
 /* Qiniu_File_ReaderAt */
 
-static ssize_t Qiniu_file_ReadAt(void* self, void *buf, size_t count, off_t offset)
+Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self)
 {
-	return pread((int)(size_t)self, buf, count, offset);
-}
-
-Qiniu_ReaderAt Qiniu_FileReaderAt_Open(const char* file)
-{
-	Qiniu_ReaderAt ret;
-	int fd = open(file, O_BINARY | O_RDONLY, 0644);
-	if (fd != -1) {
-		ret.self = (void*)(size_t)fd;
-		ret.ReadAt = Qiniu_file_ReadAt;
-		return ret;
-	}
-	ret.self = NULL;
+	Qiniu_ReaderAt ret = {self, Qiniu_File_ReadAt};
 	return ret;
-}
-
-void Qiniu_FileReaderAt_Close(void* self)
-{
-	close((int)(size_t)self);
 }
 
 /*============================================================================*/
