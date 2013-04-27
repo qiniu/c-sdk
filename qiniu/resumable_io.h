@@ -16,6 +16,49 @@
 
 #define Qiniu_Rio_InvalidCtx			701
 #define Qiniu_Rio_UnmatchedChecksum		9900
+#define Qiniu_Rio_InvalidPutProgress	9901
+#define Qiniu_Rio_PutFailed				9902
+
+/*============================================================================*/
+/* type Qiniu_Rio_WaitGroup */
+
+typedef struct _Qiniu_Rio_WaitGroup_Itbl {
+	void (*Add)(void* self, int n);
+	void (*Done)(void* self);
+	void (*Wait)(void* self);
+	void (*Release)(void* self);
+} Qiniu_Rio_WaitGroup_Itbl;
+
+typedef struct _Qiniu_Rio_WaitGroup {
+	void* self;
+	Qiniu_Rio_WaitGroup_Itbl* itbl;
+} Qiniu_Rio_WaitGroup;
+
+/*============================================================================*/
+/* type Qiniu_Rio_ThreadModel */
+
+typedef struct _Qiniu_Rio_ThreadModel_Itbl {
+	Qiniu_Rio_WaitGroup (*WaitGroup)(void* self);
+	Qiniu_Client* (*ClientTls)(void* self);
+	void (*RunTask)(void* self, void (*task)(void* params), void* params);
+} Qiniu_Rio_ThreadModel_Itbl;
+
+typedef struct _Qiniu_Rio_ThreadModel {
+	void* self;
+	Qiniu_Rio_ThreadModel_Itbl* itbl;
+} Qiniu_Rio_ThreadModel;
+
+/*============================================================================*/
+/* type Qiniu_Rio_Settings */
+
+typedef struct _Qiniu_Rio_Settings {
+    int taskQsize;		// 可选。任务队列大小。为 0 表示取 Workers * 4。 
+    int workers;		// 并行 Goroutine 数目。
+	int chunkSize;		// 默认的Chunk大小，不设定则为256k
+	int tryTimes;		// 默认的尝试次数，不设定则为3
+} Qiniu_Rio_Settings;
+
+void Qiniu_Rio_SetSettings(Qiniu_Rio_Settings* v);
 
 /*============================================================================*/
 /* type Qiniu_Rio_PutExtra */
@@ -28,8 +71,8 @@ typedef struct _Qiniu_Rio_BlkputRet {
 	const char* host;
 } Qiniu_Rio_BlkputRet;
 
-typedef (*Qiniu_Rio_FnNotify)(void* recvr, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret);
-typedef (*Qiniu_Rio_FnNotifyErr)(void* recvr, int blkIdx, int blkSize, Qiniu_Error err);
+typedef void (*Qiniu_Rio_FnNotify)(void* recvr, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret);
+typedef void (*Qiniu_Rio_FnNotifyErr)(void* recvr, int blkIdx, int blkSize, Qiniu_Error err);
 
 typedef struct _Qiniu_Rio_PutExtra {
 	const char* callbackParams;	// 当 uptoken 指定了 CallbackUrl，则 CallbackParams 必须非空
@@ -42,7 +85,8 @@ typedef struct _Qiniu_Rio_PutExtra {
 	Qiniu_Rio_FnNotify notify;		 // 可选。进度提示（注意多个block是并行传输的）
 	Qiniu_Rio_FnNotifyErr notifyErr;
 	Qiniu_Rio_BlkputRet* progresses; // 可选。上传进度
-	size_t blkCount;
+	size_t blockCnt;
+	Qiniu_Rio_ThreadModel threadModel;
 } Qiniu_Rio_PutExtra;
 
 /*============================================================================*/
@@ -51,6 +95,11 @@ typedef struct _Qiniu_Rio_PutExtra {
 typedef struct _Qiniu_Rio_PutRet {
 	const char* hash;			// 如果 uptoken 没有指定 ReturnBody，那么返回值是标准的 PutRet 结构
 } Qiniu_Rio_PutRet;
+
+/*============================================================================*/
+/* func Qiniu_Rio_BlockCount */
+
+int Qiniu_Rio_BlockCount(Qiniu_Int64 fsize);
 
 /*============================================================================*/
 /* func Qiniu_Rio_PutXXX */

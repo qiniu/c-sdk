@@ -12,8 +12,118 @@
 #include <curl/curl.h>
 #include <sys/stat.h>
 
-#define	blockBits	22
-#define blockMask	((1 << blockBits) - 1)
+#define	blockBits			22
+#define blockMask			((1 << blockBits) - 1)
+
+#define defaultTryTimes		3
+#define defaultWorkers		4
+#define defaultChunkSize	(256 * 1024) // 256k
+
+/*============================================================================*/
+/* type Qiniu_Rio_Settings */
+
+static Qiniu_Rio_Settings settings = {
+	defaultWorkers * 4,
+	defaultWorkers,
+	defaultChunkSize,
+	defaultTryTimes
+};
+
+void Qiniu_Rio_SetSettings(Qiniu_Rio_Settings* v)
+{
+	settings = *v;
+	if (settings.workers == 0) {
+		settings.workers = defaultWorkers;
+	}
+	if (settings.taskQsize == 0) {
+		settings.taskQsize = settings.workers * 4;
+	}
+	if (settings.chunkSize == 0) {
+		settings.chunkSize = defaultChunkSize;
+	}
+	if (settings.tryTimes == 0) {
+		settings.tryTimes = defaultTryTimes;
+	}
+}
+
+/*============================================================================*/
+/* func Qiniu_UptokenAuth */
+
+static Qiniu_Error Qiniu_UptokenAuth_Auth(
+	void* self, Qiniu_Header** header, const char* url, const char* addition, size_t addlen)
+{
+	Qiniu_Error err;
+
+	*header = curl_slist_append(*header, self);
+
+	err.code    = 200;
+	err.message = "OK";
+	return err;
+}
+
+static void Qiniu_UptokenAuth_Release(void* self)
+{
+	free(self);
+}
+
+static Qiniu_Auth_Itbl Qiniu_UptokenAuth_Itbl = {
+	Qiniu_UptokenAuth_Auth,
+	Qiniu_UptokenAuth_Release
+};
+
+Qiniu_Auth Qiniu_UptokenAuth(const char* uptoken)
+{
+	char* self = Qiniu_String_Concat2("Authorization: UpToken ", uptoken);
+	Qiniu_Auth auth = {self, &Qiniu_UptokenAuth_Itbl};
+	return auth;
+}
+
+/*============================================================================*/
+/* type Qiniu_Rio_BlkputRet */
+
+void Qiniu_Rio_BlkputRet_Init(Qiniu_Rio_BlkputRet* self, Qiniu_Rio_BlkputRet* ret)
+{
+	char* p;
+	size_t n1 = 0, n2 = 0, n3 = 0;
+
+	*self = *ret;
+
+	n1 = strlen(ret->ctx) + 1;
+	n3 = strlen(ret->host) + 1;
+	if (ret->checksum) {
+		n2 = strlen(ret->checksum) + 1;
+	}
+
+	p = (char*)malloc(n1 + n2 + n3);
+
+	memcpy(p, ret->ctx, n1);
+	self->ctx = p;
+
+	memcpy(p+n1, ret->host, n3);
+	self->host = p+n1;
+
+	if (n2) {
+		memcpy(p+n1+n3, ret->checksum, n2);
+		self->checksum = p+n1+n3;
+	}
+}
+
+void Qiniu_Rio_BlkputRet_Cleanup(Qiniu_Rio_BlkputRet* self)
+{
+	if (self->ctx != NULL) {
+		free((void*)self->ctx);
+		self->ctx = NULL;
+	}
+}
+
+void Qiniu_Rio_PutExtra_Cleanup(Qiniu_Rio_PutExtra* self)
+{
+	size_t i;
+	for (i = 0; i < self->blockCnt; i++) {
+		Qiniu_Rio_BlkputRet_Cleanup(&self->progresses[i]);
+	}
+	self->blockCnt = 0;
+}
 
 /*============================================================================*/
 
@@ -143,7 +253,7 @@ lzRetry:
 static Qiniu_Error Qiniu_Rio_Mkfile(
 	Qiniu_Client* c, Qiniu_Rio_PutRet* ret, const char* key, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra* extra)
 {
-	size_t i, blkCount = extra->blkCount;
+	size_t i, blkCount = extra->blockCnt;
 	Qiniu_Json* root;
 	Qiniu_Error err;
 	Qiniu_Rio_BlkputRet* prog;
@@ -183,22 +293,153 @@ static Qiniu_Error Qiniu_Rio_Mkfile(
 
 	if (err.code == 200) {
 		ret->hash = Qiniu_Json_GetString(root, "hash", NULL);
-		if (ret->hash == NULL) {
-			err.code = 9998;
-			err.message = "unexcepted response: invalid hash";
-		}
 	}
 	return err;
 }
 
 /*============================================================================*/
+
+int Qiniu_Rio_BlockCount(Qiniu_Int64 fsize)
+{
+	return (int)((fsize + blockMask) >> blockBits);
+}
+
+/*============================================================================*/
+/* type Qiniu_Rio_task */
+
+typedef struct _Qiniu_Rio_task {
+	Qiniu_ReaderAt f;
+	Qiniu_Auth auth;
+	Qiniu_Rio_PutExtra* extra;
+	Qiniu_Rio_WaitGroup wg;
+	int* nfails;
+	int blkIdx;
+	int blkSize1;
+} Qiniu_Rio_task;
+
+static void Qiniu_Rio_doTask(void* params)
+{
+	Qiniu_Error err;
+	Qiniu_Client client;
+	Qiniu_Rio_BlkputRet ret;
+	Qiniu_Rio_BlkputRet* prog;
+	Qiniu_Rio_task* task = (Qiniu_Rio_task*)params;
+	Qiniu_Rio_WaitGroup wg = task->wg;
+	Qiniu_Rio_PutExtra* extra = task->extra;
+	Qiniu_Rio_ThreadModel tm = extra->threadModel;
+	Qiniu_Client* c = tm.itbl->ClientTls(tm.self);
+	int blkIdx = task->blkIdx;
+	int tryTimes = extra->tryTimes;
+
+	c->auth = task->auth;
+
+lzRetry:
+	err = Qiniu_Rio_ResumableBlockput(c, &ret, task->f, blkIdx, task->blkSize1, extra);
+	if (err.code != 200) {
+		if (tryTimes > 1) {
+			tryTimes--;
+			Qiniu_Log_Info("resumable.Put retrying ...");
+			goto lzRetry;
+		}
+		Qiniu_Log_WarnErr("resumable.Put failed:", err);
+		extra->notifyErr(extra->notifyRecvr, task->blkIdx, task->blkSize1, err);
+		(*task->nfails)++;
+	} else {
+		Qiniu_Rio_BlkputRet_Init(&extra->progresses[blkIdx], &ret);
+	}
+	wg.itbl->Done(wg.self);
+	free(task);
+}
+
+/*============================================================================*/
 /* func Qiniu_Rio_PutXXX */
+
+static Qiniu_Error ErrInvalidPutProgress = {
+	Qiniu_Rio_InvalidPutProgress, "invalid put progress"
+};
+
+static Qiniu_Error ErrPutFailed = {
+	Qiniu_Rio_PutFailed, "resumable put failed"
+};
+
+void notifyNil(void* self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret) {}
+void notifyErrNil(void* self, int blkIdx, int blkSize, Qiniu_Error err) {}
 
 Qiniu_Error Qiniu_Rio_Put(
 	Qiniu_Client* self, Qiniu_Rio_PutRet* ret,
 	const char* uptoken, const char* key, Qiniu_ReaderAt f, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra* extra)
 {
-	Qiniu_Error err = {};
+	size_t cbprog;
+	Qiniu_Int64 offbase;
+	Qiniu_Error err;
+	Qiniu_Rio_task* task;
+	Qiniu_Rio_WaitGroup wg;
+	Qiniu_Auth auth, auth1 = self->auth;
+	Qiniu_Rio_ThreadModel tm = extra->threadModel;
+	int i, last, blkSize, blockCnt = Qiniu_Rio_BlockCount(fsize);
+	int nfails;
+
+	if (extra->progresses == NULL) {
+		cbprog = sizeof(Qiniu_Rio_BlkputRet) * blockCnt;
+		extra->progresses = (Qiniu_Rio_BlkputRet*)malloc(cbprog);
+		extra->blockCnt = blockCnt;
+		memset(extra->progresses, 0, cbprog);
+	} else if (extra->blockCnt != blockCnt) {
+		return ErrInvalidPutProgress;
+	}
+
+	if (extra->chunkSize == 0) {
+		extra->chunkSize = settings.chunkSize;
+	}
+	if (extra->tryTimes == 0) {
+		extra->tryTimes = settings.tryTimes;
+	}
+	if (extra->notify == NULL) {
+		extra->notify = notifyNil;
+	}
+	if (extra->notifyErr == NULL) {
+		extra->notifyErr = notifyErrNil;
+	}
+
+	wg = tm.itbl->WaitGroup(tm.self);
+	wg.itbl->Add(wg.self, blockCnt);
+
+	last = blockCnt - 1;
+	blkSize = 1 << blockBits;
+	nfails = 0;
+
+	auth = Qiniu_UptokenAuth(uptoken);
+
+	for (i = 0; i < blockCnt; i++) {
+		task = (Qiniu_Rio_task*)malloc(sizeof(Qiniu_Rio_task));
+		task->f = f;
+		task->auth = self->auth;
+		task->extra = extra;
+		task->wg = wg;
+		task->nfails = &nfails;
+		task->blkIdx = i;
+		task->blkSize1 = blkSize;
+		if (i == last) {
+			offbase = (Qiniu_Int64)(i) << blockBits;
+			task->blkSize1 = (int)(fsize - offbase);
+		}
+		tm.itbl->RunTask(tm.self, Qiniu_Rio_doTask, task);
+	}
+
+	wg.itbl->Wait(wg.self);
+	if (nfails != 0) {
+		err = ErrPutFailed;
+	} else {
+		self->auth = auth;
+		err = Qiniu_Rio_Mkfile(self, ret, key, fsize, extra);
+	}
+
+	auth.itbl->Release(auth.self);
+
+	Qiniu_Rio_PutExtra_Cleanup(extra);
+	free(extra->progresses);
+
+	self->auth = auth1;
 	return err;
 }
 
