@@ -1,10 +1,9 @@
 /*
  ============================================================================
  Name        : resumable_io.c
- Author      : Qiniu Developers
- Version     : 1.0.0.0
+ Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : RS
+ Description :
  ============================================================================
  */
 
@@ -58,6 +57,80 @@ static Qiniu_Error Qiniu_Rio_Blockput(
 	Qiniu_Error err = Qiniu_Rio_bput(self, ret, body, bodyLength, url);
 	free(url);
 	return err;
+}
+
+/*============================================================================*/
+
+static Qiniu_Error Qiniu_Rio_ResumableBlockput(
+	Qiniu_Client* self, Qiniu_Rio_BlkputRet* ret, Qiniu_ReaderAt f, int blkIdx, int blkSize, Qiniu_Rio_PutExtra* extra)
+{
+	h := crc32.NewIEEE()
+	offbase := int64(blkIdx) << blockBits
+	chunkSize := extra.ChunkSize
+
+	var bodyLength int
+
+	if ret.Ctx == "" {
+
+		if chunkSize < blkSize {
+			bodyLength = chunkSize
+		} else {
+			bodyLength = blkSize
+		}
+
+		body1 := io.NewSectionReader(f, offbase, int64(bodyLength))
+		body := io.TeeReader(body1, h)
+
+		err = Mkblock(c, l, ret, blkSize, body, bodyLength)
+		if err != nil {
+			return
+		}
+		if ret.Crc32 != h.Sum32() || int(ret.Offset) != bodyLength {
+			err = ErrUnmatchedChecksum
+			return
+		}
+		extra.Notify(blkIdx, blkSize, ret)
+	}
+
+	for int(ret.Offset) < blkSize {
+
+		if chunkSize < blkSize - int(ret.Offset) {
+			bodyLength = chunkSize
+		} else {
+			bodyLength = blkSize - int(ret.Offset)
+		}
+
+		tryTimes := extra.TryTimes
+
+lzRetry:
+		h.Reset()
+		body1 := io.NewSectionReader(f, offbase + int64(ret.Offset), int64(bodyLength))
+		body := io.TeeReader(body1, h)
+
+		err = Blockput(c, l, ret, body, bodyLength)
+		if err == nil {
+			if ret.Crc32 == h.Sum32() {
+				extra.Notify(blkIdx, blkSize, ret)
+				continue
+			}
+			log.Warn("ResumableBlockput: invalid checksum, retry")
+			err = ErrUnmatchedChecksum
+		} else {
+			if ei, ok := err.(*rpc.ErrorInfo); ok && ei.Code == InvalidCtx {
+				ret.Ctx = "" // reset
+				log.Warn("ResumableBlockput: invalid ctx, please retry")
+				return
+			}
+			log.Warn("ResumableBlockput: bput failed -", err)
+		}
+		if tryTimes > 1 {
+			tryTimes--
+			log.Info("ResumableBlockput retrying ...")
+			goto lzRetry
+		}
+		break
+	}
+	return
 }
 
 /*============================================================================*/

@@ -1,8 +1,7 @@
 /*
  ============================================================================
  Name        : oauth2_digest.c
- Author      : Qiniu Developers
- Version     : 1.0.0.0
+ Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
  Description : 
  ============================================================================
