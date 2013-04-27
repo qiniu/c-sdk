@@ -12,15 +12,10 @@
 #include <curl/curl.h>
 #include <sys/stat.h>
 
-/*============================================================================*/
+#define	blockBits	22
+#define blockMask	((1 << blockBits) - 1)
 
-typedef struct _Qiniu_Rio_BlkputRet {
-	const char* ctx;
-	const char* checksum;
-	Qiniu_Uint32 crc32;
-	Qiniu_Uint32 offset;
-	const char* host;
-} Qiniu_Rio_BlkputRet;
+/*============================================================================*/
 
 static Qiniu_Error Qiniu_Rio_bput(
 	Qiniu_Client* self, Qiniu_Rio_BlkputRet* ret, Qiniu_Reader body, int bodyLength, const char* url)
@@ -61,76 +56,86 @@ static Qiniu_Error Qiniu_Rio_Blockput(
 
 /*============================================================================*/
 
+static Qiniu_Error ErrUnmatchedChecksum = {
+	Qiniu_Rio_UnmatchedChecksum, "unmatched checksum"
+};
+
 static Qiniu_Error Qiniu_Rio_ResumableBlockput(
-	Qiniu_Client* self, Qiniu_Rio_BlkputRet* ret, Qiniu_ReaderAt f, int blkIdx, int blkSize, Qiniu_Rio_PutExtra* extra)
+	Qiniu_Client* c, Qiniu_Rio_BlkputRet* ret, Qiniu_ReaderAt f, int blkIdx, int blkSize, Qiniu_Rio_PutExtra* extra)
 {
-	h := crc32.NewIEEE()
-	offbase := int64(blkIdx) << blockBits
-	chunkSize := extra.ChunkSize
+	Qiniu_Error err = {200, NULL};
+	Qiniu_Tee tee;
+	Qiniu_Section section;
+	Qiniu_Reader body, body1;
 
-	var bodyLength int
+	Qiniu_Crc32 crc32;
+	Qiniu_Writer h = Qiniu_Crc32Writer(&crc32, 0);
+	Qiniu_Int64 offbase = (Qiniu_Int64)(blkIdx) << blockBits;
 
-	if ret.Ctx == "" {
+	int chunkSize = extra->chunkSize;
+	int bodyLength;
+	int tryTimes;
 
-		if chunkSize < blkSize {
-			bodyLength = chunkSize
+	if (ret->ctx == NULL) {
+
+		if (chunkSize < blkSize) {
+			bodyLength = chunkSize;
 		} else {
-			bodyLength = blkSize
+			bodyLength = blkSize;
 		}
 
-		body1 := io.NewSectionReader(f, offbase, int64(bodyLength))
-		body := io.TeeReader(body1, h)
+		body1 = Qiniu_SectionReader(&section, f, offbase, bodyLength);
+		body = Qiniu_TeeReader(&tee, body1, h);
 
-		err = Mkblock(c, l, ret, blkSize, body, bodyLength)
-		if err != nil {
-			return
+		err = Qiniu_Rio_Mkblock(c, ret, blkSize, body, bodyLength);
+		if (err.code != 200) {
+			return err;
 		}
-		if ret.Crc32 != h.Sum32() || int(ret.Offset) != bodyLength {
-			err = ErrUnmatchedChecksum
-			return
+		if (ret->crc32 != crc32.val || (int)(ret->offset) != bodyLength) {
+			return ErrUnmatchedChecksum;
 		}
-		extra.Notify(blkIdx, blkSize, ret)
+		extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
 	}
 
-	for int(ret.Offset) < blkSize {
+	while ((int)(ret->offset) < blkSize) {
 
-		if chunkSize < blkSize - int(ret.Offset) {
-			bodyLength = chunkSize
+		if (chunkSize < blkSize - (int)(ret->offset)) {
+			bodyLength = chunkSize;
 		} else {
-			bodyLength = blkSize - int(ret.Offset)
+			bodyLength = blkSize - (int)(ret->offset);
 		}
 
-		tryTimes := extra.TryTimes
+		tryTimes = extra->tryTimes;
 
 lzRetry:
-		h.Reset()
-		body1 := io.NewSectionReader(f, offbase + int64(ret.Offset), int64(bodyLength))
-		body := io.TeeReader(body1, h)
+		crc32.val = 0;
+		body1 = Qiniu_SectionReader(&section, f, offbase + (Qiniu_Int64)(ret->offset), bodyLength);
+		body = Qiniu_TeeReader(&tee, body1, h);
 
-		err = Blockput(c, l, ret, body, bodyLength)
-		if err == nil {
-			if ret.Crc32 == h.Sum32() {
-				extra.Notify(blkIdx, blkSize, ret)
-				continue
+		err = Qiniu_Rio_Blockput(c, ret, body, bodyLength);
+		if (err.code == 200) {
+			if (ret->crc32 == crc32.val) {
+				extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
+				continue;
 			}
-			log.Warn("ResumableBlockput: invalid checksum, retry")
-			err = ErrUnmatchedChecksum
+			Qiniu_Log_Warn("ResumableBlockput: invalid checksum, retry");
+			err = ErrUnmatchedChecksum;
 		} else {
-			if ei, ok := err.(*rpc.ErrorInfo); ok && ei.Code == InvalidCtx {
-				ret.Ctx = "" // reset
-				log.Warn("ResumableBlockput: invalid ctx, please retry")
-				return
+			if (err.code == Qiniu_Rio_InvalidCtx) {
+				ret->ctx = NULL; // reset
+				Qiniu_Log_Warn("ResumableBlockput: invalid ctx, please retry");
+				return err;
 			}
-			log.Warn("ResumableBlockput: bput failed -", err)
+			Qiniu_Log_WarnErr("ResumableBlockput: bput failed -", err);
 		}
-		if tryTimes > 1 {
-			tryTimes--
-			log.Info("ResumableBlockput retrying ...")
-			goto lzRetry
+		if (tryTimes > 1) {
+			tryTimes--;
+			Qiniu_Log_Info("ResumableBlockput retrying ...");
+			goto lzRetry;
 		}
-		break
+		break;
 	}
-	return
+	return err;
 }
 
 /*============================================================================*/

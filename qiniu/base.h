@@ -100,6 +100,13 @@ char* Qiniu_QueryEscape(const char* s, Qiniu_Bool* fesc);
 Qiniu_Int64 Qiniu_Seconds();
 
 /*============================================================================*/
+/* type Qiniu_Log */
+
+#define Qiniu_Log_Info(msg)
+#define Qiniu_Log_Warn(msg)
+#define Qiniu_Log_WarnErr(msg, err)
+
+/*============================================================================*/
 /* type Qiniu_Reader */
 
 typedef size_t (*Qiniu_FnRead)(void *buf, size_t, size_t n, void *self);
