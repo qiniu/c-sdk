@@ -65,8 +65,11 @@ void Qiniu_Mutex_Unlock(Qiniu_Mutex* self)
 /*============================================================================*/
 /* Global */
 
+void Qiniu_Buffer_formatInit();
+
 void Qiniu_Global_Init(long flags)
 {
+	Qiniu_Buffer_formatInit();
 	curl_global_init(CURL_GLOBAL_ALL);
 }
 
@@ -269,7 +272,7 @@ Qiniu_Error Qiniu_Client_CallWithBinary(
 {
 	CURL* curl = Qiniu_Client_initcall(self, url);
 
-	curl_easy_setopt(curl, CURLOPT_INFILESIZE, bodyLen);
+	curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, bodyLen);
 	curl_easy_setopt(curl, CURLOPT_READFUNCTION, body.Read);
 	curl_easy_setopt(curl, CURLOPT_READDATA, body.self);
 
@@ -278,7 +281,7 @@ Qiniu_Error Qiniu_Client_CallWithBinary(
 
 Qiniu_Error Qiniu_Client_CallWithBuffer(
 	Qiniu_Client* self, Qiniu_Json** ret, const char* url,
-	const char* body, Qiniu_Int64 bodyLen, const char* mimeType)
+	const char* body, size_t bodyLen, const char* mimeType)
 {
 	CURL* curl = Qiniu_Client_initcall(self, url);
 
