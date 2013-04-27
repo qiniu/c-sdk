@@ -27,7 +27,7 @@ static Qiniu_Error Qiniu_Rio_bput(
 	Qiniu_Client* self, Qiniu_Rio_BlkputRet* ret, Qiniu_Reader body, int bodyLength, const char* url)
 {
 	Qiniu_Json* root;
-	Qiniu_Error err = Qiniu_Client_CallWithBinary(self, &root, url, body, Qiniu_Int64(bodyLength), NULL);
+	Qiniu_Error err = Qiniu_Client_CallWithBinary(self, &root, url, body, bodyLength, NULL);
 	if (err.code == 200) {
 		ret->ctx = Qiniu_Json_GetString(root, "ctx", NULL);
 		ret->checksum = Qiniu_Json_GetString(root, "checksum", NULL);
@@ -39,42 +39,25 @@ static Qiniu_Error Qiniu_Rio_bput(
 			err.message = "unexcepted response: invalid ctx, host or offset";
 		}
 	}
-    return err;
+	return err;
 }
 
 static Qiniu_Error Qiniu_Rio_Mkblock(
 	Qiniu_Client* self, Qiniu_Rio_BlkputRet* ret, int blkSize, Qiniu_Reader body, int bodyLength)
 {
-    Qiniu_Error err;
-    char blkSizeStr[128];
-    char* url = NULL;
-
-    bzero(blkSizeStr, sizeof(blkSizeStr));
-    Qiniu_snprintf(blkSizeStr, sizeof(blkSizeStr), "%d", blkSize);
-	url = Qiniu_String_Concat(QBOX_UP_HOST, "/mkblk/", blkSizeStr, NULL);
-
-    err = Qiniu_Rio_Chunkput(self, ret, body, bodyLength, url);
-    free(url);
-
-    return err;
+	char* url = Qiniu_String_Format(128, "%s/mkblk/%d", QINIU_UP_HOST, blkSize);
+	Qiniu_Error err = Qiniu_Rio_bput(self, ret, body, bodyLength, url);
+	free(url);
+	return err;
 }
 
-Qiniu_Error Qiniu_Rio_Blockput(Qiniu_Client* self, Qiniu_Rio_PutRet* ret,
-    const char* ctx, int offset, Qiniu_Reader body, int bodyLength)
+static Qiniu_Error Qiniu_Rio_Blockput(
+	Qiniu_Client* self, Qiniu_Rio_BlkputRet* ret, Qiniu_Reader body, int bodyLength)
 {
-    Qiniu_Error err;
-    char offsetStr[128];
-    char* url = NULL;
-
-    bzero(offsetStr, sizeof(offsetStr));
-    Qiniu_snprintf(offsetStr, sizeof(offsetStr), "%d", offset);
-
-    url = Qiniu_String_Concat(QBOX_UP_HOST, "/bput/", ctx, "/", offsetStr, NULL);
-
-    err = Qiniu_Rio_Chunkput(self, ret, body, bodyLength, url);
-    free(url);
-
-    return err;
+	char* url = Qiniu_String_Format(1024, "%s/bput/%s/%d", ret->host, ret->ctx, (int)ret->offset);
+	Qiniu_Error err = Qiniu_Rio_bput(self, ret, body, bodyLength, url);
+	free(url);
+	return err;
 }
 
 /*============================================================================*/
