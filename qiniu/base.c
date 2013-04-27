@@ -310,7 +310,7 @@ void Qiniu_Buffer_AppendUint(Qiniu_Buffer* self, Qiniu_Uint64 v)
 	char buf[32];
 	char* p = buf+32;
 	for (;;) {
-		*--p = v % 10;
+		*--p = '0' + v % 10;
 		v /= 10;
 		if (v == 0) {
 			break;

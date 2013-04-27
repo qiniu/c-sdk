@@ -9,6 +9,8 @@ SOURCE_FILES=\
 	../qiniu/rs.c\
 	../qiniu/rs_token.c\
 	../qiniu/io.c\
+	test_io_put.c\
+	test_fmt.c\
 	test.c\
 
 CUNIT_LIB=../CUnit/CUnit/Sources/.libs
