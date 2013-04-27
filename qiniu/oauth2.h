@@ -75,9 +75,11 @@ void Qiniu_Client_Cleanup(Qiniu_Client* self);
 Qiniu_Error Qiniu_Client_Call(Qiniu_Client* self, Qiniu_Json** ret, const char* url);
 Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client* self, const char* url);
 Qiniu_Error Qiniu_Client_CallWithBinary(
-	Qiniu_Client* self, Qiniu_Json** ret, const char* url, Qiniu_Reader body, Qiniu_Int64 bodyLen);
+	Qiniu_Client* self, Qiniu_Json** ret, const char* url,
+	Qiniu_Reader body, Qiniu_Int64 bodyLen, const char* mimeType);
 Qiniu_Error Qiniu_Client_CallWithBuffer(
-	Qiniu_Client* self, Qiniu_Json** ret, const char* url, const char* body, Qiniu_Int64 bodyLen);
+	Qiniu_Client* self, Qiniu_Json** ret, const char* url,
+	const char* body, size_t bodyLen, const char* mimeType);
 
 /*============================================================================*/
 
