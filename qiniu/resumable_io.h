@@ -3,7 +3,7 @@
  Name        : resumable_io.h
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 
@@ -54,7 +54,7 @@ extern Qiniu_Rio_ThreadModel Qiniu_Rio_ST;
 /* type Qiniu_Rio_Settings */
 
 typedef struct _Qiniu_Rio_Settings {
-	int taskQsize;		// 可选。任务队列大小。为 0 表示取 Workers * 4。 
+	int taskQsize;		// 可选。任务队列大小。为 0 表示取 Workers * 4。
 	int workers;		// 并行 Goroutine 数目。
 	int chunkSize;		// 默认的Chunk大小，不设定则为256k
 	int tryTimes;		// 默认的尝试次数，不设定则为3
