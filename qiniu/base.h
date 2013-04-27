@@ -1,8 +1,7 @@
 /*
  ============================================================================
  Name        : base.h
- Author      : Qiniu Developers
- Version     : 1.0.0.0
+ Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
  Description : 
  ============================================================================
@@ -77,16 +76,11 @@ Qiniu_Count Qiniu_Count_Dec(Qiniu_Count* self);
 /*============================================================================*/
 /* func Qiniu_String_Concat */
 
-typedef struct _Qiniu_Valist {
-	va_list items;
-} Qiniu_Valist;
-
 char* Qiniu_String_Concat2(const char* s1, const char* s2);
 char* Qiniu_String_Concat3(const char* s1, const char* s2, const char* s3);
 char* Qiniu_String_Concat(const char* s1, ...);
 
 char* Qiniu_String_Format(size_t initSize, const char* fmt, ...);
-char* Qiniu_String_FormatV(size_t initSize, const char* fmt, Qiniu_Valist* args);
 
 /*============================================================================*/
 /* func Qiniu_String_Encode */
@@ -106,7 +100,45 @@ char* Qiniu_QueryEscape(const char* s, Qiniu_Bool* fesc);
 Qiniu_Int64 Qiniu_Seconds();
 
 /*============================================================================*/
+/* type Qiniu_Reader */
+
+typedef size_t (*Qiniu_FnRead)(void *buf, size_t, size_t n, void *self);
+
+typedef struct _Qiniu_Reader {
+	void* self;
+	Qiniu_FnRead Read;
+} Qiniu_Reader;
+
+Qiniu_Reader Qiniu_FILE_Reader(FILE* fp);
+
+/*============================================================================*/
+/* type Qiniu_Writer */
+
+typedef size_t (*Qiniu_FnWrite)(const void *buf, size_t, size_t n, void *self);
+
+typedef struct _Qiniu_Writer {
+	void* self;
+	Qiniu_FnWrite Write;
+} Qiniu_Writer;
+
+Qiniu_Writer Qiniu_FILE_Writer(FILE* fp);
+
+/*============================================================================*/
+/* type Qiniu_ReaderAt */
+
+typedef	ssize_t (*Qiniu_FnReadAt)(void* self, void *buf, size_t bytes, off_t offset);
+
+typedef struct _Qiniu_ReaderAt {
+	void* self;
+	Qiniu_FnReadAt ReadAt;
+} Qiniu_ReaderAt;
+
+/*============================================================================*/
 /* type Qiniu_Buffer */
+
+typedef struct _Qiniu_Valist {
+	va_list items;
+} Qiniu_Valist;
 
 typedef struct _Qiniu_Buffer {
 	char* buf;
@@ -125,13 +157,14 @@ void Qiniu_Buffer_Cleanup(Qiniu_Buffer* self);
 
 const char* Qiniu_Buffer_CStr(Qiniu_Buffer* self);
 const char* Qiniu_Buffer_Format(Qiniu_Buffer* self, const char* fmt, ...);
-const char* Qiniu_Buffer_FormatV(Qiniu_Buffer* self, const char* fmt, Qiniu_Valist* args);
 
 void Qiniu_Buffer_PutChar(Qiniu_Buffer* self, char ch);
 
 size_t Qiniu_Buffer_Len(Qiniu_Buffer* self);
 size_t Qiniu_Buffer_Write(Qiniu_Buffer* self, const void* buf, size_t n);
-size_t Qiniu_Buffer_Fwrite(void *buf, size_t, size_t n, void *self);
+size_t Qiniu_Buffer_Fwrite(const void* buf, size_t, size_t n, void* self);
+
+Qiniu_Writer Qiniu_BufWriter(Qiniu_Buffer* self);
 
 char* Qiniu_Buffer_Expand(Qiniu_Buffer* self, size_t n);
 void Qiniu_Buffer_Commit(Qiniu_Buffer* self, char* p);
@@ -143,30 +176,31 @@ void Qiniu_Format_Register(char esc, Qiniu_FnAppender appender);
 /*============================================================================*/
 /* func Qiniu_Null_Fwrite */
 
-size_t Qiniu_Null_Fwrite(void *buf, size_t, size_t n, void *self);
-
-/*============================================================================*/
-/* type Qiniu_Reader */
-
-typedef size_t (*Qiniu_FnRead)(void *buf, size_t, size_t n, void *self);
-
-typedef struct _Qiniu_Reader {
-	void* self;
-	Qiniu_FnRead Read;
-} Qiniu_Reader;
-
-Qiniu_Reader Qiniu_FILE_Reader(FILE* fp);
+size_t Qiniu_Null_Fwrite(const void* buf, size_t, size_t n, void* self);
 
 /*============================================================================*/
 /* type Qiniu_BufReader */
 
-typedef struct _Qiniu_BufReader {
+typedef struct _Qiniu_ReadBuf {
 	const char* buf;
 	size_t off;
 	size_t limit;
-} Qiniu_BufReader;
+} Qiniu_ReadBuf;
 
-Qiniu_Reader Qiniu_Buffer_Reader(Qiniu_BufReader* self, const char* buf, size_t bytes);
+Qiniu_Reader Qiniu_BufReader(Qiniu_ReadBuf* self, const char* buf, size_t bytes);
+
+/*============================================================================*/
+/* type Qiniu_Crc32 */
+
+unsigned long Qiniu_Crc32_Update(unsigned long inCrc32, const void *buf, size_t bufLen);
+
+typedef struct _Qiniu_Crc32 {
+	unsigned long val;
+} Qiniu_Crc32;
+
+size_t Qiniu_Crc32_Fwrite(const void* buf, size_t, size_t n, Qiniu_Crc32* self);
+
+Qiniu_Writer Qiniu_Crc32Writer(Qiniu_Crc32* self, unsigned long inCrc32);
 
 /*============================================================================*/
 /* type Qiniu_File */
@@ -183,20 +217,13 @@ void Qiniu_File_Close(void* self);
 
 ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, off_t offset);
 
+Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self);
+
 /*============================================================================*/
-/* type Qiniu_ReaderAt */
-
-typedef	ssize_t (*Qiniu_FnReadAt)(void* self, void *buf, size_t bytes, off_t offset);
-
-typedef struct _Qiniu_ReaderAt {
-	void* self;
-	Qiniu_FnReadAt ReadAt;
-} Qiniu_ReaderAt;
+/* type Qiniu_SectionReader */
 
 Qiniu_Reader Qiniu_SectionReader(Qiniu_ReaderAt readerAt, off_t off, off_t n);
 void Qiniu_SectionReader_Release(void* self);
-
-Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self);
 
 /*============================================================================*/
 
