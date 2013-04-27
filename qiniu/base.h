@@ -77,16 +77,11 @@ Qiniu_Count Qiniu_Count_Dec(Qiniu_Count* self);
 /*============================================================================*/
 /* func Qiniu_String_Concat */
 
-typedef struct _Qiniu_Valist {
-	va_list items;
-} Qiniu_Valist;
-
 char* Qiniu_String_Concat2(const char* s1, const char* s2);
 char* Qiniu_String_Concat3(const char* s1, const char* s2, const char* s3);
 char* Qiniu_String_Concat(const char* s1, ...);
 
 char* Qiniu_String_Format(size_t initSize, const char* fmt, ...);
-char* Qiniu_String_FormatV(size_t initSize, const char* fmt, Qiniu_Valist* args);
 
 /*============================================================================*/
 /* func Qiniu_String_Encode */
@@ -108,6 +103,10 @@ Qiniu_Int64 Qiniu_Seconds();
 /*============================================================================*/
 /* type Qiniu_Buffer */
 
+typedef struct _Qiniu_Valist {
+	va_list items;
+} Qiniu_Valist;
+
 typedef struct _Qiniu_Buffer {
 	char* buf;
 	char* curr;
@@ -125,7 +124,6 @@ void Qiniu_Buffer_Cleanup(Qiniu_Buffer* self);
 
 const char* Qiniu_Buffer_CStr(Qiniu_Buffer* self);
 const char* Qiniu_Buffer_Format(Qiniu_Buffer* self, const char* fmt, ...);
-const char* Qiniu_Buffer_FormatV(Qiniu_Buffer* self, const char* fmt, Qiniu_Valist* args);
 
 void Qiniu_Buffer_PutChar(Qiniu_Buffer* self, char ch);
 

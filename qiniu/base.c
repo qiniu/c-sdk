@@ -453,33 +453,23 @@ void Qiniu_Buffer_AppendFormat(Qiniu_Buffer* self, const char* fmt, ...)
 	Qiniu_Buffer_AppendFormatV(self, fmt, &args);
 }
 
-const char* Qiniu_Buffer_FormatV(Qiniu_Buffer* self, const char* fmt, Qiniu_Valist* args)
-{
-	Qiniu_Buffer_Reset(self);
-	Qiniu_Buffer_AppendFormatV(self, fmt, args);
-	return Qiniu_Buffer_CStr(self);
-}
-
 const char* Qiniu_Buffer_Format(Qiniu_Buffer* self, const char* fmt, ...)
 {
 	Qiniu_Valist args;
 	va_start(args.items, fmt);
-	return Qiniu_Buffer_FormatV(self, fmt, &args);
-}
-
-char* Qiniu_String_FormatV(size_t initSize, const char* fmt, Qiniu_Valist* args)
-{
-	Qiniu_Buffer buf;
-	Qiniu_Buffer_Init(&buf, initSize);
-	Qiniu_Buffer_AppendFormatV(&buf, fmt, args);
-	return (char*)Qiniu_Buffer_CStr(&buf);
+	Qiniu_Buffer_Reset(self);
+	Qiniu_Buffer_AppendFormatV(self, fmt, &args);
+	return Qiniu_Buffer_CStr(self);
 }
 
 char* Qiniu_String_Format(size_t initSize, const char* fmt, ...)
 {
 	Qiniu_Valist args;
+	Qiniu_Buffer buf;
 	va_start(args.items, fmt);
-	return Qiniu_String_FormatV(initSize, fmt, &args);
+	Qiniu_Buffer_Init(&buf, initSize);
+	Qiniu_Buffer_AppendFormatV(&buf, fmt, &args);
+	return (char*)Qiniu_Buffer_CStr(&buf);
 }
 
 /*============================================================================*/
