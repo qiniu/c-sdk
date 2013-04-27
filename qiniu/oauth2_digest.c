@@ -76,7 +76,7 @@ static Qiniu_Auth_Itbl Qiniu_DigestAuth_Itbl = {
 	Qiniu_DigestAuth_Release
 };
 
-static Qiniu_Auth Qiniu_DigestAuth = {
+Qiniu_Auth Qiniu_DigestAuth = {
 	NULL,
 	&Qiniu_DigestAuth_Itbl
 };
