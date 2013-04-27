@@ -336,46 +336,53 @@ void Qiniu_Buffer_AppendEncodedBinary(Qiniu_Buffer* self, const char* buf, size_
 	Qiniu_Buffer_Commit(self, dest + cbReal);
 }
 
-void Qiniu_Buffer_appendUint(Qiniu_Buffer* self, va_list* ap)
+va_list Qiniu_Buffer_appendUint(Qiniu_Buffer* self, va_list ap)
 {
-	unsigned v = va_arg(*ap, unsigned);
+	unsigned v = va_arg(ap, unsigned);
 	Qiniu_Buffer_AppendUint(self, v);
+	return ap;
 }
 
-void Qiniu_Buffer_appendInt(Qiniu_Buffer* self, va_list* ap)
+va_list Qiniu_Buffer_appendInt(Qiniu_Buffer* self, va_list ap)
 {
-	int v = va_arg(*ap, int);
+	int v = va_arg(ap, int);
 	Qiniu_Buffer_AppendInt(self, v);
+	return ap;
 }
 
-void Qiniu_Buffer_appendUint64(Qiniu_Buffer* self, va_list* ap)
+va_list Qiniu_Buffer_appendUint64(Qiniu_Buffer* self, va_list ap)
 {
-	Qiniu_Uint64 v = va_arg(*ap, Qiniu_Uint64);
+	Qiniu_Uint64 v = va_arg(ap, Qiniu_Uint64);
 	Qiniu_Buffer_AppendUint(self, v);
+	return ap;
 }
 
-void Qiniu_Buffer_appendInt64(Qiniu_Buffer* self, va_list* ap)
+va_list Qiniu_Buffer_appendInt64(Qiniu_Buffer* self, va_list ap)
 {
-	Qiniu_Int64 v = va_arg(*ap, Qiniu_Int64);
+	Qiniu_Int64 v = va_arg(ap, Qiniu_Int64);
 	Qiniu_Buffer_AppendInt(self, v);
+	return ap;
 }
 
-void Qiniu_Buffer_appendString(Qiniu_Buffer* self, va_list* ap)
+va_list Qiniu_Buffer_appendString(Qiniu_Buffer* self, va_list ap)
 {
-	const char* v = va_arg(*ap, const char*);
+	const char* v = va_arg(ap, const char*);
 	Qiniu_Buffer_Write(self, v, strlen(v));
+	return ap;
 }
 
-void Qiniu_Buffer_appendEncodedString(Qiniu_Buffer* self, va_list* ap)
+va_list Qiniu_Buffer_appendEncodedString(Qiniu_Buffer* self, va_list ap)
 {
-	const char* v = va_arg(*ap, const char*);
+	const char* v = va_arg(ap, const char*);
 	size_t n = strlen(v);
 	Qiniu_Buffer_AppendEncodedBinary(self, v, n);
+	return ap;
 }
 
-void Qiniu_Buffer_appendPercent(Qiniu_Buffer* self, va_list* ap)
+va_list Qiniu_Buffer_appendPercent(Qiniu_Buffer* self, va_list ap)
 {
 	Qiniu_Buffer_PutChar(self, '%');
+	return ap;
 }
 
 /*============================================================================*/
@@ -434,7 +441,7 @@ void Qiniu_Buffer_AppendFormatV(Qiniu_Buffer* self, const char* fmt, va_list arg
 		if (ch < 128) {
 			appender = qiniu_Appenders[ch];
 			if (appender != NULL) {
-				appender(self, &args);
+				args = appender(self, args);
 				continue;
 			}
 		}

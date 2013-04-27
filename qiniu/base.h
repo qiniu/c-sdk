@@ -132,7 +132,7 @@ size_t Qiniu_Buffer_Fwrite(void *buf, size_t, size_t n, void *self);
 char* Qiniu_Buffer_Expand(Qiniu_Buffer* self, size_t n);
 void Qiniu_Buffer_Commit(Qiniu_Buffer* self, char* p);
 
-typedef void (*Qiniu_FnAppender)(Qiniu_Buffer* self, va_list* ap);
+typedef va_list (*Qiniu_FnAppender)(Qiniu_Buffer* self, va_list ap);
 
 void Qiniu_Format_Register(char esc, Qiniu_FnAppender appender);
 

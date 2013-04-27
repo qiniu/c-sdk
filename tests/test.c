@@ -20,7 +20,7 @@ void testFmt();
 
 QINIU_TESTS_BEGIN(qbox)
 	QINIU_TEST(testFmt)
-//	QINIU_TEST(testIoPut)
+	QINIU_TEST(testIoPut)
 QINIU_TESTS_END()
 
 QINIU_ONE_SUITE(qbox)
