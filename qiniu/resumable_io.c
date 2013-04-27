@@ -139,10 +139,60 @@ lzRetry:
 }
 
 /*============================================================================*/
-/* func Qiniu_Rio_PutXXX */
 
-CURL* Qiniu_Client_reset(Qiniu_Client* self);
-Qiniu_Error Qiniu_callex(CURL* curl, Qiniu_Buffer *resp, Qiniu_Json** ret, Qiniu_Bool simpleError, Qiniu_Buffer *resph);
+static Qiniu_Error Qiniu_Rio_Mkfile(
+	Qiniu_Client* c, Qiniu_Rio_PutRet* ret, const char* key, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra* extra)
+{
+	size_t i, blkCount = extra->blkCount;
+	Qiniu_Json* root;
+	Qiniu_Error err;
+	Qiniu_Rio_BlkputRet* prog;
+	Qiniu_Buffer url, body;
+
+	char* entry = Qiniu_String_Concat3(extra->bucket, ":", key);
+
+	Qiniu_Buffer_Init(&url, 1024);
+	Qiniu_Buffer_AppendFormat(&url, "%s/rs-mkfile/%S/fsize/%D", QINIU_UP_HOST, entry, fsize);
+	free(entry);
+
+	if (extra->mimeType != NULL) {
+		Qiniu_Buffer_AppendFormat(&url, "/mimeType/%S", extra->mimeType);
+	}
+	if (extra->customMeta != NULL) {
+		Qiniu_Buffer_AppendFormat(&url, "/meta/%S", extra->customMeta);
+	}
+	if (extra->callbackParams != NULL) {
+		Qiniu_Buffer_AppendFormat(&url, "/params/%S", extra->callbackParams);
+	}
+
+	Qiniu_Buffer_Init(&body, 176 * blkCount);
+	for (i = 0; i < blkCount; i++) {
+		prog = &extra->progresses[i];
+		Qiniu_Buffer_Write(&body, prog->ctx, strlen(prog->ctx));
+		Qiniu_Buffer_PutChar(&body, ',');
+	}
+	if (blkCount > 0) {
+		body.curr--;
+	}
+
+	err = Qiniu_Client_CallWithBuffer(
+		c, &root, Qiniu_Buffer_CStr(&url), body.buf, body.curr - body.buf, "text/plain");
+
+	Qiniu_Buffer_Cleanup(&url);
+	Qiniu_Buffer_Cleanup(&body);
+
+	if (err.code == 200) {
+		ret->hash = Qiniu_Json_GetString(root, "hash", NULL);
+		if (ret->hash == NULL) {
+			err.code = 9998;
+			err.message = "unexcepted response: invalid hash";
+		}
+	}
+	return err;
+}
+
+/*============================================================================*/
+/* func Qiniu_Rio_PutXXX */
 
 Qiniu_Error Qiniu_Rio_Put(
 	Qiniu_Client* self, Qiniu_Rio_PutRet* ret,

@@ -38,10 +38,11 @@ typedef struct _Qiniu_Rio_PutExtra {
 	const char* mimeType;		// 可选。在 uptoken 没有指定 DetectMime 时，用户客户端可自己指定 MimeType
 	int chunkSize;				// 可选。每次上传的Chunk大小
 	int tryTimes;				// 可选。尝试次数
-	Qiniu_Rio_BlkputRet* progresses; // 可选。上传进度
 	void* notifyRecvr;
 	Qiniu_Rio_FnNotify notify;		 // 可选。进度提示（注意多个block是并行传输的）
 	Qiniu_Rio_FnNotifyErr notifyErr;
+	Qiniu_Rio_BlkputRet* progresses; // 可选。上传进度
+	size_t blkCount;
 } Qiniu_Rio_PutExtra;
 
 /*============================================================================*/
