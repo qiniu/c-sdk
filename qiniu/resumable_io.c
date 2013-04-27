@@ -487,7 +487,9 @@ Qiniu_Error Qiniu_Rio_Put(
 	auth.itbl->Release(auth.self);
 
 	Qiniu_Rio_PutExtra_Cleanup(extra);
+
 	free(extra->progresses);
+	extra->progresses = NULL;
 
 	self->auth = auth1;
 	return err;
