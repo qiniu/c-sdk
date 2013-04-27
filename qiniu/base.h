@@ -195,6 +195,7 @@ typedef struct _Qiniu_ReadBuf {
 } Qiniu_ReadBuf;
 
 Qiniu_Reader Qiniu_BufReader(Qiniu_ReadBuf* self, const char* buf, size_t bytes);
+Qiniu_ReaderAt Qiniu_BufReaderAt(Qiniu_ReadBuf* self, const char* buf, size_t bytes);
 
 /*============================================================================*/
 /* type Qiniu_Tee */
@@ -203,8 +204,6 @@ typedef struct _Qiniu_Tee {
 	Qiniu_Reader r;
 	Qiniu_Writer w;
 } Qiniu_Tee;
-
-size_t Qiniu_Tee_Read(void* buf, size_t unused, size_t n, Qiniu_Tee* self);
 
 Qiniu_Reader Qiniu_TeeReader(Qiniu_Tee* self, Qiniu_Reader r, Qiniu_Writer w);
 
@@ -217,8 +216,6 @@ typedef struct _Qiniu_Section {
 	off_t limit;
 } Qiniu_Section;
 
-size_t Qiniu_Section_Read(void* buf, size_t unused, size_t n, Qiniu_Section* self);
-
 Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, off_t off, off_t n);
 
 /*============================================================================*/
@@ -229,8 +226,6 @@ unsigned long Qiniu_Crc32_Update(unsigned long inCrc32, const void *buf, size_t 
 typedef struct _Qiniu_Crc32 {
 	unsigned long val;
 } Qiniu_Crc32;
-
-size_t Qiniu_Crc32_Fwrite(const void* buf, size_t, size_t n, Qiniu_Crc32* self);
 
 Qiniu_Writer Qiniu_Crc32Writer(Qiniu_Crc32* self, unsigned long inCrc32);
 

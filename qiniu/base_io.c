@@ -92,9 +92,8 @@ Qiniu_Writer Qiniu_Crc32Writer(Qiniu_Crc32* self, unsigned long inCrc32)
 /*============================================================================*/
 /* Qiniu_BufReader */
 
-static size_t Qiniu_ReadBuf_Read(void *buf, size_t unused, size_t n, void *self1)
+static size_t Qiniu_ReadBuf_Read(void *buf, size_t unused, size_t n, Qiniu_ReadBuf* self)
 {
-	Qiniu_ReadBuf* self = (Qiniu_ReadBuf*)self1;
 	size_t max = self->limit - self->off;
 	if (max <= 0) {
 		return 0;
@@ -107,9 +106,31 @@ static size_t Qiniu_ReadBuf_Read(void *buf, size_t unused, size_t n, void *self1
 	return n;
 }
 
+ssize_t Qiniu_ReadBuf_ReadAt(Qiniu_ReadBuf* self, void *buf, size_t n, off_t off)
+{
+	size_t max = self->limit - (size_t)off;
+	if ((ssize_t)max <= 0) {
+		return 0;
+	}
+	if (n > max) {
+		n = (size_t)max;
+	}
+	memcpy(buf, self->buf + off, n);
+	return n;
+}
+
 Qiniu_Reader Qiniu_BufReader(Qiniu_ReadBuf* self, const char* buf, size_t bytes)
 {
-	Qiniu_Reader ret = {self, Qiniu_ReadBuf_Read};
+	Qiniu_Reader ret = {self, (Qiniu_FnRead)Qiniu_ReadBuf_Read};
+	self->buf = buf;
+	self->off = 0;
+	self->limit = bytes;
+	return ret;
+}
+
+Qiniu_ReaderAt Qiniu_BufReaderAt(Qiniu_ReadBuf* self, const char* buf, size_t bytes)
+{
+	Qiniu_ReaderAt ret = {self, (Qiniu_FnReadAt)Qiniu_ReadBuf_ReadAt};
 	self->buf = buf;
 	self->off = 0;
 	self->limit = bytes;
