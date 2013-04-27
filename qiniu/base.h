@@ -77,12 +77,16 @@ Qiniu_Count Qiniu_Count_Dec(Qiniu_Count* self);
 /*============================================================================*/
 /* func Qiniu_String_Concat */
 
+typedef struct _Qiniu_Valist {
+	va_list items;
+} Qiniu_Valist;
+
 char* Qiniu_String_Concat2(const char* s1, const char* s2);
 char* Qiniu_String_Concat3(const char* s1, const char* s2, const char* s3);
 char* Qiniu_String_Concat(const char* s1, ...);
 
 char* Qiniu_String_Format(size_t initSize, const char* fmt, ...);
-char* Qiniu_String_FormatV(size_t initSize, const char* fmt, va_list args);
+char* Qiniu_String_FormatV(size_t initSize, const char* fmt, Qiniu_Valist* args);
 
 /*============================================================================*/
 /* func Qiniu_String_Encode */
@@ -116,12 +120,12 @@ void Qiniu_Buffer_AppendInt(Qiniu_Buffer* self, Qiniu_Int64 v);
 void Qiniu_Buffer_AppendUint(Qiniu_Buffer* self, Qiniu_Uint64 v);
 void Qiniu_Buffer_AppendEncodedBinary(Qiniu_Buffer* self, const char* buf, size_t cb);
 void Qiniu_Buffer_AppendFormat(Qiniu_Buffer* self, const char* fmt, ...);
-void Qiniu_Buffer_AppendFormatV(Qiniu_Buffer* self, const char* fmt, va_list args);
+void Qiniu_Buffer_AppendFormatV(Qiniu_Buffer* self, const char* fmt, Qiniu_Valist* args);
 void Qiniu_Buffer_Cleanup(Qiniu_Buffer* self);
 
 const char* Qiniu_Buffer_CStr(Qiniu_Buffer* self);
 const char* Qiniu_Buffer_Format(Qiniu_Buffer* self, const char* fmt, ...);
-const char* Qiniu_Buffer_FormatV(Qiniu_Buffer* self, const char* fmt, va_list args);
+const char* Qiniu_Buffer_FormatV(Qiniu_Buffer* self, const char* fmt, Qiniu_Valist* args);
 
 void Qiniu_Buffer_PutChar(Qiniu_Buffer* self, char ch);
 
@@ -132,7 +136,7 @@ size_t Qiniu_Buffer_Fwrite(void *buf, size_t, size_t n, void *self);
 char* Qiniu_Buffer_Expand(Qiniu_Buffer* self, size_t n);
 void Qiniu_Buffer_Commit(Qiniu_Buffer* self, char* p);
 
-typedef va_list (*Qiniu_FnAppender)(Qiniu_Buffer* self, va_list ap);
+typedef void (*Qiniu_FnAppender)(Qiniu_Buffer* self, Qiniu_Valist* ap);
 
 void Qiniu_Format_Register(char esc, Qiniu_FnAppender appender);
 

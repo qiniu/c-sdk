@@ -336,53 +336,46 @@ void Qiniu_Buffer_AppendEncodedBinary(Qiniu_Buffer* self, const char* buf, size_
 	Qiniu_Buffer_Commit(self, dest + cbReal);
 }
 
-va_list Qiniu_Buffer_appendUint(Qiniu_Buffer* self, va_list ap)
+void Qiniu_Buffer_appendUint(Qiniu_Buffer* self, Qiniu_Valist* ap)
 {
-	unsigned v = va_arg(ap, unsigned);
+	unsigned v = va_arg(ap->items, unsigned);
 	Qiniu_Buffer_AppendUint(self, v);
-	return ap;
 }
 
-va_list Qiniu_Buffer_appendInt(Qiniu_Buffer* self, va_list ap)
+void Qiniu_Buffer_appendInt(Qiniu_Buffer* self, Qiniu_Valist* ap)
 {
-	int v = va_arg(ap, int);
+	int v = va_arg(ap->items, int);
 	Qiniu_Buffer_AppendInt(self, v);
-	return ap;
 }
 
-va_list Qiniu_Buffer_appendUint64(Qiniu_Buffer* self, va_list ap)
+void Qiniu_Buffer_appendUint64(Qiniu_Buffer* self, Qiniu_Valist* ap)
 {
-	Qiniu_Uint64 v = va_arg(ap, Qiniu_Uint64);
+	Qiniu_Uint64 v = va_arg(ap->items, Qiniu_Uint64);
 	Qiniu_Buffer_AppendUint(self, v);
-	return ap;
 }
 
-va_list Qiniu_Buffer_appendInt64(Qiniu_Buffer* self, va_list ap)
+void Qiniu_Buffer_appendInt64(Qiniu_Buffer* self, Qiniu_Valist* ap)
 {
-	Qiniu_Int64 v = va_arg(ap, Qiniu_Int64);
+	Qiniu_Int64 v = va_arg(ap->items, Qiniu_Int64);
 	Qiniu_Buffer_AppendInt(self, v);
-	return ap;
 }
 
-va_list Qiniu_Buffer_appendString(Qiniu_Buffer* self, va_list ap)
+void Qiniu_Buffer_appendString(Qiniu_Buffer* self, Qiniu_Valist* ap)
 {
-	const char* v = va_arg(ap, const char*);
+	const char* v = va_arg(ap->items, const char*);
 	Qiniu_Buffer_Write(self, v, strlen(v));
-	return ap;
 }
 
-va_list Qiniu_Buffer_appendEncodedString(Qiniu_Buffer* self, va_list ap)
+void Qiniu_Buffer_appendEncodedString(Qiniu_Buffer* self, Qiniu_Valist* ap)
 {
-	const char* v = va_arg(ap, const char*);
+	const char* v = va_arg(ap->items, const char*);
 	size_t n = strlen(v);
 	Qiniu_Buffer_AppendEncodedBinary(self, v, n);
-	return ap;
 }
 
-va_list Qiniu_Buffer_appendPercent(Qiniu_Buffer* self, va_list ap)
+void Qiniu_Buffer_appendPercent(Qiniu_Buffer* self, Qiniu_Valist* ap)
 {
 	Qiniu_Buffer_PutChar(self, '%');
-	return ap;
 }
 
 /*============================================================================*/
@@ -421,7 +414,7 @@ void Qiniu_Buffer_formatInit()
 	}
 }
 
-void Qiniu_Buffer_AppendFormatV(Qiniu_Buffer* self, const char* fmt, va_list args)
+void Qiniu_Buffer_AppendFormatV(Qiniu_Buffer* self, const char* fmt, Qiniu_Valist* args)
 {
 	unsigned char ch;
 	const char* p;
@@ -441,7 +434,7 @@ void Qiniu_Buffer_AppendFormatV(Qiniu_Buffer* self, const char* fmt, va_list arg
 		if (ch < 128) {
 			appender = qiniu_Appenders[ch];
 			if (appender != NULL) {
-				args = appender(self, args);
+				appender(self, args);
 				continue;
 			}
 		}
@@ -455,12 +448,12 @@ void Qiniu_Buffer_AppendFormatV(Qiniu_Buffer* self, const char* fmt, va_list arg
 
 void Qiniu_Buffer_AppendFormat(Qiniu_Buffer* self, const char* fmt, ...)
 {
-	va_list ap;
-	va_start(ap, fmt);
-	Qiniu_Buffer_AppendFormatV(self, fmt, ap);
+	Qiniu_Valist args;
+	va_start(args.items, fmt);
+	Qiniu_Buffer_AppendFormatV(self, fmt, &args);
 }
 
-const char* Qiniu_Buffer_FormatV(Qiniu_Buffer* self, const char* fmt, va_list args)
+const char* Qiniu_Buffer_FormatV(Qiniu_Buffer* self, const char* fmt, Qiniu_Valist* args)
 {
 	Qiniu_Buffer_Reset(self);
 	Qiniu_Buffer_AppendFormatV(self, fmt, args);
@@ -469,12 +462,12 @@ const char* Qiniu_Buffer_FormatV(Qiniu_Buffer* self, const char* fmt, va_list ar
 
 const char* Qiniu_Buffer_Format(Qiniu_Buffer* self, const char* fmt, ...)
 {
-	va_list ap;
-	va_start(ap, fmt);
-	return Qiniu_Buffer_FormatV(self, fmt, ap);
+	Qiniu_Valist args;
+	va_start(args.items, fmt);
+	return Qiniu_Buffer_FormatV(self, fmt, &args);
 }
 
-char* Qiniu_String_FormatV(size_t initSize, const char* fmt, va_list args)
+char* Qiniu_String_FormatV(size_t initSize, const char* fmt, Qiniu_Valist* args)
 {
 	Qiniu_Buffer buf;
 	Qiniu_Buffer_Init(&buf, initSize);
@@ -484,9 +477,9 @@ char* Qiniu_String_FormatV(size_t initSize, const char* fmt, va_list args)
 
 char* Qiniu_String_Format(size_t initSize, const char* fmt, ...)
 {
-	va_list ap;
-	va_start(ap, fmt);
-	return Qiniu_String_FormatV(initSize, fmt, ap);
+	Qiniu_Valist args;
+	va_start(args.items, fmt);
+	return Qiniu_String_FormatV(initSize, fmt, &args);
 }
 
 /*============================================================================*/
