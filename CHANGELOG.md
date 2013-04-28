@@ -1,6 +1,6 @@
 ## CHANGE LOG
 
-### v5.0.1
+### v5.1.0
 
 2013-04-29 issue [#54](https://github.com/qiniu/c-sdk/pull/54)
 
