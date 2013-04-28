@@ -1,10 +1,10 @@
 /*
  ============================================================================
- Name                : qbox_test.h
- Author            : Wu Shi Yu
- Version         : 1.0.0.0
- Copyright     : 2012 Shanghai Qiniu Information Technologies Co., Ltd.
- Description : QBOX TEST
+ Name        : test.c
+ Author      : Qiniu Developers
+ Version     : 1.0.0.0
+ Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
+ Description :
  ============================================================================
  */
 #include <stdio.h>
@@ -12,7 +12,7 @@
 #include <string.h>
 #include <assert.h>
 #include "CUnit/Basic.h"
-#include "c_unit_test_main.h"
+#include "test.h"
 
 
 void AddTests(void);
@@ -76,15 +76,15 @@ int main(int argc, char* argv[])
     }
     else {
         //*/
-        AddTestsRS();//*
-        AddTestsRsDemo();//*
-        AddTestsImage();//*
+        AddTestsBase();//*  //2
+        AddTestsRS();//* //1
+        AddTestsRsCli();//*  //4
+        AddTestsImage();//*/ //3
         AddTestsUp();//*
         AddTestsUpDemo();//*
         AddTestsUpDemoResumable(myMode);//*
-        AddTestsBase();//*
         AddTestsOauth2();//*
-        AddTestsOauth2Passwd();//*/
+        //AddTestsOauth2Passwd();//*/
         //*/
         if((myMode&GENERATE_XML)!=0){
             //***使用自动产生XML文件的模式********

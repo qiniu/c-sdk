@@ -17,7 +17,7 @@
 #include "../qbox/rs.h"
 #include "../qbox/up.h"
 #include "../qbox/oauth2.h"
-#include "c_unit_test_main.h"
+#include "test.h"
 
 //#define TESTFILE_16M "/home/wsy/文档/SDKUnitTest/src/test_file_16M.txt"
 //#define TESTFILE_1M "/home/wsy/文档/SDKUnitTest/src/test_file_1M .txt"

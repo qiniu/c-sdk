@@ -19,7 +19,7 @@
 #include "../qbox/rs.h"
 #include "../qbox/up.h"
 #include "../qbox/oauth2.h"
-#include "c_unit_test_main.h"
+#include "test.h"
 
 //#define TESTFILE_16M "/home/wsy/文档/SDKUnitTest/src/test_file_16M.txt"
 //#define TESTFILE_1M "/home/wsy/文档/SDKUnitTest/src/test_file_1M .txt"
@@ -369,6 +369,7 @@ void test_by_up_demo_resumable_err18(){
     }
 	QBOX_SECRET_KEY = "yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze";
 }
+/*
 void test_QBox_UP_NewProgress(){
     QBox_UP_Progress* prog = NULL;
     prog = QBox_UP_NewProgress(4194304);
@@ -388,7 +389,7 @@ void test_QBox_UP_NewProgress(){
     prog=NULL;
     QBox_UP_Progress_Release(prog);
 }
-
+*/
 
 /**//*---- test suites ------------------*/
 int suite_init_up_demo_resumable(void)
@@ -410,7 +411,7 @@ QBOX_TEST(test_by_up_demo_resumable_16M)
 QBOX_TEST(test_by_up_demo_resumable_1M)
 QBOX_TEST(test_by_up_demo_resumable_err299)
 QBOX_TEST(test_by_up_demo_resumable_err18)
-QBOX_TEST(test_QBox_UP_NewProgress)
+//QBOX_TEST(test_QBox_UP_NewProgress)
 QBOX_TESTS_END()
 
 QBOX_SUITES_BEGIN()

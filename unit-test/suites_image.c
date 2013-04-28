@@ -1,10 +1,10 @@
 /*
  ============================================================================
- Name        : qbox_test.h
- Author      : Wu Shi Yu
+ Name        : suites_image.c
+ Author      : Qiniu Developers
  Version     : 1.0.0.0
- Copyright   : 2012 Shanghai Qiniu Information Technologies Co., Ltd.
- Description : QBOX TEST
+ Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
+ Description :
  ============================================================================
  */
 #include <stdio.h>
@@ -16,7 +16,7 @@
 #include "../qbox/image.h"
 #include "../qbox/rs.h"
 #include "../qbox/base.h"
-#include "c_unit_test_main.h"
+#include "test.h"
 
 
 QBox_Error err;
@@ -24,7 +24,7 @@ QBox_Client client;
 
 #define MY_TRUE 0
 #define MY_FALSE -1
-//#define PICTURE "/home/wsy/文档/SDKUnitTest/src/gogopher.jpg"
+//#define PICTURE "/home/wsy/文档/c-sdk/unit-test/gogopher.jpg"
 #define PICTURE "gogopher.jpg"
 
 //extern char* _dirtycat(char* dst, const char* src);
@@ -33,42 +33,45 @@ void test_QBox_IMG_Info(){
     const char* imgURL="http://qiniuphotos.dn.qbox.me/gogopher.jpg";
     err=QBox_IMG_Info(&client,ret,imgURL);
     CU_ASSERT_EQUAL(err.code,200);
+    CU_ASSERT_STRING_EQUAL(ret->format,"jpeg");
+    CU_ASSERT_STRING_EQUAL(ret->colorModel,"ycbcr");
+    CU_ASSERT_EQUAL(ret->width,640);
+    CU_ASSERT_EQUAL(ret->height,427);
     //test branch:err!=200.
     imgURL="http://upload.mjdo.com/lady/20110621/12/201121733.jpg";
     err=QBox_IMG_Info(&client,ret,imgURL);
     CU_ASSERT_NOT_EQUAL(err.code,200);
-    //printf("\n%d\n%s\n",err.code,err.message);
+    CU_ASSERT_EQUAL(err.code,405);
     free(ret);
 }
 
 void test_QBox_IMG_Exif(){
-    const char* imgURL="http://qiniuphotos.dn.qbox.me/gogopher.jpg";
+    char* imgURL=malloc(128);
     QBox_IMG_ExifRet* ret=malloc(sizeof(QBox_IMG_ExifRet));
-
-
+    imgURL="http://qiniuphotos.dn.qbox.me/gogopher.jpg";
 	err = QBox_IMG_Exif(&client, ret, imgURL);
 	CU_ASSERT_EQUAL(err.code,200);
-    /*
-    printf("\n");
-	QBox_Uint32 index;
+	/*
 	for (index = 0; index < ret->size; index++) {
 		printf("name: %-25s val: %-20s type: %d\n",
 				ret->info[index].name,
 				ret->info[index].val,
 				(int)ret->info[index].type);
-	}
-    */
+	}*/
+	QBox_IMG_ExifRet_Release(*ret);
 
     imgURL="http://qiniuphotos.dn.qbox.me/gogopherxx.jpg";
 	err = QBox_IMG_Exif(&client, ret, imgURL);
 	CU_ASSERT_NOT_EQUAL(err.code,200);
-
-	QBox_IMG_ExifRet_Release(*ret);
 }
 
 void test_QBox_IMG_InitViewOpts(){
     QBox_IMG_ViewOpts* opts=malloc(sizeof(QBox_IMG_ViewOpts));
     QBox_IMG_InitViewOpts(opts);
+    CU_ASSERT_EQUAL(opts->width,-1);
+    CU_ASSERT_EQUAL(opts->height,-1);
+    CU_ASSERT_EQUAL(opts->quality,-1);
+    CU_ASSERT_EQUAL(opts->sharpen,-1);
     free(opts);
 }
 
@@ -83,21 +86,21 @@ void test_QBox_IMG_ViewURL(){
 	url = QBox_IMG_ViewURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageView/0");
-	CU_ASSERT_EQUAL(strcmp(url,urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 	opts.mode = 1;
 	url = QBox_IMG_ViewURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageView/1");
-	CU_ASSERT_EQUAL(strcmp(url,urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 	opts.width = 100;
 	url = QBox_IMG_ViewURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageView/1/w/100");
-	CU_ASSERT_EQUAL(strcmp(url,urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 
@@ -105,21 +108,21 @@ void test_QBox_IMG_ViewURL(){
 	url = QBox_IMG_ViewURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageView/1/w/100/h/200");
-	CU_ASSERT_EQUAL(strcmp(url,urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 	opts.quality = 50;
 	url = QBox_IMG_ViewURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageView/1/w/100/h/200/q/50");
-	CU_ASSERT_EQUAL(strcmp(url,urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 	opts.format = "png";
 	url = QBox_IMG_ViewURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageView/1/w/100/h/200/q/50/format/png");
-	CU_ASSERT_EQUAL(strcmp(url,urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 
@@ -127,26 +130,36 @@ void test_QBox_IMG_ViewURL(){
 	url = QBox_IMG_ViewURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageView/1/w/100/h/200/q/50/format/png/sharpen/60");
-	CU_ASSERT_EQUAL(strcmp(url,urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 	opts.watermark = 1;
 	url = QBox_IMG_ViewURL(&opts, imgURL);
-	//printf("url:%s\n", url);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageView/1/w/100/h/200/q/50/format/png/sharpen/60/watermark/1");
-	CU_ASSERT_EQUAL(strcmp(url,urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
     //test branch: src2nd[0] == '\0' in function _dirtycat2
 	opts.format = "\0";
 	url = QBox_IMG_ViewURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
-	strcat(urlCompare,"?imageView/1/w/100/h/200/q/50/format/\0");
-	CU_ASSERT_NOT_EQUAL(strcmp(url,urlCompare),0);
+	strcat(urlCompare,"?imageView/1/w/100/h/200/q/50/sharpen/60/watermark/1");
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
-
 	free(urlCompare);
+}
+
+void test_QBox_IMG_InitMogrOpts(){
+    QBox_IMG_MogrOpts* opts=malloc(sizeof(QBox_IMG_MogrOpts));
+    QBox_IMG_InitMogrOpts(opts);
+	CU_ASSERT_EQUAL(opts->thumbnail,0);
+	CU_ASSERT_EQUAL(opts->gravity,0);
+	CU_ASSERT_EQUAL(opts->crop,0);
+	CU_ASSERT_EQUAL(opts->quality,0);
+	CU_ASSERT_EQUAL(opts->rotate,0);
+	CU_ASSERT_EQUAL(opts->format,0);
+	CU_ASSERT_EQUAL(opts->auto_orient,0);
 }
 
 void test_QBox_IMG_MogrifyURL(){
@@ -159,49 +172,49 @@ void test_QBox_IMG_MogrifyURL(){
 	url = QBox_IMG_MogrifyURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageMogr");
-	CU_ASSERT_EQUAL(strcmp(url, urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 	opts.auto_orient = 1;
 	url = QBox_IMG_MogrifyURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageMogr/auto-orient");
-	CU_ASSERT_EQUAL(strcmp(url, urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 	opts.quality = "60";
 	url = QBox_IMG_MogrifyURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageMogr/quality/60/auto-orient");
-	CU_ASSERT_EQUAL(strcmp(url, urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 	opts.thumbnail = "50%";
 	url = QBox_IMG_MogrifyURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageMogr/thumbnail/50%/quality/60/auto-orient");
-	CU_ASSERT_EQUAL(strcmp(url, urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 	opts.gravity = "North";
 	url = QBox_IMG_MogrifyURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageMogr/thumbnail/50%/gravity/North/quality/60/auto-orient");
-	CU_ASSERT_EQUAL(strcmp(url, urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 	opts.crop = "!300x400a10a10";
 	url = QBox_IMG_MogrifyURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageMogr/thumbnail/50%/gravity/North/crop/!300x400a10a10/quality/60/auto-orient");
-	CU_ASSERT_EQUAL(strcmp(url, urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 	opts.rotate = "45";
 	url = QBox_IMG_MogrifyURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageMogr/thumbnail/50%/gravity/North/crop/!300x400a10a10/quality/60/rotate/45/auto-orient");
-	CU_ASSERT_EQUAL(strcmp(url, urlCompare),0);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 
@@ -209,8 +222,7 @@ void test_QBox_IMG_MogrifyURL(){
 	url = QBox_IMG_MogrifyURL(&opts, imgURL);
 	strcpy(urlCompare,imgURL);
 	strcat(urlCompare,"?imageMogr/thumbnail/50%/gravity/North/crop/!300x400a10a10/quality/60/rotate/45/format/png/auto-orient");
-	CU_ASSERT_EQUAL(strcmp(url, urlCompare),0);
-	//printf("\n%s\n", url);
+	CU_ASSERT_STRING_EQUAL(url,urlCompare);
 	free(url);
 
 	free(urlCompare);
@@ -228,6 +240,7 @@ void test_QBox_IMG_SaveAs(){
 	char* file=PICTURE;
 	err = QBox_RS_PutFile(&client, &putRet, tableName, "gogopher.jpg", "image/jpeg", file, "");
 	CU_ASSERT_EQUAL(err.code,200);
+
 
 	err = QBox_RS_Get(&client, &getRet, tableName, "gogopher.jpg", NULL);
 	CU_ASSERT_EQUAL(err.code,200);
@@ -266,7 +279,8 @@ void test_QBox_IMG_SaveAs(){
 	err = QBox_IMG_SaveAs(&client, &ret, &opts, imgURL, tableName, "save8");
 	CU_ASSERT_EQUAL(err.code,200);
 
-
+    //test Error
+    //test err401
     QBOX_ACCESS_KEY = "test Err!=200";
 	err = QBox_IMG_SaveAs(&client, &ret, &opts, imgURL, tableName, "saveErr");
 	CU_ASSERT_NOT_EQUAL(err.code,200);
@@ -313,6 +327,7 @@ QBOX_TEST(test_QBox_IMG_Info)
 QBOX_TEST(test_QBox_IMG_Exif)
 QBOX_TEST(test_QBox_IMG_InitViewOpts)
 QBOX_TEST(test_QBox_IMG_ViewURL)
+QBOX_TEST(test_QBox_IMG_InitMogrOpts)
 QBOX_TEST(test_QBox_IMG_MogrifyURL)
 QBOX_TEST(test_QBox_IMG_SaveAs)
 QBOX_TESTS_END()

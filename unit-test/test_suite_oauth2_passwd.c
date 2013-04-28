@@ -19,7 +19,7 @@
 #include "../qbox/base.h"
 #include "../qbox/rs.h"
 #include "../qbox/oauth2_passwd.h"
-#include "c_unit_test_main.h"
+#include "test.h"
 
 
 QBox_Error err;
@@ -47,16 +47,21 @@ void test_QBox_Token_Release(){
 }
 
 void test_QBox_Token_ExchangeByPassword(){
+    printf("\nx1\n");
     QBox_Token* token=NULL;
 	err = QBox_Token_ExchangeByPassword(&token, "test@qbox.net", "test");
 	CU_ASSERT_EQUAL(err.code,200);
     //test branches in function QBox_shouldEscape in the file base.c
+    printf("\nx2\n");
 	err = QBox_Token_ExchangeByPassword(&token, "test@qbox.net", "Test  ~89");
 	CU_ASSERT_NOT_EQUAL(err.code,200);
 
+    printf("\nx3\n");
 	err = QBox_Token_ExchangeByPassword(&token, "", "Test  ~89");
 	CU_ASSERT_NOT_EQUAL(err.code,200);
-    QBox_Token_Release(token);
+    printf("\nx4\n");
+    //QBox_Token_Release(token);
+    printf("\nx5\n");
 }
 
 

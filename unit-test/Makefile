@@ -18,5 +18,16 @@ all: $(SOURCE_FILES)
 install: all
 	@echo
 
-clean:
+clean:  
 	-rm -rf *.o test
+	-rm -rf result *~
+output: $(SOURCE_FILES)
+	gcc $^ -o test -lcurl -lm -lssl -lcrypto -lcunit -lcurses -fprofile-arcs -ftest-coverage
+	./test
+	lcov --directory .   --capture --output-file rs_app.info
+	genhtml -o result rs_app.info
+	-rm -rf *.gcno *.gcda *.info
+	
+run: $(SOURCE_FILES)
+	gcc $^ -o test -lcurl -lm -lssl -lcrypto -lcunit -lcurses -fprofile-arcs -ftest-coverage
+	./test

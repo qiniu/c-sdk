@@ -19,7 +19,7 @@
 #include "../qbox/rs.h"
 #include "../qbox/oauth2.h"
 #include "../cJSON/cJSON.h"
-#include "c_unit_test_main.h"
+#include "test.h"
 
 
 QBox_Error err;
