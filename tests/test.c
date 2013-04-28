@@ -15,12 +15,14 @@
 
 void testBaseIo();
 void testIoPut();
+void testResumableIoPut();
 void testFmt();
 
 QINIU_TESTS_BEGIN(qbox)
 	QINIU_TEST(testFmt)
 	QINIU_TEST(testBaseIo)
-//	QINIU_TEST(testIoPut)
+	QINIU_TEST(testResumableIoPut)
+	QINIU_TEST(testIoPut)
 QINIU_TESTS_END()
 
 QINIU_ONE_SUITE(qbox)
