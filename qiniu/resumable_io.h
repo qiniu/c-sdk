@@ -11,6 +11,7 @@
 #define QINIU_RESUMABLE_IO_H
 
 #include "oauth2.h"
+#include "io.h"
 
 /*============================================================================*/
 
@@ -95,9 +96,7 @@ typedef struct _Qiniu_Rio_PutExtra {
 /*============================================================================*/
 /* type Qiniu_Rio_PutRet */
 
-typedef struct _Qiniu_Rio_PutRet {
-	const char* hash;			// 如果 uptoken 没有指定 ReturnBody，那么返回值是标准的 PutRet 结构
-} Qiniu_Rio_PutRet;
+typedef Qiniu_Io_PutRet Qiniu_Rio_PutRet;
 
 /*============================================================================*/
 /* func Qiniu_Rio_BlockCount */

@@ -1,4 +1,5 @@
 #include "../../qiniu/io.h"
+#include "../../qiniu/resumable_io.h"
 
 const char bucket[] = "a";
 
@@ -36,6 +37,18 @@ int simple_upload(Qiniu_Client* client, char* uptoken, const char* key, const ch
 	Qiniu_Zero(extra);
 	extra.bucket = bucket;
 	err = Qiniu_Io_PutFile(client, NULL, uptoken, key, localFile, &extra);
+	return err.code;
+}
+/* @endgist */
+
+/* @gist resumable-upload */
+int resumable_upload(Qiniu_Client* client, char* uptoken, const char* key, const char* localFile)
+{
+	Qiniu_Error err;
+	Qiniu_Rio_PutExtra extra;
+	Qiniu_Zero(extra);
+	extra.bucket = bucket;
+	err = Qiniu_Rio_PutFile(client, NULL, uptoken, key, localFile, &extra);
 	return err.code;
 }
 /* @endgist */

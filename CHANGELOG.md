@@ -5,7 +5,7 @@
 2013-04-29 issue [#54](https://github.com/qiniu/c-sdk/pull/54)
 
 - 增加断点续上传支持 (Qiniu_Rio_Put/PutFile)。
-- 补充了大量C语言基础组件（StringFormat, Logger, Copy, TeeReader, SectionReader, Crc32Writer, etc）
+- 补充了大量C语言基础组件 (StringFormat, Logger, Copy, TeeReader, SectionReader, Crc32Writer, etc)
 
 
 ### v5.0.1
