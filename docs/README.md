@@ -21,7 +21,7 @@ SDK 下载地址：<https://github.com/qiniu/c-sdk/tags>
 - [上传文件](#io-put)
     - [上传流程](#io-put-flow)
     - [上传策略](#io-put-policy)
-    - [断点续上传](#resumable-io-put)
+    - [断点续上传、分块并行上传](#resumable-io-put)
 - [下载文件](#io-get)
     - [下载私有文件](#io-get-private)
     - [HTTPS 支持](#io-https-get)
@@ -297,7 +297,27 @@ int simple_upload(Qiniu_Client* client, char* uptoken, const char* key, const ch
 
 <a name="resumable-io-put"></a>
 
-### 断点续上传
+### 断点续上传、分块并行上传
+
+除了基本的上传外，七牛还支持你将文件切成若干块（除最后一块外，每个块固定为4M大小），每个块可独立上传，互不干扰；每个分块块内则能够做到断点上续传。
+
+我们先看支持了断点上续传、分块并行上传的基本样例：
+
+```{c}
+int resumable_upload(Qiniu_Client* client, char* uptoken, const char* key, const char* localFile)
+{
+	Qiniu_Error err;
+	Qiniu_Rio_PutExtra extra;
+	Qiniu_Zero(extra);
+	extra.bucket = bucket;
+	err = Qiniu_Rio_PutFile(client, NULL, uptoken, key, localFile, &extra);
+	return err.code;
+}
+```
+
+你可能发现代码没有变复杂。基本上就只是 `Qiniu_Io_PutExtra` 改为 `Qiniu_Rio_PutExtra`，`Qiniu_Io_PutFile` 改为 `Qiniu_Rio_PutFile`。
+
+但实际上 `Qiniu_Rio_PutExtra` 多了不少配置项，其中最重要的是两个回调函数：`notify` 与 `notifyErr`，它们用来通知使用者有更多的数据被传输成功，或者有些数据传输失败。在 `notify` 回调函数中，比较常见的做法是将传输的状态进行持久化，以便于在软件退出后下次再进来还可以继续进行断点续上传。但不传入 `notify` 回调函数并不表示不能断点续上传，只要程序没有退出，上传失败自动进行续传和重试操作。
 
 
 <a name="io-get"></a>

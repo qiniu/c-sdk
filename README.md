@@ -13,7 +13,7 @@
 
 ## 使用
 
-参考文档：[七牛云存储 C SDK 使用指南](https://github.com/qiniu/c-sdk/tree/v5/docs)
+参考文档：[七牛云存储 C SDK 使用指南](https://github.com/qiniu/c-sdk/tree/develop/docs)
 
 ## 贡献代码
 
