@@ -24,9 +24,6 @@ static Qiniu_Error Qiniu_DigestAuth_Auth(
 	char* enc_digest = NULL;
 	HMAC_CTX ctx;
 
-	ENGINE_load_builtin_engines();
-	ENGINE_register_all_complete();
-
 	path = strstr(url, "://");
 	if (path != NULL) {
 		path = strchr(path + 3, '/');
@@ -83,6 +80,9 @@ Qiniu_Auth Qiniu_DigestAuth = {
 
 void Qiniu_Client_Init(Qiniu_Client* self, size_t bufSize)
 {
+	ENGINE_load_builtin_engines();
+	ENGINE_register_all_complete();
+
 	Qiniu_Client_InitEx(self, Qiniu_DigestAuth, bufSize);
 }
 

@@ -11,6 +11,7 @@
 #include "../b64/urlsafe_b64.h"
 #include <assert.h>
 #include <time.h>
+#include <errno.h>
 
 /*============================================================================*/
 /* type Qiniu_Count */
@@ -335,8 +336,10 @@ void Qiniu_Buffer_AppendError(Qiniu_Buffer* self, Qiniu_Error v)
 {
 	Qiniu_Buffer_PutChar(self, 'E');
 	Qiniu_Buffer_AppendInt(self, v.code);
-	Qiniu_Buffer_PutChar(self, ' ');
-	Qiniu_Buffer_Write(self, v.message, strlen(v.message));
+	if (v.message) {
+		Qiniu_Buffer_PutChar(self, ' ');
+		Qiniu_Buffer_Write(self, v.message, strlen(v.message));
+	}
 }
 
 void Qiniu_Buffer_AppendEncodedBinary(Qiniu_Buffer* self, const char* buf, size_t cb)
@@ -509,6 +512,42 @@ Qiniu_Writer Qiniu_FILE_Writer(FILE* fp)
 }
 
 /*============================================================================*/
+/* func Qiniu_Copy */
+
+Qiniu_Error Qiniu_OK = {
+	200, NULL
+};
+
+Qiniu_Error Qiniu_Copy(Qiniu_Writer w, Qiniu_Reader r, void* buf, size_t n, Qiniu_Int64* ret)
+{
+	Qiniu_Int64 fsize = 0;
+	size_t n1, n2;
+	char* p = (char*)buf;
+	if (buf == NULL) {
+		p = (char*)malloc(n);
+	}
+	for (;;) {
+		n1 = r.Read(p, 1, n, r.self);
+		if (n1 > 0) {
+			n2 = w.Write(p, 1, n1, w.self);
+			fsize += n2;
+		} else {
+			n2 = 0;
+		}
+		if (n2 != n) {
+			break;
+		}
+	}
+	if (buf == NULL) {
+		free(p);
+	}
+	if (ret) {
+		*ret = fsize;
+	}
+	return Qiniu_OK;
+}
+
+/*============================================================================*/
 /* func Qiniu_Null_Fwrite */
 
 size_t Qiniu_Null_Fwrite(const void *buf, size_t size, size_t nmemb, void *self)
@@ -521,14 +560,14 @@ Qiniu_Writer Qiniu_Discard = {
 };
 
 /*============================================================================*/
-/* func Qiniu_Null_Logf */
+/* func Qiniu_Null_Log */
 
-void Qiniu_Null_Logf(const char* fmt, ...)
+void Qiniu_Null_Log(const char* fmt, ...)
 {
 }
 
 /*============================================================================*/
-/* func Qiniu_Stderr_Infof/Warnf */
+/* func Qiniu_Stderr_Info/Warn */
 
 static const char* qiniu_Levels[] = {
 	"[DEBUG]",
@@ -552,14 +591,14 @@ void Qiniu_Logv(Qiniu_Writer w, int ilvl, const char* fmt, Qiniu_Valist* args)
 	Qiniu_Buffer_Cleanup(&log);
 }
 
-void Qiniu_Stderr_Infof(const char* fmt, ...)
+void Qiniu_Stderr_Info(const char* fmt, ...)
 {
 	Qiniu_Valist args;
 	va_start(args.items, fmt);
 	Qiniu_Logv(Qiniu_Stderr, Qiniu_Linfo, fmt, &args);
 }
 
-void Qiniu_Stderr_Warnf(const char* fmt, ...)
+void Qiniu_Stderr_Warn(const char* fmt, ...)
 {
 	Qiniu_Valist args;
 	va_start(args.items, fmt);

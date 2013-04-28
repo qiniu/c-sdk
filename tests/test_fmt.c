@@ -45,7 +45,7 @@ void testFmt()
 	err.code = 400;
 	err.message = "invalid arguments";
 	p = Qiniu_String_Format(32, "[INFO] %E", err);
-	Qiniu_Log_Warnf("%E", err);
+	Qiniu_Log_Warn("%E", err);
 	CU_ASSERT_STRING_EQUAL(p, "[INFO] E400 invalid arguments");
 	free(p);
 }

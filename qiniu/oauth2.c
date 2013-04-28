@@ -82,7 +82,7 @@ static const char g_statusCodeError[] = "http status code is not OK";
 
 Qiniu_Error Qiniu_callex(CURL* curl, Qiniu_Buffer *resp, Qiniu_Json** ret, Qiniu_Bool simpleError, Qiniu_Buffer *resph)
 {
-	Qiniu_Error err = {};
+	Qiniu_Error err;
 	CURLcode curlCode;
 	long httpCode;
 	Qiniu_Json* root;

@@ -65,6 +65,8 @@ typedef struct _Qiniu_Error {
 
 /* @endgist */
 
+extern Qiniu_Error Qiniu_OK;
+
 /*============================================================================*/
 /* type Qiniu_Count */
 
@@ -122,6 +124,7 @@ typedef struct _Qiniu_Writer {
 } Qiniu_Writer;
 
 Qiniu_Writer Qiniu_FILE_Writer(FILE* fp);
+Qiniu_Error Qiniu_Copy(Qiniu_Writer w, Qiniu_Reader r, void* buf, size_t n, Qiniu_Int64* ret);
 
 #define Qiniu_Stderr Qiniu_FILE_Writer(stderr)
 
@@ -256,26 +259,22 @@ Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self);
 
 void Qiniu_Logv(Qiniu_Writer w, int level, const char* fmt, Qiniu_Valist* args);
 
-void Qiniu_Stderr_Infof(const char* fmt, ...);
-void Qiniu_Stderr_Warnf(const char* fmt, ...);
+void Qiniu_Stderr_Info(const char* fmt, ...);
+void Qiniu_Stderr_Warn(const char* fmt, ...);
 
-void Qiniu_Null_Logf(const char* fmt, ...);
+void Qiniu_Null_Log(const char* fmt, ...);
 
 #ifndef Qiniu_Log_Info
 
 #ifdef QINIU_DISABLE_LOG
 
-#define Qiniu_Log_Info(msg)
-#define Qiniu_Log_Infof	Qiniu_Null_Logf
-#define Qiniu_Log_Warn(msg)
-#define Qiniu_Log_Warnf	Qiniu_Null_Logf
+#define Qiniu_Log_Info	Qiniu_Null_Log
+#define Qiniu_Log_Warn	Qiniu_Null_Log
 
 #else
 
-#define Qiniu_Log_Info(msg)			Qiniu_Stderr_Infof("%s", msg)
-#define Qiniu_Log_Infof				Qiniu_Stderr_Infof
-#define Qiniu_Log_Warn(msg)			Qiniu_Stderr_Warnf("%s", msg)
-#define Qiniu_Log_Warnf				Qiniu_Stderr_Warnf
+#define Qiniu_Log_Info	Qiniu_Stderr_Info
+#define Qiniu_Log_Warn	Qiniu_Stderr_Warn
 
 #endif
 

@@ -171,10 +171,6 @@ static void Qiniu_Rio_BlkputRet_Assign(Qiniu_Rio_BlkputRet* self, Qiniu_Rio_Blkp
 static void notifyNil(void* self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret) {}
 static void notifyErrNil(void* self, int blkIdx, int blkSize, Qiniu_Error err) {}
 
-static Qiniu_Error OK = {
-	200, NULL
-};
-
 static Qiniu_Error ErrInvalidPutProgress = {
 	Qiniu_Rio_InvalidPutProgress, "invalid put progress"
 };
@@ -221,7 +217,7 @@ static Qiniu_Error Qiniu_Rio_PutExtra_Init(
 	if (self->threadModel.itbl == NULL) {
 		self->threadModel = settings.threadModel;
 	}
-	return OK;
+	return Qiniu_OK;
 }
 
 void Qiniu_Rio_PutExtra_Cleanup(Qiniu_Rio_PutExtra* self)
@@ -350,11 +346,11 @@ lzRetry:
 				Qiniu_Log_Warn("ResumableBlockput: invalid ctx, please retry");
 				return err;
 			}
-			Qiniu_Log_Warnf("ResumableBlockput %d off:%d failed - %E", blkIdx, (int)ret->offset, err);
+			Qiniu_Log_Warn("ResumableBlockput %d off:%d failed - %E", blkIdx, (int)ret->offset, err);
 		}
 		if (tryTimes > 1 && Qiniu_TemporaryError(err.code)) {
 			tryTimes--;
-			Qiniu_Log_Infof("ResumableBlockput %E, retrying ...", err);
+			Qiniu_Log_Info("ResumableBlockput %E, retrying ...", err);
 			goto lzRetry;
 		}
 		break;
@@ -423,7 +419,6 @@ int Qiniu_Rio_BlockCount(Qiniu_Int64 fsize)
 
 typedef struct _Qiniu_Rio_task {
 	Qiniu_ReaderAt f;
-	Qiniu_Auth auth;
 	Qiniu_Client* mc;
 	Qiniu_Rio_PutExtra* extra;
 	Qiniu_Rio_WaitGroup wg;
@@ -446,18 +441,16 @@ static void Qiniu_Rio_doTask(void* params)
 	int blkIdx = task->blkIdx;
 	int tryTimes = extra->tryTimes;
 
-	c->auth = task->auth;
-
 lzRetry:
 	ret = extra->progresses[blkIdx];
 	err = Qiniu_Rio_ResumableBlockput(c, &ret, task->f, blkIdx, task->blkSize1, extra);
 	if (err.code != 200) {
 		if (tryTimes > 1 && Qiniu_TemporaryError(err.code)) {
 			tryTimes--;
-			Qiniu_Log_Infof("resumable.Put %E, retrying ...", err);
+			Qiniu_Log_Info("resumable.Put %E, retrying ...", err);
 			goto lzRetry;
 		}
-		Qiniu_Log_Warnf("resumable.Put %d failed: %E", blkIdx, err);
+		Qiniu_Log_Warn("resumable.Put %d failed: %E", blkIdx, err);
 		extra->notifyErr(extra->notifyRecvr, task->blkIdx, task->blkSize1, err);
 		(*task->nfails)++;
 	} else {
@@ -499,12 +492,11 @@ Qiniu_Error Qiniu_Rio_Put(
 	blkSize = 1 << blockBits;
 	nfails = 0;
 
-	auth = Qiniu_UptokenAuth(uptoken);
+	self->auth = auth = Qiniu_UptokenAuth(uptoken);
 
 	for (i = 0; i < extra.blockCnt; i++) {
 		task = (Qiniu_Rio_task*)malloc(sizeof(Qiniu_Rio_task));
 		task->f = f;
-		task->auth = auth;
 		task->extra = &extra;
 		task->mc = self;
 		task->wg = wg;
@@ -522,7 +514,6 @@ Qiniu_Error Qiniu_Rio_Put(
 	if (nfails != 0) {
 		err = ErrPutFailed;
 	} else {
-		self->auth = auth;
 		err = Qiniu_Rio_Mkfile(self, ret, key, fsize, &extra);
 	}
 
@@ -540,11 +531,11 @@ Qiniu_Error Qiniu_Rio_PutFile(
 	Qiniu_FileInfo fi;
 	Qiniu_File* f;
 	Qiniu_Error err = Qiniu_File_Open(&f, localFile);
-	if (err.code != 0) {
+	if (err.code != 200) {
 		return err;
 	}
 	err = Qiniu_File_Stat(f, &fi);
-	if (err.code == 0) {
+	if (err.code == 200) {
 		err = Qiniu_Rio_Put(self, ret, uptoken, key, Qiniu_FileReaderAt(f), Qiniu_FileInfo_Fsize(fi), extra);
 	}
 	Qiniu_File_Close(f);
