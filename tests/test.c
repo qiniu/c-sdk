@@ -17,10 +17,12 @@ void testBaseIo();
 void testIoPut();
 void testResumableIoPut();
 void testFmt();
+void testEqual();
 
 QINIU_TESTS_BEGIN(qbox)
 	QINIU_TEST(testFmt)
 	QINIU_TEST(testBaseIo)
+	QINIU_TEST(testEqual)
 	QINIU_TEST(testResumableIoPut)
 	QINIU_TEST(testIoPut)
 QINIU_TESTS_END()
