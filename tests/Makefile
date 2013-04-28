@@ -11,6 +11,7 @@ SOURCE_FILES=\
 	../qiniu/io.c\
 	../qiniu/resumable_io.c\
 	seq.c\
+	equal.c\
 	test_io_put.c\
 	test_resumable_io.c\
 	test_base_io.c\

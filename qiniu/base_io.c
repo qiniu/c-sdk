@@ -191,9 +191,10 @@ Qiniu_Reader Qiniu_TeeReader(Qiniu_Tee* self, Qiniu_Reader r, Qiniu_Writer w)
 
 Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file)
 {
-	Qiniu_Error err = {};
+	Qiniu_Error err;
 	int fd = open(file, O_BINARY | O_RDONLY, 0644);
 	if (fd != -1) {
+		err = Qiniu_OK;
 		*pp = (Qiniu_File*)(size_t)fd;
 	} else {
 		err.code = errno;
@@ -204,10 +205,12 @@ Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file)
 
 Qiniu_Error Qiniu_File_Stat(Qiniu_File* self, Qiniu_FileInfo* fi)
 {
-	Qiniu_Error err = {};
+	Qiniu_Error err;
 	if (fstat((int)(size_t)self, fi) != 0) {
 		err.code = errno;
 		err.message = "fstat failed";
+	} else {
+		err = Qiniu_OK;
 	}
 	return err;
 }

@@ -36,6 +36,20 @@
 	QINIU_ONE_SUITE_EX(testClass, NULL, NULL)
 
 /*============================================================================*/
+/* func Qiniu_IsEqual */
+
+int Qiniu_IsEqual(Qiniu_Reader a, Qiniu_Reader b);
+
+typedef struct _Qiniu_Eq {
+	Qiniu_Reader v;
+	int result;
+} Qiniu_Eq;
+
+int Qiniu_Is(Qiniu_Eq* eq);
+
+Qiniu_Writer Qiniu_EqWriter(Qiniu_Eq* self, Qiniu_Reader v);
+
+/*============================================================================*/
 /* type Qiniu_Seq */
 
 typedef struct _Qiniu_Seq {
