@@ -236,7 +236,7 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 @gist(gist/client.c#resumable-upload)
 ```
 
-你可能发现代码没有变复杂。基本上就只是 `Qiniu_Io_PutExtra` 改为 `Qiniu_Rio_PutExtra`，`Qiniu_Io_PutFile` 改为 `Qiniu_Rio_PutFile`。
+相比普通上传，断点上续传代码没有变复杂。基本上就只是将`Qiniu_Io_PutExtra`改为`Qiniu_Rio_PutExtra`，`Qiniu_Io_PutFile`改为`Qiniu_Rio_PutFile`。
 
 但实际上 `Qiniu_Rio_PutExtra` 多了不少配置项，其中最重要的是两个回调函数：`notify` 与 `notifyErr`，它们用来通知使用者有更多的数据被传输成功，或者有些数据传输失败。在 `notify` 回调函数中，比较常见的做法是将传输的状态进行持久化，以便于在软件退出后下次再进来还可以继续进行断点续上传。但不传入 `notify` 回调函数并不表示不能断点续上传，只要程序没有退出，上传失败自动进行续传和重试操作。
 
