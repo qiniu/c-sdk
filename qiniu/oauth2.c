@@ -9,8 +9,6 @@
 
 #include "oauth2.h"
 #include <curl/curl.h>
-#include <string.h>
-#include <stdlib.h>
 
 /*============================================================================*/
 /* type Qiniu_Mutex */

@@ -8,9 +8,8 @@
  ============================================================================
  */
 
-#include "../qiniu/rs.h"
-#include "../qiniu/io.h"
 #include "test.h"
+#include "../qiniu/io.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

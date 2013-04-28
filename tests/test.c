@@ -8,18 +8,19 @@
  ============================================================================
  */
 
-#include "../qiniu/rs.h"
 #include "test.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
+void testBaseIo();
 void testIoPut();
 void testFmt();
 
 QINIU_TESTS_BEGIN(qbox)
 	QINIU_TEST(testFmt)
+	QINIU_TEST(testBaseIo)
 	QINIU_TEST(testIoPut)
 QINIU_TESTS_END()
 

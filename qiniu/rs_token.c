@@ -8,11 +8,8 @@
  */
 
 #include "rs.h"
-#include "conf.h"
-#include <stdlib.h>
 #include <time.h>
 #include <openssl/hmac.h>
-#include "../cJSON/cJSON.h"
 
 static char* Qiniu_makeToken(char* policy_str)
 {

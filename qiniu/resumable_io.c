@@ -8,7 +8,6 @@
  */
 
 #include "resumable_io.h"
-#include "conf.h"
 #include <curl/curl.h>
 #include <sys/stat.h>
 
@@ -281,7 +280,7 @@ lzRetry:
 				Qiniu_Log_Warn("ResumableBlockput: invalid ctx, please retry");
 				return err;
 			}
-			Qiniu_Log_WarnErr("ResumableBlockput: bput failed -", err);
+			Qiniu_Log_Warnf("ResumableBlockput %d off:%d failed - %E", blkIdx, (int)ret->offset, err);
 		}
 		if (tryTimes > 1) {
 			tryTimes--;
@@ -387,7 +386,7 @@ lzRetry:
 			Qiniu_Log_Info("resumable.Put retrying ...");
 			goto lzRetry;
 		}
-		Qiniu_Log_WarnErr("resumable.Put failed:", err);
+		Qiniu_Log_Warnf("resumable.Put %d failed: %E", blkIdx, err);
 		extra->notifyErr(extra->notifyRecvr, task->blkIdx, task->blkSize1, err);
 		(*task->nfails)++;
 	} else {

@@ -9,9 +9,7 @@
 
 #include "base.h"
 #include "../b64/urlsafe_b64.h"
-#include <stdlib.h>
 #include <assert.h>
-#include <string.h>
 #include <time.h>
 
 /*============================================================================*/
@@ -546,6 +544,7 @@ void Qiniu_Logv(Qiniu_Writer w, int ilvl, const char* fmt, Qiniu_Valist* args)
 	Qiniu_Buffer_Write(&log, level, strlen(level));
 	Qiniu_Buffer_PutChar(&log, ' ');
 	Qiniu_Buffer_AppendFormatV(&log, fmt, args);
+	Qiniu_Buffer_PutChar(&log, '\n');
 	w.Write(log.buf, 1, log.curr-log.buf, w.self);
 	Qiniu_Buffer_Cleanup(&log);
 }

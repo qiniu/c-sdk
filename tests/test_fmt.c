@@ -8,7 +8,6 @@
  ============================================================================
  */
 
-#include "../qiniu/base.h"
 #include "test.h"
 #include <stdio.h>
 #include <stdlib.h>
