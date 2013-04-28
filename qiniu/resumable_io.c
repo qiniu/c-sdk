@@ -115,7 +115,7 @@ static Qiniu_Auth_Itbl Qiniu_UptokenAuth_Itbl = {
 	Qiniu_UptokenAuth_Release
 };
 
-Qiniu_Auth Qiniu_UptokenAuth(const char* uptoken)
+static Qiniu_Auth Qiniu_UptokenAuth(const char* uptoken)
 {
 	char* self = Qiniu_String_Concat2("Authorization: UpToken ", uptoken);
 	Qiniu_Auth auth = {self, &Qiniu_UptokenAuth_Itbl};
@@ -125,12 +125,25 @@ Qiniu_Auth Qiniu_UptokenAuth(const char* uptoken)
 /*============================================================================*/
 /* type Qiniu_Rio_BlkputRet */
 
-void Qiniu_Rio_BlkputRet_Init(Qiniu_Rio_BlkputRet* self, Qiniu_Rio_BlkputRet* ret)
+static void Qiniu_Rio_BlkputRet_Cleanup(Qiniu_Rio_BlkputRet* self)
+{
+	if (self->ctx != NULL) {
+		free((void*)self->ctx);
+		self->ctx = NULL;
+	}
+}
+
+static void Qiniu_Rio_BlkputRet_Assign(Qiniu_Rio_BlkputRet* self, Qiniu_Rio_BlkputRet* ret)
 {
 	char* p;
 	size_t n1 = 0, n2 = 0, n3 = 0;
 
+	Qiniu_Rio_BlkputRet_Cleanup(self);
+
 	*self = *ret;
+	if (ret->ctx == NULL) {
+		return;
+	}
 
 	n1 = strlen(ret->ctx) + 1;
 	n3 = strlen(ret->host) + 1;
@@ -152,11 +165,57 @@ void Qiniu_Rio_BlkputRet_Init(Qiniu_Rio_BlkputRet* self, Qiniu_Rio_BlkputRet* re
 	}
 }
 
-void Qiniu_Rio_BlkputRet_Cleanup(Qiniu_Rio_BlkputRet* self)
+/*============================================================================*/
+/* type Qiniu_Rio_PutExtra */
+
+static void notifyNil(void* self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret) {}
+static void notifyErrNil(void* self, int blkIdx, int blkSize, Qiniu_Error err) {}
+
+static Qiniu_Error ErrInvalidPutProgress = {
+	Qiniu_Rio_InvalidPutProgress, "invalid put progress"
+};
+
+static Qiniu_Error Qiniu_Rio_PutExtra_Init(
+	Qiniu_Rio_PutExtra* self, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra* extra)
 {
-	if (self->ctx != NULL) {
-		free((void*)self->ctx);
-		self->ctx = NULL;
+	size_t cbprog;
+	int i, blockCnt = Qiniu_Rio_BlockCount(fsize);
+	int fprog = (extra != NULL) && (extra->blockCnt != 0);
+
+	if (fprog && extra->blockCnt != blockCnt) {
+		return ErrInvalidPutProgress;
+	}
+
+	if (extra) {
+		*self = *extra;
+	} else {
+		memset(self, 0, sizeof(Qiniu_Rio_PutExtra));
+	}
+
+	cbprog = sizeof(Qiniu_Rio_BlkputRet) * blockCnt;
+	self->progresses = (Qiniu_Rio_BlkputRet*)malloc(cbprog);
+	self->blockCnt = blockCnt;
+	memset(self->progresses, 0, cbprog);
+	if (fprog) {
+		for (i = 0; i < blockCnt; i++) {
+			Qiniu_Rio_BlkputRet_Assign(&self->progresses[i], &extra->progresses[i]);
+		}
+	}
+
+	if (self->chunkSize == 0) {
+		self->chunkSize = settings.chunkSize;
+	}
+	if (self->tryTimes == 0) {
+		self->tryTimes = settings.tryTimes;
+	}
+	if (self->notify == NULL) {
+		self->notify = notifyNil;
+	}
+	if (self->notifyErr == NULL) {
+		self->notifyErr = notifyErrNil;
+	}
+	if (self->threadModel.itbl == NULL) {
+		self->threadModel = settings.threadModel;
 	}
 }
 
@@ -166,6 +225,8 @@ void Qiniu_Rio_PutExtra_Cleanup(Qiniu_Rio_PutExtra* self)
 	for (i = 0; i < self->blockCnt; i++) {
 		Qiniu_Rio_BlkputRet_Cleanup(&self->progresses[i]);
 	}
+	free(self->progresses);
+	self->progresses = NULL;
 	self->blockCnt = 0;
 }
 
@@ -390,7 +451,7 @@ lzRetry:
 		extra->notifyErr(extra->notifyRecvr, task->blkIdx, task->blkSize1, err);
 		(*task->nfails)++;
 	} else {
-		Qiniu_Rio_BlkputRet_Init(&extra->progresses[blkIdx], &ret);
+		Qiniu_Rio_BlkputRet_Assign(&extra->progresses[blkIdx], &ret);
 	}
 	wg.itbl->Done(wg.self);
 	free(task);
@@ -399,70 +460,42 @@ lzRetry:
 /*============================================================================*/
 /* func Qiniu_Rio_PutXXX */
 
-static Qiniu_Error ErrInvalidPutProgress = {
-	Qiniu_Rio_InvalidPutProgress, "invalid put progress"
-};
-
 static Qiniu_Error ErrPutFailed = {
 	Qiniu_Rio_PutFailed, "resumable put failed"
 };
 
-void notifyNil(void* self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret) {}
-void notifyErrNil(void* self, int blkIdx, int blkSize, Qiniu_Error err) {}
-
 Qiniu_Error Qiniu_Rio_Put(
 	Qiniu_Client* self, Qiniu_Rio_PutRet* ret,
-	const char* uptoken, const char* key, Qiniu_ReaderAt f, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra* extra)
+	const char* uptoken, const char* key, Qiniu_ReaderAt f, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra* extra1)
 {
-	size_t cbprog;
 	Qiniu_Int64 offbase;
-	Qiniu_Error err;
 	Qiniu_Rio_task* task;
 	Qiniu_Rio_WaitGroup wg;
+	Qiniu_Rio_PutExtra extra;
+	Qiniu_Rio_ThreadModel tm;
 	Qiniu_Auth auth, auth1 = self->auth;
-	Qiniu_Rio_ThreadModel tm = extra->threadModel;
-	int i, last, blkSize, blockCnt = Qiniu_Rio_BlockCount(fsize);
+	int i, last, blkSize;
 	int nfails;
-
-	if (extra->progresses == NULL) {
-		cbprog = sizeof(Qiniu_Rio_BlkputRet) * blockCnt;
-		extra->progresses = (Qiniu_Rio_BlkputRet*)malloc(cbprog);
-		extra->blockCnt = blockCnt;
-		memset(extra->progresses, 0, cbprog);
-	} else if (extra->blockCnt != blockCnt) {
-		return ErrInvalidPutProgress;
+	Qiniu_Error err = Qiniu_Rio_PutExtra_Init(&extra, fsize, extra1);
+	if (err.code != 200) {
+		return err;
 	}
 
-	if (extra->chunkSize == 0) {
-		extra->chunkSize = settings.chunkSize;
-	}
-	if (extra->tryTimes == 0) {
-		extra->tryTimes = settings.tryTimes;
-	}
-	if (extra->notify == NULL) {
-		extra->notify = notifyNil;
-	}
-	if (extra->notifyErr == NULL) {
-		extra->notifyErr = notifyErrNil;
-	}
-	if (extra->threadModel.itbl == NULL) {
-		extra->threadModel = settings.threadModel;
-	}
-
+	tm = extra.threadModel;
 	wg = tm.itbl->WaitGroup(tm.self);
-	wg.itbl->Add(wg.self, blockCnt);
+	wg.itbl->Add(wg.self, extra.blockCnt);
 
-	last = blockCnt - 1;
+	last = extra.blockCnt - 1;
 	blkSize = 1 << blockBits;
 	nfails = 0;
 
 	auth = Qiniu_UptokenAuth(uptoken);
 
-	for (i = 0; i < blockCnt; i++) {
+	for (i = 0; i < extra.blockCnt; i++) {
 		task = (Qiniu_Rio_task*)malloc(sizeof(Qiniu_Rio_task));
 		task->f = f;
 		task->auth = self->auth;
-		task->extra = extra;
+		task->extra = &extra;
 		task->mc = self;
 		task->wg = wg;
 		task->nfails = &nfails;
@@ -480,16 +513,12 @@ Qiniu_Error Qiniu_Rio_Put(
 		err = ErrPutFailed;
 	} else {
 		self->auth = auth;
-		err = Qiniu_Rio_Mkfile(self, ret, key, fsize, extra);
+		err = Qiniu_Rio_Mkfile(self, ret, key, fsize, &extra);
 	}
 
+	Qiniu_Rio_PutExtra_Cleanup(&extra);
+
 	auth.itbl->Release(auth.self);
-
-	Qiniu_Rio_PutExtra_Cleanup(extra);
-
-	free(extra->progresses);
-	extra->progresses = NULL;
-
 	self->auth = auth1;
 	return err;
 }
