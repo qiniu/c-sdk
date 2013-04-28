@@ -6,6 +6,7 @@ CLIENT_SOURCE_FILES=\
 	../../qiniu/base_io.c\
 	../../qiniu/oauth2.c\
 	../../qiniu/io.c\
+	../../qiniu/resumable_io.c\
 	client.c\
 
 SERVER_SOURCE_FILES=\

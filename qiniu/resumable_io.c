@@ -220,7 +220,7 @@ static Qiniu_Error Qiniu_Rio_PutExtra_Init(
 	return Qiniu_OK;
 }
 
-void Qiniu_Rio_PutExtra_Cleanup(Qiniu_Rio_PutExtra* self)
+static void Qiniu_Rio_PutExtra_Cleanup(Qiniu_Rio_PutExtra* self)
 {
 	size_t i;
 	for (i = 0; i < self->blockCnt; i++) {
@@ -229,6 +229,26 @@ void Qiniu_Rio_PutExtra_Cleanup(Qiniu_Rio_PutExtra* self)
 	free(self->progresses);
 	self->progresses = NULL;
 	self->blockCnt = 0;
+}
+
+static Qiniu_Int64 Qiniu_Rio_PutExtra_ChunkSize(Qiniu_Rio_PutExtra* self)
+{
+	if (self) {
+		return self->chunkSize;
+	}
+	return settings.chunkSize;
+}
+
+static void Qiniu_Io_PutExtra_initFrom(Qiniu_Io_PutExtra* self, Qiniu_Rio_PutExtra* extra)
+{
+	if (extra) {
+		self->callbackParams = extra->callbackParams;
+		self->bucket = extra->bucket;
+		self->customMeta = extra->customMeta;
+		self->mimeType = extra->mimeType;
+	} else {
+		memset(self, 0, sizeof(*self));
+	}
 }
 
 /*============================================================================*/
@@ -528,6 +548,8 @@ Qiniu_Error Qiniu_Rio_PutFile(
 	Qiniu_Client* self, Qiniu_Rio_PutRet* ret,
 	const char* uptoken, const char* key, const char* localFile, Qiniu_Rio_PutExtra* extra)
 {
+	Qiniu_Io_PutExtra extra1;
+	Qiniu_Int64 fsize;
 	Qiniu_FileInfo fi;
 	Qiniu_File* f;
 	Qiniu_Error err = Qiniu_File_Open(&f, localFile);
@@ -536,7 +558,13 @@ Qiniu_Error Qiniu_Rio_PutFile(
 	}
 	err = Qiniu_File_Stat(f, &fi);
 	if (err.code == 200) {
-		err = Qiniu_Rio_Put(self, ret, uptoken, key, Qiniu_FileReaderAt(f), Qiniu_FileInfo_Fsize(fi), extra);
+		fsize = Qiniu_FileInfo_Fsize(fi);
+		if (fsize <= Qiniu_Rio_PutExtra_ChunkSize(extra)) { // file is too small, don't need resumable-io
+			Qiniu_File_Close(f);
+			Qiniu_Io_PutExtra_initFrom(&extra1, extra);
+			return Qiniu_Io_PutFile(self, ret, uptoken, key, localFile, &extra1);
+		}
+		err = Qiniu_Rio_Put(self, ret, uptoken, key, Qiniu_FileReaderAt(f), fsize, extra);
 	}
 	Qiniu_File_Close(f);
 	return err;
