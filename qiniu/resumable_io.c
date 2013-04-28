@@ -171,6 +171,10 @@ static void Qiniu_Rio_BlkputRet_Assign(Qiniu_Rio_BlkputRet* self, Qiniu_Rio_Blkp
 static void notifyNil(void* self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret) {}
 static void notifyErrNil(void* self, int blkIdx, int blkSize, Qiniu_Error err) {}
 
+static Qiniu_Error OK = {
+	200, NULL
+};
+
 static Qiniu_Error ErrInvalidPutProgress = {
 	Qiniu_Rio_InvalidPutProgress, "invalid put progress"
 };
@@ -180,7 +184,7 @@ static Qiniu_Error Qiniu_Rio_PutExtra_Init(
 {
 	size_t cbprog;
 	int i, blockCnt = Qiniu_Rio_BlockCount(fsize);
-	int fprog = (extra != NULL) && (extra->blockCnt != 0);
+	int fprog = (extra != NULL) && (extra->progresses != NULL);
 
 	if (fprog && extra->blockCnt != blockCnt) {
 		return ErrInvalidPutProgress;
@@ -217,6 +221,7 @@ static Qiniu_Error Qiniu_Rio_PutExtra_Init(
 	if (self->threadModel.itbl == NULL) {
 		self->threadModel = settings.threadModel;
 	}
+	return OK;
 }
 
 void Qiniu_Rio_PutExtra_Cleanup(Qiniu_Rio_PutExtra* self)
@@ -274,6 +279,10 @@ static Qiniu_Error Qiniu_Rio_Blockput(
 static Qiniu_Error ErrUnmatchedChecksum = {
 	Qiniu_Rio_UnmatchedChecksum, "unmatched checksum"
 };
+
+static int Qiniu_TemporaryError(int code) {
+	return code != 401;
+}
 
 static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 	Qiniu_Client* c, Qiniu_Rio_BlkputRet* ret, Qiniu_ReaderAt f, int blkIdx, int blkSize, Qiniu_Rio_PutExtra* extra)
@@ -343,9 +352,9 @@ lzRetry:
 			}
 			Qiniu_Log_Warnf("ResumableBlockput %d off:%d failed - %E", blkIdx, (int)ret->offset, err);
 		}
-		if (tryTimes > 1) {
+		if (tryTimes > 1 && Qiniu_TemporaryError(err.code)) {
 			tryTimes--;
-			Qiniu_Log_Info("ResumableBlockput retrying ...");
+			Qiniu_Log_Infof("ResumableBlockput %E, retrying ...", err);
 			goto lzRetry;
 		}
 		break;
@@ -440,11 +449,12 @@ static void Qiniu_Rio_doTask(void* params)
 	c->auth = task->auth;
 
 lzRetry:
+	ret = extra->progresses[blkIdx];
 	err = Qiniu_Rio_ResumableBlockput(c, &ret, task->f, blkIdx, task->blkSize1, extra);
 	if (err.code != 200) {
-		if (tryTimes > 1) {
+		if (tryTimes > 1 && Qiniu_TemporaryError(err.code)) {
 			tryTimes--;
-			Qiniu_Log_Info("resumable.Put retrying ...");
+			Qiniu_Log_Infof("resumable.Put %E, retrying ...", err);
 			goto lzRetry;
 		}
 		Qiniu_Log_Warnf("resumable.Put %d failed: %E", blkIdx, err);
@@ -494,7 +504,7 @@ Qiniu_Error Qiniu_Rio_Put(
 	for (i = 0; i < extra.blockCnt; i++) {
 		task = (Qiniu_Rio_task*)malloc(sizeof(Qiniu_Rio_task));
 		task->f = f;
-		task->auth = self->auth;
+		task->auth = auth;
 		task->extra = &extra;
 		task->mc = self;
 		task->wg = wg;

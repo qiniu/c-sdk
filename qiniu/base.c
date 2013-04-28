@@ -374,6 +374,9 @@ void Qiniu_Buffer_appendInt64(Qiniu_Buffer* self, Qiniu_Valist* ap)
 void Qiniu_Buffer_appendString(Qiniu_Buffer* self, Qiniu_Valist* ap)
 {
 	const char* v = va_arg(ap->items, const char*);
+	if (v == NULL) {
+		v = "(null)";
+	}
 	Qiniu_Buffer_Write(self, v, strlen(v));
 }
 
@@ -518,9 +521,9 @@ Qiniu_Writer Qiniu_Discard = {
 };
 
 /*============================================================================*/
-/* func Qiniu_Null_Warnf */
+/* func Qiniu_Null_Logf */
 
-void Qiniu_Null_Warnf(const char* fmt, ...)
+void Qiniu_Null_Logf(const char* fmt, ...)
 {
 }
 

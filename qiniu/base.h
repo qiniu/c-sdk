@@ -259,22 +259,22 @@ void Qiniu_Logv(Qiniu_Writer w, int level, const char* fmt, Qiniu_Valist* args);
 void Qiniu_Stderr_Infof(const char* fmt, ...);
 void Qiniu_Stderr_Warnf(const char* fmt, ...);
 
-void Qiniu_Null_Warnf(const char* fmt, ...);
+void Qiniu_Null_Logf(const char* fmt, ...);
 
 #ifndef Qiniu_Log_Info
 
 #ifdef QINIU_DISABLE_LOG
 
 #define Qiniu_Log_Info(msg)
+#define Qiniu_Log_Infof	Qiniu_Null_Logf
 #define Qiniu_Log_Warn(msg)
-#define Qiniu_Log_WarnErr(msg, err)
-#define Qiniu_Log_Warnf	Qiniu_Null_Warnf
+#define Qiniu_Log_Warnf	Qiniu_Null_Logf
 
 #else
 
 #define Qiniu_Log_Info(msg)			Qiniu_Stderr_Infof("%s", msg)
+#define Qiniu_Log_Infof				Qiniu_Stderr_Infof
 #define Qiniu_Log_Warn(msg)			Qiniu_Stderr_Warnf("%s", msg)
-#define Qiniu_Log_WarnErr(msg, err)	Qiniu_Stderr_Warnf("%s %E", msg, err)
 #define Qiniu_Log_Warnf				Qiniu_Stderr_Warnf
 
 #endif
