@@ -2,15 +2,13 @@
  ============================================================================
  Name        : test_io_put.c
  Author      : Qiniu.com
- Version     : 1.0.0
  Copyright   : 2012 Shanghai Qiniu Information Technologies Co., Ltd.
  Description : Qiniu C SDK Unit Test
  ============================================================================
  */
 
-#include "../qiniu/rs.h"
-#include "../qiniu/io.h"
 #include "test.h"
+#include "../qiniu/io.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

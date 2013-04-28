@@ -1,5 +1,8 @@
 #include "../CUnit/CUnit/Headers/Basic.h"
 #include "../CUnit/CUnit/Headers/CUnit.h"
+#include "../qiniu/rs.h"
+
+/*============================================================================*/
 
 #define QINIU_TESTS_BEGIN(testClass)				\
 	static CU_TestInfo tests_##testClass[] = {
@@ -31,4 +34,20 @@
 
 #define QINIU_ONE_SUITE(testClass)					\
 	QINIU_ONE_SUITE_EX(testClass, NULL, NULL)
+
+/*============================================================================*/
+/* type Qiniu_Seq */
+
+typedef struct _Qiniu_Seq {
+	size_t off;
+	size_t limit;
+	int radix;	// 10
+	int base;	// '0'
+	size_t delta; // 0
+} Qiniu_Seq;
+
+Qiniu_Reader Qiniu_SeqReader(Qiniu_Seq* self, size_t limit, int radix, int base, size_t delta);
+Qiniu_ReaderAt Qiniu_SeqReaderAt(Qiniu_Seq* self, size_t limit, int radix, int base, size_t delta);
+
+/*============================================================================*/
 
