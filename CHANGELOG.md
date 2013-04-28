@@ -1,5 +1,27 @@
 ## CHANGE LOG
 
+### v5.0.1
+
+2013-04-29 issue [#54](https://github.com/qiniu/c-sdk/pull/54)
+
+- 增加断点续上传支持 (Qiniu_Rio_Put/PutFile)。
+- 补充了大量C语言基础组件 (StringFormat, Logger, Copy, TeeReader, SectionReader, Crc32Writer, etc)
+
+
+### v5.0.1
+
+2013-04-22 issue [#41](https://github.com/qiniu/c-sdk/pull/41)
+
+- 补充 v5.0.0 的 SDK 文档。
+
+
+### v5.0.0
+
+2013-04-21 issue [#39](https://github.com/qiniu/c-sdk/pull/39)
+
+- 非兼容调整。完全重构，遵循 [Qiniu sdkspec](https://github.com/qiniu/sdkspec)。
+
+
 ### v2.2.2
 
 2013-04-20 issue [#36](https://github.com/qiniu/c-sdk/pull/36)

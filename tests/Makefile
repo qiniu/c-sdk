@@ -1,14 +1,21 @@
 SOURCE_FILES=\
 	../b64/urlsafe_b64.c\
 	../cJSON/cJSON.c\
-	../qbox/conf.c\
-	../qbox/base.c\
-	../qbox/base_io.c\
-	../qbox/oauth2.c\
-	../qbox/oauth2_digest.c\
-	../qbox/rs.c\
-	../qbox/rs_token.c\
-	../qbox/io.c\
+	../qiniu/conf.c\
+	../qiniu/base.c\
+	../qiniu/base_io.c\
+	../qiniu/oauth2.c\
+	../qiniu/oauth2_digest.c\
+	../qiniu/rs.c\
+	../qiniu/rs_token.c\
+	../qiniu/io.c\
+	../qiniu/resumable_io.c\
+	seq.c\
+	equal.c\
+	test_io_put.c\
+	test_resumable_io.c\
+	test_base_io.c\
+	test_fmt.c\
 	test.c\
 
 CUNIT_LIB=../CUnit/CUnit/Sources/.libs
