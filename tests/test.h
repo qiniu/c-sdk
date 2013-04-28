@@ -46,7 +46,8 @@ typedef struct _Qiniu_Seq {
 	size_t delta; // 0
 } Qiniu_Seq;
 
-Qiniu_Reader Qiniu_SeqReader(Qiniu_Seq* self, int radix, int base, size_t delta);
+Qiniu_Reader Qiniu_SeqReader(Qiniu_Seq* self, size_t limit, int radix, int base, size_t delta);
+Qiniu_ReaderAt Qiniu_SeqReaderAt(Qiniu_Seq* self, size_t limit, int radix, int base, size_t delta);
 
 /*============================================================================*/
 
