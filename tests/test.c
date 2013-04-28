@@ -2,25 +2,25 @@
  ============================================================================
  Name        : test.c
  Author      : Qiniu.com
- Version     : 1.0.0
  Copyright   : 2012 Shanghai Qiniu Information Technologies Co., Ltd.
  Description : Qiniu C SDK Unit Test
  ============================================================================
  */
 
-#include "../qiniu/rs.h"
 #include "test.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
+void testBaseIo();
 void testIoPut();
 void testFmt();
 
 QINIU_TESTS_BEGIN(qbox)
 	QINIU_TEST(testFmt)
-	QINIU_TEST(testIoPut)
+	QINIU_TEST(testBaseIo)
+//	QINIU_TEST(testIoPut)
 QINIU_TESTS_END()
 
 QINIU_ONE_SUITE(qbox)

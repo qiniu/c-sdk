@@ -10,7 +10,9 @@ SOURCE_FILES=\
 	../qiniu/rs_token.c\
 	../qiniu/io.c\
 	../qiniu/resumable_io.c\
+	seq.c\
 	test_io_put.c\
+	test_base_io.c\
 	test_fmt.c\
 	test.c\
 
