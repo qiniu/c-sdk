@@ -1,6 +1,8 @@
 #include "../CUnit/CUnit/Headers/Basic.h"
 #include "../CUnit/CUnit/Headers/CUnit.h"
 
+/*============================================================================*/
+
 #define QINIU_TESTS_BEGIN(testClass)				\
 	static CU_TestInfo tests_##testClass[] = {
 
@@ -31,4 +33,9 @@
 
 #define QINIU_ONE_SUITE(testClass)					\
 	QINIU_ONE_SUITE_EX(testClass, NULL, NULL)
+
+/*============================================================================*/
+
+
+/*============================================================================*/
 

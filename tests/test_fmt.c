@@ -16,6 +16,8 @@
 
 void testFmt()
 {
+	Qiniu_Error err;
+
 	char* p;
 	p = Qiniu_String_Format(32, "%d4", -123);
 	printf("%s\n", p);
@@ -40,6 +42,13 @@ void testFmt()
 	p = Qiniu_String_Format(32, "%S -> %s", "123", "4");
 	printf("%s\n", p);
 	CU_ASSERT_STRING_EQUAL(p, "MTIz -> 4");
+	free(p);
+
+	err.code = 400;
+	err.message = "invalid arguments";
+	p = Qiniu_String_Format(32, "[INFO] %E", err);
+	Qiniu_Log_Warnf("%E", err);
+	CU_ASSERT_STRING_EQUAL(p, "[INFO] E400 invalid arguments");
 	free(p);
 }
 

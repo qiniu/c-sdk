@@ -333,6 +333,14 @@ void Qiniu_Buffer_AppendInt(Qiniu_Buffer* self, Qiniu_Int64 v)
 	Qiniu_Buffer_AppendUint(self, v);
 }
 
+void Qiniu_Buffer_AppendError(Qiniu_Buffer* self, Qiniu_Error v)
+{
+	Qiniu_Buffer_PutChar(self, 'E');
+	Qiniu_Buffer_AppendInt(self, v.code);
+	Qiniu_Buffer_PutChar(self, ' ');
+	Qiniu_Buffer_Write(self, v.message, strlen(v.message));
+}
+
 void Qiniu_Buffer_AppendEncodedBinary(Qiniu_Buffer* self, const char* buf, size_t cb)
 {
 	const size_t cbDest = urlsafe_b64_encode(buf, cb, NULL, 0);
@@ -378,6 +386,12 @@ void Qiniu_Buffer_appendEncodedString(Qiniu_Buffer* self, Qiniu_Valist* ap)
 	Qiniu_Buffer_AppendEncodedBinary(self, v, n);
 }
 
+void Qiniu_Buffer_appendError(Qiniu_Buffer* self, Qiniu_Valist* ap)
+{
+	Qiniu_Error v = va_arg(ap->items, Qiniu_Error);
+	Qiniu_Buffer_AppendError(self, v);
+}
+
 void Qiniu_Buffer_appendPercent(Qiniu_Buffer* self, Qiniu_Valist* ap)
 {
 	Qiniu_Buffer_PutChar(self, '%');
@@ -398,6 +412,7 @@ static Qiniu_formatProc qiniu_formatProcs[] = {
 	{ Qiniu_Buffer_appendUint64, 'U' },
 	{ Qiniu_Buffer_appendString, 's' },
 	{ Qiniu_Buffer_appendEncodedString, 'S' },
+	{ Qiniu_Buffer_appendError, 'E' },
 	{ Qiniu_Buffer_appendPercent, '%' },
 };
 
@@ -478,14 +493,6 @@ char* Qiniu_String_Format(size_t initSize, const char* fmt, ...)
 }
 
 /*============================================================================*/
-/* func Qiniu_Null_Fwrite */
-
-size_t Qiniu_Null_Fwrite(const void *buf, size_t size, size_t nmemb, void *self)
-{
-	return nmemb;
-}
-
-/*============================================================================*/
 /* func Qiniu_FILE_Reader */
 
 Qiniu_Reader Qiniu_FILE_Reader(FILE* fp)
@@ -498,6 +505,63 @@ Qiniu_Writer Qiniu_FILE_Writer(FILE* fp)
 {
 	Qiniu_Writer writer = {fp, (Qiniu_FnWrite)fwrite};
 	return writer;
+}
+
+/*============================================================================*/
+/* func Qiniu_Null_Fwrite */
+
+size_t Qiniu_Null_Fwrite(const void *buf, size_t size, size_t nmemb, void *self)
+{
+	return nmemb;
+}
+
+Qiniu_Writer Qiniu_Discard = {
+	NULL, Qiniu_Null_Fwrite
+};
+
+/*============================================================================*/
+/* func Qiniu_Null_Warnf */
+
+void Qiniu_Null_Warnf(const char* fmt, ...)
+{
+}
+
+/*============================================================================*/
+/* func Qiniu_Stderr_Infof/Warnf */
+
+static const char* qiniu_Levels[] = {
+	"[DEBUG]",
+	"[INFO]",
+	"[WARN]",
+	"[ERROR]",
+	"[PANIC]",
+	"[FATAL]"
+};
+
+void Qiniu_Logv(Qiniu_Writer w, int ilvl, const char* fmt, Qiniu_Valist* args)
+{
+	const char* level = qiniu_Levels[ilvl];
+	Qiniu_Buffer log;
+	Qiniu_Buffer_Init(&log, 512);
+	Qiniu_Buffer_Write(&log, level, strlen(level));
+	Qiniu_Buffer_PutChar(&log, ' ');
+	Qiniu_Buffer_AppendFormatV(&log, fmt, args);
+	w.Write(log.buf, 1, log.curr-log.buf, w.self);
+	Qiniu_Buffer_Cleanup(&log);
+}
+
+void Qiniu_Stderr_Infof(const char* fmt, ...)
+{
+	Qiniu_Valist args;
+	va_start(args.items, fmt);
+	Qiniu_Logv(Qiniu_Stderr, Qiniu_Linfo, fmt, &args);
+}
+
+void Qiniu_Stderr_Warnf(const char* fmt, ...)
+{
+	Qiniu_Valist args;
+	va_start(args.items, fmt);
+	Qiniu_Logv(Qiniu_Stderr, Qiniu_Lwarn, fmt, &args);
 }
 
 /*============================================================================*/

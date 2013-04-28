@@ -100,13 +100,6 @@ char* Qiniu_QueryEscape(const char* s, Qiniu_Bool* fesc);
 Qiniu_Int64 Qiniu_Seconds();
 
 /*============================================================================*/
-/* type Qiniu_Log */
-
-#define Qiniu_Log_Info(msg)
-#define Qiniu_Log_Warn(msg)
-#define Qiniu_Log_WarnErr(msg, err)
-
-/*============================================================================*/
 /* type Qiniu_Reader */
 
 typedef size_t (*Qiniu_FnRead)(void *buf, size_t, size_t n, void *self);
@@ -129,6 +122,8 @@ typedef struct _Qiniu_Writer {
 } Qiniu_Writer;
 
 Qiniu_Writer Qiniu_FILE_Writer(FILE* fp);
+
+#define Qiniu_Stderr Qiniu_FILE_Writer(stderr)
 
 /*============================================================================*/
 /* type Qiniu_ReaderAt */
@@ -157,6 +152,7 @@ void Qiniu_Buffer_Init(Qiniu_Buffer* self, size_t initSize);
 void Qiniu_Buffer_Reset(Qiniu_Buffer* self);
 void Qiniu_Buffer_AppendInt(Qiniu_Buffer* self, Qiniu_Int64 v);
 void Qiniu_Buffer_AppendUint(Qiniu_Buffer* self, Qiniu_Uint64 v);
+void Qiniu_Buffer_AppendError(Qiniu_Buffer* self, Qiniu_Error v);
 void Qiniu_Buffer_AppendEncodedBinary(Qiniu_Buffer* self, const char* buf, size_t cb);
 void Qiniu_Buffer_AppendFormat(Qiniu_Buffer* self, const char* fmt, ...);
 void Qiniu_Buffer_AppendFormatV(Qiniu_Buffer* self, const char* fmt, Qiniu_Valist* args);
@@ -184,6 +180,8 @@ void Qiniu_Format_Register(char esc, Qiniu_FnAppender appender);
 /* func Qiniu_Null_Fwrite */
 
 size_t Qiniu_Null_Fwrite(const void* buf, size_t, size_t n, void* self);
+
+extern Qiniu_Writer Qiniu_Discard;
 
 /*============================================================================*/
 /* type Qiniu_ReadBuf */
@@ -245,6 +243,43 @@ void Qiniu_File_Close(void* self);
 ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, off_t offset);
 
 Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self);
+
+/*============================================================================*/
+/* type Qiniu_Log */
+
+#define Qiniu_Ldebug	0
+#define Qiniu_Linfo		1
+#define Qiniu_Lwarn		2
+#define Qiniu_Lerror	3
+#define Qiniu_Lpanic	4
+#define Qiniu_Lfatal	5
+
+void Qiniu_Logv(Qiniu_Writer w, int level, const char* fmt, Qiniu_Valist* args);
+
+void Qiniu_Stderr_Infof(const char* fmt, ...);
+void Qiniu_Stderr_Warnf(const char* fmt, ...);
+
+void Qiniu_Null_Warnf(const char* fmt, ...);
+
+#ifndef Qiniu_Log_Info
+
+#ifdef QINIU_DISABLE_LOG
+
+#define Qiniu_Log_Info(msg)
+#define Qiniu_Log_Warn(msg)
+#define Qiniu_Log_WarnErr(msg, err)
+#define Qiniu_Log_Warnf	Qiniu_Null_Warnf
+
+#else
+
+#define Qiniu_Log_Info(msg)			Qiniu_Stderr_Infof("%s", msg)
+#define Qiniu_Log_Warn(msg)			Qiniu_Stderr_Warnf("%s", msg)
+#define Qiniu_Log_WarnErr(msg, err)	Qiniu_Stderr_Warnf("%s %E", msg, err)
+#define Qiniu_Log_Warnf				Qiniu_Stderr_Warnf
+
+#endif
+
+#endif
 
 /*============================================================================*/
 
