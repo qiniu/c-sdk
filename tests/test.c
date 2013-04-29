@@ -39,7 +39,7 @@ int main()
 	assert(QINIU_ACCESS_KEY != NULL);
 	assert(QINIU_SECRET_KEY != NULL);
 
-	Qiniu_Global_Init(-1);
+	Qiniu_Servend_Init(-1);
 
 	CU_initialize_registry();
 
@@ -54,7 +54,7 @@ int main()
 	err = CU_basic_run_tests();
 	CU_cleanup_registry();
 
-	Qiniu_Global_Cleanup();
+	Qiniu_Servend_Cleanup();
 	return err;
 }
 

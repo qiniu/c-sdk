@@ -10,7 +10,7 @@
 #ifndef QINIU_RESUMABLE_IO_H
 #define QINIU_RESUMABLE_IO_H
 
-#include "oauth2.h"
+#include "http.h"
 #include "io.h"
 
 /*============================================================================*/
