@@ -101,7 +101,8 @@ C-SDK 的 conf.h 文件中声明了对应的两个变量：`QINIU_ACCESS_KEY`和
 两者主要的区别在于：
 
 1. 客户端没有 `QINIU_ACCESS_KEY`, `QINIU_SECRET_KEY` 变量（不需要初始化）。
-2. 客户端没有签名授权，所以初始化 `Qiniu_Client` 对象应该用 `Qiniu_Client_InitNoAuth` 而不是 `Qiniu_Client_Init`。
+2. 客户端没有签名授权，所以初始化 `Qiniu_Client` 对象应该用 `Qiniu_Client_InitNoAuth` 而不是 `Qiniu_Client_InitMacAuth`。
+3. 客户端初始化/清理用 Qiniu_Global_Init/Cleanup，而服务端用 Qiniu_Servend_Init/Cleanup 这对函数。
 
 
 <a name="convention"></a>
