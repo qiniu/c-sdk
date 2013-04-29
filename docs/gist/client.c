@@ -23,7 +23,7 @@ char* upload(Qiniu_Client* client, char* uptoken, const char* key, const char* l
 	err = Qiniu_Io_PutFile(client, &putRet, uptoken, key, localFile, &extra);
 	if (err.code != 200) {
 		debug(client, err);
-		return;
+		return NULL;
 	}
 	return strdup(putRet.hash); /* 注意需要后续使用的变量要复制出来 */
 }
