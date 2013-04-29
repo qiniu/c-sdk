@@ -48,7 +48,7 @@ C-SDK 以开源方式提供。开发者可以随时从本文档提供的下载�
 
 * 公共部分，所有用况下都用到：qiniu/base.c, qiniu/conf.c, qiniu/oauth2.c
 * 客户端上传文件：qiniu/base_io.c, qiniu/io.c
-* 客户端断点续上传：qiniu/base_io.c, qiniu/resumable_io.c
+* 客户端断点续上传：qiniu/base_io.c, qiniu/io.c, qiniu/resumable_io.c
 * 数据处理：qiniu/fop.c
 * 服务端操作：qiniu/oauth2_digest.c (授权), qiniu/rs.c (资源操作), qiniu/rs_token.c (uptoken/dntoken颁发)
 
