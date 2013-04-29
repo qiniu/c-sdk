@@ -10,7 +10,7 @@
 #ifndef QINIU_IO_H
 #define QINIU_IO_H
 
-#include "oauth2.h"
+#include "http.h"
 
 /*============================================================================*/
 /* type Qiniu_Io_PutExtra */

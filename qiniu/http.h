@@ -1,14 +1,14 @@
 /*
  ============================================================================
- Name        : oauth2.h
+ Name        : http.h
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
  Description : 
  ============================================================================
  */
 
-#ifndef QINIU_OAUTH2_H
-#define QINIU_OAUTH2_H
+#ifndef QINIU_HTTP_H
+#define QINIU_HTTP_H
 
 #include "base.h"
 #include "conf.h"
@@ -19,6 +19,12 @@
 
 void Qiniu_Global_Init(long flags);
 void Qiniu_Global_Cleanup();
+
+void Qiniu_MacAuth_Init();
+void Qiniu_MacAuth_Cleanup();
+
+void Qiniu_Servend_Init(long flags);
+void Qiniu_Servend_Cleanup();
 
 /*============================================================================*/
 /* type Qiniu_Mutex */
@@ -46,7 +52,7 @@ const char* Qiniu_Json_GetString(Qiniu_Json* self, const char* key, const char* 
 Qiniu_Int64 Qiniu_Json_GetInt64(Qiniu_Json* self, const char* key, Qiniu_Int64 defval);
 
 /*============================================================================*/
-/* type Qiniu_Client */
+/* type Qiniu_Auth */
 
 typedef struct curl_slist Qiniu_Header;
 
@@ -59,6 +65,11 @@ typedef struct _Qiniu_Auth {
 	void* self;
 	Qiniu_Auth_Itbl* itbl;
 } Qiniu_Auth;
+
+extern Qiniu_Auth Qiniu_NoAuth;
+
+/*============================================================================*/
+/* type Qiniu_Client */
 
 typedef struct _Qiniu_Client {
 	void* curl;
@@ -81,14 +92,21 @@ Qiniu_Error Qiniu_Client_CallWithBuffer(
 	const char* body, size_t bodyLen, const char* mimeType);
 
 /*============================================================================*/
+/* func Qiniu_Client_InitNoAuth/InitMacAuth  */
 
-extern Qiniu_Auth Qiniu_NoAuth;
-extern Qiniu_Auth Qiniu_DigestAuth;
+typedef struct _Qiniu_Mac {
+	const char* accessKey;
+	const char* secretKey;
+} Qiniu_Mac;
 
-void Qiniu_Client_Init(Qiniu_Client* self, size_t bufSize);
+Qiniu_Auth Qiniu_MacAuth(Qiniu_Mac* mac);
+
+char* Qiniu_Mac_SignToken(Qiniu_Mac* self, char* data);
+
 void Qiniu_Client_InitNoAuth(Qiniu_Client* self, size_t bufSize);
+void Qiniu_Client_InitMacAuth(Qiniu_Client* self, size_t bufSize, Qiniu_Mac* mac);
 
 /*============================================================================*/
 
-#endif /* QINIU_OAUTH2_H */
+#endif /* QINIU_HTTP_H */
 

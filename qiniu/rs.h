@@ -10,7 +10,7 @@
 #ifndef QINIU_RS_H
 #define QINIU_RS_H
 
-#include "oauth2.h"
+#include "http.h"
 
 /*============================================================================*/
 /* type PutPolicy, GetPolicy */
@@ -32,8 +32,8 @@ typedef struct _Qiniu_RS_GetPolicy {
     Qiniu_Uint32 expires;              // 可选。默认是 3600 秒
 } Qiniu_RS_GetPolicy;
 
-char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* policy);
-char* Qiniu_RS_GetPolicy_Token(Qiniu_RS_GetPolicy* policy);
+char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* policy, Qiniu_Mac* mac);
+char* Qiniu_RS_GetPolicy_Token(Qiniu_RS_GetPolicy* policy, Qiniu_Mac* mac);
 
 /*============================================================================*/
 /* func Qiniu_RS_Stat */

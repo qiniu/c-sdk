@@ -4,10 +4,9 @@ SOURCE_FILES=\
 	../qiniu/conf.c\
 	../qiniu/base.c\
 	../qiniu/base_io.c\
-	../qiniu/oauth2.c\
-	../qiniu/oauth2_digest.c\
+	../qiniu/http.c\
+	../qiniu/auth_mac.c\
 	../qiniu/rs.c\
-	../qiniu/rs_token.c\
 	../qiniu/io.c\
 	../qiniu/resumable_io.c\
 	seq.c\

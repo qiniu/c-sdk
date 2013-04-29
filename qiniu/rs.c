@@ -7,6 +7,91 @@
  ============================================================================
  */
 #include "rs.h"
+#include <time.h>
+
+/*============================================================================*/
+/* type Qiniu_RS_PutPolicy/GetPolicy */
+
+char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* auth, Qiniu_Mac* mac)
+{
+	int expires;
+	time_t deadline;
+	char* authstr;
+	char* token;
+
+	cJSON* root = cJSON_CreateObject();
+
+	if (auth->scope) {
+		cJSON_AddStringToObject(root, "scope", auth->scope);
+	}
+	if (auth->callbackUrl) {
+		cJSON_AddStringToObject(root, "callbackUrl", auth->callbackUrl);
+	}
+	if (auth->callbackBodyType) {
+		cJSON_AddStringToObject(root, "callbackBodyType", auth->callbackBodyType);
+	}
+	if (auth->asyncOps) {
+		cJSON_AddStringToObject(root, "asyncOps", auth->asyncOps);
+	}
+	if (auth->returnBody) {
+		cJSON_AddStringToObject(root, "returnBody", auth->returnBody);
+	}
+	if (auth->customer) {
+		cJSON_AddStringToObject(root, "customer", auth->customer);
+	}
+
+	if (auth->expires) {
+		expires = auth->expires;
+	} else {
+		expires = 3600; // 1小时
+	}
+	time(&deadline);
+	deadline += expires;
+	cJSON_AddNumberToObject(root, "deadline", deadline);
+
+	if (auth->escape) {
+		cJSON_AddNumberToObject(root, "escape", auth->escape);
+	}
+	if (auth->detectMime) {
+		cJSON_AddNumberToObject(root, "detectMime", auth->detectMime);
+	}
+
+	authstr = cJSON_PrintUnformatted(root);
+	cJSON_Delete(root);
+
+	token = Qiniu_Mac_SignToken(mac, authstr);
+	free(authstr);
+
+	return token;
+}
+
+char* Qiniu_RS_GetPolicy_Token(Qiniu_RS_GetPolicy* auth, Qiniu_Mac* mac)
+{
+	int expires;
+	time_t deadline;
+	char* authstr;
+	char* token;
+
+	cJSON* root = cJSON_CreateObject();
+	cJSON_AddStringToObject(root, "S", auth->scope);
+
+	if (auth->expires) {
+		expires = auth->expires;
+	} else {
+		expires = 3600; // 1小时
+	}
+	time(&deadline);
+	deadline += expires;
+	cJSON_AddNumberToObject(root, "E", deadline);
+
+	authstr = cJSON_PrintUnformatted(root);
+	cJSON_Delete(root);
+
+	token = Qiniu_Mac_SignToken(mac, authstr);
+	free(authstr);
+
+	return token;
+}
 
 /*============================================================================*/
 /* func Qiniu_RS_Stat */

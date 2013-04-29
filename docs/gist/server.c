@@ -28,7 +28,7 @@ char* uptoken(Qiniu_Client* client, const char* bucket)
 	Qiniu_RS_PutPolicy putPolicy;
 	Qiniu_Zero(putPolicy);
 	putPolicy.scope = bucket;
-	return Qiniu_RS_PutPolicy_Token(&putPolicy);
+	return Qiniu_RS_PutPolicy_Token(&putPolicy, NULL);
 }
 /* @endgist */
 
@@ -40,7 +40,7 @@ char* dntoken(Qiniu_Client* client, const char* key)
 	Qiniu_Zero(getPolicy);
 	getPolicy.scope = "*/*"; /* 错！！！下载授权切记不要授权范围过大，否则容易导致安全隐患 */
 	getPolicy.scope = Qiniu_String_Concat2("*/", key); /* 正确！只授权这一个资源可以被访问 */
-	token = Qiniu_RS_GetPolicy_Token(&getPolicy);
+	token = Qiniu_RS_GetPolicy_Token(&getPolicy, NULL);
 	free((void*)getPolicy.scope);
 	return token;
 }
@@ -54,14 +54,14 @@ int main()
 	QINIU_ACCESS_KEY = "<Please apply your access key>";
 	QINIU_SECRET_KEY = "<Dont send your secret key to anyone>";
 
-	Qiniu_Global_Init(-1);                  /* 全局初始化函数，整个进程只需要调用一次 */
-	Qiniu_Client_Init(&client, 1024);       /* HTTP客户端初始化。HTTP客户端实例是线程不安全的，每个线程独立使用，互不相干 */
+	Qiniu_Servend_Init(-1);                        /* 全局初始化函数，整个进程只需要调用一次 */
+	Qiniu_Client_InitMacAuth(&client, 1024, NULL); /* HTTP客户端初始化。HTTP客户端是线程不安全的，不要在多个线程间共用 */
 	/* @endgist */
 
 	stat(&client, "a");
 
 	/* @gist init */
-	Qiniu_Client_Cleanup(&client);          /* 每个HTTP客户端使用完后释放 */
-	Qiniu_Global_Cleanup();                 /* 全局清理函数，只需要在进程退出时调用一次 */
+	Qiniu_Client_Cleanup(&client);                 /* 每个HTTP客户端使用完后释放 */
+	Qiniu_Servend_Cleanup();                       /* 全局清理函数，只需要在进程退出时调用一次 */
 	/* @endgist */
 }

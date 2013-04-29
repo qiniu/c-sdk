@@ -1,13 +1,13 @@
 /*
  ============================================================================
- Name        : oauth2.c
+ Name        : http.c
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
  Description : 
  ============================================================================
  */
 
-#include "oauth2.h"
+#include "http.h"
 #include <curl/curl.h>
 
 /*============================================================================*/
