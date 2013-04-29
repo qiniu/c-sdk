@@ -46,11 +46,11 @@ C-SDK 以开源方式提供。开发者可以随时从本文档提供的下载�
 
 从内容上来说，C-SDK 主要包含如下几方面的内容：
 
-* 公共部分，所有用况下都用到：qiniu/base.c, qiniu/conf.c, qiniu/oauth2.c
+* 公共部分，所有用况下都用到：qiniu/base.c, qiniu/conf.c, qiniu/http.c
 * 客户端上传文件：qiniu/base_io.c, qiniu/io.c
-* 客户端断点续上传：qiniu/base_io.c, qiniu/resumable_io.c
+* 客户端断点续上传：qiniu/base_io.c, qiniu/io.c, qiniu/resumable_io.c
 * 数据处理：qiniu/fop.c
-* 服务端操作：qiniu/oauth2_digest.c (授权), qiniu/rs.c (资源操作), qiniu/rs_token.c (uptoken/dntoken颁发)
+* 服务端操作：qiniu/auth_mac.c (授权), qiniu/rs.c (资源操作, uptoken/dntoken颁发)
 
 
 <a name="prepare"></a>
@@ -94,13 +94,13 @@ Qiniu_Client client;
 QINIU_ACCESS_KEY = "<Please apply your access key>";
 QINIU_SECRET_KEY = "<Dont send your secret key to anyone>";
 
-Qiniu_Global_Init(-1);                  /* 全局初始化函数，整个进程只需要调用一次 */
-Qiniu_Client_Init(&client, 1024);       /* HTTP客户端初始化。HTTP客户端实例是线程不安全的，每个线程独立使用，互不相干 */
+Qiniu_Servend_Init(-1);                        /* 全局初始化函数，整个进程只需要调用一次 */
+Qiniu_Client_InitMacAuth(&client, 1024, NULL); /* HTTP客户端初始化。HTTP客户端是线程不安全的，不要在多个线程间共用 */
 
 ...
 
-Qiniu_Client_Cleanup(&client);          /* 每个HTTP客户端使用完后释放 */
-Qiniu_Global_Cleanup();                 /* 全局清理函数，只需要在进程退出时调用一次 */
+Qiniu_Client_Cleanup(&client);                 /* 每个HTTP客户端使用完后释放 */
+Qiniu_Servend_Cleanup();                       /* 全局清理函数，只需要在进程退出时调用一次 */
 ```
 
 对于客户端而言，常规程序流程是：
@@ -109,7 +109,7 @@ Qiniu_Global_Cleanup();                 /* 全局清理函数，只需要在进�
 Qiniu_Client client;
 
 Qiniu_Global_Init(-1);                  /* 全局初始化函数，整个进程只需要调用一次 */
-Qiniu_Client_InitNoAuth(&client, 1024); /* HTTP客户端初始化。HTTP客户端实例是线程不安全的，每个线程独立使用，互不相干 */
+Qiniu_Client_InitNoAuth(&client, 1024); /* HTTP客户端初始化。HTTP客户端是线程不安全的，不要在多个线程间共用 */
 
 ...
 
@@ -241,7 +241,7 @@ char* uptoken(Qiniu_Client* client, const char* bucket)
 	Qiniu_RS_PutPolicy putPolicy;
 	Qiniu_Zero(putPolicy);
 	putPolicy.scope = bucket;
-	return Qiniu_RS_PutPolicy_Token(&putPolicy);
+	return Qiniu_RS_PutPolicy_Token(&putPolicy, NULL);
 }
 ```
 
@@ -258,7 +258,7 @@ char* upload(Qiniu_Client* client, char* uptoken, const char* key, const char* l
 	err = Qiniu_Io_PutFile(client, &putRet, uptoken, key, localFile, &extra);
 	if (err.code != 200) {
 		debug(client, err);
-		return;
+		return NULL;
 	}
 	return strdup(putRet.hash); /* 注意需要后续使用的变量要复制出来 */
 }
@@ -348,7 +348,7 @@ char* dntoken(Qiniu_Client* client, const char* key)
 	Qiniu_Zero(getPolicy);
 	getPolicy.scope = "*/*"; /* 错！！！下载授权切记不要授权范围过大，否则容易导致安全隐患 */
 	getPolicy.scope = Qiniu_String_Concat2("*/", key); /* 正确！只授权这一个资源可以被访问 */
-	token = Qiniu_RS_GetPolicy_Token(&getPolicy);
+	token = Qiniu_RS_GetPolicy_Token(&getPolicy, NULL);
 	free((void*)getPolicy.scope);
 	return token;
 }

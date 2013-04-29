@@ -130,11 +130,11 @@ void testResumableIoPut()
 	char* uptoken;
 	char* dntoken;
 
-	Qiniu_Client_Init(&client, 1024);
+	Qiniu_Client_InitMacAuth(&client, 1024, NULL);
 
 	Qiniu_Zero(putPolicy);
 	putPolicy.scope = bucket;
-	uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy);
+	uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, NULL);
 
 	Qiniu_RS_Delete(&client, bucket, key);
 	clientIoPutFile(uptoken);
@@ -146,7 +146,7 @@ void testResumableIoPut()
 
 	Qiniu_Zero(getPolicy);
 	getPolicy.scope = "*/*";
-	dntoken = Qiniu_RS_GetPolicy_Token(&getPolicy);
+	dntoken = Qiniu_RS_GetPolicy_Token(&getPolicy, NULL);
 
 	clientIoGet(dntoken);
 

@@ -59,7 +59,7 @@ int main()
 	Qiniu_Client client;
 
 	Qiniu_Global_Init(-1);                  /* 全局初始化函数，整个进程只需要调用一次 */
-	Qiniu_Client_InitNoAuth(&client, 1024); /* HTTP客户端初始化。HTTP客户端实例是线程不安全的，每个线程独立使用，互不相干 */
+	Qiniu_Client_InitNoAuth(&client, 1024); /* HTTP客户端初始化。HTTP客户端是线程不安全的，不要在多个线程间共用 */
 	/* @endgist */
 
 	/* @gist init */
