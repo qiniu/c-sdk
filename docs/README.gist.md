@@ -46,11 +46,11 @@ C-SDK 以开源方式提供。开发者可以随时从本文档提供的下载�
 
 从内容上来说，C-SDK 主要包含如下几方面的内容：
 
-* 公共部分，所有用况下都用到：qiniu/base.c, qiniu/conf.c, qiniu/oauth2.c
+* 公共部分，所有用况下都用到：qiniu/base.c, qiniu/conf.c, qiniu/http.c
 * 客户端上传文件：qiniu/base_io.c, qiniu/io.c
-* 客户端断点续上传：qiniu/base_io.c, qiniu/resumable_io.c
+* 客户端断点续上传：qiniu/base_io.c, qiniu/io.c, qiniu/resumable_io.c
 * 数据处理：qiniu/fop.c
-* 服务端操作：qiniu/oauth2_digest.c (授权), qiniu/rs.c (资源操作), qiniu/rs_token.c (uptoken/dntoken颁发)
+* 服务端操作：qiniu/auth_mac.c (授权), qiniu/rs.c (资源操作, uptoken/dntoken颁发)
 
 
 <a name="prepare"></a>
@@ -101,7 +101,8 @@ C-SDK 的 conf.h 文件中声明了对应的两个变量：`QINIU_ACCESS_KEY`和
 两者主要的区别在于：
 
 1. 客户端没有 `QINIU_ACCESS_KEY`, `QINIU_SECRET_KEY` 变量（不需要初始化）。
-2. 客户端没有签名授权，所以初始化 `Qiniu_Client` 对象应该用 `Qiniu_Client_InitNoAuth` 而不是 `Qiniu_Client_Init`。
+2. 客户端没有签名授权，所以初始化 `Qiniu_Client` 对象应该用 `Qiniu_Client_InitNoAuth` 而不是 `Qiniu_Client_InitMacAuth`。
+3. 客户端初始化/清理用 Qiniu_Global_Init/Cleanup，而服务端用 Qiniu_Servend_Init/Cleanup 这对函数。
 
 
 <a name="convention"></a>

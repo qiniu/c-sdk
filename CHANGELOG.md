@@ -2,10 +2,13 @@
 
 ### v5.1.0
 
-2013-04-29 issue [#54](https://github.com/qiniu/c-sdk/pull/54)
+2013-04-29 issue [#54](https://github.com/qiniu/c-sdk/pull/54), [#59](https://github.com/qiniu/c-sdk/pull/59)
 
 - 增加断点续上传支持 (Qiniu_Rio_Put/PutFile)。
 - 补充了大量C语言基础组件 (StringFormat, Logger, Copy, TeeReader, SectionReader, Crc32Writer, etc)
+- 非兼容调整（细节）：Qiniu_Client_Init 改名为 Qiniu_Client_InitMacAuth，以明其义。
+- 非兼容调整（细节）：Qiniu_RS_GetPolicy_Token, Qiniu_RS_PutPolicy_Token 增加参数 Qiniu_Mac* mac。
+- 引入 Qiniu_Servend_Init/Cleanup，在服务端用的时候应该用它们而不是 Qiniu_Global_Init/Cleanup。
 
 
 ### v5.0.1
