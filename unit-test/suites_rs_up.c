@@ -10,9 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <CUnit/CUnit.h>
-#include <CUnit/Automated.h>
-#include <CUnit/TestDB.h>
+#include "../CUnit/CUnit/Headers/CUnit.h"
+#include "../CUnit/CUnit/Headers/Automated.h"
+#include "../CUnit/CUnit/Headers/TestDB.h"
 #include "../qbox/base.h"
 #include "../qbox/rs.h"
 #include "../qbox/up.h"
@@ -25,15 +25,14 @@
 #define TESTFILE_16M "test_file_16M.txt"
 #define TESTFILE_1M "test_file_1M.txt"
 
-#define NORMAL 0
-#define TEST_NOT_NULL_OR_END 1
-#define TEST_END 2
-
 #define MESSAGE_LEVEL 0
 //MESSAGE_LEVEL: used to set the level of output message
-
-void up_demo(const char* fl,int testStyle){
-    //const char* fl=TESTFILE_16M;
+int testErr=200;
+int block_notify_rs_up_err299(void* self, int blockIdx, QBox_UP_Checksum* checksum)
+{
+    return 0;
+}
+QBox_Error up_demo(const char* fl,const char* customMeta){
     QBox_Error err;
     QBox_Client client;
     QBox_Client client2;
@@ -46,6 +45,10 @@ void up_demo(const char* fl,int testStyle){
     QBox_Json* root = NULL;
     QBox_UP_Progress* prog = NULL;
     QBox_Int64 fsize = 0;
+    QBox_UP_FnBlockNotify blockNotify=NULL;
+
+    if(testErr==299)
+        blockNotify=block_notify_rs_up_err299;
 
     if(MESSAGE_LEVEL >= 1)
         printf("\nProcessing ... %s\n", fl);
@@ -56,6 +59,7 @@ void up_demo(const char* fl,int testStyle){
     if(MESSAGE_LEVEL >= 1)
         printf("QBox_RS_Delete\n");
     QBox_RS_Delete(&client2, "Bucket", fl);
+    QBox_RS_Drop(&client2,"Bucket");
 
     /* Upload file */
     QBox_Zero(client);
@@ -87,44 +91,34 @@ void up_demo(const char* fl,int testStyle){
             printf("fsize=%ld\n",(long)fsize);
 
         prog = QBox_UP_NewProgress(fsize);
-        if(testStyle==TEST_NOT_NULL_OR_END){
-            prog->progs[0].ctx=malloc(sizeof(char)*16);
-            strcpy(prog->progs[0].ctx,"test");
-        }
-        else if(testStyle==TEST_END){
-            prog->progs[0].ctx=malloc(sizeof(char)*16);
-            strcpy(prog->progs[0].ctx,"end");
-        }
-
         if(MESSAGE_LEVEL >= 1)
             printf("QBox_RS_ResumablePut\n");
+
         QBox_RS_Create(&client2,"Bucket");
         entry = QBox_String_Concat("Bucket:", fl, NULL);
         err = QBox_RS_ResumablePut(
             &client,
             &putRet,
             prog,
-            NULL, /* blockNotify    */
+            blockNotify, /* blockNotify    */
             NULL, /* chunkNotify    */
             NULL, /* notifyParams   */
             entry,
             "text/plain",
             f,
             fsize,
-            "test", /* customMeta     */
+            customMeta, /* customMeta     */
             NULL  /* callbackParams */
         );
         free(entry);
 
         QBox_FileReaderAt_Close(f.self);
 
-        CU_ASSERT_EQUAL(err.code,200);
-
         if (err.code != 200) {
             if(MESSAGE_LEVEL >= 1)
                 printf("QBox_RS_ResumablePut failed: %d - %s\n", err.code, err.message);
             free(uptoken);
-            return;
+            return err;
         }
 
         QBox_UP_Progress_Release(prog);
@@ -135,13 +129,11 @@ void up_demo(const char* fl,int testStyle){
 
         err = QBox_RS_Get(&client2, &getRet, "Bucket", fl, NULL);
 
-        CU_ASSERT_EQUAL(err.code,200);
-
         if (err.code != 200) {
             if(MESSAGE_LEVEL >= 1)
                 printf("QBox_RS_Get failed: %d - %s\n", err.code, err.message);
             free(uptoken);
-            return;
+            return err;
         }
 
         CU_ASSERT_EQUAL(getRet.fsize,fsize);
@@ -156,34 +148,24 @@ void up_demo(const char* fl,int testStyle){
     }
 
     QBox_Client_Cleanup(&client);
+    return err;
 }
-void test_by_up_demo(){
-    up_demo(TESTFILE_16M,NORMAL);
+void test_QBox_RS_ResumablePut(){
+    QBox_Error err;
+    err=up_demo(TESTFILE_16M,NULL);
+    CU_ASSERT_EQUAL(err.code,200);
+    //test customMeta != NULL
+    err=up_demo(TESTFILE_1M,"test");
+    CU_ASSERT_EQUAL(err.code,200);
+    //test err299
+    testErr=299;
+    err=up_demo(TESTFILE_16M,NULL);
+    CU_ASSERT_EQUAL(err.code,299);
+    testErr=200;
 }
-
-void test_ctx(){
-    up_demo(TESTFILE_1M,TEST_NOT_NULL_OR_END);
-    up_demo(TESTFILE_1M,TEST_END);
-}
-
-void test_auth_policy(){
-    QBox_AuthPolicy auth;
-    auth.scope="test";
-    auth.callbackUrl="test";
-    auth.returnUrl="test";
-    auth.expires=1800;
-    char* uptoken = NULL;
-	uptoken = QBox_MakeUpToken(&auth);
-	if (uptoken == NULL) {
-		printf("Cannot generate UpToken!\n");
-		return;
-	}
-	///how to judge?
-}
-
 
 /**//*---- test suites ------------------*/
-int suite_init_up_demo(void)
+int suite_init_rs_up(void)
 {
     QBOX_ACCESS_KEY = "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";
 	QBOX_SECRET_KEY = "yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze";
@@ -191,26 +173,22 @@ int suite_init_up_demo(void)
 	return 0;
 }
 
-int suite_clean_up_demo(void)
+int suite_clean_rs_up(void)
 {
 	QBox_Global_Cleanup();
     return 0;
 }
 
-QBOX_TESTS_BEGIN(up_demo)
-QBOX_TEST(test_by_up_demo)
-QBOX_TEST(test_ctx)
-QBOX_TEST(test_auth_policy)
+QBOX_TESTS_BEGIN(rs_up)
+QBOX_TEST(test_QBox_RS_ResumablePut)
 QBOX_TESTS_END()
 
 QBOX_SUITES_BEGIN()
-QBOX_SUITE_EX(up_demo,suite_init_up_demo,suite_clean_up_demo)
+QBOX_SUITE_EX(rs_up,suite_init_rs_up,suite_clean_rs_up)
 QBOX_SUITES_END()
 
-
 /**//*---- setting enviroment -----------*/
-
-void AddTestsUpDemo(void)
+void AddTestsRsUp(void)
 {
-        QBOX_TEST_REGISTE(up_demo)
+        QBOX_TEST_REGISTE(rs_up)
 }

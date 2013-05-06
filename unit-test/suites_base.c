@@ -12,9 +12,9 @@
 #include <assert.h>
 #include <time.h>
 #include <string.h>
-#include <CUnit/CUnit.h>
-#include <CUnit/Automated.h>
-#include <CUnit/TestDB.h>
+#include "../CUnit/CUnit/Headers/CUnit.h"
+#include "../CUnit/CUnit/Headers/Automated.h"
+#include "../CUnit/CUnit/Headers/TestDB.h"
 #include "../qbox/base.h"
 #include "../qbox/rs.h"
 #include "test.h"

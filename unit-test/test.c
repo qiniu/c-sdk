@@ -79,12 +79,15 @@ int main(int argc, char* argv[])
         AddTestsBase();//*  //2
         AddTestsRS();//* //1
         AddTestsRsCli();//*  //4
-        AddTestsImage();//*/ //3
-        AddTestsUp();//*
-        AddTestsUpDemo();//*
-        AddTestsUpDemoResumable(myMode);//*
-        AddTestsOauth2();//*
+        AddTestsImage();//* //3
+        AddTestsUp(myMode);//* //5
+        AddTestsRsUp();//* //6
+        AddTestsOauth2();//* //7
+        AddTestsAuthPolicy();//* //8
+        //AddTestsIo();//*/ //9?
         //AddTestsOauth2Passwd();//*/
+        //AddTestsUpDemoResumable(myMode);//*
+
         //*/
         if((myMode&GENERATE_XML)!=0){
             //***使用自动产生XML文件的模式********

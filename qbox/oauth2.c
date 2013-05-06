@@ -4,7 +4,7 @@
  Author      : Qiniu Developers
  Version     : 1.0.0.0
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 

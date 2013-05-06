@@ -10,9 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <CUnit/CUnit.h>
-#include <CUnit/Automated.h>
-#include <CUnit/TestDB.h>
+#include "../CUnit/CUnit/Headers/CUnit.h"
+#include "../CUnit/CUnit/Headers/Automated.h"
+#include "../CUnit/CUnit/Headers/TestDB.h"
 #include "../qbox/up.h"
 #include "../qbox/base.h"
 #include "test.h"
@@ -80,6 +80,167 @@ void test_QBox_UP_Blockput(){
     fclose(file);
     free(putRet);
 }
+QBox_Error test_qbox_up_resumableblock(QBox_UP_PutRet* ret,int blkIndex,QBox_UP_Progress* prog,QBox_UP_FnChunkNotify chunkNotify){
+    const char* fl=TESTFILE_16M;
+    QBox_ReaderAt f;
+    f = QBox_FileReaderAt_Open(fl);
+    return QBox_UP_ResumableBlockput(
+        &client,ret,f,
+        blkIndex,
+        prog->progs[blkIndex].offset + prog->progs[blkIndex].restSize,
+        QBOX_PUT_CHUNK_SIZE,
+        QBOX_PUT_RETRY_TIMES,
+        &prog->progs[blkIndex],
+        chunkNotify,
+        NULL
+        );
+}
+QBox_Error test_qbox_up_resumableblock_err(QBox_UP_FnChunkNotify chunkNotify){
+    QBox_UP_PutRet* ret=malloc(sizeof(QBox_UP_PutRet));
+    const char* fl=TESTFILE_16M;
+    QBox_ReaderAt f;
+    f = QBox_FileReaderAt_Open(fl);
+    int blkIndex=0;
+    QBox_UP_Progress* prog = QBox_UP_NewProgress(QBOX_PUT_CHUNK_SIZE*2);
+    return QBox_UP_ResumableBlockput(
+        &client,ret,f,
+        blkIndex,
+        prog->progs[blkIndex].offset + prog->progs[blkIndex].restSize,
+        QBOX_PUT_CHUNK_SIZE,
+        0,
+        &prog->progs[blkIndex],
+        chunkNotify,
+        NULL
+        );
+}
+int times;
+int chunk_notify_up(void* self, int blockIdx, QBox_UP_BlockProgress* prog)
+{
+    times++;
+    return 1;
+}
+int chunk_notify_up_err299_1(void* self, int blockIdx, QBox_UP_BlockProgress* prog)
+{
+    return 0;
+}
+int chunk_notify_up_err299_2(void* self, int blockIdx, QBox_UP_BlockProgress* prog)
+{
+    if(prog->restSize==QBOX_PUT_CHUNK_SIZE)
+        return 1;
+    return 0;
+}
+int chunk_notify_up_err18_1(void* self, int blockIdx, QBox_UP_BlockProgress* prog)
+{
+    QBOX_ACCESS_KEY = "err18";
+	QBOX_SECRET_KEY = "err18";
+
+	QBox_Zero(client);
+	QBox_Global_Init(-1);
+
+	QBox_Client_Init(&client, 1024);
+    return 1;
+}
+
+void test_QBox_UP_ResumableBlockput(){
+    QBox_UP_PutRet* putRet=malloc(sizeof(QBox_UP_PutRet));
+    QBox_UP_Progress* prog = NULL;
+    int blkIndex;
+
+    //test branch: blockNotify=NULL
+    blkIndex=0;
+    prog = QBox_UP_NewProgress(QBOX_PUT_CHUNK_SIZE*2);
+    err=test_qbox_up_resumableblock(putRet,blkIndex,prog,NULL);
+    CU_ASSERT_EQUAL(err.code,200);
+    //test branch: blockNotify!=NULL
+    blkIndex=0;
+    times=0;
+    prog = QBox_UP_NewProgress(QBOX_PUT_CHUNK_SIZE*2);
+    err=test_qbox_up_resumableblock(putRet,blkIndex,prog,chunk_notify_up);
+    CU_ASSERT_EQUAL(err.code,200);
+    CU_ASSERT_EQUAL(times,2);
+    //test branch: blockNotify!=NULL
+    blkIndex=0;
+    prog = QBox_UP_NewProgress(QBOX_PUT_CHUNK_SIZE*2);
+    err=test_qbox_up_resumableblock(putRet,blkIndex,prog,NULL);
+    err=test_qbox_up_resumableblock(putRet,blkIndex,prog,NULL);
+    CU_ASSERT_EQUAL(err.code,200);
+    //test Error
+    //test error299 (up.c 133)
+    blkIndex=0;
+    prog = QBox_UP_NewProgress(QBOX_PUT_CHUNK_SIZE*2);
+    err=test_qbox_up_resumableblock(putRet,blkIndex,prog,chunk_notify_up_err299_1);
+    CU_ASSERT_EQUAL(err.code,299);
+    //test error299 (up.c 185)
+    blkIndex=0;
+    prog = QBox_UP_NewProgress(QBOX_PUT_CHUNK_SIZE*2);
+    err=test_qbox_up_resumableblock(putRet,blkIndex,prog,chunk_notify_up_err299_2);
+    CU_ASSERT_EQUAL(err.code,299);
+    //test err
+    if((myMode&ADD_BAD_TEST)!=0){
+    err= test_qbox_up_resumableblock_err(chunk_notify_up_err18_1);
+    CU_ASSERT_EQUAL(err.code,18);
+    printf("\n%d %s\n",err.code,err.message);
+    err= test_qbox_up_resumableblock_err(NULL);
+    CU_ASSERT_EQUAL(err.code,18);
+    printf("\n%d %s\n",err.code,err.message);
+    suite_init_up();
+    }
+
+
+}
+
+void test_QBox_UP_Mkfile(){
+    QBox_UP_PutRet* putRet=malloc(sizeof(QBox_UP_PutRet));
+    const char* fl=TESTFILE;
+    QBox_ReaderAt f;
+    QBox_Int64 fsize=29;
+    QBox_UP_Progress* prog = NULL;
+    //test branch: blockNotify=NULL
+    f = QBox_FileReaderAt_Open(fl);
+    prog = QBox_UP_NewProgress(29);
+    err = QBox_UP_Put(&client,putRet, f, fsize, prog, NULL, NULL, NULL);
+    CU_ASSERT_EQUAL(err.code,200);
+
+    QBox_Json* root = NULL;
+    char* params = NULL;
+    const char* callbackParams=NULL;
+    const char* mimeType=NULL;
+    const char* entryURI=QBox_String_Concat("Bucket:", "test_up", NULL);
+
+    err = QBox_UP_Mkfile(
+        &client,
+        &root,
+        "/rs-mkfile/",
+        entryURI,
+        mimeType,
+        fsize,
+        params,
+        callbackParams,
+        prog->checksums,
+        prog->blockCount
+    );
+    CU_ASSERT_EQUAL(err.code,200);
+
+    params = "";
+    callbackParams="";
+    mimeType="application/octet-stream";
+    entryURI=QBox_String_Concat("Bucket:", "test_up", NULL);
+
+    err = QBox_UP_Mkfile(
+        &client,
+        &root,
+        "/rs-mkfile/",
+        entryURI,
+        mimeType,
+        fsize,
+        params,
+        callbackParams,
+        prog->checksums,
+        prog->blockCount
+    );
+    CU_ASSERT_EQUAL(err.code,200);
+    QBox_RS_Drop(&client,"test_up");
+}
 
 void test_QBox_UP_NewProgress(){
     QBox_UP_Progress* prog = NULL;
@@ -106,27 +267,53 @@ void test_QBox_UP_Progress_Release(){
     prog=NULL;
     QBox_UP_Progress_Release(prog);
 }
+int* temp;
+int temp_index=0;
+int block_notify_findnextblock(void* self, int blockIdx, QBox_UP_Checksum* checksum)
+{
+    *(temp+temp_index)=blockIdx;
+    temp_index++;
+    return 1;
+}
 void test_qbox_up_findnextblock(QBox_UP_PutRet* putRet,QBox_Int64 fsize,QBox_UP_Progress* prog){
     const char* fl=TESTFILE_16M;
     QBox_ReaderAt f;
     f = QBox_FileReaderAt_Open(fl);
-    err = QBox_UP_Put(&client,putRet, f, fsize, prog, NULL, NULL, NULL);
+    err = QBox_UP_Put(&client,putRet, f, fsize, prog, block_notify_findnextblock, NULL, NULL);
 }
 
 void test_QBox_UP_FindNextBlock(){
     QBox_UP_PutRet* putRet=malloc(sizeof(QBox_UP_PutRet));
     QBox_UP_Progress* prog = NULL;
     //test branch: progs[i].ctx=null
-    prog = QBox_UP_NewProgress(4*1024*1024*2);
-    test_qbox_up_findnextblock(putRet,4*1024*1024*2,prog);
+    temp=malloc(64);
+    temp_index=0;
+    prog = QBox_UP_NewProgress(4*1024*1024+1);
+    test_qbox_up_findnextblock(putRet,4*1024*1024+1,prog);
+    CU_ASSERT_EQUAL(temp_index,2);
+    CU_ASSERT_EQUAL(*(temp+0),0);
+    CU_ASSERT_EQUAL(*(temp+1),1);
     //test branch: progs[i].ctx="end" progs[i].ctx!=null
-    prog = QBox_UP_NewProgress(4*1024*1024*1);
+    temp_index=0;
+    prog = QBox_UP_NewProgress(4*1024*1024+1);
     prog->progs[0].ctx="end";
-    test_qbox_up_findnextblock(putRet,4*1024*1024*1,prog);
+    test_qbox_up_findnextblock(putRet,4*1024*1024+1,prog);
+    CU_ASSERT_EQUAL(temp_index,1);
+    CU_ASSERT_EQUAL(*(temp+0),1);
+    //test branch: i>=prog->blockCount
+    temp_index=0;
+    prog = QBox_UP_NewProgress(4*1024*1024);
+    prog->progs[0].ctx="end";
+    test_qbox_up_findnextblock(putRet,4*1024*1024,prog);
+    CU_ASSERT_EQUAL(temp_index,0);
     //test breach: i > prog->blockCount progs[i].ctx!="end"
-    prog = QBox_UP_NewProgress(4*1024*1024*1);
-    prog->progs[0].ctx="xxxx";
-    test_qbox_up_findnextblock(putRet,4*1024*1024*1,prog);
+    temp_index=0;
+    prog = QBox_UP_NewProgress(4*1024*1024+1);
+    prog->progs[0].ctx="xxx";
+    test_qbox_up_findnextblock(putRet,4*1024*1024+1,prog);
+    CU_ASSERT_EQUAL(temp_index,2);
+    CU_ASSERT_EQUAL(*(temp+0),0);
+    CU_ASSERT_EQUAL(*(temp+1),1);
 }
 
 int block_notify_up(void* self, int blockIdx, QBox_UP_Checksum* checksum)
@@ -206,6 +393,8 @@ QBOX_TESTS_BEGIN(up)
 QBOX_TEST(test_QBox_UP_Mkblock)
 QBOX_TEST(test_QBox_UP_NewProgress)
 QBOX_TEST(test_QBox_UP_Progress_Release)
+QBOX_TEST(test_QBox_UP_ResumableBlockput)
+QBOX_TEST(test_QBox_UP_Mkfile)
 QBOX_TEST(test_QBox_UP_FindNextBlock)
 QBOX_TEST(test_QBox_UP_Put)
 QBOX_TESTS_END()
@@ -217,7 +406,8 @@ QBOX_SUITES_END()
 
 /**//*---- setting enviroment -----------*/
 
-void AddTestsUp(void)
+void AddTestsUp(int mode)
 {
-        QBOX_TEST_REGISTE(up)
+    myMode=mode;
+    QBOX_TEST_REGISTE(up)
 }
