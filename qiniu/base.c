@@ -3,7 +3,7 @@
  Name        : base.c
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 
@@ -68,7 +68,7 @@ static int Qiniu_shouldEscape(int c)
 	return 1;
 }
 
-static const char Qiniu_hexTable[] = "0123456789ABCDEF"; 
+static const char Qiniu_hexTable[] = "0123456789ABCDEF";
 
 char* Qiniu_QueryEscape(const char* s, Qiniu_Bool* fesc)
 {
