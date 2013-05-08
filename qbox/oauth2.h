@@ -75,6 +75,10 @@ QBox_Error QBox_Client_CallWithBinary(
 QBox_Error QBox_Client_CallWithBuffer(
 	QBox_Client* self, QBox_Json** ret, const char* url, const char* body, QBox_Int64 bodyLen);
 
+struct curl_httppost;
+QBox_Error QBox_Client_CallWithForm(
+	QBox_Client* self, QBox_Json** ret, const char* url, struct curl_httppost* formpost);
+
 /*============================================================================*/
 
 void QBox_Client_Init(QBox_Client* self, size_t bufSize);

@@ -59,8 +59,8 @@ char* QBox_MakeUpToken(const QBox_AuthPolicy* auth)
 
 	HMAC_CTX ctx;
 
-	ENGINE_load_builtin_engines();
-	ENGINE_register_all_complete();
+	//ENGINE_load_builtin_engines();
+	//ENGINE_register_all_complete();
 
 	policy_str = QBox_AuthPolicy_json(auth);
 	encoded_policy_str = QBox_String_Encode(policy_str);

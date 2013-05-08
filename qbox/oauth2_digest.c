@@ -24,8 +24,8 @@ static QBox_Error QBox_DigestAuth_Auth(void* self, QBox_Header** header, const c
 	char* enc_digest = NULL;
 	HMAC_CTX ctx;
 
-	ENGINE_load_builtin_engines();
-	ENGINE_register_all_complete();
+	//ENGINE_load_builtin_engines();
+	//ENGINE_register_all_complete();
 
 	path = strstr(url, "://");
 	if (path != NULL) {
@@ -57,7 +57,11 @@ static QBox_Error QBox_DigestAuth_Auth(void* self, QBox_Header** header, const c
 	auth = QBox_String_Concat("Authorization: QBox ", QBOX_ACCESS_KEY, ":", enc_digest, NULL);
 	free(enc_digest);
 
-	*header = curl_slist_append(*header, auth);
+    if (*header) {
+	    *header = curl_slist_append(*header, auth);
+    } else {
+        *header = curl_slist_append(NULL, auth);
+    }
 	free(auth);
 
 	err.code    = 200;

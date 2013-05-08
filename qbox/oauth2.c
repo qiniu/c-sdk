@@ -270,6 +270,33 @@ QBox_Error QBox_Client_CallWithBuffer(
 	return QBox_Client_callWithBody(self, ret, url, bodyLen, curl, headers);
 }
 
+QBox_Error QBox_Client_CallWithForm(
+	QBox_Client* self, QBox_Json** ret, const char* url, struct curl_httppost* formpost)
+{
+	CURL* curl;
+	struct curl_slist* headers = NULL;
+	QBox_Error err;
+
+	QBox_Client_initcall(self, url);
+
+	curl = (CURL*)self->curl;
+	curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+
+	err = self->vptr->Auth(self->auth, &headers, url, NULL, 0);
+	if (err.code != 200) {
+		return err;
+	}
+
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+	err = QBox_callex(curl, &self->b, &self->root, QBox_False);
+
+	curl_slist_free_all(headers);
+
+	*ret = self->root;
+	return err;
+}
+
 QBox_Error QBox_Client_Call(QBox_Client* self, QBox_Json** ret, const char* url)
 {
 	QBox_Error err;

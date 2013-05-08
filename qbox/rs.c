@@ -9,6 +9,7 @@
  */
 
 #include <zlib.h>
+#include <curl/curl.h>
 #include "rs.h"
 
 /*============================================================================*/
@@ -159,6 +160,64 @@ QBox_Error QBox_RS_PutStream(
 
 	err = QBox_Client_CallWithBuffer(self, &root, url, stream, bytes);
 	free(url);
+
+	if (err.code == 200) {
+		ret->hash = QBox_Json_GetString(root, "hash", NULL);
+	}
+	return err;
+}
+
+QBox_Error QBox_RS_UploadStream( 
+    QBox_Client* self, QBox_RS_PutRet* ret, const char* tableName, const char* key, 
+    const char* mimeType, const char* pStream, int bytes, const char* customMeta,
+    const char* callbackParams, const char* uptoken)
+{
+	char* entryURI;
+	char* entryURIEncoded;
+	char* mimeTypeEncoded;
+	char* customMetaEncoded;
+	char* action;
+	char* action2;
+    char* url;
+	QBox_Error err;
+	cJSON* root;
+
+	struct curl_httppost* formpost = NULL;
+	struct curl_httppost* lastptr = NULL;
+
+    url = QBox_String_Concat2(QBOX_UP_HOST, "/upload");
+
+	if (mimeType == NULL) {
+		mimeType = "application/octet-stream";
+	}
+
+	mimeTypeEncoded = QBox_String_Encode(mimeType);
+
+	entryURI = QBox_String_Concat3(tableName, ":", key);
+	entryURIEncoded = QBox_String_Encode(entryURI);
+	free(entryURI);
+
+	action = QBox_String_Concat("/rs-put/", entryURIEncoded, "/mimeType/", mimeTypeEncoded, NULL);
+	free(entryURIEncoded);
+	free(mimeTypeEncoded);
+
+	if (customMeta != NULL && *customMeta != '\0') {
+		customMetaEncoded = QBox_String_Encode(customMeta);
+		action2 = QBox_String_Concat3(action, "/meta/", customMetaEncoded);
+		free(action);
+		free(customMetaEncoded);
+		action = action2;
+	}
+
+	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "action", CURLFORM_COPYCONTENTS, action, CURLFORM_END);
+	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "auth", CURLFORM_COPYCONTENTS, uptoken, CURLFORM_END);
+	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "file", CURLFORM_BUFFER, "content", CURLFORM_BUFFERPTR, pStream, CURLFORM_BUFFERLENGTH, bytes, CURLFORM_END);
+	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "params", CURLFORM_COPYCONTENTS, callbackParams, CURLFORM_END);
+
+	err = QBox_Client_CallWithForm(self, &root, url, formpost);
+	free(url);
+	free(action);
+	curl_formfree(formpost);
 
 	if (err.code == 200) {
 		ret->hash = QBox_Json_GetString(root, "hash", NULL);

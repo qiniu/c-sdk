@@ -64,8 +64,13 @@ QBox_Error QBox_RS_PutStream(
 	QBox_Client* self, QBox_RS_PutRet* ret, const char* tableName, const char* key,
 	const char* mimeType, const char* pStream, int bytes, const char* customMeta);
 
+QBox_Error QBox_RS_UploadStream( 
+    QBox_Client* self, QBox_RS_PutRet* ret, const char* tableName, const char* key, 
+    const char* mimeType, const char* pStream, int bytes, const char* customMeta,
+    const char* callbackParams, const char* uptoken);
+
 QBox_Error QBox_RS_ResumablePut(
-	QBox_Client* self, QBox_UP_PutRet* ret, QBox_UP_Progress* prog,
+	QBox_Client* self, QBox_RS_PutRet* ret, QBox_UP_Progress* prog,
 	QBox_UP_FnBlockNotify blockNotify, QBox_UP_FnChunkNotify chunkNotify, void* notifyParams,
 	const char* entryURI, const char* mimeType, QBox_ReaderAt f, QBox_Int64 fsize,
 	const char* customMeta, const char* callbackParams);
