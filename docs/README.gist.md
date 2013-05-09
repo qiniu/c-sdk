@@ -290,19 +290,122 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 
 ## 资源操作
 
+资源操作包括对存储在七牛云存储上的文件进行查看、删除、复制和移动处理。同时七牛云存储也支持对文件进行相应的批量操作。
+所有操作都会返回一个Qiniu_Error的结构体，用于记录该次操作的成功/失败信息。
+
+```{c}
+@gist(../qiniu/base.h#error)
+```
+
 <a name="rs-stat"></a>
 
 ### 获取文件信息
+
+```{c}
+@gist(gist/server.c#stat)
+```
+
+通过调用Qiniu_RS_Stat，可以得到指定文件的属性信息。除了会返回一个Qiniu_Error结构体之外，Qiniu_RS_Stat还会返回Qiniu_RS_StatRet这个结构体，其中记录了被查询文件的一些属性信息。
+
+```{c}
+@gist(../qiniu/rs.h#statret)
+```
 
 <a name="rs-delete"></a>
 
 ### 删除文件
 
+调用Qiniu_RS_Delete并指定<bucket>和<key>，即可完成对一个文件的删除操作，同样Qiniu_Error结构体中记录了成功/失败信息。
+
+```{c}
+@gist(gist/server.c#delete)
+```
 <a name="rs-copy-move"></a>
 
 ### 复制/移动文件
+
+复制和移动操作，需要指定源路径和目标路径。
+
+```{c}
+@gist(gist/server.c#copy)
+```
+
+```{c}
+@gist(gist/server.c#move)
+```
 
 <a name="rs-batch"></a>
 
 ### 批量操作
 
+在支持单一的资源操作的同时，七牛云存储还支持批量地进行查看、删除、复制和移动操作。
+
+#### 批量查看
+
+调用Qiniu_RS_BatchStat可以批量查看多个文件的属性信息。
+
+```{c}
+@gist(gist/server.c#batchStat)
+```
+
+其中，`entries`是一个指向`Qiniu_RS_EntryPath`结构体数组的指针，`entryCount`为数组`entries`的长度。结构体`Qiniu_RS_EntryPath`中填写每个文件相应的<bucket>和<key>：
+
+```{c}
+@gist(../qiniu/rs.h.c#entrypath)
+```
+
+`Qiniu_RS_BatchStat`会将文件信息（及成功/失败信息）依次写入一个由结构体`Qiniu_RS_BatchStatRet`组成的数组空间`rets`。因此，调用之前，需要先给`rets`申请好相应长度的内存空间。
+
+其中结构体`Qiniu_RS_BatchStatRet`的组成如下：
+
+```{c}
+@gist(../qiniu/rs.h#batchstatret)
+```
+
+结构体Qiniu_RS_StatRet的组成为：
+
+```{c}
+@gist(../qiniu/rs.h#statret)
+```
+
+需要注意的是，通过动态内存申请得到的内存空间在使用完毕后应该立即释放。
+
+#### 批量删除
+
+调用`Qiniu_RS_BatchDelete`可以批量删除多个文件。
+
+```{c}
+@gist(gist/server.c#batchDelete)
+```
+
+和批量查看一样，`entries`是一个指向`Qiniu_RS_EntryPath`结构体数组的指针，`entryCount`为数组`entries`的长度。`Qiniu_RS_BatchDelete`会将删除操作的成功/失败信息依次写入一个由结构体`Qiniu_RS_BatchItemRet`组成的数组空间`rets`。同样需要先申请好相应长度的内存空间。
+
+其中结构体`Qiniu_RS_BatchItemRet`的组成如下：
+
+```{c}
+@gist(../qiniu/rs.h#batchitemret)
+```
+
+#### 批量复制
+
+调用`Qiniu_RS_BatchCopy`可以批量删除多个文件。
+
+```{c}
+@gist(gist/server.c#batchCopy)
+```
+
+批量复制需要指明每个操作的源路径和目标路径，`entryPairs`是一个指向`Qiniu_RS_EntryPathPair`结构体数组的指针，`entryCount`为数组`entryPairs`的长度。结构体`Qiniu_RS_EntryPathPair`结构如下：
+
+```{c}
+@gist(../qiniu/rs.h.c#entrypathpair)
+```
+
+同之前一样 ，`Qiniu_RS_BatchCopy`会将复制操作的成功/失败信息依次写入一个由结构体`Qiniu_RS_BatchItemRet`组成的数组空间`rets`。
+
+#### 批量移动
+
+批量移动和批量复制很类似，唯一的区别就是调用`Qiniu_RS_BatchMove`。
+
+```{c}
+@gist(gist/server.c#batchMove)
+```
