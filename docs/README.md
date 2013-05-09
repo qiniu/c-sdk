@@ -586,7 +586,7 @@ typedef struct _Qiniu_RS_BatchItemRet {
 
 #### 批量复制
 
-调用`Qiniu_RS_BatchCopy`可以批量删除多个文件。
+调用`Qiniu_RS_BatchCopy`可以批量复制多个文件。
 
 ```{c}
 void batchCopy(Qiniu_Client* client, 

@@ -30,7 +30,7 @@ void delete(Qiniu_Client* client, const char* bucket, const char* key)
         debug(client, err);
         return;
     }
-    printf("%s:a delete OK.\n", bucket);
+    printf("%s:%s delete OK.\n", bucket, key);
 }
 /* @endgist */
 
