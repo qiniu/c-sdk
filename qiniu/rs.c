@@ -218,11 +218,14 @@ Qiniu_Error Qiniu_RS_BatchStat(
         entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
         entryURIEncoded = Qiniu_String_Encode(entryURI);
         opBody = Qiniu_String_Concat2("op=/stat/", entryURIEncoded);
+        free(entryURI);
+        free(entryURIEncoded);
 
         if (!body) {
             bodyTmp = opBody;
         } else {
             bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
+            free(opBody);
         }
         free(body);
         body = bodyTmp;
@@ -279,11 +282,14 @@ Qiniu_Error Qiniu_RS_BatchDelete(
         entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
         entryURIEncoded = Qiniu_String_Encode(entryURI);
         opBody = Qiniu_String_Concat2("op=/delete/", entryURIEncoded);
+        free(entryURI);
+        free(entryURIEncoded);
 
         if (!body) {
             bodyTmp = opBody;
         } else {
             bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
+            free(opBody);
         }
         free(body);
         body = bodyTmp;
@@ -340,11 +346,17 @@ Qiniu_Error Qiniu_RS_BatchMove(
 
         bodyPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
         opBody = Qiniu_String_Concat2("op=/move/", bodyPart);
+        free(entryURISrc);
+        free(entryURISrcEncoded);
+        free(entryURIDest);
+        free(entryURIDestEncoded);
+        free(bodyPart);
 
         if (!body) {
             bodyTmp = opBody;
         } else {
             bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
+            free(opBody);
         }
         free(body);
         body = bodyTmp;
@@ -401,11 +413,17 @@ Qiniu_Error Qiniu_RS_BatchCopy(
         
         bodyPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
         opBody = Qiniu_String_Concat2("op=/copy/", bodyPart);
+        free(entryURISrc);
+        free(entryURISrcEncoded);
+        free(entryURIDest);
+        free(entryURIDestEncoded);
+        free(bodyPart);
 
         if (!body) {
             bodyTmp = opBody;
         } else {
             bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
+            free(opBody);
         }
         free(body);
         body = bodyTmp;

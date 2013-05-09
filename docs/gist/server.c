@@ -211,7 +211,7 @@ int main()
     copy(&client, "bucket1", "key1", "bucket2", "key2");
     move(&client, "bucket1", "key1", "bucket2", "key2");
 
-    /* @gist batchstat/batchdelete */
+    /* batchstat/batchdelete */
     Qiniu_RS_EntryPath* entries = (Qiniu_RS_EntryPath*)calloc(2, sizeof(Qiniu_RS_EntryPath));
     entries[0].bucket = "bucket1";
     entries[0].key = "key1";
@@ -220,11 +220,9 @@ int main()
 
     batchStat(&client, entries, 2);
     batchDelete(&client, entries, 2);
-
-    /*@endgist */
+    free(entries);
 
     /* batchcopy/batchmove */
-
     Qiniu_RS_EntryPathPair* entryPairs = 
         (Qiniu_RS_EntryPathPair*)calloc(2, sizeof(Qiniu_RS_EntryPathPair));
     entryPairs[0].src.bucket = "bucket1";
@@ -239,8 +237,7 @@ int main()
 
     batchCopy(&client, entryPairs, 2);
     batchMove(&client, entryPairs, 2);
-
-    /*@endgist */
+    free(entryPairs);
 
 	/* @gist init */
 	Qiniu_Client_Cleanup(&client);                 /* 每个HTTP客户端使用完后释放 */
