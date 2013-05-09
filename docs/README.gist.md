@@ -291,7 +291,7 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 ## 资源操作
 
 资源操作包括对存储在七牛云存储上的文件进行查看、删除、复制和移动处理。同时七牛云存储也支持对文件进行相应的批量操作。
-所有操作都会返回一个Qiniu_Error的结构体，用于记录该次操作的成功/失败信息。
+所有操作都会返回一个`Qiniu_Error`的结构体，用于记录该次操作的成功/失败信息。
 
 ```{c}
 @gist(../qiniu/base.h#error)
@@ -397,7 +397,7 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 批量复制需要指明每个操作的源路径和目标路径，`entryPairs`是一个指向`Qiniu_RS_EntryPathPair`结构体数组的指针，`entryCount`为数组`entryPairs`的长度。结构体`Qiniu_RS_EntryPathPair`结构如下：
 
 ```{c}
-@gist(../qiniu/rs.h.c#entrypathpair)
+@gist(../qiniu/rs.h#entrypathpair)
 ```
 
 同之前一样 ，`Qiniu_RS_BatchCopy`会将复制操作的成功/失败信息依次写入一个由结构体`Qiniu_RS_BatchItemRet`组成的数组空间`rets`。
