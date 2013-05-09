@@ -70,7 +70,7 @@ QBox_Error QBox_RS_UploadStream(
     const char* callbackParams, const char* uptoken);
 
 QBox_Error QBox_RS_ResumablePut(
-	QBox_Client* self, QBox_RS_PutRet* ret, QBox_UP_Progress* prog,
+	QBox_Client* self, QBox_UP_PutRet* ret, QBox_UP_Progress* prog,
 	QBox_UP_FnBlockNotify blockNotify, QBox_UP_FnChunkNotify chunkNotify, void* notifyParams,
 	const char* entryURI, const char* mimeType, QBox_ReaderAt f, QBox_Int64 fsize,
 	const char* customMeta, const char* callbackParams);
