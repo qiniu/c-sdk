@@ -351,7 +351,7 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 其中，`entries`是一个指向`Qiniu_RS_EntryPath`结构体数组的指针，`entryCount`为数组`entries`的长度。结构体`Qiniu_RS_EntryPath`中填写每个文件相应的bucket和key：
 
 ```{c}
-@gist(../qiniu/rs.h.c#entrypath)
+@gist(../qiniu/rs.h#entrypath)
 ```
 
 `Qiniu_RS_BatchStat`会将文件信息（及成功/失败信息）依次写入一个由结构体`Qiniu_RS_BatchStatRet`组成的数组空间`rets`。因此，调用之前，需要先给`rets`申请好相应长度的内存空间。
