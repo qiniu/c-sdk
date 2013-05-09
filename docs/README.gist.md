@@ -305,7 +305,7 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 @gist(gist/server.c#stat)
 ```
 
-通过调用Qiniu_RS_Stat，可以得到指定文件的属性信息。除了会返回一个Qiniu_Error结构体之外，Qiniu_RS_Stat还会返回Qiniu_RS_StatRet这个结构体，其中记录了被查询文件的一些属性信息。
+通过调用`Qiniu_RS_Stat`，可以得到指定文件的属性信息。除了会返回一个`Qiniu_Error`结构体之外，`Qiniu_RS_Stat`还会返回`Qiniu_RS_StatRet`这个结构体，其中记录了被查询文件的一些属性信息。
 
 ```{c}
 @gist(../qiniu/rs.h#statret)
@@ -315,7 +315,7 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 
 ### 删除文件
 
-调用Qiniu_RS_Delete并指定<bucket>和<key>，即可完成对一个文件的删除操作，同样Qiniu_Error结构体中记录了成功/失败信息。
+调用`Qiniu_RS_Delete`并指定bucket和key，即可完成对一个文件的删除操作，同样`Qiniu_Error`结构体中记录了成功/失败信息。
 
 ```{c}
 @gist(gist/server.c#delete)
@@ -342,13 +342,13 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 
 #### 批量查看
 
-调用Qiniu_RS_BatchStat可以批量查看多个文件的属性信息。
+调用`Qiniu_RS_BatchStat`可以批量查看多个文件的属性信息。
 
 ```{c}
 @gist(gist/server.c#batchStat)
 ```
 
-其中，`entries`是一个指向`Qiniu_RS_EntryPath`结构体数组的指针，`entryCount`为数组`entries`的长度。结构体`Qiniu_RS_EntryPath`中填写每个文件相应的<bucket>和<key>：
+其中，`entries`是一个指向`Qiniu_RS_EntryPath`结构体数组的指针，`entryCount`为数组`entries`的长度。结构体`Qiniu_RS_EntryPath`中填写每个文件相应的bucket和key：
 
 ```{c}
 @gist(../qiniu/rs.h.c#entrypath)
@@ -362,7 +362,7 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 @gist(../qiniu/rs.h#batchstatret)
 ```
 
-结构体Qiniu_RS_StatRet的组成为：
+结构体`Qiniu_RS_StatRet`的组成为：
 
 ```{c}
 @gist(../qiniu/rs.h#statret)
