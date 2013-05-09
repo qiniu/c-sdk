@@ -137,10 +137,10 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 在 C-SDK 中，HTTP 客户端叫`Qiniu_Client`。在某些语言环境中，这个类是线程安全的，多个线程可以共享同一份实例，但在 C-SDK 中它被设计为线程不安全的。一个重要的原因是我们试图简化内存管理的负担。HTTP 请求结果的生命周期被设计成由`Qiniu_Client`负责，在下一次请求时会自动释放上一次 HTTP 请求的结果。这有点粗暴，但在多数场合是合理的。如果某个 HTTP 请求结果的数据需要长期使用，你应该复制一份。例如：
 
 ```{c}
-void stat(Qiniu_Client* client, const char* bucket)
+void stat(Qiniu_Client* client, const char* bucket, const char* key)
 {
 	Qiniu_RS_StatRet ret;
-	Qiniu_Error err = Qiniu_RS_Stat(client, &ret, bucket, "key");
+	Qiniu_Error err = Qiniu_RS_Stat(client, &ret, bucket, key);
 	if (err.code != 200) {
 		debug(client, err);
 		return;
@@ -196,7 +196,7 @@ typedef struct _Qiniu_Error {
 ```{c}
 void debug(Qiniu_Client* client, Qiniu_Error err)
 {
-	printf("error code: %d, message: %s\n", err.code, err.message);
+	printf("\nerror code: %d, message: %s\n", err.code, err.message);
 	printf("respose header:\n%s", Qiniu_Buffer_CStr(&client->respHeader));
 	printf("respose body:\n%s", Qiniu_Buffer_CStr(&client->b));
 }
@@ -379,20 +379,278 @@ char* dntoken(Qiniu_Client* client, const char* key)
 
 ## 资源操作
 
+资源操作包括对存储在七牛云存储上的文件进行查看、删除、复制和移动处理。同时七牛云存储也支持对文件进行相应的批量操作。
+所有操作都会返回一个`Qiniu_Error`的结构体，用于记录该次操作的成功/失败信息。
+
+```{c}
+typedef struct _Qiniu_Error {
+	int code;
+	const char* message;
+} Qiniu_Error;
+```
+
 <a name="rs-stat"></a>
 
 ### 获取文件信息
+
+```{c}
+void stat(Qiniu_Client* client, const char* bucket, const char* key)
+{
+	Qiniu_RS_StatRet ret;
+	Qiniu_Error err = Qiniu_RS_Stat(client, &ret, bucket, key);
+	if (err.code != 200) {
+		debug(client, err);
+		return;
+	}
+	printf("hash: %s, fsize: %lld, mimeType: %s\n", ret.hash, ret.fsize, ret.mimeType);
+}
+```
+
+通过调用`Qiniu_RS_Stat`，可以得到指定文件的属性信息。除了会返回一个`Qiniu_Error`结构体之外，`Qiniu_RS_Stat`还会返回`Qiniu_RS_StatRet`这个结构体，其中记录了被查询文件的一些属性信息。
+
+```{c}
+typedef struct _Qiniu_RS_StatRet {
+	const char* hash;
+	const char* mimeType;
+	Qiniu_Int64 fsize;	
+	Qiniu_Int64 putTime;
+} Qiniu_RS_StatRet;
+```
 
 <a name="rs-delete"></a>
 
 ### 删除文件
 
+调用`Qiniu_RS_Delete`并指定bucket和key，即可完成对一个文件的删除操作，同样`Qiniu_Error`结构体中记录了成功/失败信息。
+
+```{c}
+void delete(Qiniu_Client* client, const char* bucket, const char* key)
+{
+    Qiniu_Error err = Qiniu_RS_Delete(client, bucket, key);
+    if (err.code != 200) {
+        debug(client, err);
+        return;
+    }
+    printf("%s:a delete OK.\n", bucket);
+}
+```
 <a name="rs-copy-move"></a>
 
 ### 复制/移动文件
+
+复制和移动操作，需要指定源路径和目标路径。
+
+```{c}
+void copy(Qiniu_Client* client, 
+        const char* bucketSrc, const char* keySrc, 
+        const char* bucketDest, const char* keyDest)
+{
+    Qiniu_Error err = Qiniu_RS_Copy(client, bucketSrc, keySrc, bucketDest, keyDest);
+    if (err.code != 200) {
+        debug(client, err);
+        return;
+    }
+    printf("Copy %s:%s -> %s:%s OK.\n", bucketSrc, keySrc, bucketDest, keyDest);
+}
+```
+
+```{c}
+void move(Qiniu_Client* client, 
+        const char* bucketSrc, const char* keySrc, 
+        const char* bucketDest, const char* keyDest)
+{
+    Qiniu_Error err = Qiniu_RS_Move(client, bucketSrc, keySrc, bucketDest, keyDest);
+    if (err.code != 200) {
+        debug(client, err);
+        return;
+    }
+    printf("Move %s:%s -> %s:%s OK.\n", bucketSrc, keySrc, bucketDest, keyDest);
+}
+```
 
 <a name="rs-batch"></a>
 
 ### 批量操作
 
+在支持单一的资源操作的同时，七牛云存储还支持批量地进行查看、删除、复制和移动操作。
+
+#### 批量查看
+
+调用`Qiniu_RS_BatchStat`可以批量查看多个文件的属性信息。
+
+```{c}
+void batchStat(Qiniu_Client* client, 
+        Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
+{
+    Qiniu_RS_BatchStatRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchStatRet));
+    Qiniu_Error err = Qiniu_RS_BatchStat(client, rets, entries, entryCount);
+
+    int curr = 0;
+    while (curr < entryCount) {
+        printf("\ncode: %d\n", rets[curr].code);
+
+        if (rets[curr].code != 200) {
+            printf("error: %s\n", rets[curr].error);
+        } else {
+            printf("hash: %s\n", rets[curr].data.hash);
+            printf("mimeType: %s\n", rets[curr].data.mimeType);
+            printf("fsize: %lld\n", rets[curr].data.fsize);
+            printf("putTime: %lld\n", rets[curr].data.putTime);
+        }
+        curr++;
+    }
+
+    free(rets);
+
+    if (err.code != 200) {
+        debug(client, err);
+        return;
+    }
+}
+```
+
+其中，`entries`是一个指向`Qiniu_RS_EntryPath`结构体数组的指针，`entryCount`为数组`entries`的长度。结构体`Qiniu_RS_EntryPath`中填写每个文件相应的bucket和key：
+
+```{c}
+typedef struct _Qiniu_RS_EntryPath {
+    const char* bucket;
+    const char* key;
+} Qiniu_RS_EntryPath;
+```
+
+`Qiniu_RS_BatchStat`会将文件信息（及成功/失败信息）依次写入一个由结构体`Qiniu_RS_BatchStatRet`组成的数组空间`rets`。因此，调用之前，需要先给`rets`申请好相应长度的内存空间。
+
+其中结构体`Qiniu_RS_BatchStatRet`的组成如下：
+
+```{c}
+typedef struct _Qiniu_RS_BatchStatRet {
+    Qiniu_RS_StatRet data;
+    const char* error;
+    int code;
+}Qiniu_RS_BatchStatRet;
+```
+
+结构体`Qiniu_RS_StatRet`的组成为：
+
+```{c}
+typedef struct _Qiniu_RS_StatRet {
+	const char* hash;
+	const char* mimeType;
+	Qiniu_Int64 fsize;	
+	Qiniu_Int64 putTime;
+} Qiniu_RS_StatRet;
+```
+
+需要注意的是，通过动态内存申请得到的内存空间在使用完毕后应该立即释放。
+
+#### 批量删除
+
+调用`Qiniu_RS_BatchDelete`可以批量删除多个文件。
+
+```{c}
+void batchDelete(Qiniu_Client* client, 
+        Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
+{
+    Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
+    Qiniu_Error err = Qiniu_RS_BatchDelete(client, rets, entries, entryCount);
+
+    int curr = 0;
+    while (curr < entryCount) {
+        printf("\ncode: %d\n", rets[curr].code);
+
+        if (rets[curr].code != 200) {
+            printf("error: %s\n", rets[curr].error);
+        }
+        curr++;
+    }
+
+    free(rets);
+
+    if (err.code != 200) {
+        debug(client, err);
+        return;
+    }
+}
+```
+
+和批量查看一样，`entries`是一个指向`Qiniu_RS_EntryPath`结构体数组的指针，`entryCount`为数组`entries`的长度。`Qiniu_RS_BatchDelete`会将删除操作的成功/失败信息依次写入一个由结构体`Qiniu_RS_BatchItemRet`组成的数组空间`rets`。同样需要先申请好相应长度的内存空间。
+
+其中结构体`Qiniu_RS_BatchItemRet`的组成如下：
+
+```{c}
+typedef struct _Qiniu_RS_BatchItemRet {
+    const char* error;
+    int code;
+}Qiniu_RS_BatchItemRet;
+```
+
+#### 批量复制
+
+调用`Qiniu_RS_BatchCopy`可以批量删除多个文件。
+
+```{c}
+void batchCopy(Qiniu_Client* client, 
+        Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
+{
+    Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
+    Qiniu_Error err = Qiniu_RS_BatchCopy(client, rets, entryPairs, entryCount);
+    int curr = 0;
+
+    while (curr < entryCount) {
+        printf("\ncode: %d\n", rets[curr].code);
+
+        if (rets[curr].code != 200) {
+            printf("error: %s\n", rets[curr].error);
+        }
+        curr++;
+    }
+    free(rets);
+
+    if (err.code != 200) {
+        debug(client, err);
+        return;
+    }
+}
+```
+
+批量复制需要指明每个操作的源路径和目标路径，`entryPairs`是一个指向`Qiniu_RS_EntryPathPair`结构体数组的指针，`entryCount`为数组`entryPairs`的长度。结构体`Qiniu_RS_EntryPathPair`结构如下：
+
+```{c}
+typedef struct _Qiniu_RS_EntryPathPair {
+    Qiniu_RS_EntryPath src;
+    Qiniu_RS_EntryPath dest;
+} Qiniu_RS_EntryPathPair;
+```
+
+同之前一样 ，`Qiniu_RS_BatchCopy`会将复制操作的成功/失败信息依次写入一个由结构体`Qiniu_RS_BatchItemRet`组成的数组空间`rets`。
+
+#### 批量移动
+
+批量移动和批量复制很类似，唯一的区别就是调用`Qiniu_RS_BatchMove`。
+
+```{c}
+void batchMove(Qiniu_Client* client, 
+        Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
+{
+    Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
+    Qiniu_Error err = Qiniu_RS_BatchMove(client, rets, entryPairs, entryCount);
+
+    int curr = 0;
+    while (curr < entryCount) {
+        printf("\ncode: %d\n", rets[curr].code);
+
+        if (rets[curr].code != 200) {
+            printf("error: %s\n", rets[curr].error);
+        }
+        curr++;
+    }
+
+    free(rets);
+
+    if (err.code != 200) {
+        debug(client, err);
+        return;
+    }
+}
+```
 
