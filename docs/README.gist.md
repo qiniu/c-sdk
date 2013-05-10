@@ -388,7 +388,7 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 
 #### 批量复制
 
-调用`Qiniu_RS_BatchCopy`可以批量删除多个文件。
+调用`Qiniu_RS_BatchCopy`可以批量复制多个文件。
 
 ```{c}
 @gist(gist/server.c#batchCopy)
