@@ -14,6 +14,21 @@
 #include "CUnit/Basic.h"
 #include "test.h"
 
+static const char bucket[] = "Bucket";
+static const char key[] = "key2";
+static const char domain[] = "aatest.qiniudn.com";
+
+void getUptoken(char **uptoken){
+	Qiniu_Error err;
+	Qiniu_RS_PutPolicy putPolicy;
+
+	Qiniu_Zero(putPolicy);
+	putPolicy.scope = bucket;
+	*uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, NULL);
+}
+void deleteFile(){
+	Qiniu_RS_Delete(&serverClient, bucket, key);
+}
 
 void AddTests(void);
 
@@ -75,6 +90,13 @@ int main(int argc, char* argv[])
         printf("\nInitialization of Test Registry failed.");
     }
     else {
+        //*
+        AddTestsBase(); //*/
+        AddTestsIo();  //*/
+        AddTestsRs(); //*/
+        AddTestsResumableIo();
+        AddTestsHttp();
+        //*/
         /*/
 
         AddTestsRS();//* //1
@@ -85,7 +107,6 @@ int main(int argc, char* argv[])
         AddTestsOauth2();//* //7
         AddTestsAuthPolicy();//* //8
         //AddTestsIo();//*/ //9?
-        AddTestsBase();//*  //2
         //AddTestsOauth2Passwd();//*/
         //AddTestsUpDemoResumable(myMode);//*
 

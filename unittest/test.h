@@ -17,6 +17,7 @@ static int myMode;
 
 #include "../CUnit/CUnit/Headers/Basic.h"
 #include "../CUnit/CUnit/Headers/CUnit.h"
+#include "../qiniu/rs.h"
 
 #define QINIU_TESTS_BEGIN(testClass) \
 static CU_TestInfo tests_##testClass[] = {
@@ -56,5 +57,32 @@ if(CUE_SUCCESS != CU_register_suites(suites)){  \
     fprintf(stderr, "Register suits_name failed - %s ", CU_get_error_msg()); \
     exit(EXIT_FAILURE); \
 }
+
+Qiniu_Client serverClient;
+
+int Qiniu_IsEqual(Qiniu_Reader a, Qiniu_Reader b);
+
+typedef struct _Qiniu_Eq {
+	Qiniu_Reader v;
+	int result;
+} Qiniu_Eq;
+
+int Qiniu_Is(Qiniu_Eq* eq);
+
+Qiniu_Writer Qiniu_EqWriter(Qiniu_Eq* self, Qiniu_Reader v);
+
+/*============================================================================*/
+/* type Qiniu_Seq */
+
+typedef struct _Qiniu_Seq {
+	size_t off;
+	size_t limit;
+	int radix;	// 10
+	int base;	// '0'
+	size_t delta; // 0
+} Qiniu_Seq;
+
+Qiniu_Reader Qiniu_SeqReader(Qiniu_Seq* self, size_t limit, int radix, int base, size_t delta);
+Qiniu_ReaderAt Qiniu_SeqReaderAt(Qiniu_Seq* self, size_t limit, int radix, int base, size_t delta);
 #endif
 

@@ -16,25 +16,24 @@
 #include "../CUnit/CUnit/Headers/Automated.h"
 #include "../CUnit/CUnit/Headers/TestDB.h"
 #include "../qiniu/base.h"
-#include "../qiniu/rs.h"
+#include "../qiniu/conf.h"
 #include "test.h"
 
 
 Qiniu_Error err;
-Qiniu_Client client;
 
 //#define TESTFILE "/home/wsy/文档/c-sdk/unit-test/test_file.txt"
-#define TESTFILE_I "test_file_64B.txt"
+#define TESTFILE_I "test_file_64b.txt"
 #define TESTFILE_O "test_file_output.txt"
 
-void test_Qiniu_Seconds(){
+static void test_Qiniu_Seconds(){
     Qiniu_Int64 sec1,sec2;
     sec1=time(NULL);
     sec2=Qiniu_Seconds();
     CU_ASSERT(sec1<=sec2 && sec1>sec2-5);
 }
 
-void test_Qiniu_QueryEscape(){
+static void test_Qiniu_QueryEscape(){
     Qiniu_Bool fesc;
     char *str;
     //test branch:normal
@@ -58,18 +57,18 @@ void test_Qiniu_QueryEscape(){
     CU_ASSERT_STRING_EQUAL(str,"abxz-ABXZ~0189")
 }
 
-void test_Qiniu_String_Concat2(){
+static void test_Qiniu_String_Concat2(){
     CU_ASSERT_STRING_EQUAL(Qiniu_String_Concat2("asdf","qwe"),"asdfqwe");
 }
 
-void test_Qiniu_String_Concat3(){
+static void test_Qiniu_String_Concat3(){
     CU_ASSERT_STRING_EQUAL(Qiniu_String_Concat3("as","df","qwe"),"asdfqwe");
 }
-void test_Qiniu_String_Concat(){
+static void test_Qiniu_String_Concat(){
     CU_ASSERT_EQUAL(strncmp(Qiniu_String_Concat("a","s","d","f","q","w","e"),"asdfqwe",7),0);
     //CU_ASSERT_STRING_EQUAL(Qiniu_String_Concat("a","s","d","f","q","w","e"),"asdfqwe");
 }
-void test_Qiniu_String_Encode(){
+static void test_Qiniu_String_Encode(){
     const char* s1="abcdABCD1234=+";
     const size_t cb = strlen(s1);
     const size_t cbDest = urlsafe_b64_encode(s1, cb, NULL, 0);
@@ -79,17 +78,17 @@ void test_Qiniu_String_Encode(){
     CU_ASSERT_STRING_EQUAL(Qiniu_String_Encode(s1),dest);
 }
 
-void test_Qiniu_Memory_Encode(){
+static void test_Qiniu_Memory_Encode(){
     const char* s1="abcdABCD1234=+";
     const size_t cb = strlen(s1);
     CU_ASSERT_STRING_EQUAL(Qiniu_Memory_Encode(s1,cb),Qiniu_String_Encode(s1));
 }
 
-void test_Qiniu_String_Decode(){
+static void test_Qiniu_String_Decode(){
     CU_ASSERT_STRING_EQUAL(Qiniu_String_Decode(Qiniu_String_Encode("abcdABCD1234=+-*")),"abcdABCD1234=+-*");
 }
 
-void test_Qiniu_Buffer_Init(){
+static void test_Qiniu_Buffer_Init(){
     size_t size=16;
     Qiniu_Buffer* buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,size);
@@ -97,7 +96,7 @@ void test_Qiniu_Buffer_Init(){
     CU_ASSERT_EQUAL(buff->bufEnd,buff->buf+size);
 }
 
-void test_Qiniu_Buffer_Reset(){
+static void test_Qiniu_Buffer_Reset(){
     size_t size=16;
     char* s="1234567890";
     Qiniu_Buffer* buff=malloc(sizeof(Qiniu_Buffer));
@@ -108,7 +107,7 @@ void test_Qiniu_Buffer_Reset(){
     CU_ASSERT_EQUAL(buff->curr,buff->buf);
 }
 
-void test_Qiniu_Buffer_Cleanup(){
+static void test_Qiniu_Buffer_Cleanup(){
     size_t size=16;
     Qiniu_Buffer* buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,size);
@@ -119,7 +118,7 @@ void test_Qiniu_Buffer_Cleanup(){
     CU_ASSERT_EQUAL(buff->buf,NULL);
 }
 
-void test_Qiniu_Buffer_Len(){
+static void test_Qiniu_Buffer_Len(){
     size_t size=16;
     Qiniu_Buffer* buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,size);
@@ -128,7 +127,7 @@ void test_Qiniu_Buffer_Len(){
     CU_ASSERT_EQUAL(Qiniu_Buffer_Len(buff),5);
 }
 
-void test_Qiniu_Buffer_CStr(){
+static void test_Qiniu_Buffer_CStr(){
     size_t size=2;
     Qiniu_Buffer* buff=malloc(sizeof(Qiniu_Buffer));
     //test branch self->curr >= self->bufEnd
@@ -142,7 +141,7 @@ void test_Qiniu_Buffer_CStr(){
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qiniu");
 }
 
-void test_Qiniu_Buffer_PutChar(){
+static void test_Qiniu_Buffer_PutChar(){
     Qiniu_Buffer* buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,1);
     Qiniu_Buffer_PutChar(buff,'Q');
@@ -150,7 +149,7 @@ void test_Qiniu_Buffer_PutChar(){
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qi");
 }
 
-void test_Qiniu_Buffer_Write(){
+static void test_Qiniu_Buffer_Write(){
     size_t size=4;
     Qiniu_Buffer* buff=malloc(sizeof(Qiniu_Buffer));
     //test branch self->curr + n <self->bufEnd
@@ -167,14 +166,14 @@ void test_Qiniu_Buffer_Write(){
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qiniu");
 }
 
-void test_Qiniu_Buffer_Fwrite(){
+static void test_Qiniu_Buffer_Fwrite(){
     size_t size=4;
     Qiniu_Buffer* buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,size);
     Qiniu_Buffer_Fwrite("Qiniu",1,5,buff);
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qiniu");
 }
-void test_Qiniu_BufWriter(){
+static void test_Qiniu_BufWriter(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Writer writer;
     Qiniu_Buffer_Init(buff,8);
@@ -183,7 +182,7 @@ void test_Qiniu_BufWriter(){
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(writer.self),"Qiniu");
 }
 
-void test_Qiniu_Buffer_Expand(){
+static void test_Qiniu_Buffer_Expand(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,8);
     char* p;
@@ -196,14 +195,14 @@ void test_Qiniu_Buffer_Expand(){
     CU_ASSERT_EQUAL(p,buff->buf);
 }
 
-void test_Qiniu_Buffer_Commit(){
+static void test_Qiniu_Buffer_Commit(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,8);
     char* p=buff->buf+1;
     Qiniu_Buffer_Commit(buff,p);
     CU_ASSERT_EQUAL(buff->curr,p);
 }
-void test_Qiniu_Buffer_AppendUint(){
+static void test_Qiniu_Buffer_AppendUint(){
     Qiniu_Uint64 v;
     Qiniu_Buffer *buff;
     buff=malloc(sizeof(Qiniu_Buffer));
@@ -221,7 +220,7 @@ void test_Qiniu_Buffer_AppendUint(){
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"2147483648");
 }
 
-void test_Qiniu_Buffer_AppendInt(){
+static void test_Qiniu_Buffer_AppendInt(){
     Qiniu_Int64 v;
     Qiniu_Buffer *buff;
     buff=malloc(sizeof(Qiniu_Buffer));
@@ -243,7 +242,7 @@ void test_Qiniu_Buffer_AppendInt(){
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"9223372036854775807");
 }
 
-void test_Qiniu_Buffer_AppendError(){
+static void test_Qiniu_Buffer_AppendError(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Error error;
     error.code=200;
@@ -259,7 +258,7 @@ void test_Qiniu_Buffer_AppendError(){
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"E200 ok");
 }
 
-void test_Qiniu_Buffer_AppendEncodedBinary(){
+static void test_Qiniu_Buffer_AppendEncodedBinary(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     const char* str="qiniu";
     size_t cb=5;
@@ -268,18 +267,20 @@ void test_Qiniu_Buffer_AppendEncodedBinary(){
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),Qiniu_String_Encode(str));
 }
 
-void test_qiniu_buffer_appendformatv(Qiniu_Buffer* self, const char* fmt, ...){
+static void test_qiniu_buffer_appendformatv(Qiniu_Buffer* self, const char* fmt, ...){
     Qiniu_Valist args;
     va_start(args.items, fmt);
     Qiniu_Buffer_AppendFormatV(self, fmt, &args);
 }
-void test_Qiniu_Buffer_appendUint(){
+
+static void test_Qiniu_Buffer_appendUint(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,32);
     test_qiniu_buffer_appendformatv(buff,"Qiniu %u",-1);
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qiniu 4294967295");
 }
-void test_Qiniu_Buffer_appendInt(){
+
+static void test_Qiniu_Buffer_appendInt(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,32);
     test_qiniu_buffer_appendformatv(buff,"Qiniu %d",64);
@@ -288,7 +289,8 @@ void test_Qiniu_Buffer_appendInt(){
     test_qiniu_buffer_appendformatv(buff,"Qiniu %d",-1);
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qiniu -1");
 }
-void test_Qiniu_Buffer_appendUint64(){
+
+static void test_Qiniu_Buffer_appendUint64(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,32);
     test_qiniu_buffer_appendformatv(buff,"Qiniu %U",((Qiniu_Uint64)1<<63));
@@ -297,7 +299,8 @@ void test_Qiniu_Buffer_appendUint64(){
     test_qiniu_buffer_appendformatv(buff,"Qiniu %U",(Qiniu_Uint64)-1);
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qiniu 18446744073709551615");
 }
-void test_Qiniu_Buffer_appendInt64(){
+
+static void test_Qiniu_Buffer_appendInt64(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,32);
     test_qiniu_buffer_appendformatv(buff,"Qiniu %D",~((Qiniu_Int64)1<<63));
@@ -309,7 +312,8 @@ void test_Qiniu_Buffer_appendInt64(){
     test_qiniu_buffer_appendformatv(buff,"Qiniu %D",(Qiniu_Int64)-1);
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qiniu -1");
 }
-void test_Qiniu_Buffer_appendString(){
+
+static void test_Qiniu_Buffer_appendString(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,32);
     test_qiniu_buffer_appendformatv(buff,"Qiniu %s","c-sdk");
@@ -318,7 +322,8 @@ void test_Qiniu_Buffer_appendString(){
     test_qiniu_buffer_appendformatv(buff,"Qiniu %s",NULL);
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qiniu (null)");
 }
-void test_Qiniu_Buffer_appendEncodedString(){
+
+static void test_Qiniu_Buffer_appendEncodedString(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,32);
     test_qiniu_buffer_appendformatv(buff,"Qiniu %S","c-sdk");
@@ -327,7 +332,8 @@ void test_Qiniu_Buffer_appendEncodedString(){
     strcat(str,Qiniu_String_Encode("c-sdk"));
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),str);
 }
-void test_Qiniu_Buffer_appendError(){
+
+static void test_Qiniu_Buffer_appendError(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Error error;
     error.code=200;
@@ -336,16 +342,19 @@ void test_Qiniu_Buffer_appendError(){
     test_qiniu_buffer_appendformatv(buff,"Qiniu %E",error);
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qiniu E200 ok");
 }
-void test_Qiniu_Buffer_appendPercent(){
+
+static void test_Qiniu_Buffer_appendPercent(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,32);
     test_qiniu_buffer_appendformatv(buff,"Qiniu %%");
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qiniu %");
 }
-void test_Qiniu_FnAppender(Qiniu_Buffer* self, Qiniu_Valist* ap){
+
+static void test_Qiniu_FnAppender(Qiniu_Buffer* self, Qiniu_Valist* ap){
     Qiniu_Buffer_Write(self, "test", 4);
 }
-void test_Qiniu_Format_Register(){
+
+static void test_Qiniu_Format_Register(){
     Qiniu_Format_Register('t',test_Qiniu_FnAppender);
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,32);
@@ -357,7 +366,8 @@ void test_Qiniu_Format_Register(){
     test_qiniu_buffer_appendformatv(buff,"Qiniu %汉");
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qiniu %汉");
 }
-void test_Qiniu_Buffer_AppendFormatV(){
+
+static void test_Qiniu_Buffer_AppendFormatV(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,32);
     test_qiniu_buffer_appendformatv(buff,"%s%s %U","Qi","niu",777);
@@ -372,21 +382,25 @@ void test_Qiniu_Buffer_AppendFormatV(){
     test_qiniu_buffer_appendformatv(buff,"Qiniu %n");
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qiniu %n");
 }
-void test_Qiniu_Buffer_AppendFormat(){
+
+static void test_Qiniu_Buffer_AppendFormat(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,32);
     Qiniu_Buffer_AppendFormat(buff,"%s%s %U","Qi","niu",777);
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_CStr(buff),"Qiniu 777");
 }
-void test_Qiniu_Buffer_Format(){
+
+static void test_Qiniu_Buffer_Format(){
     Qiniu_Buffer *buff=malloc(sizeof(Qiniu_Buffer));
     Qiniu_Buffer_Init(buff,32);
     CU_ASSERT_STRING_EQUAL(Qiniu_Buffer_Format(buff,"%s%s %U","Qi","niu",777),"Qiniu 777");
 }
-void test_Qiniu_String_Format(){
+
+static void test_Qiniu_String_Format(){
     CU_ASSERT_STRING_EQUAL(Qiniu_String_Format(32,"%s%s %U","Qi","niu",777),"Qiniu 777");
 }
-void test_Qiniu_FILE_Reader(){
+
+static void test_Qiniu_FILE_Reader(){
     FILE* file;
     Qiniu_Reader reader;
     file=fopen(TESTFILE_I,"r");
@@ -397,7 +411,8 @@ void test_Qiniu_FILE_Reader(){
     reader=Qiniu_FILE_Reader(NULL);
     CU_ASSERT_EQUAL(reader.self,NULL);
 }
-void test_Qiniu_FILE_Writer(){
+
+static void test_Qiniu_FILE_Writer(){
     FILE* file;
     Qiniu_Writer writer;
     file=fopen(TESTFILE_O,"w");
@@ -408,7 +423,8 @@ void test_Qiniu_FILE_Writer(){
     writer=Qiniu_FILE_Writer(NULL);
     CU_ASSERT_EQUAL(writer.self,NULL);
 }
-void test_Qiniu_Copy(){
+
+static void test_Qiniu_Copy(){
     Qiniu_Writer writer;
     Qiniu_Reader reader;
 
@@ -471,18 +487,22 @@ void test_Qiniu_Copy(){
     free(buff);
     free(str2);
 }
-void test_Qiniu_Null_Fwrite(){
+
+static void test_Qiniu_Null_Fwrite(){
     CU_ASSERT_EQUAL(Qiniu_Null_Fwrite(NULL,1,5,NULL),5);
 }
-void test_Qiniu_Null_Log(){
+
+static void test_Qiniu_Null_Log(){
     Qiniu_Null_Log("test");
 }
-void test_qiniu_logv(Qiniu_Writer w, int ilvl, const char* fmt, ...){
+
+static void test_qiniu_logv(Qiniu_Writer w, int ilvl, const char* fmt, ...){
     Qiniu_Valist args;
     va_start(args.items, fmt);
     Qiniu_Logv(w, ilvl, fmt, &args);
 }
-void test_Qiniu_Logv(){
+
+static void test_Qiniu_Logv(){
     Qiniu_Writer writer;
     Qiniu_Reader reader;
     FILE* writeFile;
@@ -506,34 +526,71 @@ void test_Qiniu_Logv(){
     free(str);
 
 }
-void test_Qiniu_Stderr_Info(){
+
+static void test_Qiniu_Stderr_Info(){
     Qiniu_Stderr_Info("Qiniu %sv%d","test",7);
 }
-void test_Qiniu_Stderr_Warn(){
+
+static void test_Qiniu_Stderr_Warn(){
     Qiniu_Stderr_Warn("Qiniu %sv%d","test",7);
 }
+//*//base_io.c
 
+static void test_Qiniu_Crc32_Update(){
+    unsigned long inCrc32,crc;
+    const char *buf="Qiniu unit test!";
+    size_t bufLen=16;
+    inCrc32=3160732;
+    crc=Qiniu_Crc32_Update(inCrc32,buf,bufLen);
+}
 
+static void test_Qiniu_Crc32Writer(){
+    Qiniu_Crc32* crc32=malloc(sizeof(Qiniu_Crc32));
+    unsigned long inCrc32=3160732;
+    const char *buf="Qiniu unit test!";
+    size_t bufLen=16;
+    Qiniu_Writer writer;
+    writer=Qiniu_Crc32Writer(crc32,inCrc32);
+    CU_ASSERT_EQUAL(writer.self,crc32);
+    CU_ASSERT_EQUAL(((Qiniu_Crc32*)(writer.self))->val,inCrc32);
+    writer.Write(buf,0,bufLen,writer.self);
+    CU_ASSERT_EQUAL(((Qiniu_Crc32*)(writer.self))->val,Qiniu_Crc32_Update(inCrc32,buf,bufLen));
+}
 
+static void test_Qiniu_BufReader(){
+    Qiniu_ReadBuf readBuf;
+    Qiniu_Reader reader;
+    const char* buf="Qiniu unit test!";
+    int len=16;
+    reader=Qiniu_BufReader(&readBuf,buf,len);
+    CU_ASSERT_EQUAL(reader.self,&readBuf);
+    CU_ASSERT_STRING_EQUAL(((Qiniu_ReadBuf*)(reader.self))->buf,buf);
+    CU_ASSERT_EQUAL(((Qiniu_ReadBuf*)(reader.self))->off,0);
+    CU_ASSERT_EQUAL(((Qiniu_ReadBuf*)(reader.self))->limit,len);
+}
 
-/*
-void test_Qiniu_BufReader_Read(){
+static void test_Qiniu_ReadBuf_Read(){
     int len;
     void *buf=malloc(64);
-    Qiniu_BufReader* bufReader=malloc(sizeof(Qiniu_BufReader));
+
+    Qiniu_ReadBuf readBuf;
     Qiniu_Reader reader;
-    reader=Qiniu_Buffer_Reader(bufReader,"test_Qiniu_BufReader_Read",25);
+    reader=Qiniu_BufReader(&readBuf,"Qiniu unit test!",16);
     //test branch:n<max
-	len=reader.Read(buf,0,9,reader.self);
-	*((char*)buf+9)='\0';
-	CU_ASSERT_EQUAL(len,9);
-	CU_ASSERT_EQUAL(bufReader->off,9);
-	CU_ASSERT_STRING_EQUAL(buf,"test_Qiniu");
+    int buflen1=10;
+	len=reader.Read(buf,0,buflen1,reader.self);
+	*((char*)buf+len)='\0';
+	CU_ASSERT_EQUAL(len,buflen1);
+	CU_ASSERT_EQUAL(readBuf.off,buflen1);
+	CU_ASSERT_STRING_EQUAL(buf,"Qiniu unit");
     //test branch:n>max
-	len=reader.Read(buf,0,30,reader.self);
-	CU_ASSERT_EQUAL(len,16);
-	CU_ASSERT_EQUAL(bufReader->off,25);
-	CU_ASSERT_STRING_EQUAL(buf,"_BufReader_Read");
+
+    int buflen2=16;
+	len=reader.Read(buf,0,buflen2*2,reader.self);
+	CU_ASSERT_EQUAL(len,buflen2-buflen1);
+	CU_ASSERT_EQUAL(readBuf.off,buflen2);
+	*((char*)buf+len)='\0';
+	CU_ASSERT_STRING_EQUAL(buf," test!");
 	//test branch:max<=0
 	len=reader.Read(buf,0,0,reader.self);
 	CU_ASSERT_EQUAL(len,0);
@@ -541,77 +598,202 @@ void test_Qiniu_BufReader_Read(){
 	CU_ASSERT_EQUAL(len,0);
 }
 
-void test_Qiniu_buffer_Reader(){
-    Qiniu_BufReader* bufReader=malloc(sizeof(Qiniu_BufReader));
-    Qiniu_Reader reader;
-    reader=Qiniu_Buffer_Reader(bufReader,"test_Qiniu_buffer_Reader",23);
-    CU_ASSERT_EQUAL(reader.self,bufReader);
-    CU_ASSERT_STRING_EQUAL(((Qiniu_BufReader*)(reader.self))->buf,"test_Qiniu_buffer_Reader");
-    CU_ASSERT_EQUAL(((Qiniu_BufReader*)(reader.self))->off,0);
-    CU_ASSERT_EQUAL(((Qiniu_BufReader*)(reader.self))->limit,23);
+static void test_Qiniu_BufReaderAt(){
+    Qiniu_ReadBuf readBuf;
+    Qiniu_ReaderAt readerAt;
+    const char* buf="Qiniu unit test!";
+    int len=16;
+    readerAt=Qiniu_BufReaderAt(&readBuf,buf,len);
+    CU_ASSERT_EQUAL(readerAt.self,&readBuf);
+    CU_ASSERT_STRING_EQUAL(((Qiniu_ReadBuf*)(readerAt.self))->buf,buf);
+    CU_ASSERT_EQUAL(((Qiniu_ReadBuf*)(readerAt.self))->off,0);
+    CU_ASSERT_EQUAL(((Qiniu_ReadBuf*)(readerAt.self))->limit,len);
 }
 
-void test_Qiniu_sectionReader_Read(){
-    char *buff=malloc(256);
-    Qiniu_Reader reader;
+static void test_Qiniu_ReadBuf_ReadAt(){
+    void *ret=malloc(64);
+
+    Qiniu_ReadBuf readBuf;
     Qiniu_ReaderAt readerAt;
-    int result=-1;
+    const char* buf="Qiniu unit test!";
+    int len=16;
+    readerAt=Qiniu_BufReaderAt(&readBuf,buf,len);
     //test branch:n<max
-    readerAt=Qiniu_FileReaderAt_Open(TESTFILE);
-    reader=Qiniu_SectionReader(readerAt,0,28);
-    result=reader.Read(buff,0,9,reader.self);
-    buff[9]='\0';
-    CU_ASSERT_EQUAL(result,9);
-    CU_ASSERT_STRING_EQUAL(buff,"JUST FOR ");
-    result=reader.Read(buff,0,30,reader.self);
-    buff[19]='\0';
-    CU_ASSERT_EQUAL(result,19);
-    CU_ASSERT_STRING_EQUAL(buff,"TEST!JUST FOR TEST!");
+    int off;
+    int retlen;
+
+    off=0;
+    len=10;
+	retlen=readerAt.ReadAt(readerAt.self,ret,len,off);
+	*((char*)ret+retlen)='\0';
+	CU_ASSERT_EQUAL(retlen,len);
+	CU_ASSERT_STRING_EQUAL(ret,"Qiniu unit");
     //test branch:n>max
-    result=reader.Read(buff,0,0,reader.self);
-    CU_ASSERT_EQUAL(result,0);
-    result=reader.Read(buff,0,-5,reader.self);
-    CU_ASSERT_EQUAL(result,0);
+
+    off=11;
+    len=5;
+	retlen=readerAt.ReadAt(readerAt.self,ret,len*2,off);
+	CU_ASSERT_EQUAL(retlen,len);
+	*((char*)ret+retlen)='\0';
+	CU_ASSERT_STRING_EQUAL(ret,"test!");
+	//test branch:max<=0
+	retlen=readerAt.ReadAt(readerAt.self,ret,len,17);//off>limit
+	CU_ASSERT_EQUAL(retlen,0);
+	retlen=readerAt.ReadAt(readerAt.self,ret,-1,0);//unsigned int so -1=2^32-1
+	CU_ASSERT_EQUAL(retlen,16);
+	*((char*)ret+retlen)='\0';
+	CU_ASSERT_STRING_EQUAL(ret,buf);
 }
 
-void test_Qiniu_SectionReader_Release(){
+static void test_Qiniu_SectionReader(){
+    Qiniu_Section section;
     Qiniu_Reader reader;
+
+    Qiniu_ReadBuf readBuf;
     Qiniu_ReaderAt readerAt;
+    const char* buf="Qiniu unit test!";
+    int len=16;
+    readerAt=Qiniu_BufReaderAt(&readBuf,buf,len);
 
-    readerAt=Qiniu_FileReaderAt_Open(TESTFILE);
-    reader=Qiniu_SectionReader(readerAt,0,29);
-
-    Qiniu_SectionReader_Release(reader.self);
+    reader=Qiniu_SectionReader(&section,readerAt,11,5);
+    Qiniu_Section *readerSection=reader.self;
+    CU_ASSERT_EQUAL(readerSection,&section);
+    CU_ASSERT_EQUAL(readerSection->off,11);
+    CU_ASSERT_EQUAL(readerSection->limit,16);
 }
 
-void test_Qiniu_FileReaderAt_Open(){
-    CU_ASSERT_EQUAL(Qiniu_FileReaderAt_Open("bazingo").self,NULL);
+static void test_Qiniu_Section_Read(){
+
+    Qiniu_Section section;
+    Qiniu_Reader reader;
+
+    Qiniu_ReadBuf readBuf;
+    Qiniu_ReaderAt readerAt;
+    const char* buf="Qiniu unit test!";
+    int len=16;
+    readerAt=Qiniu_BufReaderAt(&readBuf,buf,len);
+
+    reader=Qiniu_SectionReader(&section,readerAt,0,16);
+    Qiniu_Section *readerSection=reader.self;
+
+    char *ret=malloc(128);
+    int retlen;
+    int buflen1=10;
+	retlen=reader.Read(ret,0,buflen1,reader.self);
+	*((char*)ret+retlen)='\0';
+	CU_ASSERT_EQUAL(retlen,buflen1);
+	CU_ASSERT_EQUAL(readerSection->off,buflen1);
+	CU_ASSERT_STRING_EQUAL(ret,"Qiniu unit");
+    //test branch:n>max
+
+    int buflen2=16;
+	retlen=reader.Read(ret,0,buflen2*2,reader.self);
+	CU_ASSERT_EQUAL(retlen,buflen2-buflen1);
+	CU_ASSERT_EQUAL(readerSection->off,buflen2);
+	*((char*)ret+retlen)='\0';
+	CU_ASSERT_STRING_EQUAL(ret," test!");
+	//test branch:max<=0
+	retlen=reader.Read(ret,0,0,reader.self);
+	CU_ASSERT_EQUAL(retlen,0);
+	retlen=reader.Read(ret,0,-1,reader.self);
+	CU_ASSERT_EQUAL(retlen,0);
 }
 
-void test_Qiniu_FileReaderAt_Close(){
-    Qiniu_FileReaderAt_Close(TESTFILE);
+size_t testRead(void* buf, size_t unused, size_t n, Qiniu_Tee* self){
+    return n;
 }
-*/
+
+size_t testWrite(void* buf, size_t unused, size_t n, Qiniu_Tee* self){
+    CU_ASSERT(1);
+    return n;
+}
+
+static void test_Qiniu_TeeReader(){
+    Qiniu_Tee tee;
+    Qiniu_Reader r={NULL,(Qiniu_FnRead)testRead};
+    Qiniu_Writer w={NULL,(Qiniu_FnWrite)testWrite};
+    Qiniu_Reader reader=Qiniu_TeeReader(&tee,r,w);
+    CU_ASSERT_EQUAL(reader.self,&tee);
+}
+
+static void test_Qiniu_Tee_Read(){
+    size_t len;
+    Qiniu_Tee tee;
+    Qiniu_Reader r={NULL,(Qiniu_FnRead)testRead};
+    Qiniu_Writer w={NULL,(Qiniu_FnWrite)testWrite};
+    Qiniu_Reader reader=Qiniu_TeeReader(&tee,r,w);
+    len=0;
+    CU_ASSERT_EQUAL(reader.Read("",0,len,reader.self),len);
+    len=3160732;
+    CU_ASSERT_EQUAL(reader.Read("",0,len,reader.self),len);
+
+}
+
+static void test_Qiniu_File_Open(){
+    Qiniu_Error error;
+    Qiniu_File *file;
+    error=Qiniu_File_Open(&file,"bazingo");
+    CU_ASSERT_STRING_EQUAL(error.message,"open file failed");
+    error=Qiniu_File_Open(&file,TESTFILE_I);
+    CU_ASSERT_EQUAL(error.code,200);
+    Qiniu_File_Close(file);
+}
+
+static void test_Qiniu_File_Close(){
+    Qiniu_File *file;
+    Qiniu_File_Open(&file,TESTFILE_I);
+    Qiniu_File_Close(file);
+}
+
+static void test_Qiniu_File_Stat(){
+    Qiniu_Error error;
+    Qiniu_File *file;
+    Qiniu_FileInfo* info=malloc(256);
+    Qiniu_File_Open(&file,TESTFILE_I);
+    error=Qiniu_File_Stat(file,NULL);
+    CU_ASSERT_STRING_EQUAL(error.message,"fstat failed");
+    error=Qiniu_File_Stat(file,info);
+    CU_ASSERT_EQUAL(error.code,200);
+}
+
+static void test_Qiniu_FileReaderAt(){
+    Qiniu_File *file;
+    Qiniu_ReaderAt readerAt;
+    readerAt=Qiniu_FileReaderAt(file);
+    CU_ASSERT_EQUAL(readerAt.self,file);
+}
+
+static void test_Qiniu_File_ReadAt(){
+    Qiniu_File *file;
+    Qiniu_ReaderAt readerAt;
+    Qiniu_File_Open(&file,TESTFILE_I);
+    readerAt=Qiniu_FileReaderAt(file);
+
+    char *buf=malloc(128);
+    readerAt.ReadAt(readerAt.self,buf,16,0);
+    *(buf+16)='\0';
+    CU_ASSERT_STRING_EQUAL(buf,"QINIU_UNIT_TEST!");
+    readerAt.ReadAt(readerAt.self,buf,32,16);
+    *(buf+32)='\0';
+    CU_ASSERT_STRING_EQUAL(buf,"QINIU_UNIT_TEST!QINIU_UNIT_TEST!");
+}
+
 
 /**//*---- test suites ------------------*/
-int suite_init_base(void)
+static int suite_init(void)
 {
-    //stderr="test_file_output.txt";
+
 	QINIU_ACCESS_KEY = "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";
 	QINIU_SECRET_KEY = "yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze";
 
-	Qiniu_Zero(client);
 	Qiniu_Global_Init(-1);
 
-    Qiniu_Client_InitNoAuth(&client,1024);
-	//Qiniu_Client_Init(&client, 1024);
 
 	return 0;
 }
 
-int suite_clean_base(void)
+static int suite_clean(void)
 {
-	Qiniu_Client_Cleanup(&client);
 	Qiniu_Global_Cleanup();
 
     return 0;
@@ -664,18 +846,26 @@ QINIU_TEST(test_Qiniu_Logv)
 QINIU_TEST(test_Qiniu_Stderr_Info)
 QINIU_TEST(test_Qiniu_Stderr_Warn)
 //base.c*/
-/*base_io.c
-QINIU_TEST(test_Qiniu_BufReader_Read)
-QINIU_TEST(test_Qiniu_buffer_Reader)
-QINIU_TEST(test_Qiniu_sectionReader_Read)
-QINIU_TEST(test_Qiniu_FileReaderAt_Open)
-QINIU_TEST(test_Qiniu_SectionReader_Release)
-QINIU_TEST(test_Qiniu_FileReaderAt_Close)
-//base_io.c*/
+//*base_io.c
+QINIU_TEST(test_Qiniu_Crc32_Update)
+QINIU_TEST(test_Qiniu_Crc32Writer)
+QINIU_TEST(test_Qiniu_BufReader)
+QINIU_TEST(test_Qiniu_ReadBuf_Read)
+QINIU_TEST(test_Qiniu_BufReaderAt)
+QINIU_TEST(test_Qiniu_ReadBuf_ReadAt)
+QINIU_TEST(test_Qiniu_SectionReader)
+QINIU_TEST(test_Qiniu_Section_Read)
+QINIU_TEST(test_Qiniu_TeeReader)
+QINIU_TEST(test_Qiniu_Tee_Read)
+QINIU_TEST(test_Qiniu_File_Open)
+QINIU_TEST(test_Qiniu_File_Close)
+QINIU_TEST(test_Qiniu_File_Stat)
+QINIU_TEST(test_Qiniu_FileReaderAt)
+QINIU_TEST(test_Qiniu_File_ReadAt)
 QINIU_TESTS_END()
 
 QINIU_SUITES_BEGIN()
-QINIU_SUITE_EX(testcases_base,suite_init_base,suite_clean_base)
+QINIU_SUITE_EX(testcases_base,suite_init,suite_clean)
 QINIU_SUITES_END()
 
 

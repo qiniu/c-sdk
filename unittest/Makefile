@@ -9,6 +9,8 @@ SOURCE_FILES=\
 	../qiniu/rs.c\
 	../qiniu/io.c\
 	../qiniu/resumable_io.c\
+	../tests/seq.c\
+	../tests/equal.c\
 	*.c
 
 all: $(SOURCE_FILES)
