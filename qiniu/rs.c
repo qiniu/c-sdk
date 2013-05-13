@@ -206,7 +206,7 @@ Qiniu_Error Qiniu_RS_BatchStat(
         Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
 {
     Qiniu_Error err;
-	cJSON *root, *arrayItem, *dataItem;
+    cJSON *root, *arrayItem, *dataItem;
     char *body = NULL, *bodyTmp = NULL;
     char *entryURI, *entryURIEncoded, *opBody;
     Qiniu_RS_EntryPath* entry = entries;
@@ -269,7 +269,7 @@ Qiniu_Error Qiniu_RS_BatchDelete(
         Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
 {
     Qiniu_Error err;
-	cJSON *root, *arrayItem, *dataItem;
+    cJSON *root, *arrayItem, *dataItem;
     char *body = NULL, *bodyTmp = NULL;
     char *entryURI, *entryURIEncoded, *opBody;
     Qiniu_ItemCount curr = 0;
@@ -328,7 +328,7 @@ Qiniu_Error Qiniu_RS_BatchMove(
         Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
 {
     Qiniu_Error err;
-	cJSON *root, *arrayItem, *dataItem;
+    cJSON *root, *arrayItem, *dataItem;
     char *body = NULL, *bodyTmp = NULL;
     char *entryURISrc, *entryURISrcEncoded, *opBody;
     char *entryURIDest, *entryURIDestEncoded, *bodyPart;
@@ -395,7 +395,7 @@ Qiniu_Error Qiniu_RS_BatchCopy(
         Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
 {
     Qiniu_Error err;
-	cJSON *root, *arrayItem, *dataItem;
+    cJSON *root, *arrayItem, *dataItem;
     char *body = NULL, *bodyTmp = NULL;
     char *entryURISrc, *entryURISrcEncoded, *opBody;
     char *entryURIDest, *entryURIDestEncoded, *bodyPart;
