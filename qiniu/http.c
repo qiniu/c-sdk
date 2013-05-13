@@ -259,11 +259,11 @@ static Qiniu_Error Qiniu_Client_callWithBody(
 	headers = curl_slist_append(headers, ctxType);
 
 	if (self->auth.itbl != NULL) {
-        if (body == NULL) {
-		    err = self->auth.itbl->Auth(self->auth.self, &headers, url, NULL, 0);
-        } else {
-		    err = self->auth.itbl->Auth(self->auth.self, &headers, url, body, bodyLen);
-        }
+		if (body == NULL) {
+			err = self->auth.itbl->Auth(self->auth.self, &headers, url, NULL, 0);
+		} else {
+			err = self->auth.itbl->Auth(self->auth.self, &headers, url, body, bodyLen);
+		}
 
 		if (err.code != 200) {
 			return err;
