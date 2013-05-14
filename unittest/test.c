@@ -91,8 +91,8 @@ int main(int argc, char* argv[])
     }
     else {
         //*
-        AddTestsBase(); //*/
-        AddTestsIo();  //*/
+        AddTestsBase(); //*
+        AddTestsIo();  //*
         AddTestsRs(); //*/
         AddTestsResumableIo();
         AddTestsHttp();

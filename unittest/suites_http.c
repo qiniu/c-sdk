@@ -269,6 +269,34 @@ static void test_Qiniu_Client_CallWithBuffer(){
     */
 }
 
+static void test_Mac(){
+    Qiniu_MacAuth_Init();
+    Qiniu_MacAuth_Cleanup();
+    Qiniu_MacAuth_Init();
+    Qiniu_MacAuth_Cleanup();
+	Qiniu_Global_Cleanup();
+	Qiniu_Servend_Init(-1);
+	Qiniu_Servend_Cleanup();
+	Qiniu_Global_Init(-1);
+	Qiniu_Mac mac;
+	Qiniu_Mac *pointer_mac;
+	Qiniu_Auth auth;
+	auth=Qiniu_MacAuth(NULL);
+	pointer_mac=auth.self;
+	CU_ASSERT_EQUAL(pointer_mac,NULL);
+	mac.accessKey=malloc(sizeof(32));
+	mac.secretKey=malloc(sizeof(32));
+	strcpy(mac.accessKey,"test");
+	strcpy(mac.secretKey,"test");
+
+	auth=Qiniu_MacAuth(&mac);
+	pointer_mac=auth.self;
+	CU_ASSERT_STRING_EQUAL(pointer_mac->accessKey,mac.accessKey);
+	CU_ASSERT_STRING_EQUAL(pointer_mac->secretKey,mac.secretKey);
+
+
+}
+
 
 
 /**//*---- test suites ------------------*/
@@ -296,6 +324,7 @@ QINIU_TEST(test_Qiniu_Client_InitEx)
 QINIU_TEST(test_Qiniu_Client_InitNoAuth)
 QINIU_TEST(test_Qiniu_Client_Cleanup)
 //QINIU_TEST(test_Qiniu_Client_CallWithBuffer)
+QINIU_TEST(test_Mac)
 QINIU_TESTS_END()
 
 QINIU_SUITES_BEGIN()

@@ -100,43 +100,6 @@ static void test_Qiniu_Rio_Put()
 	Qiniu_Client_Cleanup(&client);
 }
 
-static void clientIoGet(const char* dntoken)
-{
-	Qiniu_Eq eq;
-	Qiniu_Seq seq;
-	Qiniu_Int64 fsize = testFsize;
-	Qiniu_Reader in = Qiniu_SeqReader(&seq, fsize, 10, '0', 0);
-	Qiniu_Writer w = Qiniu_EqWriter(&eq, in);
-
-	char* url = Qiniu_String_Concat("http://", domain, "/", key, "?token=", dntoken, NULL);
-
-	long code, httpCode;
-	CURL* curl = curl_easy_init();
-	Qiniu_Buffer respHeader;
-	Qiniu_Buffer_Init(&respHeader, 1024);
-
-	printf("url: %s\n", url);
-
-	curl_easy_setopt(curl, CURLOPT_URL, url);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, w.Write);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, w.self);
-	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, Qiniu_Buffer_Fwrite);
-	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &respHeader);
-
-	code = curl_easy_perform(curl);
-
-	printf("\n%s", Qiniu_Buffer_CStr(&respHeader));
-	printf("\ncurl.code: %d, eq.result: %d\n", (int)code, eq.result);
-	CU_ASSERT(code == 0);
-
-	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
-	CU_ASSERT(httpCode == 200);
-
-	CU_ASSERT(Qiniu_Is(&eq));
-
-	curl_easy_cleanup(curl);
-}
-
 static void test_Qiniu_Rio_PutFile()
 {
 	Qiniu_Error err;
@@ -241,6 +204,92 @@ static void test_Qiniu_Rio_PutExtra_Init()
 
 	Qiniu_Client_Cleanup(&client);
 }
+static void test_Qiniu_Io_PutExtra_initFrom(){
+	Qiniu_Error err;
+	Qiniu_Client client;
+	Qiniu_Rio_PutExtra extra;
+	Qiniu_Rio_PutRet putRet;
+	char *uptoken;
+
+	Qiniu_Client_InitNoAuth(&client, 1024);
+
+	Qiniu_Zero(extra);
+	extra.bucket = bucket;
+	extra.chunkSize=64 * 1024;
+
+    getUptoken(&uptoken);
+
+    deleteFile();
+	err = Qiniu_Rio_PutFile(&client, &putRet, uptoken, key, TESTFILE_64B, NULL);
+	printf("\n%d %s\n",err.code,err.message);
+	Qiniu_Client_Cleanup(&client);
+}
+void test_Qiniu_Rio_Mkfile(){
+	Qiniu_Error err;
+	Qiniu_Client client;
+	Qiniu_Rio_PutExtra extra;
+	Qiniu_Rio_PutRet putRet;
+	char *uptoken;
+
+	Qiniu_Client_InitNoAuth(&client, 1024);
+
+	Qiniu_Zero(extra);
+	extra.bucket = bucket;
+    getUptoken(&uptoken);
+
+
+	extra.chunkSize=256 * 1024;
+    deleteFile();
+	err = Qiniu_Rio_PutFile(&client, &putRet, uptoken, key, TESTFILE_16M, &extra);
+	CU_ASSERT_EQUAL(err.code,200);
+	CU_ASSERT_STRING_EQUAL(putRet.hash,"lupYG7WWC1EiG8NhlKo415Pr9gQg");
+
+	extra.chunkSize=256 * 1024;
+	extra.mimeType="application/octet-stream";
+	extra.customMeta="test";
+	extra.callbackParams="";
+    deleteFile();
+	err = Qiniu_Rio_PutFile(&client, &putRet, uptoken, key, TESTFILE_16M, &extra);
+	CU_ASSERT_EQUAL(err.code,200);
+	CU_ASSERT_STRING_EQUAL(putRet.hash,"lupYG7WWC1EiG8NhlKo415Pr9gQg");
+	Qiniu_Client_Cleanup(&client);
+}
+
+static void notifyTry(void* self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret)
+{
+    printf("%d %d \n");
+    if(ret->ctx!=NULL)
+        printf("ctx:%s\n",ret->ctx);
+    if(ret->checksum!=NULL)
+        printf("checksum:%s\n",ret->checksum);
+    if(ret->crc32!=NULL)
+        printf("crc32:%d\n",ret->crc32);
+}
+static void test_Qiniu_Rio_doTask(){
+	Qiniu_Error err;
+	Qiniu_Client client;
+	Qiniu_Rio_PutExtra extra;
+	Qiniu_Rio_PutRet putRet;
+	char *uptoken;
+
+	Qiniu_Client_InitNoAuth(&client, 1024);
+
+	Qiniu_Zero(extra);
+	extra.bucket = bucket;
+	extra.notify=notifyTry;
+    //getUptoken(&uptoken);
+
+
+	extra.chunkSize=256 * 1024;
+    deleteFile();
+    printf("\n");
+	err = Qiniu_Rio_PutFile(&client, &putRet, uptoken, key, TESTFILE_16M, &extra);
+	printf("%d %s\n",err.code,err.message);
+	CU_ASSERT_EQUAL(err.code,200);
+	CU_ASSERT_STRING_EQUAL(putRet.hash,"lupYG7WWC1EiG8NhlKo415Pr9gQg");
+	Qiniu_Client_Cleanup(&client);
+
+}
 
 
 /**//*---- test suites ------------------*/
@@ -269,6 +318,9 @@ QINIU_TEST(test_Qiniu_Rio_SetSettings)
 QINIU_TEST(test_Qiniu_Rio_Put)
 QINIU_TEST(test_Qiniu_Rio_PutFile)
 QINIU_TEST(test_Qiniu_Rio_PutExtra_Init)
+/**//*QINIU_TEST(test_Qiniu_Io_PutExtra_initFrom)//*//*unfinish*/
+QINIU_TEST(test_Qiniu_Rio_Mkfile)
+/**//*QINIU_TEST(test_Qiniu_Rio_doTask)//*/
 QINIU_TESTS_END()
 
 QINIU_SUITES_BEGIN()
