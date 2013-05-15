@@ -154,6 +154,20 @@ Qiniu_Int64 Qiniu_Json_GetInt64(Qiniu_Json* self, const char* key, Qiniu_Int64 d
 	}
 }
 
+Qiniu_Uint32 Qiniu_Json_GetInt(Qiniu_Json* self, const char* key, Qiniu_Uint32 defval)
+{
+	Qiniu_Json* sub;
+	if (self == NULL) {
+		return defval;
+	}
+	sub = cJSON_GetObjectItem(self, key);
+	if (sub != NULL && sub->type == cJSON_Number) {
+		return (Qiniu_Uint32)sub->valueint;
+	} else {
+		return defval;
+	}
+}
+
 /*============================================================================*/
 /* type Qiniu_Client */
 
@@ -223,7 +237,8 @@ static CURL* Qiniu_Client_initcall(Qiniu_Client* self, const char* url)
 }
 
 static Qiniu_Error Qiniu_Client_callWithBody(
-	Qiniu_Client* self, Qiniu_Json** ret, const char* url, Qiniu_Int64 bodyLen, const char* mimeType)
+	Qiniu_Client* self, Qiniu_Json** ret, const char* url, 
+    const char* body, Qiniu_Int64 bodyLen, const char* mimeType)
 {
 	Qiniu_Error err;
 	const char* ctxType;
@@ -244,7 +259,12 @@ static Qiniu_Error Qiniu_Client_callWithBody(
 	headers = curl_slist_append(headers, ctxType);
 
 	if (self->auth.itbl != NULL) {
-		err = self->auth.itbl->Auth(self->auth.self, &headers, url, NULL, 0);
+		if (body == NULL) {
+			err = self->auth.itbl->Auth(self->auth.self, &headers, url, NULL, 0);
+		} else {
+			err = self->auth.itbl->Auth(self->auth.self, &headers, url, body, bodyLen);
+		}
+
 		if (err.code != 200) {
 			return err;
 		}
@@ -273,7 +293,7 @@ Qiniu_Error Qiniu_Client_CallWithBinary(
 	curl_easy_setopt(curl, CURLOPT_READFUNCTION, body.Read);
 	curl_easy_setopt(curl, CURLOPT_READDATA, body.self);
 
-	return Qiniu_Client_callWithBody(self, ret, url, bodyLen, mimeType);
+	return Qiniu_Client_callWithBody(self, ret, url, NULL, bodyLen, mimeType);
 }
 
 Qiniu_Error Qiniu_Client_CallWithBuffer(
@@ -285,7 +305,7 @@ Qiniu_Error Qiniu_Client_CallWithBuffer(
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, bodyLen);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
 
-	return Qiniu_Client_callWithBody(self, ret, url, bodyLen, mimeType);
+	return Qiniu_Client_callWithBody(self, ret, url, body, bodyLen, mimeType);
 }
 
 Qiniu_Error Qiniu_Client_Call(Qiniu_Client* self, Qiniu_Json** ret, const char* url)
