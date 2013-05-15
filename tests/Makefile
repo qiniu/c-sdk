@@ -18,8 +18,7 @@ SOURCE_FILES=\
 	test.c\
 	test_rs_ops.c\
 
-#CUNIT_LIB=../CUnit/CUnit/Sources/.libs
-CUNIT_LIB=/usr/local/lib/
+CUNIT_LIB=../CUnit/CUnit/Sources/.libs
 
 all: $(SOURCE_FILES)
 	gcc $^ -o qiniutest -L$(CUNIT_LIB) -lcurl -lssl -lcrypto -lcunit -lm
