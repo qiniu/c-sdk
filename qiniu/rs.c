@@ -230,7 +230,7 @@ Qiniu_Error Qiniu_RS_BatchStat(
 		free(body);
 		body = bodyTmp;
 		curr++;
-		entry = entries + 1;
+		entry = &entries[curr];
 	}
 
 	err = Qiniu_Client_CallWithBuffer(self, &root, 
@@ -294,7 +294,7 @@ Qiniu_Error Qiniu_RS_BatchDelete(
 		free(body);
 		body = bodyTmp;
 		curr++;
-		entry = entries + 1;
+		entry = &entries[curr];
 	}
 
 	err = Qiniu_Client_CallWithBuffer(self, &root, 
@@ -361,7 +361,7 @@ Qiniu_Error Qiniu_RS_BatchMove(
 		free(body);
 		body = bodyTmp;
 		curr++;
-		entryPair = entryPairs + 1;
+		entryPair = &entryPairs[curr];
 	}
 
 	err = Qiniu_Client_CallWithBuffer(self, &root, 
@@ -428,7 +428,7 @@ Qiniu_Error Qiniu_RS_BatchCopy(
 		free(body);
 		body = bodyTmp;
 		curr++;
-		entryPair = entryPairs + 1;
+		entryPair = &entryPairs[curr];
 	}
 
 	err = Qiniu_Client_CallWithBuffer(self, &root, 

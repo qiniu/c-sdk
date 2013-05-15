@@ -18,6 +18,7 @@ void testIoPut();
 void testResumableIoPut();
 void testFmt();
 void testEqual();
+void testRsBatchOps();
 
 QINIU_TESTS_BEGIN(qbox)
 	QINIU_TEST(testFmt)
@@ -25,6 +26,7 @@ QINIU_TESTS_BEGIN(qbox)
 	QINIU_TEST(testEqual)
 	QINIU_TEST(testResumableIoPut)
 	QINIU_TEST(testIoPut)
+	QINIU_TEST(testRsBatchOps)
 QINIU_TESTS_END()
 
 QINIU_ONE_SUITE(qbox)
@@ -41,7 +43,8 @@ int main()
 
 	Qiniu_Servend_Init(-1);
 
-	CU_initialize_registry();
+	if (CUE_SUCCESS != CU_initialize_registry())
+        return CU_get_error();
 
 	assert(NULL != CU_get_registry());
 	assert(!CU_is_test_running());
