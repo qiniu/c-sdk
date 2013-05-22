@@ -139,5 +139,6 @@ void testIoPut()
 int main()
 {
 	testIoPut();
+	return 0;
 }
 #endif
