@@ -7,7 +7,6 @@
  ============================================================================
  */
 
-
 #ifndef QINIU_BASE_H
 #define QINIU_BASE_H
 
@@ -15,6 +14,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include<sys/types.h>
+
+#ifndef ssize_t
+#define ssize_t int
+#endif
 
 /*============================================================================*/
 /* func Qiniu_Zero */
