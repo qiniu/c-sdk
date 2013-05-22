@@ -15,6 +15,10 @@
 #include <string.h>
 #include <stdarg.h>
 
+#ifdef _WIN32
+#include "../c-sdk-wdeps/emu-posix/emu-posix.h" // for type ssize_t
+#endif
+
 /*============================================================================*/
 /* func Qiniu_Zero */
 
