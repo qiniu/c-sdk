@@ -10,6 +10,7 @@
 #include "http.h"
 #include <curl/curl.h>
 #include <openssl/hmac.h>
+#include<openssl/engine.h>
 
 /*============================================================================*/
 /* Global */
