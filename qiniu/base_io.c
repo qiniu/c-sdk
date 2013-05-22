@@ -8,15 +8,23 @@
  */
 
 #include "base.h"
+#ifdef WIN32
+#include <io.h>  
+#include <process.h>  
+#include <windows.h>
+#include<stdio.h>
+#else
 #include <unistd.h>
+#endif
+
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <errno.h>
 
+
 #ifndef O_BINARY
 #define O_BINARY	0
 #endif
-
 
 /*============================================================================*/
 /* type Qiniu_Crc32 */
@@ -220,10 +228,26 @@ void Qiniu_File_Close(void* self)
 {
 	close((int)(size_t)self);
 }
+#ifdef WIN32
+/*
+pread simple implementation for Windows ,see https://gist.github.com/bartku/1258986
+*/
+int pread(unsigned int fd, char *buf, size_t count, int offset)
+{
+	if (_lseek(fd, offset, SEEK_SET) != offset) {
+		return -1;
+	}
+	return read(fd, buf, count);
+}
+#endif
 
 ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, off_t offset)
 {
+#ifdef WIN32
+	return pread((int)(size_t)self, (char *)buf, bytes, offset);
+#else
 	return pread((int)(size_t)self, buf, bytes, offset);
+#endif
 }
 
 Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self)
