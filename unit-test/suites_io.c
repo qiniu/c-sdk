@@ -122,7 +122,7 @@ static void testIoPut()
 
 	free(dntoken);
 
-    QBox_RS_Drop(&client,bucket);
+    //QBox_RS_Drop(&client,bucket);
 	QBox_Client_Cleanup(&client);
 }
 

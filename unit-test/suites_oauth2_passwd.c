@@ -124,8 +124,8 @@ void test_QBox_PasswordAuth_Auth(){
 	    printf("\nQBox_RS_PutFile Erroe!\nerr %d:%s\n",err.code,err.message);
 	}
 	//printf("    QBox_RS_Drop\n");
-	err = QBox_RS_Drop(&client, tableName);
-	CU_ASSERT_EQUAL(err.code,200);
+	//err = QBox_RS_Drop(&client, tableName);
+	//CU_ASSERT_EQUAL(err.code,200);
 
 	QBox_Client_Cleanup(&client);
 	QBox_Zero(client);
@@ -146,7 +146,7 @@ void test_QBox_PasswordAuth_Auth_err(){
     QBox_PasswordAuth* auth=(QBox_PasswordAuth*)(client.auth.self);
     strcpy(auth->token->refreshToken,"err");
 
-	err = QBox_RS_Drop(&client, tableName);
+	//err = QBox_RS_Drop(&client, tableName);
 
     CU_ASSERT_NOT_EQUAL(err.code,200);
 	CU_ASSERT_EQUAL(err.code,401);

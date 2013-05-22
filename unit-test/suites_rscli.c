@@ -59,7 +59,7 @@ void test_QBox_RSCli_PutFile(){
     CU_ASSERT_STRING_EQUAL(ret->mimeType,"application/octet-stream");
     CU_ASSERT_EQUAL(ret->fsize,29);
 
-	QBox_RS_Drop(&client, tableName);
+	//QBox_RS_Drop(&client, tableName);
 }
 
 void test_QBox_RSCli_PutStream(){
@@ -93,7 +93,7 @@ void test_QBox_RSCli_PutStream(){
     CU_ASSERT_STRING_EQUAL(ret->mimeType,"application/octet-stream");
     CU_ASSERT_EQUAL(ret->fsize,4);
 
-	QBox_RS_Drop(&client, tableName);
+	//QBox_RS_Drop(&client, tableName);
 }
 
 void test_QBox_RSCli_UploadStream(){
@@ -137,7 +137,7 @@ void test_QBox_RSCli_UploadStream(){
     CU_ASSERT_STRING_EQUAL(ret->mimeType,"application/octet-stream");
     CU_ASSERT_EQUAL(ret->fsize,4);
 
-	QBox_RS_Drop(&client, tableName);
+	//QBox_RS_Drop(&client, tableName);
 
 }
 

@@ -250,7 +250,7 @@ void test_QBox_Client_CallWithBuffer(){
     chkBuf = malloc(bodyLength);
     err=QBox_Client_CallWithBuffer(self, &root, url, chkBuf, bodyLength);
     CU_ASSERT_EQUAL(err.code,200);
-	QBox_RS_Drop(&client,"c_test_table_0");
+	//QBox_RS_Drop(&client,"c_test_table_0");
 
     //test self->auth.itbl != NULL err.code != 200
     chkBuf = malloc(bodyLength);
@@ -296,7 +296,7 @@ void test_QBox_Client_Call(){
 	QBox_RS_Create(&client,tableName);
     err=QBox_Client_Call(self, &root, url);
     CU_ASSERT_EQUAL(err.code,612);
-	QBox_RS_Drop(&client,tableName);
+	//QBox_RS_Drop(&client,tableName);
 
     err=QBox_Client_Call(self, &root, "err");
     CU_ASSERT_EQUAL(err.code,1234567);
@@ -320,7 +320,7 @@ void test_QBox_Client_CallNoRet(){
 	QBox_RS_Create(&client,tableName);
     err=QBox_Client_CallNoRet(self, url);
     CU_ASSERT_EQUAL(err.code,200);
-	QBox_RS_Drop(&client,tableName);
+	//QBox_RS_Drop(&client,tableName);
 
     err=QBox_Client_CallNoRet(self, "err");
     CU_ASSERT_EQUAL(err.code,1234567);

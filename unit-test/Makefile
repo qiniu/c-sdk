@@ -21,6 +21,7 @@ install: all
 clean:  
 	-rm -rf *.o test
 	-rm -rf result *~
+	-rm -rf *.gcno *.gcda *.info
 output: $(SOURCE_FILES)
 	gcc $^ -o test -lcurl -lm -lssl -lcrypto -lcunit -lcurses -fprofile-arcs -ftest-coverage
 	./test

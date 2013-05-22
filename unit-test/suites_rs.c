@@ -88,6 +88,7 @@ void test_QBox_RS_PutAuthEx(){
 
 void test_QBox_RS_Put(){
     const char* tableName="c_test_table_0";
+    const char* tableNull="c_test_table_null";
     const char* key="c_test_key_0";
     QBox_RS_PutRet* ret=malloc(sizeof(QBox_RS_PutRet));
     const char* mimeType="application/octet-stream";
@@ -104,7 +105,7 @@ void test_QBox_RS_Put(){
     err=QBox_RS_Put(&client,ret,tableName,key,NULL,source,size,NULL);
     CU_ASSERT_EQUAL(err.code,200);
     CU_ASSERT_STRING_EQUAL(ret->hash,"FthxcG3okD3aIkbvHVjdCdnHZ3QO");
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
 
 
     //test upload file with the same key
@@ -120,7 +121,7 @@ void test_QBox_RS_Put(){
     err=QBox_RS_Put(&client,ret,tableName,key,NULL,source,size,NULL);
     CU_ASSERT_EQUAL(err.code,200);
     CU_ASSERT_STRING_EQUAL(ret->hash,"FthxcG3okD3aIkbvHVjdCdnHZ3QO");
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
 
     //test branch: mimeType="cotet-stream".customMeta=NULL
     QBox_RS_Create(&client, tableName);
@@ -129,7 +130,7 @@ void test_QBox_RS_Put(){
     source=QBox_FILE_Reader(file);
     err=QBox_RS_Put(&client,ret,tableName,key,mimeType,source,size,NULL);
     CU_ASSERT_EQUAL(err.code,200);
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
 
     //test branch: mimeType="cotet-stream".customMeta!=NULL
     QBox_RS_Create(&client, tableName);
@@ -138,7 +139,7 @@ void test_QBox_RS_Put(){
     source=QBox_FILE_Reader(file);
     err=QBox_RS_Put(&client,ret,tableName,key,mimeType,source,size,customMeta);
     CU_ASSERT_EQUAL(err.code,200);
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
 
     //test branch: mimeType="cotet-stream".customMeta='\0'
     QBox_RS_Create(&client, tableName);
@@ -147,16 +148,16 @@ void test_QBox_RS_Put(){
     source=QBox_FILE_Reader(file);
     err=QBox_RS_Put(&client,ret,tableName,key,mimeType,source,size,"\0");
     CU_ASSERT_EQUAL(err.code,200);
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
 
     //Test Error
     //test err631: put a file into the non-existent table.
-    QBox_RS_Drop(&client,tableName);
+    QBox_RS_Drop(&client,tableNull);
     file=fopen(TESTFILE1,"rb");
     if(file==NULL){CU_ASSERT_NOT_EQUAL(file,NULL);return;}
     source=QBox_FILE_Reader(file);
-    err=QBox_RS_Put(&client,ret,tableName,key,NULL,source,size,NULL);
-    CU_ASSERT_EQUAL(err.code,599);
+    err=QBox_RS_Put(&client,ret,tableNull,key,NULL,source,size,NULL);
+    CU_ASSERT_EQUAL(err.code,631);
 
 	//test err401
     QBox_RS_Create(&client, tableName);
@@ -168,7 +169,7 @@ void test_QBox_RS_Put(){
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,401);
 	QBOX_ACCESS_KEY = "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
     //*/
     free(ret);
     //*/
@@ -188,7 +189,7 @@ void test_QBox_RS_PutFile(){
     err=QBox_RS_PutFile(&client,ret,tableName,key,mimeType,srcFile,customMeta);
     CU_ASSERT_EQUAL(err.code,200);
     CU_ASSERT_STRING_EQUAL(ret->hash,"FqEDbBSj-G-XfRKU4fAZu6vUoSIr");
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
 
     //test Error
     //test err-1:open source file failed
@@ -196,7 +197,7 @@ void test_QBox_RS_PutFile(){
     srcFile="bazinga";
     err=QBox_RS_PutFile(&client,ret,tableName,key,mimeType,srcFile,customMeta);
     CU_ASSERT_EQUAL(err.code,-1);
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
     free(ret);
 }
 
@@ -204,6 +205,7 @@ void test_QBox_RS_PutStream(){
     QBox_RS_PutRet* putret=malloc(sizeof(QBox_RS_PutRet));
     QBox_RS_GetRet* getret;
     const char* tableName="c_test_table_0";
+    const char* tableNull="c_test_table_null";
     const char* key="c_test_key_0";
     const char* mimeType="application/octet-stream";
     char* stream = NULL;
@@ -230,7 +232,7 @@ void test_QBox_RS_PutStream(){
 
     err=QBox_RS_PutStream(&client,putret,tableName,key,NULL,stream,bytes,"\0");
     CU_ASSERT_EQUAL(err.code,200);
-	err=QBox_RS_Drop(&client, tableName);
+	//err=QBox_RS_Drop(&client, tableName);
     //test Error
     //test err401
 	err=QBox_RS_Create(&client, tableName);
@@ -239,12 +241,12 @@ void test_QBox_RS_PutStream(){
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,401);
     QBOX_ACCESS_KEY = "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";
-	//test err599
-	err=QBox_RS_Drop(&client, tableName);
-    err=QBox_RS_PutStream(&client,putret,tableName,key,NULL,stream,bytes,"\0");
+	//test err631
+	err=QBox_RS_Drop(&client, tableNull);
+    err=QBox_RS_PutStream(&client,putret,tableNull,key,NULL,stream,bytes,"\0");
     CU_ASSERT_NOT_EQUAL(err.code,200);
-    CU_ASSERT_EQUAL(err.code,599);
-	QBox_RS_Drop(&client, tableName);
+    CU_ASSERT_EQUAL(err.code,631);
+	//QBox_RS_Drop(&client, tableName);
 
     free(stream);
     free(putret);
@@ -253,6 +255,7 @@ void test_QBox_RS_PutStream(){
 void test_QBox_RS_Get(){
     QBox_RS_GetRet* ret=malloc(sizeof(QBox_RS_GetRet));
     const char* tableName="c_test_table_0";
+    const char* tableNull="c_test_table_null";
     const char* key="c_test_key_0";
     const char* attName="attName.txt";
     const char* srcFile=TESTFILE1;
@@ -269,7 +272,7 @@ void test_QBox_RS_Get(){
     CU_ASSERT_EQUAL(err.code,200);
     CU_ASSERT_STRING_EQUAL(ret->hash,hash);
     CU_ASSERT_STRING_EQUAL(ret->mimeType,"application/octet-stream");
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
 
     //test branch:attName=NULL
     QBox_RS_Create(&client, tableName);
@@ -281,19 +284,20 @@ void test_QBox_RS_Get(){
     err=QBox_RS_Get(&client,ret,tableName,key,NULL);
     CU_ASSERT_EQUAL(err.code,200);
     CU_ASSERT_STRING_EQUAL(hash,ret->hash);
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
 
     //test err400
-    QBox_RS_Drop(&client,tableName);
-    err=QBox_RS_Get(&client,ret,tableName,key,NULL);
+    QBox_RS_Drop(&client,tableNull);
+    err=QBox_RS_Get(&client,ret,tableNull,key,NULL);
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,400);
     //test err612
     QBox_RS_Create(&client, tableName);
+    err=QBox_RS_Delete(&client,tableName,key);
     err=QBox_RS_Get(&client,ret,tableName,key,NULL);
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,612);
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
 
     free(ret);
 }
@@ -302,6 +306,7 @@ void test_QBox_RS_GetIfNotModified(){
     QBox_RS_GetRet* ret=malloc(sizeof(QBox_RS_GetRet));
     QBox_RS_PutRet* putRet;
     const char* tableName="c_test_table_0";
+    const char* tableNull="c_test_table_null";
     const char* key="c_test_key_0";
     const char* attName="attName.txt";
     const char* base=malloc(sizeof(char)*64);
@@ -318,7 +323,7 @@ void test_QBox_RS_GetIfNotModified(){
     CU_ASSERT_EQUAL(err.code,200);
     CU_ASSERT_STRING_EQUAL(ret->hash,base);
     CU_ASSERT_STRING_EQUAL(ret->mimeType,"application/octet-stream");
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
     //test branch:attName=NULL
     QBox_RS_Create(&client, tableName);
     putRet=malloc(sizeof(QBox_RS_PutRet));
@@ -328,7 +333,7 @@ void test_QBox_RS_GetIfNotModified(){
     free(putRet);
     err=QBox_RS_GetIfNotModified(&client,ret,tableName,key,NULL,base);
     CU_ASSERT_EQUAL(err.code,200);
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
     //test Error
     //test err608
     QBox_RS_Create(&client, tableName);
@@ -337,18 +342,19 @@ void test_QBox_RS_GetIfNotModified(){
     err=QBox_RS_GetIfNotModified(&client,ret,tableName,key,NULL,"err");
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,608);
-    QBox_RS_Drop(&client,tableName);
+   // QBox_RS_Drop(&client,tableName);
     //test err400
-    QBox_RS_Drop(&client,tableName);
-    err=QBox_RS_GetIfNotModified(&client,ret,tableName,"no",NULL,"");
+    QBox_RS_Drop(&client,tableNull);
+    err=QBox_RS_GetIfNotModified(&client,ret,tableNull,"no",NULL,"");
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,400);
     //test err612
     QBox_RS_Create(&client, tableName);
+    err=QBox_RS_Delete(&client,tableName,key);
     err=QBox_RS_GetIfNotModified(&client,ret,tableName,key,NULL,"err");
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,612);
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
 
     free(ret);
 }
@@ -357,6 +363,7 @@ void test_QBox_RS_Stat(){
     QBox_RS_StatRet* ret=malloc(sizeof(QBox_RS_StatRet));
     QBox_RS_PutRet* putRet;
     const char* tableName="c_test_table_0";
+    const char* tableNull="c_test_table_null";
     const char* key="c_test_key_0";
     const char* srcFile=TESTFILE1;
     const char* hash=malloc(sizeof(char)*128);
@@ -371,20 +378,21 @@ void test_QBox_RS_Stat(){
     CU_ASSERT_EQUAL(err.code,200);
     CU_ASSERT_STRING_EQUAL(ret->hash,hash);
     CU_ASSERT_STRING_EQUAL(ret->mimeType,"application/octet-stream");
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
 
     //test err631
-    QBox_RS_Drop(&client,tableName);
-    err=QBox_RS_Stat(&client,ret,tableName,key);
+    QBox_RS_Drop(&client,tableNull);
+    err=QBox_RS_Stat(&client,ret,tableNull,key);
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,631);
 
     //test err612
     QBox_RS_Create(&client, tableName);
+    err=QBox_RS_Delete(&client,tableName,key);
     err=QBox_RS_Stat(&client,ret,tableName,key);
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,612);
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
     free(ret);
 }
 
@@ -409,7 +417,7 @@ void test_QBox_RS_Publish(){
     err=QBox_RS_Publish(&client,tableName,domain);
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,599);
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
 }
 
 void test_QBox_RS_Unpublish(){
@@ -440,6 +448,7 @@ void test_QBox_RS_Unpublish(){
 
 void test_QBox_RS_Delete(){
     const char* tableName="c_test_table_0";
+    const char* tableNull="c_test_table_null";
     const char* key="c_test_key_0";
     const char* srcFile=TESTFILE2;
 
@@ -451,11 +460,11 @@ void test_QBox_RS_Delete(){
     if(err.code!=200){CU_ASSERT_EQUAL(err.code,200);return;}
     err=QBox_RS_Delete(&client,tableName,key);
     CU_ASSERT_EQUAL(err.code,200);
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
     //test Error
     //test err631
-    QBox_RS_Drop(&client,tableName);
-    err=QBox_RS_Delete(&client,tableName,key);
+    QBox_RS_Drop(&client,tableNull);
+    err=QBox_RS_Delete(&client,tableNull,key);
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,631);
     //test err631
@@ -463,7 +472,7 @@ void test_QBox_RS_Delete(){
     err=QBox_RS_Delete(&client,tableName,key);
     CU_ASSERT_NOT_EQUAL(err.code,200);
     CU_ASSERT_EQUAL(err.code,612);
-    QBox_RS_Drop(&client,tableName);
+    //QBox_RS_Drop(&client,tableName);
 }
 
 void test_QBox_RS_Create(){
@@ -594,8 +603,8 @@ QBOX_TEST(test_QBox_RS_Stat)
 QBOX_TEST(test_QBox_RS_Publish)
 QBOX_TEST(test_QBox_RS_Unpublish)
 QBOX_TEST(test_QBox_RS_Delete)
-QBOX_TEST(test_QBox_RS_Create)
-QBOX_TEST(test_QBox_RS_Drop)
+//QBOX_TEST(test_QBox_RS_Create)
+//QBOX_TEST(test_QBox_RS_Drop)
 //rs.h*/
 //*rs_token.c/
 QBOX_TEST(test_QBox_RS_PutPolicy_Token)
