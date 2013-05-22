@@ -8,19 +8,21 @@
  */
 
 #include "base.h"
-#ifdef WIN32
-#include <io.h>  
-#include <process.h>  
-#include <windows.h>
-#include<stdio.h>
-#else
-#include <unistd.h>
-#endif
-
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <errno.h>
 
+#ifdef _WIN32
+#include "../c-sdk-wdeps/emu-posix/emu-posix.h" // for type Qiniu_Posix_File
+#else
+#include <unistd.h>
+#define Qiniu_Posix_Handle	int
+#define Qiniu_Posix_Open	open
+#define Qiniu_Posix_Pread	pread
+#define Qiniu_Posix_Fstat	fstat
+#define Qiniu_Posix_Close	close
+#define Qiniu_Posix_InvalidHandle -1
+#endif
 
 #ifndef O_BINARY
 #define O_BINARY	0
@@ -201,8 +203,8 @@ Qiniu_Reader Qiniu_TeeReader(Qiniu_Tee* self, Qiniu_Reader r, Qiniu_Writer w)
 Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file)
 {
 	Qiniu_Error err;
-	int fd = open(file, O_BINARY | O_RDONLY, 0644);
-	if (fd != -1) {
+	Qiniu_Posix_Handle fd = Qiniu_Posix_Open(file, O_BINARY | O_RDONLY, 0644);
+	if (fd != Qiniu_Posix_InvalidHandle) {
 		err = Qiniu_OK;
 		*pp = (Qiniu_File*)(size_t)fd;
 	} else {
@@ -215,7 +217,7 @@ Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file)
 Qiniu_Error Qiniu_File_Stat(Qiniu_File* self, Qiniu_FileInfo* fi)
 {
 	Qiniu_Error err;
-	if (fstat((int)(size_t)self, fi) != 0) {
+	if (Qiniu_Posix_Fstat((Qiniu_Posix_Handle)(size_t)self, fi) != 0) {
 		err.code = errno;
 		err.message = "fstat failed";
 	} else {
@@ -226,28 +228,12 @@ Qiniu_Error Qiniu_File_Stat(Qiniu_File* self, Qiniu_FileInfo* fi)
 
 void Qiniu_File_Close(void* self)
 {
-	close((int)(size_t)self);
+	Qiniu_Posix_Close((Qiniu_Posix_Handle)(size_t)self);
 }
-#ifdef WIN32
-/*
-pread simple implementation for Windows ,see https://gist.github.com/bartku/1258986
-*/
-int pread(unsigned int fd, char *buf, size_t count, int offset)
-{
-	if (_lseek(fd, offset, SEEK_SET) != offset) {
-		return -1;
-	}
-	return read(fd, buf, count);
-}
-#endif
 
 ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, off_t offset)
 {
-#ifdef WIN32
-	return pread((int)(size_t)self, (char *)buf, bytes, offset);
-#else
-	return pread((int)(size_t)self, buf, bytes, offset);
-#endif
+	return Qiniu_Posix_Pread((Qiniu_Posix_Handle)(size_t)self, buf, bytes, offset);
 }
 
 Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self)

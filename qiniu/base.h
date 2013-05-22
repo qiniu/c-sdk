@@ -14,10 +14,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include<sys/types.h>
 
-#ifndef ssize_t
-#define ssize_t int
+#ifdef _WIN32
+#include "../c-sdk-wdeps/emu-posix/emu-posix.h" // for type ssize_t
 #endif
 
 /*============================================================================*/
