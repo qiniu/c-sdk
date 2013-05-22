@@ -6,17 +6,20 @@
  Description : Qiniu C SDK Unit Test
  ============================================================================
  */
-
+#ifdef WIN32
 #include "../qiniu/rs.h"
+#else
+#include "test.h"
+#endif
 #include "../qiniu/io.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <curl/curl.h>
 
-static const char bucket[] = "icattlecoder"; //your bucketname
-static const char key[] = "csdk-test2";// your key
-static const char domain[] = "icattlecoder.qiniudn.com";//your domain
+static const char bucket[] = "a";
+static const char key[] = "key";
+static const char domain[] = "aatest.qiniudn.com";
 
 
 static void clientIoPutFile(const char* uptoken)
@@ -132,7 +135,9 @@ void testIoPut()
 
 	Qiniu_Client_Cleanup(&client);
 }
+#ifdef WIN32
 int main()
 {
 	testIoPut();
 }
+#endif
