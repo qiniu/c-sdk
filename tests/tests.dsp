@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "../../c-sdk-wdeps/include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "../../c-sdk-wdeps/include" /I "../CUnit/CUnit/Headers" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
 # ADD BASE RSC /l 0x804 /d "NDEBUG"
 # ADD RSC /l 0x804 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -66,7 +66,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../c-sdk-wdeps/include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../c-sdk-wdeps/include" /I "../CUnit/CUnit/Headers" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FR /YX /FD /GZ /c
 # ADD BASE RSC /l 0x804 /d "_DEBUG"
 # ADD RSC /l 0x804 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -168,6 +168,34 @@ SOURCE="..\..\c-sdk-wdeps\emu-posix\emu_posix.h"
 # Begin Source File
 
 SOURCE=..\b64\urlsafe_b64.c
+# End Source File
+# End Group
+# Begin Group "cunit"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\CUnit\CUnit\Sources\Basic\Basic.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\CUnit\CUnit\Sources\Framework\CUError.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\CUnit\CUnit\Sources\Framework\MyMem.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\CUnit\CUnit\Sources\Framework\TestDB.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\CUnit\CUnit\Sources\Framework\TestRun.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\CUnit\CUnit\Sources\Framework\Util.c
 # End Source File
 # End Group
 # Begin Source File
