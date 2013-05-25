@@ -90,7 +90,6 @@ size_t Qiniu_Eq_Fwrite(const void* buf, size_t unused, size_t n, Qiniu_Eq* self)
 
 int Qiniu_Is(Qiniu_Eq* self)
 {
-	char* buf;
 	Qiniu_Int64 ncopy;
 	Qiniu_Error err;
 	if (self->result) {

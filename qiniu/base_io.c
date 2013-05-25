@@ -13,7 +13,7 @@
 #include <errno.h>
 
 #ifdef _WIN32
-#include "../c-sdk-wdeps/emu-posix/emu-posix.h" // for type Qiniu_Posix_File
+#include "../../c-sdk-wdeps/emu-posix/emu_posix.h" // for type Qiniu_Posix_File
 #else
 #include <unistd.h>
 #define Qiniu_Posix_Handle	int
@@ -157,7 +157,7 @@ size_t Qiniu_Section_Read(void* buf, size_t unused, size_t n, Qiniu_Section* sel
 	if (max <= 0) {
 		return 0;
 	}
-	if (n > max) {
+	if ((off_t)n > max) {
 		n = (size_t)max;
 	}
 	n = self->r.ReadAt(self->r.self, buf, n, self->off);

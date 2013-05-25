@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void testFmt()
+void testFmt(void)
 {
 	Qiniu_Error err;
 

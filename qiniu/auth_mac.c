@@ -12,6 +12,10 @@
 #include <openssl/hmac.h>
 #include<openssl/engine.h>
 
+#if defined(_WIN32)
+#pragma comment(lib, "libeay32.lib")
+#endif
+
 /*============================================================================*/
 /* Global */
 

@@ -13,11 +13,11 @@
 #include <string.h>
 #include <assert.h>
 
-void testBaseIo();
-void testIoPut();
-void testResumableIoPut();
-void testFmt();
-void testEqual();
+void testBaseIo(void);
+void testIoPut(void);
+void testResumableIoPut(void);
+void testFmt(void);
+void testEqual(void);
 
 QINIU_TESTS_BEGIN(qbox)
 	QINIU_TEST(testFmt)

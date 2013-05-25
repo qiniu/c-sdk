@@ -15,8 +15,19 @@
 #include <string.h>
 #include <stdarg.h>
 
+/*============================================================================*/
+/* func type ssize_t */
+
 #ifdef _WIN32
-#include "../c-sdk-wdeps/emu-posix/emu-posix.h" // for type ssize_t
+
+#include <sys/types.h>
+
+#ifndef _W64
+#define _W64
+#endif
+
+typedef _W64 int ssize_t;
+
 #endif
 
 /*============================================================================*/
