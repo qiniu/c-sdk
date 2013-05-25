@@ -32,7 +32,6 @@ static void Qiniu_Io_form_init(
 	char* customMetaEncoded;
 	char* action;
 	char* action2;
-	Qiniu_Error err;
 
 	struct curl_httppost* formpost = NULL;
 	struct curl_httppost* lastptr = NULL;

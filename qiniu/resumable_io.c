@@ -182,7 +182,7 @@ static Qiniu_Error Qiniu_Rio_PutExtra_Init(
 	int i, blockCnt = Qiniu_Rio_BlockCount(fsize);
 	int fprog = (extra != NULL) && (extra->progresses != NULL);
 
-	if (fprog && extra->blockCnt != blockCnt) {
+	if (fprog && extra->blockCnt != (size_t)blockCnt) {
 		return ErrInvalidPutProgress;
 	}
 
@@ -262,8 +262,8 @@ static Qiniu_Error Qiniu_Rio_bput(
 		ret->ctx = Qiniu_Json_GetString(root, "ctx", NULL);
 		ret->checksum = Qiniu_Json_GetString(root, "checksum", NULL);
 		ret->host = Qiniu_Json_GetString(root, "host", NULL);
-		ret->crc32 = Qiniu_Json_GetInt64(root, "crc32", 0);
-		ret->offset = Qiniu_Json_GetInt64(root, "offset", 0);
+		ret->crc32 = (Qiniu_Uint32)Qiniu_Json_GetInt64(root, "crc32", 0);
+		ret->offset = (Qiniu_Uint32)Qiniu_Json_GetInt64(root, "offset", 0);
 		if (ret->ctx == NULL || ret->host == NULL || ret->offset == 0) {
 			err.code = 9998;
 			err.message = "unexcepted response: invalid ctx, host or offset";
@@ -324,7 +324,7 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 			bodyLength = blkSize;
 		}
 
-		body1 = Qiniu_SectionReader(&section, f, offbase, bodyLength);
+		body1 = Qiniu_SectionReader(&section, f, (off_t)offbase, bodyLength);
 		body = Qiniu_TeeReader(&tee, body1, h);
 
 		err = Qiniu_Rio_Mkblock(c, ret, blkSize, body, bodyLength);
@@ -349,7 +349,7 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 
 lzRetry:
 		crc32.val = 0;
-		body1 = Qiniu_SectionReader(&section, f, offbase + (Qiniu_Int64)(ret->offset), bodyLength);
+		body1 = Qiniu_SectionReader(&section, f, (off_t)offbase + (ret->offset), bodyLength);
 		body = Qiniu_TeeReader(&tee, body1, h);
 
 		err = Qiniu_Rio_Blockput(c, ret, body, bodyLength);
@@ -450,9 +450,7 @@ typedef struct _Qiniu_Rio_task {
 static void Qiniu_Rio_doTask(void* params)
 {
 	Qiniu_Error err;
-	Qiniu_Client client;
 	Qiniu_Rio_BlkputRet ret;
-	Qiniu_Rio_BlkputRet* prog;
 	Qiniu_Rio_task* task = (Qiniu_Rio_task*)params;
 	Qiniu_Rio_WaitGroup wg = task->wg;
 	Qiniu_Rio_PutExtra* extra = task->extra;
@@ -514,7 +512,7 @@ Qiniu_Error Qiniu_Rio_Put(
 
 	self->auth = auth = Qiniu_UptokenAuth(uptoken);
 
-	for (i = 0; i < extra.blockCnt; i++) {
+	for (i = 0; i < (int)extra.blockCnt; i++) {
 		task = (Qiniu_Rio_task*)malloc(sizeof(Qiniu_Rio_task));
 		task->f = f;
 		task->extra = &extra;
