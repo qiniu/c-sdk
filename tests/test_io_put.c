@@ -98,9 +98,8 @@ static void clientIoGet(const char* dntoken)
 	curl_easy_cleanup(curl);
 }
 
-void testIoPut()
+void testIoPut(void)
 {
-	Qiniu_Error err;
 	Qiniu_Client client;
 	Qiniu_RS_PutPolicy putPolicy;
 	Qiniu_RS_GetPolicy getPolicy;

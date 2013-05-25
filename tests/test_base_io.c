@@ -11,16 +11,16 @@
 
 static const Qiniu_Int64 fsize = 4*1024*1024 + 2;
 
-void testEqual()
+void testEqual(void)
 {
 	Qiniu_Eq eq;
 	Qiniu_Seq seq, seq2;
 	Qiniu_Section sect;
 
-	Qiniu_ReaderAt in = Qiniu_SeqReaderAt(&seq, fsize, 10, '0', 0);
-	Qiniu_Reader r = Qiniu_SectionReader(&sect, in, 0, fsize);
+	Qiniu_ReaderAt in = Qiniu_SeqReaderAt(&seq, (size_t)fsize, 10, '0', 0);
+	Qiniu_Reader r = Qiniu_SectionReader(&sect, in, 0, (off_t)fsize);
 
-	Qiniu_Reader in2 = Qiniu_SeqReader(&seq2, fsize, 10, '0', 0);
+	Qiniu_Reader in2 = Qiniu_SeqReader(&seq2, (size_t)fsize, 10, '0', 0);
 	Qiniu_Writer w = Qiniu_EqWriter(&eq, in2);
 
 	Qiniu_Int64 ncopy;
