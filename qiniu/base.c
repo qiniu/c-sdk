@@ -17,7 +17,9 @@
 /* type Qiniu_Count */
 
 #if defined(_WIN32)
-#include "Windows.h"
+
+#include <windows.h>
+
 Qiniu_Count Qiniu_Count_Inc(Qiniu_Count* self)
 {
 	return InterlockedIncrement(self);
