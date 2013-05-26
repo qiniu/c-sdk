@@ -10,6 +10,10 @@
 
 参考文档：[七牛云存储 C SDK 使用指南](https://github.com/qiniu/c-sdk/tree/develop/docs)
 
+## Windows 程序员
+
+请移步到 https://github.com/qiniu/c-sdk-for-windows
+
 ## 贡献代码
 
 1. Fork
