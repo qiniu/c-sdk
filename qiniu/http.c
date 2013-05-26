@@ -8,6 +8,7 @@
  */
 
 #include "http.h"
+#include "../cJSON/cJSON.h"
 #include <curl/curl.h>
 
 #if defined(_WIN32)
