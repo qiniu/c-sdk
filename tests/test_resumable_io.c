@@ -71,7 +71,7 @@ static void clientIoPutBuffer(const char* uptoken)
 	extra.notifyErr = notifyErr;
 	extra.chunkSize = 1024;
 
-	in = Qiniu_SeqReaderAt(&seq, fsize, 10, '0', 0);
+	in = Qiniu_SeqReaderAt(&seq, (size_t)fsize, 10, '0', 0);
 
 	err = Qiniu_Rio_Put(&client, &putRet, uptoken, key, in, fsize, &extra);
 
@@ -89,7 +89,7 @@ static void clientIoGet(const char* dntoken)
 	Qiniu_Eq eq;
 	Qiniu_Seq seq;
 	Qiniu_Int64 fsize = testFsize;
-	Qiniu_Reader in = Qiniu_SeqReader(&seq, fsize, 10, '0', 0);
+	Qiniu_Reader in = Qiniu_SeqReader(&seq, (size_t)fsize, 10, '0', 0);
 	Qiniu_Writer w = Qiniu_EqWriter(&eq, in);
 
 	char* url = Qiniu_String_Concat("http://", domain, "/", key, "?token=", dntoken, NULL);
@@ -123,7 +123,6 @@ static void clientIoGet(const char* dntoken)
 
 void testResumableIoPut(void)
 {
-	Qiniu_Error err;
 	Qiniu_Client client;
 	Qiniu_RS_PutPolicy putPolicy;
 	Qiniu_RS_GetPolicy getPolicy;
