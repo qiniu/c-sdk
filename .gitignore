@@ -5,6 +5,14 @@
 *.la
 *.exe
 
+*.dsw
+*.ncb
+*.opt
+*.plg
+
+Debug/
+Release/
+
 examples/rs_demo
 examples/auth_passwd/rs_demo
 examples/resumable_put/rs_demo

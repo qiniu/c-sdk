@@ -121,7 +121,7 @@ static void clientIoGet(const char* dntoken)
 	curl_easy_cleanup(curl);
 }
 
-void testResumableIoPut()
+void testResumableIoPut(void)
 {
 	Qiniu_Error err;
 	Qiniu_Client client;
