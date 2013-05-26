@@ -1,5 +1,12 @@
 ## CHANGE LOG
 
+### v5.2.0
+
+2013-05-26 issue [#69](https://github.com/qiniu/c-sdk/pull/69)
+
+- 支持 Windows 平台（VC++6.0 tested）。
+
+
 ### v5.1.0
 
 2013-04-29 issue [#54](https://github.com/qiniu/c-sdk/pull/54), [#59](https://github.com/qiniu/c-sdk/pull/59)

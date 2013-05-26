@@ -16,6 +16,21 @@
 #include <stdarg.h>
 
 /*============================================================================*/
+/* func type ssize_t */
+
+#ifdef _WIN32
+
+#include <sys/types.h>
+
+#ifndef _W64
+#define _W64
+#endif
+
+typedef _W64 int ssize_t;
+
+#endif
+
+/*============================================================================*/
 /* func Qiniu_Zero */
 
 #define Qiniu_Zero(v)		memset(&v, 0, sizeof(v))
