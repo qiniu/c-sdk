@@ -3,7 +3,6 @@ EXPORTS
 	QINIU_SECRET_KEY
 	QINIU_RS_HOST
 	QINIU_UP_HOST
-	QINIU_RSF_HOST
 
 	Qiniu_Count_Inc
 	Qiniu_Count_Dec
