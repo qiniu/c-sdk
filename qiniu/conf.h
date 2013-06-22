@@ -15,6 +15,7 @@ extern const char* QINIU_SECRET_KEY;
 
 extern const char* QINIU_RS_HOST;
 extern const char* QINIU_UP_HOST;
+extern const char* QINIU_RSF_HOST;
 
 #endif
 

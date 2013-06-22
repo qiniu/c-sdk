@@ -111,8 +111,9 @@ char* Qiniu_String_Encode(const char* s);
 char* Qiniu_String_Decode(const char* s);
 
 /*============================================================================*/
-/* func Qiniu_QueryEscape */
+/* func Qiniu_Escape */
 
+char* Qiniu_PathEscape(const char* s, Qiniu_Bool* fesc);
 char* Qiniu_QueryEscape(const char* s, Qiniu_Bool* fesc);
 
 /*============================================================================*/

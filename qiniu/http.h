@@ -100,6 +100,7 @@ typedef struct _Qiniu_Mac {
 
 Qiniu_Auth Qiniu_MacAuth(Qiniu_Mac* mac);
 
+char* Qiniu_Mac_Sign(Qiniu_Mac* self, char* data);
 char* Qiniu_Mac_SignToken(Qiniu_Mac* self, char* data);
 
 void Qiniu_Client_InitNoAuth(Qiniu_Client* self, size_t bufSize);

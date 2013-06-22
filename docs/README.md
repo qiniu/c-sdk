@@ -335,27 +335,31 @@ int resumable_upload(Qiniu_Client* client, char* uptoken, const char* key, const
 
 ### 下载私有文件
 
-如果某个 bucket 是私有的，那么这个 bucket 中的所有文件只能通过一个的临时有效的 url 访问：
+如果某个 bucket 是私有的，那么这个 bucket 中的所有文件只能通过一个的临时有效的 downloadUrl 访问：
 
-    http://<domain>/<key>?token=<dntoken>
+    http://<domain>/<key>?e=<deadline>&token=<dntoken>
 
-其中 dntoken 是由业务服务器签发的一个[临时下载授权凭证](http://docs.qiniutek.com/v3/api/io/#private-download)。生成 dntoken 代码如下：
+其中 dntoken 是由业务服务器签发的一个[临时下载授权凭证](http://docs.qiniu.com/api/get.html#download-token)，deadline 是 dntoken 的有效期。dntoken不需要单独生成，C-SDK 提供了生成完整 downloadUrl 的方法（包含了 dntoken），示例代码如下：
 
 ```{c}
-char* dntoken(Qiniu_Client* client, const char* key)
+char* downloadUrl(Qiniu_Client* client, const char* domain, const char* key)
 {
-	char* token;
+	char* url;
+	char* baseUrl;
 	Qiniu_RS_GetPolicy getPolicy;
+
 	Qiniu_Zero(getPolicy);
-	getPolicy.scope = "*/*"; /* 错！！！下载授权切记不要授权范围过大，否则容易导致安全隐患 */
-	getPolicy.scope = Qiniu_String_Concat2("*/", key); /* 正确！只授权这一个资源可以被访问 */
-	token = Qiniu_RS_GetPolicy_Token(&getPolicy, NULL);
-	free((void*)getPolicy.scope);
-	return token;
+	baseUrl = Qiniu_RS_MakeBaseUrl(domain, key); // baseUrl也可以自己拼接："http://"+domain+"/"+urlescape(key)
+	url = Qiniu_RS_GetPolicy_MakeRequest(&getPolicy, baseUrl, NULL);
+
+	free(baseUrl);
+	return url;
 }
 ```
 
-生成 dntoken 后，服务端可以下发 dntoken，也可以选择直接下发临时的 downloadUrl（推荐这种方式，看起来灵活性更好，避免了客户端自己组装 url）。客户端收到 downloadUrl 后，和公有资源类似，直接用任意的 HTTP 客户端就可以下载该资源了。唯一需要注意的是，在 downloadUrl 失效却还没有完成下载时，需要重新向服务器申请授权。
+生成 downloadUrl 后，服务端下发 downloadUrl 给客户端。客户端收到 downloadUrl 后，和公有资源类似，直接用任意的 HTTP 客户端就可以下载该资源了。唯一需要注意的是，在 downloadUrl 失效却还没有完成下载时，需要重新向服务器申请授权。
+
+服务端也可以单独下发 e=<deadline>&token=<dntoken> 给客户端，但不推荐使用。因为这需要客户端自己拼接 url，不够灵活，不利于服务端独立演化。
 
 无论公有资源还是私有资源，下载过程中客户端并不需要七牛 C-SDK 参与其中。
 

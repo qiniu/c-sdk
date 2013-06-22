@@ -66,15 +66,14 @@ char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* auth, Qiniu_Mac* mac)
 	return token;
 }
 
-char* Qiniu_RS_GetPolicy_Token(Qiniu_RS_GetPolicy* auth, Qiniu_Mac* mac)
+char* Qiniu_RS_GetPolicy_MakeRequest(Qiniu_RS_GetPolicy* auth, const char* baseUrl, Qiniu_Mac* mac)
 {
 	int expires;
 	time_t deadline;
+	char  e[11];
 	char* authstr;
 	char* token;
-
-	cJSON* root = cJSON_CreateObject();
-	cJSON_AddStringToObject(root, "S", auth->scope);
+	char* request;
 
 	if (auth->expires) {
 		expires = auth->expires;
@@ -83,15 +82,37 @@ char* Qiniu_RS_GetPolicy_Token(Qiniu_RS_GetPolicy* auth, Qiniu_Mac* mac)
 	}
 	time(&deadline);
 	deadline += expires;
-	cJSON_AddNumberToObject(root, "E", deadline);
+	sprintf(e, "%zu", deadline);
 
-	authstr = cJSON_PrintUnformatted(root);
-	cJSON_Delete(root);
+	if (strchr(baseUrl, '?') != NULL) {
+		authstr = Qiniu_String_Concat3(baseUrl, "&e=", e);
+	} else {
+		authstr = Qiniu_String_Concat3(baseUrl, "?e=", e);
+	}
 
-	token = Qiniu_Mac_SignToken(mac, authstr);
+	token = Qiniu_Mac_Sign(mac, authstr);
+
+	request = Qiniu_String_Concat3(authstr, "&token=", token);
+
+	free(token);
 	free(authstr);
 
-	return token;
+	return request;
+}
+
+char* Qiniu_RS_MakeBaseUrl(const char* domain, const char* key)
+{
+	Qiniu_Bool fesc;
+	char* baseUrl;
+	char* escapedKey = Qiniu_PathEscape(key, &fesc);
+
+	baseUrl = Qiniu_String_Concat("http://", domain, "/", escapedKey, NULL);
+
+	if (fesc) {
+		free(escapedKey);
+	}
+
+	return baseUrl;
 }
 
 /*============================================================================*/
