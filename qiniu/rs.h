@@ -28,12 +28,12 @@ typedef struct _Qiniu_RS_PutPolicy {
 } Qiniu_RS_PutPolicy;
 
 typedef struct _Qiniu_RS_GetPolicy {
-    const char* scope;                // 格式是 domainPattern/keyPattern，没有默认值，用 */* 授权粒度过大，用 */key 比较合适。
     Qiniu_Uint32 expires;              // 可选。默认是 3600 秒
 } Qiniu_RS_GetPolicy;
 
 char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* policy, Qiniu_Mac* mac);
-char* Qiniu_RS_GetPolicy_Token(Qiniu_RS_GetPolicy* policy, Qiniu_Mac* mac);
+char* Qiniu_RS_GetPolicy_MakeRequest(Qiniu_RS_GetPolicy* policy, const char* baseUrl, Qiniu_Mac* mac);
+char* Qiniu_RS_MakeBaseUrl(const char* domain, const char* key);
 
 /*============================================================================*/
 /* func Qiniu_RS_Stat */

@@ -138,18 +138,16 @@ void Qiniu_Client_InitMacAuth(Qiniu_Client* self, size_t bufSize, Qiniu_Mac* mac
 }
 
 /*============================================================================*/
-/* func Qiniu_Mac_SignToken */
+/* func Qiniu_Mac_Sign*/
 
-char* Qiniu_Mac_SignToken(Qiniu_Mac* self, char* policy_str)
+char* Qiniu_Mac_Sign(Qiniu_Mac* self, char* data)
 {
-	char* token;
+	char* sign;
 	char* encoded_digest;
 	char digest[EVP_MAX_MD_SIZE + 1];
 	unsigned int dgtlen = sizeof(digest);
 	HMAC_CTX ctx;
 	Qiniu_Mac mac;
-
-	char* encoded_policy_str = Qiniu_String_Encode(policy_str);
 
 	if (self) {
 		mac = *self;
@@ -160,14 +158,32 @@ char* Qiniu_Mac_SignToken(Qiniu_Mac* self, char* policy_str)
 
 	HMAC_CTX_init(&ctx);
 	HMAC_Init_ex(&ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
-	HMAC_Update(&ctx, encoded_policy_str, strlen(encoded_policy_str));
+	HMAC_Update(&ctx, data, strlen(data));
 	HMAC_Final(&ctx, digest, &dgtlen);
 	HMAC_CTX_cleanup(&ctx);
 
 	encoded_digest = Qiniu_Memory_Encode(digest, dgtlen);
-	token = Qiniu_String_Concat(mac.accessKey, ":", encoded_digest, ":", encoded_policy_str, NULL);
-	free(encoded_policy_str);
+	sign = Qiniu_String_Concat3(mac.accessKey, ":", encoded_digest);
 	free(encoded_digest);
+
+	return sign;
+}
+
+/*============================================================================*/
+/* func Qiniu_Mac_SignToken */
+
+char* Qiniu_Mac_SignToken(Qiniu_Mac* self, char* policy_str)
+{
+	char* data;
+	char* sign;
+	char* token;
+
+	data = Qiniu_String_Encode(policy_str);
+	sign = Qiniu_Mac_Sign(self, data);
+	token = Qiniu_String_Concat3(sign, ":", data);
+
+	free(sign);
+	free(data);
 
 	return token;
 }

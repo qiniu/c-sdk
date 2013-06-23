@@ -55,16 +55,35 @@ Qiniu_Int64 Qiniu_Seconds()
 /*============================================================================*/
 /* func Qiniu_QueryEscape */
 
-static int Qiniu_shouldEscape(int c)
+typedef enum {
+	encodePath,
+	encodeUserPassword,
+	encodeQueryComponent,
+	encodeFragment,
+} escapeMode;
+
+// Return true if the specified character should be escaped when
+// appearing in a URL string, according to RFC 3986.
+static int Qiniu_shouldEscape(int c, escapeMode mode)
 {
 	if (('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') || ('0' <= c && c <= '9')) {
 		return 0;
 	}
 
 	switch (c) {
-	case '-': case '_': case '.': case '!': case '~':
-	case '*': case '\'': case '(': case ')':
+	case '-': case '_': case '.': case '~': // §2.3 Unreserved characters (mark)
 		return 0;
+	case '$': case '&': case '+': case ',': case '/': case ':': case ';': case '=': case '?': case '@': // §2.2 Reserved characters (reserved)
+		switch (mode) {
+			case encodePath: // §3.3
+				return c == '?';
+			case encodeUserPassword: // §3.2.2
+				return c == '@' || c == '/' || c == ':';
+			case encodeQueryComponent: // §3.4
+				return 1;
+			case encodeFragment: // §4.1
+				return 0;
+		}
 	}
 
 	return 1;
@@ -72,7 +91,7 @@ static int Qiniu_shouldEscape(int c)
 
 static const char Qiniu_hexTable[] = "0123456789ABCDEF"; 
 
-char* Qiniu_QueryEscape(const char* s, Qiniu_Bool* fesc)
+static char* Qiniu_escape(const char* s, escapeMode mode, Qiniu_Bool* fesc)
 {
 	int spaceCount = 0;
 	int hexCount = 0;
@@ -82,8 +101,8 @@ char* Qiniu_QueryEscape(const char* s, Qiniu_Bool* fesc)
 
 	for (i = 0; i < len; i++) {
 		c = s[i];
-		if (Qiniu_shouldEscape(c)) {
-			if (c == ' ') {
+		if (Qiniu_shouldEscape(c, mode)) {
+			if (c == ' ' && mode == encodeQueryComponent) {
 				spaceCount++;
 			} else {
 				hexCount++;
@@ -100,8 +119,8 @@ char* Qiniu_QueryEscape(const char* s, Qiniu_Bool* fesc)
 	j = 0;
 	for (i = 0; i < len; i++) {
 		c = s[i];
-		if (Qiniu_shouldEscape(c)) {
-			if (c == ' ') {
+		if (Qiniu_shouldEscape(c, mode)) {
+			if (c == ' ' && mode == encodeQueryComponent) {
 				t[j] = '+';
 				j++;
 			} else {
@@ -118,6 +137,16 @@ char* Qiniu_QueryEscape(const char* s, Qiniu_Bool* fesc)
 	t[j] = '\0';
 	*fesc = Qiniu_True;
 	return t;
+}
+
+char* Qiniu_PathEscape(const char* s, Qiniu_Bool* fesc)
+{
+	return Qiniu_escape(s, encodePath, fesc);
+}
+
+char* Qiniu_QueryEscape(const char* s, Qiniu_Bool* fesc)
+{
+	return Qiniu_escape(s, encodeQueryComponent, fesc);
 }
 
 /*============================================================================*/

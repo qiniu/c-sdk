@@ -84,15 +84,13 @@ static void clientIoPutBuffer(const char* uptoken)
 	Qiniu_Client_Cleanup(&client);
 }
 
-static void clientIoGet(const char* dntoken)
+static void clientIoGet(const char* url)
 {
 	Qiniu_Eq eq;
 	Qiniu_Seq seq;
 	Qiniu_Int64 fsize = testFsize;
 	Qiniu_Reader in = Qiniu_SeqReader(&seq, (size_t)fsize, 10, '0', 0);
 	Qiniu_Writer w = Qiniu_EqWriter(&eq, in);
-
-	char* url = Qiniu_String_Concat("http://", domain, "/", key, "?token=", dntoken, NULL);
 
 	long code, httpCode;
 	CURL* curl = curl_easy_init();
@@ -127,7 +125,8 @@ void testResumableIoPut(void)
 	Qiniu_RS_PutPolicy putPolicy;
 	Qiniu_RS_GetPolicy getPolicy;
 	char* uptoken;
-	char* dntoken;
+	char* dnBaseUrl;
+	char* dnRequest;
 
 	Qiniu_Client_InitMacAuth(&client, 1024, NULL);
 
@@ -144,12 +143,13 @@ void testResumableIoPut(void)
 	free(uptoken);
 
 	Qiniu_Zero(getPolicy);
-	getPolicy.scope = "*/*";
-	dntoken = Qiniu_RS_GetPolicy_Token(&getPolicy, NULL);
+	dnBaseUrl = Qiniu_RS_MakeBaseUrl(domain, key);
+	dnRequest = Qiniu_RS_GetPolicy_MakeRequest(&getPolicy, dnBaseUrl, NULL);
 
-	clientIoGet(dntoken);
+	clientIoGet(dnRequest);
 
-	free(dntoken);
+	free(dnRequest);
+	free(dnBaseUrl);
 
 	Qiniu_Client_Cleanup(&client);
 }
