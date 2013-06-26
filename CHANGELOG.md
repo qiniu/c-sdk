@@ -1,5 +1,16 @@
 ## CHANGE LOG
 
+### v6.0.0
+
+2013-06-26 issue [#76](https://github.com/qiniu/c-sdk/pull/76)
+
+- 增加 `Qiniu_PathEscape`
+- 遵循 [sdkspec v6.0.0](https://github.com/qiniu/sdkspec/tree/v6.0.0)
+  - `Qiniu_RS_GetPolicy_Token` => `Qiniu_RS_GetPolicy_MakeRequest`
+  - 增加 `Qiniu_RS_MakeBaseUrl`
+  - 增加 `Qiniu_Mac_Sign`
+
+
 ### v5.2.0
 
 2013-05-26 issue [#69](https://github.com/qiniu/c-sdk/pull/69)
