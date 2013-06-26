@@ -32,17 +32,19 @@ char* uptoken(Qiniu_Client* client, const char* bucket)
 }
 /* @endgist */
 
-/* @gist dntoken */
-char* dntoken(Qiniu_Client* client, const char* key)
+/* @gist downloadUrl */
+char* downloadUrl(Qiniu_Client* client, const char* domain, const char* key)
 {
-	char* token;
+	char* url;
+	char* baseUrl;
 	Qiniu_RS_GetPolicy getPolicy;
+
 	Qiniu_Zero(getPolicy);
-	getPolicy.scope = "*/*"; /* 错！！！下载授权切记不要授权范围过大，否则容易导致安全隐患 */
-	getPolicy.scope = Qiniu_String_Concat2("*/", key); /* 正确！只授权这一个资源可以被访问 */
-	token = Qiniu_RS_GetPolicy_Token(&getPolicy, NULL);
-	free((void*)getPolicy.scope);
-	return token;
+	baseUrl = Qiniu_RS_MakeBaseUrl(domain, key); // baseUrl也可以自己拼接："http://"+domain+"/"+urlescape(key)
+	url = Qiniu_RS_GetPolicy_MakeRequest(&getPolicy, baseUrl, NULL);
+
+	free(baseUrl);
+	return url;
 }
 /* @endgist */
 
