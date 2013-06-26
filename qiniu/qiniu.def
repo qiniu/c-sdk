@@ -13,6 +13,7 @@ EXPORTS
 	Qiniu_Memory_Encode
 	Qiniu_String_Encode
 	Qiniu_String_Decode
+	Qiniu_PathEscape
 	Qiniu_QueryEscape
 	Qiniu_Seconds
 	Qiniu_FILE_Reader
@@ -75,6 +76,7 @@ EXPORTS
 	Qiniu_Client_CallWithBinary
 	Qiniu_Client_CallWithBuffer
 	Qiniu_MacAuth
+	Qiniu_Mac_Sign
 	Qiniu_Mac_SignToken
 	Qiniu_Client_InitNoAuth
 	Qiniu_Client_InitMacAuth
@@ -89,6 +91,7 @@ EXPORTS
 	Qiniu_Rio_PutFile
 
 	Qiniu_RS_PutPolicy_Token
-	Qiniu_RS_GetPolicy_Token
+	Qiniu_RS_GetPolicy_MakeRequest
+	Qiniu_RS_MakeBaseUrl
 	Qiniu_RS_Stat
 	Qiniu_RS_Delete
