@@ -106,6 +106,10 @@ int Qiniu_Rio_BlockCount(Qiniu_Int64 fsize);
 /*============================================================================*/
 /* func Qiniu_Rio_PutXXX */
 
+#ifndef QINIU_UNDEFINED_KEY
+#define QINIU_UNDEFINED_KEY		NULL
+#endif
+
 Qiniu_Error Qiniu_Rio_Put(
 	Qiniu_Client* self, Qiniu_Rio_PutRet* ret,
 	const char* uptoken, const char* key, Qiniu_ReaderAt f, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra* extra);

@@ -32,6 +32,10 @@ typedef struct _Qiniu_Io_PutRet {
 /*============================================================================*/
 /* func Qiniu_Io_PutXXX */
 
+#ifndef QINIU_UNDEFINED_KEY
+#define QINIU_UNDEFINED_KEY		NULL
+#endif
+
 Qiniu_Error Qiniu_Io_PutFile(
 	Qiniu_Client* self, Qiniu_Io_PutRet* ret,
 	const char* uptoken, const char* key, const char* localFile, Qiniu_Io_PutExtra* extra);
