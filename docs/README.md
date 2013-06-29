@@ -253,10 +253,7 @@ char* upload(Qiniu_Client* client, char* uptoken, const char* key, const char* l
 {
 	Qiniu_Error err;
 	Qiniu_Io_PutRet putRet;
-	Qiniu_Io_PutExtra extra;
-	Qiniu_Zero(extra);
-	extra.bucket = bucket;
-	err = Qiniu_Io_PutFile(client, &putRet, uptoken, key, localFile, &extra);
+	err = Qiniu_Io_PutFile(client, &putRet, uptoken, key, localFile, NULL);
 	if (err.code != 200) {
 		debug(client, err);
 		return NULL;
@@ -271,10 +268,7 @@ char* upload(Qiniu_Client* client, char* uptoken, const char* key, const char* l
 int simple_upload(Qiniu_Client* client, char* uptoken, const char* key, const char* localFile)
 {
 	Qiniu_Error err;
-	Qiniu_Io_PutExtra extra;
-	Qiniu_Zero(extra);
-	extra.bucket = bucket;
-	err = Qiniu_Io_PutFile(client, NULL, uptoken, key, localFile, &extra);
+	err = Qiniu_Io_PutFile(client, NULL, uptoken, key, localFile, NULL);
 	return err.code;
 }
 ```
@@ -285,7 +279,20 @@ int simple_upload(Qiniu_Client* client, char* uptoken, const char* key, const ch
 
 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 实际上是用 AccessKey/SecretKey 进行数字签名的上传策略(`Qiniu_RS_PutPolicy`)，它控制则整个上传流程的行为。让我们快速过一遍你都能够决策啥：
 
-* `expires` 指定 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 有效期（默认1小时）。一个 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token) 可以被用于多次上传（只要它还没有过期）。
+```{c}
+typedef struct _Qiniu_RS_PutPolicy {
+    const char* scope;            // 必选项。可以是 bucketName 或者 bucketName:key
+    const char* callbackUrl;      // 可选
+    const char* callbackBodyType; // 可选
+    const char* customer;         // 可选
+    const char* asyncOps;         // 可选
+    const char* returnBody;       // 可选
+    Qiniu_Uint32 expires;         // 可选。默认是 3600 秒
+    Qiniu_Uint16 escape;          // 可选。非 0 表示 Callback 的 Params 支持转义符
+    Qiniu_Uint16 detectMime;      // 可选。非 0 表示在服务端自动检测文件内容的 MimeType
+} Qiniu_RS_PutPolicy;
+```
+
 * `scope` 限定客户端的权限。如果 `scope` 是 bucket，则客户端只能新增文件到指定的 bucket，不能修改文件。如果 `scope` 为 bucket:key，则客户端可以修改指定的文件。
 * `callbackUrl` 设定业务服务器的回调地址，这样业务服务器才能感知到上传行为的发生。可选。
 * `asyncOps` 可指定上传完成后，需要自动执行哪些数据处理。这是因为有些数据处理操作（比如音视频转码）比较慢，如果不进行预转可能第一次访问的时候效果不理想，预转可以很大程度改善这一点。

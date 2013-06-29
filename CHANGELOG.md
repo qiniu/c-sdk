@@ -1,5 +1,16 @@
 ## CHANGE LOG
 
+### v6.0.1
+
+2013-06-30 issue [#79](https://github.com/qiniu/c-sdk/pull/79)
+
+- 遵循 [sdkspec v6.0.2](https://github.com/qiniu/sdkspec/tree/v6.0.2)
+  - io.Put/PutFile 调整为基于 up.qiniu.com 的协议，extra *PutExtra 参数可以为 NULL
+  - io.Put/PutFile 支持支持 key = NULL (UNDEFINED_KEY)，这样服务端将自动生成 key 并返回
+  - io.Put/PutFile 支持自定义的 "x:" 参数(io.PutExtra.Params)
+  - io.Put/PutFile 暂未支持 Crc、MimeType
+
+
 ### v6.0.0
 
 2013-06-26 issue [#76](https://github.com/qiniu/c-sdk/pull/76)

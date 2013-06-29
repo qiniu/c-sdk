@@ -1,4 +1,4 @@
-# Qiniu Resource (Cloud) Storage SDK for C/C++
+# Qiniu Resource Storage SDK for C/C++
 
 [![Build Status](https://api.travis-ci.org/qiniu/c-sdk.png?branch=master)](https://travis-ci.org/qiniu/c-sdk)
 
