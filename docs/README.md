@@ -253,10 +253,7 @@ char* upload(Qiniu_Client* client, char* uptoken, const char* key, const char* l
 {
 	Qiniu_Error err;
 	Qiniu_Io_PutRet putRet;
-	Qiniu_Io_PutExtra extra;
-	Qiniu_Zero(extra);
-	extra.bucket = bucket;
-	err = Qiniu_Io_PutFile(client, &putRet, uptoken, key, localFile, &extra);
+	err = Qiniu_Io_PutFile(client, &putRet, uptoken, key, localFile, NULL);
 	if (err.code != 200) {
 		debug(client, err);
 		return NULL;
@@ -271,10 +268,7 @@ char* upload(Qiniu_Client* client, char* uptoken, const char* key, const char* l
 int simple_upload(Qiniu_Client* client, char* uptoken, const char* key, const char* localFile)
 {
 	Qiniu_Error err;
-	Qiniu_Io_PutExtra extra;
-	Qiniu_Zero(extra);
-	extra.bucket = bucket;
-	err = Qiniu_Io_PutFile(client, NULL, uptoken, key, localFile, &extra);
+	err = Qiniu_Io_PutFile(client, NULL, uptoken, key, localFile, NULL);
 	return err.code;
 }
 ```
