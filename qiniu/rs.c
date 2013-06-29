@@ -28,17 +28,20 @@ char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* auth, Qiniu_Mac* mac)
 	if (auth->callbackUrl) {
 		cJSON_AddStringToObject(root, "callbackUrl", auth->callbackUrl);
 	}
-	if (auth->callbackBodyType) {
-		cJSON_AddStringToObject(root, "callbackBodyType", auth->callbackBodyType);
+	if (auth->callbackBody) {
+		cJSON_AddStringToObject(root, "callbackBody", auth->callbackBody);
 	}
 	if (auth->asyncOps) {
 		cJSON_AddStringToObject(root, "asyncOps", auth->asyncOps);
 	}
+	if (auth->returnUrl) {
+		cJSON_AddStringToObject(root, "returnUrl", auth->returnUrl);
+	}
 	if (auth->returnBody) {
 		cJSON_AddStringToObject(root, "returnBody", auth->returnBody);
 	}
-	if (auth->customer) {
-		cJSON_AddStringToObject(root, "customer", auth->customer);
+	if (auth->endUser) {
+		cJSON_AddStringToObject(root, "endUser", auth->endUser);
 	}
 
 	if (auth->expires) {
@@ -49,13 +52,6 @@ char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* auth, Qiniu_Mac* mac)
 	time(&deadline);
 	deadline += expires;
 	cJSON_AddNumberToObject(root, "deadline", deadline);
-
-	if (auth->escape) {
-		cJSON_AddNumberToObject(root, "escape", auth->escape);
-	}
-	if (auth->detectMime) {
-		cJSON_AddNumberToObject(root, "detectMime", auth->detectMime);
-	}
 
 	authstr = cJSON_PrintUnformatted(root);
 	cJSON_Delete(root);
