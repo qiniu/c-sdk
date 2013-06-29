@@ -283,22 +283,21 @@ int simple_upload(Qiniu_Client* client, char* uptoken, const char* key, const ch
 typedef struct _Qiniu_RS_PutPolicy {
     const char* scope;            // 必选项。可以是 bucketName 或者 bucketName:key
     const char* callbackUrl;      // 可选
-    const char* callbackBodyType; // 可选
-    const char* customer;         // 可选
-    const char* asyncOps;         // 可选
+    const char* callbackBody;     // 可选
+    const char* returnUrl;        // 可选，更贴切的名字是 redirectUrl。
     const char* returnBody;       // 可选
+    const char* endUser;          // 可选
+    const char* asyncOps;         // 可选
     Qiniu_Uint32 expires;         // 可选。默认是 3600 秒
-    Qiniu_Uint16 escape;          // 可选。非 0 表示 Callback 的 Params 支持转义符
-    Qiniu_Uint16 detectMime;      // 可选。非 0 表示在服务端自动检测文件内容的 MimeType
 } Qiniu_RS_PutPolicy;
 ```
 
 * `scope` 限定客户端的权限。如果 `scope` 是 bucket，则客户端只能新增文件到指定的 bucket，不能修改文件。如果 `scope` 为 bucket:key，则客户端可以修改指定的文件。
-* `callbackUrl` 设定业务服务器的回调地址，这样业务服务器才能感知到上传行为的发生。可选。
+* `callbackUrl` 设定业务服务器的回调地址，这样业务服务器才能感知到上传行为的发生。
+* `callbackBody` 设定业务服务器的回调信息。文件上传成功后，七牛向业务服务器的callbackUrl发送的POST请求携带的数据。支持 [魔法变量](http://docs.qiniu.com/api/put.html#MagicVariables) 和 [自定义变量](http://docs.qiniu.com/api/put.html#xVariables)。
+* `returnUrl` 设置用于浏览器端文件上传成功后，浏览器执行301跳转的URL，一般为 HTML Form 上传时使用。文件上传成功后浏览器会自动跳转到 `returnUrl?upload_ret=returnBody`。
+* `returnBody` 可调整返回给客户端的数据包。这只在没有 `callbackUrl` 时有效。不同情形下默认返回的 `returnBody` 并不相同。在一般情况下七牛必然返回文件内容的 `hash`，也就是下载该文件时的 `etag`；但指定 `returnUrl` 时默认的 `returnBody` 会带上更多的信息。
 * `asyncOps` 可指定上传完成后，需要自动执行哪些数据处理。这是因为有些数据处理操作（比如音视频转码）比较慢，如果不进行预转可能第一次访问的时候效果不理想，预转可以很大程度改善这一点。
-* `returnBody` 可调整返回给客户端的数据包（默认情况下七牛返回文件内容的 `hash`，也就是下载该文件时的 `etag`）。这只在没有 `callbackUrl` 时有效。
-* `escape` 为真（非0）时，表示客户端传入的 `callbackParams` 中含有转义符。通过这个特性，可以很方便地把上传文件的某些元信息如 `fsize`（文件大小）、`imageInfo.width/height`（图片宽度/高度）、`exif`（图片EXIF信息）等传给业务服务器。
-* `detectMime` 为真（非0）时，表示服务端忽略客户端传入的 `mimeType`，自己自行检测。
 
 关于上传策略更完整的说明，请参考 [uptoken](http://docs.qiniutek.com/v3/api/io/#upload-token)。
 
