@@ -9,6 +9,7 @@
   - io.Put/PutFile 支持支持 key = NULL (UNDEFINED_KEY)，这样服务端将自动生成 key 并返回
   - io.Put/PutFile 支持自定义的 "x:" 参数(io.PutExtra.Params)
   - io.Put/PutFile 暂未支持 Crc、MimeType
+  - 新的 PutPolicy 结构
 
 
 ### v6.0.0
