@@ -242,9 +242,6 @@ static Qiniu_Int64 Qiniu_Rio_PutExtra_ChunkSize(Qiniu_Rio_PutExtra* self)
 static void Qiniu_Io_PutExtra_initFrom(Qiniu_Io_PutExtra* self, Qiniu_Rio_PutExtra* extra)
 {
 	if (extra) {
-		self->callbackParams = extra->callbackParams;
-		self->bucket = extra->bucket;
-		self->customMeta = extra->customMeta;
 		self->mimeType = extra->mimeType;
 	} else {
 		memset(self, 0, sizeof(*self));
@@ -423,6 +420,7 @@ static Qiniu_Error Qiniu_Rio_Mkfile(
 
 	if (err.code == 200) {
 		ret->hash = Qiniu_Json_GetString(root, "hash", NULL);
+		ret->key = Qiniu_Json_GetString(root, "key", NULL);
 	}
 	return err;
 }
