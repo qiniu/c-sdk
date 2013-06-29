@@ -20,13 +20,12 @@
 typedef struct _Qiniu_RS_PutPolicy {
     const char* scope;            // 必选项。可以是 bucketName 或者 bucketName:key
     const char* callbackUrl;      // 可选
-    const char* callbackBodyType; // 可选
-    const char* customer;         // 可选
-    const char* asyncOps;         // 可选
+    const char* callbackBody;     // 可选
+    const char* returnUrl;        // 可选，更贴切的名字是 redirectUrl。
     const char* returnBody;       // 可选
+    const char* endUser;          // 可选
+    const char* asyncOps;         // 可选
     Qiniu_Uint32 expires;         // 可选。默认是 3600 秒
-    Qiniu_Uint16 escape;          // 可选。非 0 表示 Callback 的 Params 支持转义符
-    Qiniu_Uint16 detectMime;      // 可选。非 0 表示在服务端自动检测文件内容的 MimeType
 } Qiniu_RS_PutPolicy;
 
 /* @endgist */
