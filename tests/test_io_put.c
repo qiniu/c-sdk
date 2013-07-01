@@ -24,13 +24,14 @@ static void clientIoPutFile(const char* uptoken)
 	Qiniu_Client client;
 	Qiniu_Io_PutRet putRet;
 
+	Qiniu_Zero(putRet);
 	Qiniu_Client_InitNoAuth(&client, 1024);
 
 	err = Qiniu_Io_PutFile(&client, &putRet, uptoken, key, __FILE__, NULL);
 	CU_ASSERT(err.code == 200);
 
 	printf("\n%s\n", Qiniu_Buffer_CStr(&client.respHeader));
-	printf("hash: %s\n", putRet.hash);
+	printf("hash: %s\n", putRet.hash?putRet.hash:"");
 
 	Qiniu_Client_Cleanup(&client);
 }
@@ -43,12 +44,13 @@ static void clientIoPutBuffer(const char* uptoken)
 	Qiniu_Client client;
 	Qiniu_Io_PutRet putRet;
 
+	Qiniu_Zero(putRet);
 	Qiniu_Client_InitNoAuth(&client, 1024);
 
 	err = Qiniu_Io_PutBuffer(&client, &putRet, uptoken, key, text, sizeof(text)-1, NULL);
 
 	printf("\n%s", Qiniu_Buffer_CStr(&client.respHeader));
-	printf("hash: %s\n", putRet.hash);
+	printf("hash: %s\n", putRet.hash?putRet.hash:"");
 
 	CU_ASSERT(err.code == 200);
 	CU_ASSERT_STRING_EQUAL(putRet.hash, "FpQ6cC0G80WZruH42o759ylgMdaZ");
