@@ -4,6 +4,7 @@ EXPORTS
 	QINIU_RS_HOST
 	QINIU_UP_HOST
 
+	Qiniu_Free
 	Qiniu_Count_Inc
 	Qiniu_Count_Dec
 	Qiniu_String_Concat2

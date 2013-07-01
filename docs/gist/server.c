@@ -43,8 +43,8 @@ char* downloadUrl(Qiniu_Client* client, const char* domain, const char* key)
 	baseUrl = Qiniu_RS_MakeBaseUrl(domain, key); // baseUrl也可以自己拼接："http://"+domain+"/"+urlescape(key)
 	url = Qiniu_RS_GetPolicy_MakeRequest(&getPolicy, baseUrl, NULL);
 
-	free(baseUrl);
-	return url;
+	Qiniu_Free(baseUrl);
+	return url;                                  // When url is no longer being used, free it by Qiniu_Free.
 }
 /* @endgist */
 

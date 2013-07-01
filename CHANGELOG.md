@@ -1,5 +1,12 @@
 ## CHANGE LOG
 
+### v6.1.0
+
+2013-07-01 issue [#87](https://github.com/qiniu/c-sdk/pull/87)
+
+- bugfix: add Qiniu_Free for qiniu.dll (required by windows dll memory management)
+
+
 ### v6.0.1
 
 2013-06-30 issue [#79](https://github.com/qiniu/c-sdk/pull/79)
