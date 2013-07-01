@@ -16,6 +16,7 @@ SDK 下载地址：<https://github.com/qiniu/c-sdk/tags>
     - [ACCESS_KEY 和 SECRET_KEY](#appkey)
 - [初始化环境与清理](#init)
 - [C-SDK惯例](#convention)
+    - [内存管理](#memory-manage)
     - [HTTP客户端](#http-client)
     - [错误处理与调试](#error-handling)
 - [上传文件](#io-put)
@@ -110,6 +111,12 @@ C-SDK 的 conf.h 文件中声明了对应的两个变量：`QINIU_ACCESS_KEY`和
 ## C-SDK 惯例
 
 C 语言是一个非常底层的语言，相比其他高级语言来说，它的代码通常看起来会更啰嗦。为了尽量让大家理解我们的 C-SDK，这里需要解释下我们在 SDK 中的一些惯例做法。
+
+<a name="memory-manage"></a>
+
+## 内存管理
+
+在 C-SDK 中，有一些函数会涉及到内存的动态分配。这些函数的一惯处理方式为在函数内部申请内存，并以指针的形式直接返回。这就要求函数调用者在得到指针后，需要在恰当的时机去释放这些内存。对于特殊的结构体，C-SDK 都会提供特定的函数来释放内存，比如 Qiniu_Buffer 提供了 Qiniu_Buffer_Cleanup 函数。而对于其他基本数据类型的指针，则由 Qiniu_Free 函数来负责释放不再使用的内存。
 
 <a name="http-client"></a>
 

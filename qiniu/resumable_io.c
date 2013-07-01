@@ -274,7 +274,7 @@ static Qiniu_Error Qiniu_Rio_Mkblock(
 {
 	char* url = Qiniu_String_Format(128, "%s/mkblk/%d", QINIU_UP_HOST, blkSize);
 	Qiniu_Error err = Qiniu_Rio_bput(self, ret, body, bodyLength, url);
-	free(url);
+	Qiniu_Free(url);
 	return err;
 }
 
@@ -283,7 +283,7 @@ static Qiniu_Error Qiniu_Rio_Blockput(
 {
 	char* url = Qiniu_String_Format(1024, "%s/bput/%s/%d", ret->host, ret->ctx, (int)ret->offset);
 	Qiniu_Error err = Qiniu_Rio_bput(self, ret, body, bodyLength, url);
-	free(url);
+	Qiniu_Free(url);
 	return err;
 }
 
@@ -390,7 +390,7 @@ static Qiniu_Error Qiniu_Rio_Mkfile(
 
 	Qiniu_Buffer_Init(&url, 1024);
 	Qiniu_Buffer_AppendFormat(&url, "%s/rs-mkfile/%S/fsize/%D", QINIU_UP_HOST, entry, fsize);
-	free(entry);
+	Qiniu_Free(entry);
 
 	if (extra->mimeType != NULL) {
 		Qiniu_Buffer_AppendFormat(&url, "/mimeType/%S", extra->mimeType);
