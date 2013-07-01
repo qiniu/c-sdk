@@ -57,7 +57,7 @@ char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* auth, Qiniu_Mac* mac)
 	cJSON_Delete(root);
 
 	token = Qiniu_Mac_SignToken(mac, authstr);
-	free(authstr);
+	Qiniu_Free(authstr);
 
 	return token;
 }
@@ -90,8 +90,8 @@ char* Qiniu_RS_GetPolicy_MakeRequest(Qiniu_RS_GetPolicy* auth, const char* baseU
 
 	request = Qiniu_String_Concat3(authstr, "&token=", token);
 
-	free(token);
-	free(authstr);
+	Qiniu_Free(token);
+	Qiniu_Free(authstr);
 
 	return request;
 }
@@ -105,7 +105,7 @@ char* Qiniu_RS_MakeBaseUrl(const char* domain, const char* key)
 	baseUrl = Qiniu_String_Concat("http://", domain, "/", escapedKey, NULL);
 
 	if (fesc) {
-		free(escapedKey);
+		Qiniu_Free(escapedKey);
 	}
 
 	return baseUrl;
@@ -124,11 +124,11 @@ Qiniu_Error Qiniu_RS_Stat(
 	char* entryURIEncoded = Qiniu_String_Encode(entryURI);
 	char* url = Qiniu_String_Concat3(QINIU_RS_HOST, "/stat/", entryURIEncoded);
 
-	free(entryURI);
-	free(entryURIEncoded);
+	Qiniu_Free(entryURI);
+	Qiniu_Free(entryURIEncoded);
 
 	err = Qiniu_Client_Call(self, &root, url);
-	free(url);
+	Qiniu_Free(url);
 
 	if (err.code == 200) {
 		ret->hash = Qiniu_Json_GetString(root, "hash", 0);
@@ -150,11 +150,11 @@ Qiniu_Error Qiniu_RS_Delete(Qiniu_Client* self, const char* tableName, const cha
 	char* entryURIEncoded = Qiniu_String_Encode(entryURI);
 	char* url = Qiniu_String_Concat3(QINIU_RS_HOST, "/delete/", entryURIEncoded);
 
-	free(entryURI);
-	free(entryURIEncoded);
+	Qiniu_Free(entryURI);
+	Qiniu_Free(entryURIEncoded);
 
 	err = Qiniu_Client_CallNoRet(self, url);
-	free(url);
+	Qiniu_Free(url);
 
 	return err;
 }
