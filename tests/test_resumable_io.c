@@ -140,7 +140,7 @@ void testResumableIoPut(void)
 	Qiniu_RS_Delete(&client, bucket, key);
 	clientIoPutBuffer(uptoken);
 
-	free(uptoken);
+	Qiniu_Free(uptoken);
 
 	Qiniu_Zero(getPolicy);
 	dnBaseUrl = Qiniu_RS_MakeBaseUrl(domain, key);
@@ -148,8 +148,8 @@ void testResumableIoPut(void)
 
 	clientIoGet(dnRequest);
 
-	free(dnRequest);
-	free(dnBaseUrl);
+	Qiniu_Free(dnRequest);
+	Qiniu_Free(dnBaseUrl);
 
 	Qiniu_Client_Cleanup(&client);
 }

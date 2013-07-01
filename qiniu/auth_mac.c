@@ -86,10 +86,10 @@ static Qiniu_Error Qiniu_Mac_Auth(
 	enc_digest = Qiniu_Memory_Encode(digest, dgtlen);
 
 	auth = Qiniu_String_Concat("Authorization: QBox ", mac.accessKey, ":", enc_digest, NULL);
-	free(enc_digest);
+	Qiniu_Free(enc_digest);
 
 	*header = curl_slist_append(*header, auth);
-	free(auth);
+	Qiniu_Free(auth);
 
 	return Qiniu_OK;
 }
@@ -164,7 +164,7 @@ char* Qiniu_Mac_Sign(Qiniu_Mac* self, char* data)
 
 	encoded_digest = Qiniu_Memory_Encode(digest, dgtlen);
 	sign = Qiniu_String_Concat3(mac.accessKey, ":", encoded_digest);
-	free(encoded_digest);
+	Qiniu_Free(encoded_digest);
 
 	return sign;
 }
@@ -182,8 +182,8 @@ char* Qiniu_Mac_SignToken(Qiniu_Mac* self, char* policy_str)
 	sign = Qiniu_Mac_Sign(self, data);
 	token = Qiniu_String_Concat3(sign, ":", data);
 
-	free(sign);
-	free(data);
+	Qiniu_Free(sign);
+	Qiniu_Free(data);
 
 	return token;
 }
