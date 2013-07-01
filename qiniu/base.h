@@ -87,6 +87,11 @@ typedef struct _Qiniu_Error {
 extern Qiniu_Error Qiniu_OK;
 
 /*============================================================================*/
+/* type Qiniu_Free */
+
+void Qiniu_Free(void* addr);
+
+/*============================================================================*/
 /* type Qiniu_Count */
 
 typedef long Qiniu_Count;
