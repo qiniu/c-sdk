@@ -1,5 +1,12 @@
 ## CHANGE LOG
 
+### v6.1.1
+
+2013-07-02 issue [#91](https://github.com/qiniu/c-sdk/pull/91)
+
+- bugfix: vc++ 6.0 sprintf doesn't support %zu
+
+
 ### v6.1.0
 
 2013-07-01 issue [#87](https://github.com/qiniu/c-sdk/pull/87)
