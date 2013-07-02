@@ -78,7 +78,7 @@ char* Qiniu_RS_GetPolicy_MakeRequest(Qiniu_RS_GetPolicy* auth, const char* baseU
 	}
 	time(&deadline);
 	deadline += expires;
-	sprintf(e, "%u", (Qiniu_Uint32)deadline);
+	sprintf(e, "%u", (unsigned int)deadline);
 
 	if (strchr(baseUrl, '?') != NULL) {
 		authstr = Qiniu_String_Concat3(baseUrl, "&e=", e);
