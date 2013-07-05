@@ -17,17 +17,33 @@ SOURCE_FILES=\
 	test_fmt.c\
 	test.c\
 
-CUNIT_LIB=../CUnit/CUnit/Sources/.libs
-
 all: $(SOURCE_FILES)
-	gcc $^ -o qiniutest -L$(CUNIT_LIB) -lcurl -lssl -lcrypto -lcunit -lm
+	gcc $^ -o test -lcurl -lm -lssl -lcrypto -lcunit -lcurses
 
 install: all
 	@echo
 
-clean:
-	rm -f test
 
 test: all
 	LD_LIBRARY_PATH=$(CUNIT_LIB) ./qiniutest
-
+	
+clean:  
+	-rm -rf *.o test
+	-rm -rf result *~
+output: $(SOURCE_FILES)
+	gcc $^ -o test -lcurl -lm -lssl -lcrypto -lcunit -lcurses -fprofile-arcs -ftest-coverage
+	./test
+	lcov --directory .   --capture --output-file rs_app.info
+	genhtml -o result rs_app.info
+	-rm -rf *.gcno *.gcda *.info
+	
+badoutput: $(SOURCE_FILES)
+	gcc $^ -o test -lcurl -lm -lssl -lcrypto -lcunit -lcurses -fprofile-arcs -ftest-coverage
+	./test -b
+	lcov --directory .   --capture --output-file rs_app.info
+	genhtml -o result rs_app.info
+	-rm -rf *.gcno *.gcda *.info
+	
+run: $(SOURCE_FILES)
+	gcc $^ -o test -lcurl -lm -lssl -lcrypto -lcunit -lcurses -fprofile-arcs -ftest-coverage
+	./test

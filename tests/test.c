@@ -24,7 +24,7 @@ QINIU_TESTS_BEGIN(qbox)
 	QINIU_TEST(testBaseIo)
 	QINIU_TEST(testEqual)
 	QINIU_TEST(testResumableIoPut)
-	QINIU_TEST(testIoPut)
+	//QINIU_TEST(testIoPut)
 QINIU_TESTS_END()
 
 QINIU_ONE_SUITE(qbox)
@@ -33,8 +33,8 @@ int main()
 {
 	int err = 0;
 
-	QINIU_ACCESS_KEY	= getenv("QINIU_ACCESS_KEY");
-	QINIU_SECRET_KEY	= getenv("QINIU_SECRET_KEY");
+	QINIU_ACCESS_KEY	= "cg5Kj6RC5KhDStGMY-nMzDGEMkW-QcneEqjgP04Z";//getenv("QINIU_ACCESS_KEY");
+	QINIU_SECRET_KEY	= "yg6Q1sWGYBpNH8pfyZ7kyBcCZORn60p_YFdHr7Ze";//getenv("QINIU_SECRET_KEY");
 
 	assert(QINIU_ACCESS_KEY != NULL);
 	assert(QINIU_SECRET_KEY != NULL);
