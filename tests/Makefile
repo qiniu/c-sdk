@@ -16,6 +16,7 @@ SOURCE_FILES=\
 	test_base_io.c\
 	test_fmt.c\
 	test.c\
+	test_rs_ops.c\
 
 CUNIT_LIB=../CUnit/CUnit/Sources/.libs
 

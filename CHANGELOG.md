@@ -1,5 +1,13 @@
 ## CHANGE LOG
 
+### v6.1.2
+
+2013-07-06 issue [#93](https://github.com/qiniu/c-sdk/pull/93)
+
+- 支持批处理（Batch）
+- 支持 Move/Copy
+
+
 ### v6.1.1
 
 2013-07-02 issue [#91](https://github.com/qiniu/c-sdk/pull/91)
