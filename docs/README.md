@@ -1,5 +1,5 @@
 ---
-title: C/C++ SDK 使用指南 | 七牛云存储
+title: C/C++ SDK
 ---
 
 # C/C++ SDK 使用指南
