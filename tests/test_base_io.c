@@ -30,6 +30,29 @@ void testEqual(void)
 	CU_ASSERT(Qiniu_Is(&eq));
 }
 
+void testFileIo()
+{
+	char buf[24];
+	size_t len = 20;
+	size_t n;
+	Qiniu_File* fp;
+
+	Qiniu_Error err = Qiniu_File_Open(&fp, __FILE__);
+	CU_ASSERT(err.code == 200);
+
+	buf[len] = '\0';
+
+	n = Qiniu_File_ReadAt(fp, buf, len, 0);
+	printf("%s, %d, %d, %d\n", buf, n, len, errno);
+	CU_ASSERT_EQUAL(n, len);
+
+	n = Qiniu_File_ReadAt(fp, buf, len, 2);
+	printf("%s, %d, %d, %d\n", buf, n, len, errno);
+	CU_ASSERT_EQUAL(n, len);
+
+	Qiniu_File_Close(fp);
+}
+
 void testBaseIo()
 {
 	char buf[32];

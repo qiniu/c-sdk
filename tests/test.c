@@ -13,6 +13,7 @@
 #include <string.h>
 #include <assert.h>
 
+void testFileIo();
 void testBaseIo();
 void testIoPut();
 void testResumableIoPut();
@@ -23,6 +24,7 @@ void testRsBatchOps();
 QINIU_TESTS_BEGIN(qbox)
 	QINIU_TEST(testFmt)
 	QINIU_TEST(testBaseIo)
+	QINIU_TEST(testFileIo)
 	QINIU_TEST(testEqual)
 	QINIU_TEST(testResumableIoPut)
 	QINIU_TEST(testIoPut)
