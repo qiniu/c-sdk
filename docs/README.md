@@ -41,7 +41,7 @@ C-SDK 以开源方式提供。开发者可以随时从本文档提供的下载�
 
 由于 C 语言的通用性，C-SDK 被设计为同时适合服务器端和客户端使用。服务端是指开发者自己的业务服务器，客户端是指开发者提供给终端用户的软件，通常运行在 iPhone/iPad/Android 移动设备，或者运行在 Windows/Mac/Linux 这样的桌面平台上。服务端因为有七牛颁发的 AccessKey/SecretKey，可以做很多客户端做不了的事情，比如删除文件、移动/复制文件等操作。一般而言，客服端操作文件需要获得服务端的授权。客户端上传文件需要获得服务端颁发的 [uptoken（上传授权凭证）](http://docs.qiniu.com/api/put.html#uploadToken)，客户端下载文件（包括下载处理过的文件，比如下载图片的缩略图）需要获得服务端颁发的 [dntoken（下载授权凭证）](http://docs.qiniu.com/api/get.html#download-token)。但开发者也可以将 bucket 设置为公开，此时文件有永久有效的访问地址，不需要业务服务器的授权，这对网站的静态文件（如图片、js、css、html）托管非常方便。
 
-从 v5.0.0 版本开始，我们对 SDK 的内容进行了精简。所有管理操作，比如：创建/删除 bucket、为 bucket 绑定域名（publish）、设置数据处理的样式分隔符（fop seperator）、新增数据处理样式（fop style）等都去除了，统一建议到[开发者后台](https://dev.qiniutek.com/)来完成。另外，此前服务端还有自己独有的上传 API，现在也推荐统一成基于客户端上传的工作方式。
+从 v5.0.0 版本开始，我们对 SDK 的内容进行了精简。所有管理操作，比如：创建/删除 bucket、为 bucket 绑定域名（publish）、设置数据处理的样式分隔符（fop seperator）、新增数据处理样式（fop style）等都去除了，统一建议到[开发者后台](https://portal.qiniu.com/)来完成。另外，此前服务端还有自己独有的上传 API，现在也推荐统一成基于客户端上传的工作方式。
 
 从内容上来说，C-SDK 主要包含如下几方面的内容：
 
@@ -75,8 +75,8 @@ C-SDK 使用 [cURL](http://curl.haxx.se/) 进行网络相关操作。无论是�
 
 如果你的服务端采用 C-SDK，那么使用 C-SDK 前，您需要拥有一对有效的 AccessKey 和 SecretKey 用来进行签名授权。可以通过如下步骤获得：
 
-1. [开通七牛开发者帐号](https://dev.qiniutek.com/signup)
-2. [登录七牛开发者自助平台，查看 AccessKey 和 SecretKey](https://dev.qiniutek.com/account/keys) 。
+1. [开通七牛开发者帐号](https://portal.qiniu.com/signup)
+2. [登录七牛开发者自助平台，查看 AccessKey 和 SecretKey](https://portal.qiniu.com/setting/key) 。
 
 C-SDK 的 conf.h 文件中声明了对应的两个变量：`QINIU_ACCESS_KEY`和`QINIU_SECRET_KEY`。你需要在启动程序之初初始化这两个变量为七牛颁发的 AccessKey 和 SecretKey。
 
@@ -194,7 +194,7 @@ typedef struct _Qiniu_Error {
 
 即一个错误码和对应的读者友好的消息。这个错误码有可能是 cURL 的错误码，表示请求发送环节发生了意外，或者是一个 HTTP 错误码，表示请求发送正常，服务器端处理请求后返回了 HTTP 错误码。
 
-如果一切正常，`code`应该是 200，即 HTTP 的 OK 状态码。如果不是 200，则需要对`code`的值进行相应分析。对于低于 200 的值，可以查看 [cURL 错误码](http://curl.haxx.se/libcurl/c/libcurl-errors.html)，否则应查看[七牛云存储错误码](http://docs.qiniutek.com/v2/api/code/)。
+如果一切正常，`code`应该是 200，即 HTTP 的 OK 状态码。如果不是 200，则需要对`code`的值进行相应分析。对于低于 200 的值，可以查看 [cURL 错误码](http://curl.haxx.se/libcurl/c/libcurl-errors.html)，否则应查看[七牛云存储错误码](http://docs.qiniu.com/api/put.html#error-code)。
 
 如果`message`指示的信息还不够友好，也可以尝试把整个 HTTP 返回包打印出来看看：
 
@@ -439,12 +439,12 @@ typedef struct _Qiniu_RS_StatRet {
 ```{c}
 void delete(Qiniu_Client* client, const char* bucket, const char* key)
 {
-    Qiniu_Error err = Qiniu_RS_Delete(client, bucket, key);
-    if (err.code != 200) {
-        debug(client, err);
-        return;
-    }
-    printf("%s:a delete OK.\n", bucket);
+	Qiniu_Error err = Qiniu_RS_Delete(client, bucket, key);
+	if (err.code != 200) {
+		debug(client, err);
+		return;
+	}
+	printf("%s:%s delete OK.\n", bucket, key);
 }
 ```
 <a name="rs-copy-move"></a>
@@ -455,29 +455,29 @@ void delete(Qiniu_Client* client, const char* bucket, const char* key)
 
 ```{c}
 void copy(Qiniu_Client* client, 
-        const char* bucketSrc, const char* keySrc, 
-        const char* bucketDest, const char* keyDest)
+	const char* bucketSrc, const char* keySrc, 
+	const char* bucketDest, const char* keyDest)
 {
-    Qiniu_Error err = Qiniu_RS_Copy(client, bucketSrc, keySrc, bucketDest, keyDest);
-    if (err.code != 200) {
-        debug(client, err);
-        return;
-    }
-    printf("Copy %s:%s -> %s:%s OK.\n", bucketSrc, keySrc, bucketDest, keyDest);
+	Qiniu_Error err = Qiniu_RS_Copy(client, bucketSrc, keySrc, bucketDest, keyDest);
+	if (err.code != 200) {
+		debug(client, err);
+		return;
+	}
+	printf("Copy %s:%s -> %s:%s OK.\n", bucketSrc, keySrc, bucketDest, keyDest);
 }
 ```
 
 ```{c}
 void move(Qiniu_Client* client, 
-        const char* bucketSrc, const char* keySrc, 
-        const char* bucketDest, const char* keyDest)
+	const char* bucketSrc, const char* keySrc, 
+	const char* bucketDest, const char* keyDest)
 {
-    Qiniu_Error err = Qiniu_RS_Move(client, bucketSrc, keySrc, bucketDest, keyDest);
-    if (err.code != 200) {
-        debug(client, err);
-        return;
-    }
-    printf("Move %s:%s -> %s:%s OK.\n", bucketSrc, keySrc, bucketDest, keyDest);
+	Qiniu_Error err = Qiniu_RS_Move(client, bucketSrc, keySrc, bucketDest, keyDest);
+	if (err.code != 200) {
+		debug(client, err);
+		return;
+	}
+	printf("Move %s:%s -> %s:%s OK.\n", bucketSrc, keySrc, bucketDest, keyDest);
 }
 ```
 
@@ -493,32 +493,32 @@ void move(Qiniu_Client* client,
 
 ```{c}
 void batchStat(Qiniu_Client* client, 
-        Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
+	Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
 {
-    Qiniu_RS_BatchStatRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchStatRet));
-    Qiniu_Error err = Qiniu_RS_BatchStat(client, rets, entries, entryCount);
+	Qiniu_RS_BatchStatRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchStatRet));
+	Qiniu_Error err = Qiniu_RS_BatchStat(client, rets, entries, entryCount);
 
-    int curr = 0;
-    while (curr < entryCount) {
-        printf("\ncode: %d\n", rets[curr].code);
+	int curr = 0;
+	while (curr < entryCount) {
+		printf("\ncode: %d\n", rets[curr].code);
 
-        if (rets[curr].code != 200) {
-            printf("error: %s\n", rets[curr].error);
-        } else {
-            printf("hash: %s\n", rets[curr].data.hash);
-            printf("mimeType: %s\n", rets[curr].data.mimeType);
-            printf("fsize: %lld\n", rets[curr].data.fsize);
-            printf("putTime: %lld\n", rets[curr].data.putTime);
-        }
-        curr++;
-    }
+		if (rets[curr].code != 200) {
+			printf("error: %s\n", rets[curr].error);
+		} else {
+			printf("hash: %s\n", rets[curr].data.hash);
+			printf("mimeType: %s\n", rets[curr].data.mimeType);
+			printf("fsize: %lld\n", rets[curr].data.fsize);
+			printf("putTime: %lld\n", rets[curr].data.putTime);
+		}
+		curr++;
+	}
 
-    free(rets);
+	free(rets);
 
-    if (err.code != 200) {
-        debug(client, err);
-        return;
-    }
+	if (err.code != 200) {
+		debug(client, err);
+		return;
+	}
 }
 ```
 
@@ -562,27 +562,27 @@ typedef struct _Qiniu_RS_StatRet {
 
 ```{c}
 void batchDelete(Qiniu_Client* client, 
-        Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
+	Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
 {
-    Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
-    Qiniu_Error err = Qiniu_RS_BatchDelete(client, rets, entries, entryCount);
+	Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
+	Qiniu_Error err = Qiniu_RS_BatchDelete(client, rets, entries, entryCount);
 
-    int curr = 0;
-    while (curr < entryCount) {
-        printf("\ncode: %d\n", rets[curr].code);
+	int curr = 0;
+	while (curr < entryCount) {
+		printf("\ncode: %d\n", rets[curr].code);
 
-        if (rets[curr].code != 200) {
-            printf("error: %s\n", rets[curr].error);
-        }
-        curr++;
-    }
+		if (rets[curr].code != 200) {
+			printf("error: %s\n", rets[curr].error);
+		}
+		curr++;
+	}
 
-    free(rets);
+	free(rets);
 
-    if (err.code != 200) {
-        debug(client, err);
-        return;
-    }
+	if (err.code != 200) {
+		debug(client, err);
+		return;
+	}
 }
 ```
 
@@ -603,26 +603,26 @@ typedef struct _Qiniu_RS_BatchItemRet {
 
 ```{c}
 void batchCopy(Qiniu_Client* client, 
-        Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
+	Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
 {
-    Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
-    Qiniu_Error err = Qiniu_RS_BatchCopy(client, rets, entryPairs, entryCount);
-    int curr = 0;
+	Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
+	Qiniu_Error err = Qiniu_RS_BatchCopy(client, rets, entryPairs, entryCount);
+	int curr = 0;
 
-    while (curr < entryCount) {
-        printf("\ncode: %d\n", rets[curr].code);
+	while (curr < entryCount) {
+		printf("\ncode: %d\n", rets[curr].code);
 
-        if (rets[curr].code != 200) {
-            printf("error: %s\n", rets[curr].error);
-        }
-        curr++;
-    }
-    free(rets);
+		if (rets[curr].code != 200) {
+			printf("error: %s\n", rets[curr].error);
+		}
+		curr++;
+	}
+	free(rets);
 
-    if (err.code != 200) {
-        debug(client, err);
-        return;
-    }
+	if (err.code != 200) {
+		debug(client, err);
+		return;
+	}
 }
 ```
 
@@ -643,27 +643,27 @@ typedef struct _Qiniu_RS_EntryPathPair {
 
 ```{c}
 void batchMove(Qiniu_Client* client, 
-        Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
+	Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
 {
-    Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
-    Qiniu_Error err = Qiniu_RS_BatchMove(client, rets, entryPairs, entryCount);
+	Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
+	Qiniu_Error err = Qiniu_RS_BatchMove(client, rets, entryPairs, entryCount);
 
-    int curr = 0;
-    while (curr < entryCount) {
-        printf("\ncode: %d\n", rets[curr].code);
+	int curr = 0;
+	while (curr < entryCount) {
+		printf("\ncode: %d\n", rets[curr].code);
 
-        if (rets[curr].code != 200) {
-            printf("error: %s\n", rets[curr].error);
-        }
-        curr++;
-    }
+		if (rets[curr].code != 200) {
+			printf("error: %s\n", rets[curr].error);
+		}
+		curr++;
+	}
 
-    free(rets);
+	free(rets);
 
-    if (err.code != 200) {
-        debug(client, err);
-        return;
-    }
+	if (err.code != 200) {
+		debug(client, err);
+		return;
+	}
 }
 ```
 
