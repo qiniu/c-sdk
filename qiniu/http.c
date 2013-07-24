@@ -267,7 +267,7 @@ static Qiniu_Error Qiniu_Client_callWithBody(
 		if (body == NULL) {
 			err = self->auth.itbl->Auth(self->auth.self, &headers, url, NULL, 0);
 		} else {
-			err = self->auth.itbl->Auth(self->auth.self, &headers, url, body, bodyLen);
+			err = self->auth.itbl->Auth(self->auth.self, &headers, url, body, (size_t)bodyLen);
 		}
 
 		if (err.code != 200) {
