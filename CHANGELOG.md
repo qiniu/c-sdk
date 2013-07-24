@@ -1,5 +1,13 @@
 ## CHANGE LOG
 
+### v6.2.0
+
+2013-07-25 issue [#99](https://github.com/qiniu/c-sdk/pull/99)
+
+- resumable io (for windows) bugfix
+  - see [Qiniu_Posix_Pread](https://github.com/qiniu/c-sdk-wdeps/commit/5446ccdef5f4f695aec5bc3d4b68987e78b2fdfc)
+
+
 ### v6.1.2
 
 2013-07-06 issue [#93](https://github.com/qiniu/c-sdk/pull/93)
