@@ -96,3 +96,10 @@ EXPORTS
 	Qiniu_RS_MakeBaseUrl
 	Qiniu_RS_Stat
 	Qiniu_RS_Delete
+	Qiniu_RS_Copy
+	Qiniu_RS_Move
+
+	Qiniu_RS_BatchStat
+	Qiniu_RS_BatchDelete
+	Qiniu_RS_BatchMove
+	Qiniu_RS_BatchCopy

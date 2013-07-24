@@ -130,11 +130,12 @@ void batchDelete(Qiniu_Client* client,
 void testRsBatchOps()
 {
 	Qiniu_Client client;
+	Qiniu_RS_EntryPath entries[3];
+	Qiniu_RS_EntryPathPair entryPairs[3];
 	int i;
 
 	Qiniu_Client_InitMacAuth(&client, 1024, NULL);
 
-	Qiniu_RS_EntryPathPair entryPairs[3];
 	for (i = 0; i < 3; i++) {
 		entryPairs[i].src.bucket = bucket;
 		entryPairs[i].dest.bucket = bucket;
@@ -149,7 +150,6 @@ void testRsBatchOps()
 	}
 	batchMove(&client, entryPairs, 3);
 
-	Qiniu_RS_EntryPath entries[3];
 	for (i = 0; i < 3; i++) {
 		entries[i].bucket = bucket;
 		entries[i].key = moveNames[i];

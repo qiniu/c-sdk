@@ -223,6 +223,7 @@ Qiniu_Error Qiniu_RS_BatchStat(
 	Qiniu_Client* self, Qiniu_RS_BatchStatRet* rets,
 	Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
 {
+	int code;
 	Qiniu_Error err;
 	cJSON *root, *arrayItem, *dataItem;
 	char *body = NULL, *bodyTmp = NULL;
@@ -260,7 +261,7 @@ Qiniu_Error Qiniu_RS_BatchStat(
 	curr = 0;
 	while (curr < retSize) {
 		arrayItem = cJSON_GetArrayItem(root, curr);
-		int code = Qiniu_Json_GetInt(arrayItem, "code", 0);
+		code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
 		dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
 		rets[curr].code = code;
@@ -286,6 +287,7 @@ Qiniu_Error Qiniu_RS_BatchDelete(
 	Qiniu_Client* self, Qiniu_RS_BatchItemRet* rets,
 	Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
 {
+	int code;
 	Qiniu_Error err;
 	cJSON *root, *arrayItem, *dataItem;
 	char *body = NULL, *bodyTmp = NULL;
@@ -320,11 +322,11 @@ Qiniu_Error Qiniu_RS_BatchDelete(
 	free(url);
 
 	retSize = cJSON_GetArraySize(root);
-	
+
 	curr = 0;
 	while (curr < retSize) {
 		arrayItem = cJSON_GetArrayItem(root, curr);
-		int code = Qiniu_Json_GetInt(arrayItem, "code", 0);
+		code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
 		dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
 		rets[curr].code = code;
@@ -345,6 +347,7 @@ Qiniu_Error Qiniu_RS_BatchMove(
 	Qiniu_Client* self, Qiniu_RS_BatchItemRet* rets,
 	Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
 {
+	int code;
 	Qiniu_Error err;
 	cJSON *root, *arrayItem, *dataItem;
 	char *body = NULL, *bodyTmp = NULL;
@@ -391,7 +394,7 @@ Qiniu_Error Qiniu_RS_BatchMove(
 	curr = 0;
 	while (curr < retSize) {
 		arrayItem = cJSON_GetArrayItem(root, curr);
-		int code = Qiniu_Json_GetInt(arrayItem, "code", 0);
+		code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
 		dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
 		rets[curr].code = code;
@@ -412,6 +415,7 @@ Qiniu_Error Qiniu_RS_BatchCopy(
 	Qiniu_Client* self, Qiniu_RS_BatchItemRet* rets,
 	Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
 {
+	int code;
 	Qiniu_Error err;
 	cJSON *root, *arrayItem, *dataItem;
 	char *body = NULL, *bodyTmp = NULL;
@@ -458,7 +462,7 @@ Qiniu_Error Qiniu_RS_BatchCopy(
 	curr = 0;
 	while (curr < retSize) {
 		arrayItem = cJSON_GetArrayItem(root, curr);
-		int code = Qiniu_Json_GetInt(arrayItem, "code", 0);
+		code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
 		dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
 		rets[curr].code = code;
