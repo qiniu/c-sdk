@@ -36,6 +36,11 @@ typedef _W64 int ssize_t;
 
 #pragma pack(1)
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /*============================================================================*/
 /* func Qiniu_Zero */
 
@@ -310,5 +315,9 @@ void Qiniu_Null_Log(const char* fmt, ...);
 /*============================================================================*/
 
 #pragma pack()
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* QINIU_BASE_H */

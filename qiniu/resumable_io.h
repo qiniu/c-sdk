@@ -15,6 +15,11 @@
 
 #pragma pack(1)
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /*============================================================================*/
 
 #define Qiniu_Rio_InvalidCtx			701
@@ -57,10 +62,10 @@ extern Qiniu_Rio_ThreadModel Qiniu_Rio_ST;
 /* type Qiniu_Rio_Settings */
 
 typedef struct _Qiniu_Rio_Settings {
-	int taskQsize;		// 可选。任务队列大小。为 0 表示取 Workers * 4。
-	int workers;		// 并行 Goroutine 数目。
-	int chunkSize;		// 默认的Chunk大小，不设定则为256k
-	int tryTimes;		// 默认的尝试次数，不设定则为3
+	int taskQsize;
+	int workers;
+	int chunkSize;
+	int tryTimes;
 	Qiniu_Rio_ThreadModel threadModel;
 } Qiniu_Rio_Settings;
 
@@ -81,16 +86,16 @@ typedef void (*Qiniu_Rio_FnNotify)(void* recvr, int blkIdx, int blkSize, Qiniu_R
 typedef void (*Qiniu_Rio_FnNotifyErr)(void* recvr, int blkIdx, int blkSize, Qiniu_Error err);
 
 typedef struct _Qiniu_Rio_PutExtra {
-	const char* callbackParams;	// 当 uptoken 指定了 CallbackUrl，则 CallbackParams 必须非空
-	const char* bucket; 		// 当前是必选项，但未来会去掉
-	const char* customMeta;		// 可选。用户自定义 Meta，不能超过 256 字节
-	const char* mimeType;		// 可选。在 uptoken 没有指定 DetectMime 时，用户客户端可自己指定 MimeType
-	int chunkSize;				// 可选。每次上传的Chunk大小
-	int tryTimes;				// 可选。尝试次数
+	const char* callbackParams;
+	const char* bucket;
+	const char* customMeta;
+	const char* mimeType;
+	int chunkSize;
+	int tryTimes;
 	void* notifyRecvr;
-	Qiniu_Rio_FnNotify notify;		 // 可选。进度提示（注意多个block是并行传输的）
+	Qiniu_Rio_FnNotify notify;
 	Qiniu_Rio_FnNotifyErr notifyErr;
-	Qiniu_Rio_BlkputRet* progresses; // 可选。上传进度
+	Qiniu_Rio_BlkputRet* progresses;
 	size_t blockCnt;
 	Qiniu_Rio_ThreadModel threadModel;
 } Qiniu_Rio_PutExtra;
@@ -124,5 +129,8 @@ Qiniu_Error Qiniu_Rio_PutFile(
 
 #pragma pack()
 
-#endif // QINIU_RESUMABLE_IO_H
+#ifdef __cplusplus
+}
+#endif
 
+#endif // QINIU_RESUMABLE_IO_H
