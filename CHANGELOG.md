@@ -2,9 +2,11 @@
 
 ### v6.2.1
 
-2013-07-25 issue [#102](https://github.com/qiniu/c-sdk/pull/102)
+2013-07-25 issue [#102](https://github.com/qiniu/c-sdk/pull/102), [#104](https://github.com/qiniu/c-sdk/pull/104)
 
 - struct pack(1)
+- 中文编码问题：visual c++ 2010 由于把 utf8 误当 gbk，并且处理不当，导致代码被当做注释
+  - 暂且把代码中的所有中文注释去掉
 
 
 ### v6.2.0
