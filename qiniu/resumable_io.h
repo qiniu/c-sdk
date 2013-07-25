@@ -13,6 +13,8 @@
 #include "http.h"
 #include "io.h"
 
+#pragma pack(1)
+
 /*============================================================================*/
 
 #define Qiniu_Rio_InvalidCtx			701
@@ -119,6 +121,8 @@ Qiniu_Error Qiniu_Rio_PutFile(
 	const char* uptoken, const char* key, const char* localFile, Qiniu_Rio_PutExtra* extra);
 
 /*============================================================================*/
+
+#pragma pack()
 
 #endif // QINIU_RESUMABLE_IO_H
 

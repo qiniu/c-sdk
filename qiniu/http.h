@@ -53,6 +53,8 @@ Qiniu_Int64 Qiniu_Json_GetInt64(Qiniu_Json* self, const char* key, Qiniu_Int64 d
 /*============================================================================*/
 /* type Qiniu_Auth */
 
+#pragma pack(1)
+
 typedef struct curl_slist Qiniu_Header;
 
 typedef struct _Qiniu_Auth_Itbl {
@@ -107,6 +109,8 @@ void Qiniu_Client_InitNoAuth(Qiniu_Client* self, size_t bufSize);
 void Qiniu_Client_InitMacAuth(Qiniu_Client* self, size_t bufSize, Qiniu_Mac* mac);
 
 /*============================================================================*/
+
+#pragma pack()
 
 #endif /* QINIU_HTTP_H */
 
