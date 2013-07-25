@@ -12,6 +12,8 @@
 
 #include "http.h"
 
+#pragma pack(1)
+
 /*============================================================================*/
 /* type PutPolicy, GetPolicy */
 
@@ -119,7 +121,7 @@ Qiniu_Error Qiniu_RS_BatchDelete(
         Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount);
 
 /*============================================================================*/
-/* func Qiniu_RS_BatchMove */
+/* func Qiniu_RS_BatchMove/Copy */
 
 /* @gist entrypathpair */
 
@@ -134,12 +136,12 @@ Qiniu_Error Qiniu_RS_BatchMove(
         Qiniu_Client* self, Qiniu_RS_BatchItemRet* rets,
         Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount);
 
-/*============================================================================*/
-/* func Qiniu_RS_BatchCopy */
-
 Qiniu_Error Qiniu_RS_BatchCopy(
         Qiniu_Client* self, Qiniu_RS_BatchItemRet* rets,
         Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount);
 
-#endif /* QINIU_RS_H */
+/*============================================================================*/
 
+#pragma pack()
+
+#endif /* QINIU_RS_H */

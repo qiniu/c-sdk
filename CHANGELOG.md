@@ -1,5 +1,12 @@
 ## CHANGE LOG
 
+### v6.2.1
+
+2013-07-25 issue [#102](https://github.com/qiniu/c-sdk/pull/102)
+
+- struct pack(1)
+
+
 ### v6.2.0
 
 2013-07-25 issue [#99](https://github.com/qiniu/c-sdk/pull/99)

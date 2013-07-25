@@ -12,6 +12,8 @@
 
 #include "http.h"
 
+#pragma pack(1)
+
 /*============================================================================*/
 /* type Qiniu_Io_PutExtra */
 
@@ -55,6 +57,8 @@ Qiniu_Error Qiniu_Io_PutBuffer(
 	const char* uptoken, const char* key, const char* buf, size_t fsize, Qiniu_Io_PutExtra* extra);
 
 /*============================================================================*/
+
+#pragma pack()
 
 #endif // QINIU_IO_H
 
