@@ -14,26 +14,31 @@
 
 #pragma pack(1)
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /*============================================================================*/
 /* type PutPolicy, GetPolicy */
 
 /* @gist put-policy */
 
 typedef struct _Qiniu_RS_PutPolicy {
-    const char* scope;            // 必选项。可以是 bucketName 或者 bucketName:key
-    const char* callbackUrl;      // 可选
-    const char* callbackBody;     // 可选
-    const char* returnUrl;        // 可选，更贴切的名字是 redirectUrl。
-    const char* returnBody;       // 可选
-    const char* endUser;          // 可选
-    const char* asyncOps;         // 可选
-    Qiniu_Uint32 expires;         // 可选。默认是 3600 秒
+    const char* scope;
+    const char* callbackUrl;
+    const char* callbackBody;
+    const char* returnUrl;
+    const char* returnBody;
+    const char* endUser;
+    const char* asyncOps;
+    Qiniu_Uint32 expires;
 } Qiniu_RS_PutPolicy;
 
 /* @endgist */
 
 typedef struct _Qiniu_RS_GetPolicy {
-    Qiniu_Uint32 expires;              // 可选。默认是 3600 秒
+    Qiniu_Uint32 expires;
 } Qiniu_RS_GetPolicy;
 
 char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* policy, Qiniu_Mac* mac);
@@ -143,5 +148,9 @@ Qiniu_Error Qiniu_RS_BatchCopy(
 /*============================================================================*/
 
 #pragma pack()
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* QINIU_RS_H */
