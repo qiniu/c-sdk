@@ -16,6 +16,11 @@
 /*============================================================================*/
 /* Global */
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 void Qiniu_Global_Init(long flags);
 void Qiniu_Global_Cleanup();
 
@@ -24,6 +29,10 @@ void Qiniu_MacAuth_Cleanup();
 
 void Qiniu_Servend_Init(long flags);
 void Qiniu_Servend_Cleanup();
+
+#ifdef __cplusplus
+}
+#endif
 
 /*============================================================================*/
 /* type Qiniu_Mutex */
@@ -34,6 +43,11 @@ typedef CRITICAL_SECTION Qiniu_Mutex;
 #else
 #include <pthread.h>
 typedef pthread_mutex_t Qiniu_Mutex;
+#endif
+
+#ifdef __cplusplus
+extern "C"
+{
 #endif
 
 void Qiniu_Mutex_Init(Qiniu_Mutex* self);
@@ -111,6 +125,10 @@ void Qiniu_Client_InitMacAuth(Qiniu_Client* self, size_t bufSize, Qiniu_Mac* mac
 /*============================================================================*/
 
 #pragma pack()
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* QINIU_HTTP_H */
 
