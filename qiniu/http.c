@@ -328,7 +328,14 @@ Qiniu_Error Qiniu_Client_Call(Qiniu_Client* self, Qiniu_Json** ret, const char* 
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
+
 	err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
+	/*
+	 * Bug No.(4601) Wang Xiaotao 2013\10\12 17:09:02
+	 * Change for : free  var headers 'variable'
+	 * Reason     : memory leak!
+	 */
+    curl_slist_free_all(headers);
 	*ret = self->root;
 	return err;
 }
@@ -348,6 +355,13 @@ Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client* self, const char* url)
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-	return Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
+	/*
+	 * Bug No.(4601) Wang Xiaotao 2013\10\12 17:09:02
+	 * Change for : free  var headers 'variable'
+	 * Reason     : memory leak!
+	 */
+	err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
+	curl_slist_free_all(headers); 
+	return err;
 }
 
