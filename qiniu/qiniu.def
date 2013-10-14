@@ -103,3 +103,13 @@ EXPORTS
 	Qiniu_RS_BatchDelete
 	Qiniu_RS_BatchMove
 	Qiniu_RS_BatchCopy
+
+
+	Qiniu_UTF16_To_UTF8
+	Qiniu_UTF8_To_UTF16
+
+	Qiniu_UTF16_To_LocalCodePage
+	Qiniu_LocalCodePage_To_UTF16
+	
+	Qiniu_LocalCodePage_To_UTF8
+	Qiniu_UTF8_To_LocalCodePage
