@@ -1,5 +1,13 @@
 ## CHANGE LOG
 
+
+### v6.2.2
+
+2013-10-14 issue [#112](https://github.com/qiniu/c-sdk/pull/112)
+
+- 解决几个内存泄漏
+
+
 ### v6.2.1
 
 2013-07-25 issue [#102](https://github.com/qiniu/c-sdk/pull/102), [#104](https://github.com/qiniu/c-sdk/pull/104)
