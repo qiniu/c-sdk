@@ -255,6 +255,12 @@ Qiniu_Error Qiniu_RS_BatchStat(
 	err = Qiniu_Client_CallWithBuffer(self, &root, 
 	url, body, strlen(body), "application/x-www-form-urlencoded");
 	free(url);
+	/*
+	 * Bug No.(4672) Wang Xiaotao  2013\10\15 17:56:00 
+	 * Change for : free  var 'body'
+	 * Reason     : memory leak!
+	 */
+	free(body);
 
 	retSize = cJSON_GetArraySize(root);
 	
@@ -320,6 +326,12 @@ Qiniu_Error Qiniu_RS_BatchDelete(
 	err = Qiniu_Client_CallWithBuffer(self, &root, 
 	url, body, strlen(body), "application/x-www-form-urlencoded");
 	free(url);
+	/*
+	 * Bug No.(4672) Wang Xiaotao  2013\10\15 17:56:00 
+	 * Change for : free  var 'body'
+	 * Reason     : memory leak!
+	 */
+	free(body);
 
 	retSize = cJSON_GetArraySize(root);
 
@@ -388,6 +400,12 @@ Qiniu_Error Qiniu_RS_BatchMove(
 	err = Qiniu_Client_CallWithBuffer(self, &root, 
 	url, body, strlen(body), "application/x-www-form-urlencoded");
 	free(url);
+	/*
+	 * Bug No.(4672) Wang Xiaotao  2013\10\15 17:56:00 
+	 * Change for : free  var 'body'
+	 * Reason     : memory leak!
+	 */
+	free(body);
 
 	retSize = cJSON_GetArraySize(root);
 	
@@ -456,6 +474,12 @@ Qiniu_Error Qiniu_RS_BatchCopy(
 	err = Qiniu_Client_CallWithBuffer(self, &root, 
 	url, body, strlen(body), "application/x-www-form-urlencoded");
 	free(url);
+	/*
+	 * Bug No.(4672) Wang Xiaotao  2013\10\15 17:56:00 
+	 * Change for : free  var 'body'
+	 * Reason     : memory leak!
+	 */
+	free(body);
 
 	retSize = cJSON_GetArraySize(root);
 	
@@ -475,4 +499,3 @@ Qiniu_Error Qiniu_RS_BatchCopy(
 
 	return err;
 }
-
