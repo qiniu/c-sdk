@@ -69,6 +69,12 @@ static Qiniu_Error Qiniu_Io_call(
 	}
 
 	curl_formfree(formpost);
+	/*
+	 * Bug No.(4718) Wang Xiaotao 2013\10\17 17:46:07
+	 * Change for : free  variable 'headers'
+	 * Reason     : memory leak!
+	 */
+	curl_slist_free_all(headers);
 	return err;
 }
 
