@@ -3,7 +3,7 @@
 
 ### v6.2.2
 
-2013-10-14 issue [#112](https://github.com/qiniu/c-sdk/pull/112) issue [#114](https://github.com/qiniu/c-sdk/pull/114)
+2013-10-14 issue [#112](https://github.com/qiniu/c-sdk/pull/112) [#114](https://github.com/qiniu/c-sdk/pull/114) [#116](https://github.com/qiniu/c-sdk/pull/116)
 
 - 解决几个内存泄漏
 
