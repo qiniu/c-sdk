@@ -88,32 +88,13 @@ C-SDK 的 conf.h 文件中声明了对应的两个变量：`QINIU_ACCESS_KEY`和
 对于服务端而言，常规程序流程是：
 
 ```{c}
-Qiniu_Client client;
-
-QINIU_ACCESS_KEY = "<Please apply your access key>";
-QINIU_SECRET_KEY = "<Dont send your secret key to anyone>";
-
-Qiniu_Servend_Init(-1);                        /* 全局初始化函数，整个进程只需要调用一次 */
-Qiniu_Client_InitMacAuth(&client, 1024, NULL); /* HTTP客户端初始化。HTTP客户端是线程不安全的，不要在多个线程间共用 */
-
-...
-
-Qiniu_Client_Cleanup(&client);                 /* 每个HTTP客户端使用完后释放 */
-Qiniu_Servend_Cleanup();                       /* 全局清理函数，只需要在进程退出时调用一次 */
+@gist(gist/server.c#init)
 ```
 
 对于客户端而言，常规程序流程是：
 
 ```{c}
-Qiniu_Client client;
-
-Qiniu_Global_Init(-1);                  /* 全局初始化函数，整个进程只需要调用一次 */
-Qiniu_Client_InitNoAuth(&client, 1024); /* HTTP客户端初始化。HTTP客户端是线程不安全的，不要在多个线程间共用 */
-
-...
-
-Qiniu_Client_Cleanup(&client);          /* 每个HTTP客户端使用完后释放 */
-Qiniu_Global_Cleanup();                 /* 全局清理函数，只需要在进程退出时调用一次 */
+@gist(gist/client.c#init)
 ```
 
 两者主要的区别在于：
@@ -142,36 +123,19 @@ C 语言是一个非常底层的语言，相比其他高级语言来说，它的
 在 C-SDK 中，HTTP 客户端叫`Qiniu_Client`。在某些语言环境中，这个类是线程安全的，多个线程可以共享同一份实例，但在 C-SDK 中它被设计为线程不安全的。一个重要的原因是我们试图简化内存管理的负担。HTTP 请求结果的生命周期被设计成由`Qiniu_Client`负责，在下一次请求时会自动释放上一次 HTTP 请求的结果。这有点粗暴，但在多数场合是合理的。如果某个 HTTP 请求结果的数据需要长期使用，你应该复制一份。例如：
 
 ```{c}
-void stat(Qiniu_Client* client, const char* bucket, const char* key)
-{
-	Qiniu_RS_StatRet ret;
-	Qiniu_Error err = Qiniu_RS_Stat(client, &ret, bucket, key);
-	if (err.code != 200) {
-		debug(client, err);
-		return;
-	}
-	printf("hash: %s, fsize: %lld, mimeType: %s\n", ret.hash, ret.fsize, ret.mimeType);
-}
+@gist(gist/server.c#stat)
 ```
 
 这个例子中，`Qiniu_RS_Stat`请求返回了`Qiniu_Error`和`Qiniu_RS_StatRet`两个结构体。其中的 `Qiniu_Error` 类型是这样的：
 
 ```{c}
-typedef struct _Qiniu_Error {
-	int code;
-	const char* message;
-} Qiniu_Error;
+@gist(../qiniu/base.h#error)
 ```
 
 `Qiniu_RS_StatRet` 类型是这样的：
 
 ```{c}
-typedef struct _Qiniu_RS_StatRet {
-	const char* hash;
-	const char* mimeType;
-	Qiniu_Int64 fsize;	
-	Qiniu_Int64 putTime;
-} Qiniu_RS_StatRet;
+@gist(../qiniu/rs.h#statret)
 ```
 
 值得注意的是，`Qiniu_Error.message`、`Qiniu_RS_StatRet.hash`、`Qiniu_RS_StatRet.mimeType` 都声明为 `const char*` 类型，是个只读字符串，并不管理字符串内容的生命周期。这些字符串什么时候失效？下次 `Qiniu_Client` 发生网络 API 请求时失效。如果你需要长久使用，应该复制一份，比如：
@@ -186,10 +150,7 @@ typedef struct _Qiniu_RS_StatRet {
 在 HTTP 请求出错的时候，C-SDK 统一返回了一个`Qiniu_Error`结构体：
 
 ```{c}
-typedef struct _Qiniu_Error {
-	int code;
-	const char* message;
-} Qiniu_Error;
+@gist(../qiniu/base.h#error)
 ```
 
 即一个错误码和对应的读者友好的消息。这个错误码有可能是 cURL 的错误码，表示请求发送环节发生了意外，或者是一个 HTTP 错误码，表示请求发送正常，服务器端处理请求后返回了 HTTP 错误码。
@@ -199,12 +160,7 @@ typedef struct _Qiniu_Error {
 如果`message`指示的信息还不够友好，也可以尝试把整个 HTTP 返回包打印出来看看：
 
 ```{c}
-void debug(Qiniu_Client* client, Qiniu_Error err)
-{
-	printf("\nerror code: %d, message: %s\n", err.code, err.message);
-	printf("respose header:\n%s", Qiniu_Buffer_CStr(&client->respHeader));
-	printf("respose body:\n%s", Qiniu_Buffer_CStr(&client->b));
-}
+@gist(gist/server.c#debug)
 ```
 
 <a name="io-put"></a>
@@ -242,40 +198,19 @@ void debug(Qiniu_Client* client, Qiniu_Error err)
 服务端生成 [uptoken](http://docs.qiniu.com/api/put.html#uploadToken) 代码如下：
 
 ```{c}
-char* uptoken(Qiniu_Client* client, const char* bucket)
-{
-	Qiniu_RS_PutPolicy putPolicy;
-	Qiniu_Zero(putPolicy);
-	putPolicy.scope = bucket;
-	return Qiniu_RS_PutPolicy_Token(&putPolicy, NULL);
-}
+@gist(gist/server.c#uptoken)
 ```
 
 上传文件到七牛（通常是客户端完成，但也可以发生在服务端）：
 
 ```{c}
-char* upload(Qiniu_Client* client, char* uptoken, const char* key, const char* localFile)
-{
-	Qiniu_Error err;
-	Qiniu_Io_PutRet putRet;
-	err = Qiniu_Io_PutFile(client, &putRet, uptoken, key, localFile, NULL);
-	if (err.code != 200) {
-		debug(client, err);
-		return NULL;
-	}
-	return strdup(putRet.hash); /* 注意需要后续使用的变量要复制出来 */
-}
+@gist(gist/client.c#upload)
 ```
 
 如果不感兴趣返回的 hash 值，还可以更简单：
 
 ```{c}
-int simple_upload(Qiniu_Client* client, char* uptoken, const char* key, const char* localFile)
-{
-	Qiniu_Error err;
-	err = Qiniu_Io_PutFile(client, NULL, uptoken, key, localFile, NULL);
-	return err.code;
-}
+@gist(gist/client.c#simple-upload)
 ```
 
 <a name="io-put-policy"></a>
@@ -285,16 +220,7 @@ int simple_upload(Qiniu_Client* client, char* uptoken, const char* key, const ch
 [uptoken](http://docs.qiniu.com/api/put.html#uploadToken) 实际上是用 AccessKey/SecretKey 进行数字签名的上传策略(`Qiniu_RS_PutPolicy`)，它控制则整个上传流程的行为。让我们快速过一遍你都能够决策啥：
 
 ```{c}
-typedef struct _Qiniu_RS_PutPolicy {
-    const char* scope;            // 必选项。可以是 bucketName 或者 bucketName:key
-    const char* callbackUrl;      // 可选
-    const char* callbackBody;     // 可选
-    const char* returnUrl;        // 可选，更贴切的名字是 redirectUrl。
-    const char* returnBody;       // 可选
-    const char* endUser;          // 可选
-    const char* asyncOps;         // 可选
-    Qiniu_Uint32 expires;         // 可选。默认是 3600 秒
-} Qiniu_RS_PutPolicy;
+@gist(../qiniu/rs.h#put-policy)
 ```
 
 * `scope` 限定客户端的权限。如果 `scope` 是 bucket，则客户端只能新增文件到指定的 bucket，不能修改文件。如果 `scope` 为 bucket:key，则客户端可以修改指定的文件。**注意： key必须采用utf8编码，如使用非utf8编码访问七牛云存储将反馈错误**
@@ -316,15 +242,7 @@ typedef struct _Qiniu_RS_PutPolicy {
 我们先看支持了断点上续传、分块并行上传的基本样例：
 
 ```{c}
-int resumable_upload(Qiniu_Client* client, char* uptoken, const char* key, const char* localFile)
-{
-	Qiniu_Error err;
-	Qiniu_Rio_PutExtra extra;
-	Qiniu_Zero(extra);
-	extra.bucket = bucket;
-	err = Qiniu_Rio_PutFile(client, NULL, uptoken, key, localFile, &extra);
-	return err.code;
-}
+@gist(gist/client.c#resumable-upload)
 ```
 
 相比普通上传，断点上续传代码没有变复杂。基本上就只是将`Qiniu_Io_PutExtra`改为`Qiniu_Rio_PutExtra`，`Qiniu_Io_PutFile`改为`Qiniu_Rio_PutFile`。
@@ -355,19 +273,7 @@ int resumable_upload(Qiniu_Client* client, char* uptoken, const char* key, const
 其中 dntoken 是由业务服务器签发的一个[临时下载授权凭证](http://docs.qiniu.com/api/get.html#download-token)，deadline 是 dntoken 的有效期。dntoken不需要单独生成，C-SDK 提供了生成完整 downloadUrl 的方法（包含了 dntoken），示例代码如下：
 
 ```{c}
-char* downloadUrl(Qiniu_Client* client, const char* domain, const char* key)
-{
-	char* url;
-	char* baseUrl;
-	Qiniu_RS_GetPolicy getPolicy;
-
-	Qiniu_Zero(getPolicy);
-	baseUrl = Qiniu_RS_MakeBaseUrl(domain, key); // baseUrl也可以自己拼接："http://"+domain+"/"+urlescape(key)
-	url = Qiniu_RS_GetPolicy_MakeRequest(&getPolicy, baseUrl, NULL);
-
-	Qiniu_Free(baseUrl);
-	return url;                                  // When url is no longer being used, free it by Qiniu_Free.
-}
+@gist(gist/server.c#downloadUrl)
 ```
 
 生成 downloadUrl 后，服务端下发 downloadUrl 给客户端。客户端收到 downloadUrl 后，和公有资源类似，直接用任意的 HTTP 客户端就可以下载该资源了。唯一需要注意的是，在 downloadUrl 失效却还没有完成下载时，需要重新向服务器申请授权。
@@ -398,10 +304,7 @@ char* downloadUrl(Qiniu_Client* client, const char* domain, const char* key)
 所有操作都会返回一个`Qiniu_Error`的结构体，用于记录该次操作的成功/失败信息。
 
 ```{c}
-typedef struct _Qiniu_Error {
-	int code;
-	const char* message;
-} Qiniu_Error;
+@gist(../qiniu/base.h#error)
 ```
 
 <a name="rs-stat"></a>
@@ -409,27 +312,13 @@ typedef struct _Qiniu_Error {
 ### 获取文件信息
 
 ```{c}
-void stat(Qiniu_Client* client, const char* bucket, const char* key)
-{
-	Qiniu_RS_StatRet ret;
-	Qiniu_Error err = Qiniu_RS_Stat(client, &ret, bucket, key);
-	if (err.code != 200) {
-		debug(client, err);
-		return;
-	}
-	printf("hash: %s, fsize: %lld, mimeType: %s\n", ret.hash, ret.fsize, ret.mimeType);
-}
+@gist(gist/server.c#stat)
 ```
 
 通过调用`Qiniu_RS_Stat`，可以得到指定文件的属性信息。除了会返回一个`Qiniu_Error`结构体之外，`Qiniu_RS_Stat`还会返回`Qiniu_RS_StatRet`这个结构体，其中记录了被查询文件的一些属性信息。
 
 ```{c}
-typedef struct _Qiniu_RS_StatRet {
-	const char* hash;
-	const char* mimeType;
-	Qiniu_Int64 fsize;	
-	Qiniu_Int64 putTime;
-} Qiniu_RS_StatRet;
+@gist(../qiniu/rs.h#statret)
 ```
 
 <a name="rs-delete"></a>
@@ -439,15 +328,7 @@ typedef struct _Qiniu_RS_StatRet {
 调用`Qiniu_RS_Delete`并指定bucket和key，即可完成对一个文件的删除操作，同样`Qiniu_Error`结构体中记录了成功/失败信息。
 
 ```{c}
-void delete(Qiniu_Client* client, const char* bucket, const char* key)
-{
-	Qiniu_Error err = Qiniu_RS_Delete(client, bucket, key);
-	if (err.code != 200) {
-		debug(client, err);
-		return;
-	}
-	printf("%s:%s delete OK.\n", bucket, key);
-}
+@gist(gist/server.c#delete)
 ```
 <a name="rs-copy-move"></a>
 
@@ -456,31 +337,11 @@ void delete(Qiniu_Client* client, const char* bucket, const char* key)
 复制和移动操作，需要指定源路径和目标路径。
 
 ```{c}
-void copy(Qiniu_Client* client, 
-	const char* bucketSrc, const char* keySrc, 
-	const char* bucketDest, const char* keyDest)
-{
-	Qiniu_Error err = Qiniu_RS_Copy(client, bucketSrc, keySrc, bucketDest, keyDest);
-	if (err.code != 200) {
-		debug(client, err);
-		return;
-	}
-	printf("Copy %s:%s -> %s:%s OK.\n", bucketSrc, keySrc, bucketDest, keyDest);
-}
+@gist(gist/server.c#copy)
 ```
 
 ```{c}
-void move(Qiniu_Client* client, 
-	const char* bucketSrc, const char* keySrc, 
-	const char* bucketDest, const char* keyDest)
-{
-	Qiniu_Error err = Qiniu_RS_Move(client, bucketSrc, keySrc, bucketDest, keyDest);
-	if (err.code != 200) {
-		debug(client, err);
-		return;
-	}
-	printf("Move %s:%s -> %s:%s OK.\n", bucketSrc, keySrc, bucketDest, keyDest);
-}
+@gist(gist/server.c#move)
 ```
 
 <a name="rs-batch"></a>
@@ -494,43 +355,13 @@ void move(Qiniu_Client* client,
 调用`Qiniu_RS_BatchStat`可以批量查看多个文件的属性信息。
 
 ```{c}
-void batchStat(Qiniu_Client* client, 
-	Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
-{
-	Qiniu_RS_BatchStatRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchStatRet));
-	Qiniu_Error err = Qiniu_RS_BatchStat(client, rets, entries, entryCount);
-
-	int curr = 0;
-	while (curr < entryCount) {
-		printf("\ncode: %d\n", rets[curr].code);
-
-		if (rets[curr].code != 200) {
-			printf("error: %s\n", rets[curr].error);
-		} else {
-			printf("hash: %s\n", rets[curr].data.hash);
-			printf("mimeType: %s\n", rets[curr].data.mimeType);
-			printf("fsize: %lld\n", rets[curr].data.fsize);
-			printf("putTime: %lld\n", rets[curr].data.putTime);
-		}
-		curr++;
-	}
-
-	free(rets);
-
-	if (err.code != 200) {
-		debug(client, err);
-		return;
-	}
-}
+@gist(gist/server.c#batchStat)
 ```
 
 其中，`entries`是一个指向`Qiniu_RS_EntryPath`结构体数组的指针，`entryCount`为数组`entries`的长度。结构体`Qiniu_RS_EntryPath`中填写每个文件相应的bucket和key：
 
 ```{c}
-typedef struct _Qiniu_RS_EntryPath {
-    const char* bucket;
-    const char* key;
-} Qiniu_RS_EntryPath;
+@gist(../qiniu/rs.h#entrypath)
 ```
 
 `Qiniu_RS_BatchStat`会将文件信息（及成功/失败信息）依次写入一个由结构体`Qiniu_RS_BatchStatRet`组成的数组空间`rets`。因此，调用之前，需要先给`rets`申请好相应长度的内存空间。
@@ -538,22 +369,13 @@ typedef struct _Qiniu_RS_EntryPath {
 其中结构体`Qiniu_RS_BatchStatRet`的组成如下：
 
 ```{c}
-typedef struct _Qiniu_RS_BatchStatRet {
-    Qiniu_RS_StatRet data;
-    const char* error;
-    int code;
-}Qiniu_RS_BatchStatRet;
+@gist(../qiniu/rs.h#batchstatret)
 ```
 
 结构体`Qiniu_RS_StatRet`的组成为：
 
 ```{c}
-typedef struct _Qiniu_RS_StatRet {
-	const char* hash;
-	const char* mimeType;
-	Qiniu_Int64 fsize;	
-	Qiniu_Int64 putTime;
-} Qiniu_RS_StatRet;
+@gist(../qiniu/rs.h#statret)
 ```
 
 需要注意的是，通过动态内存申请得到的内存空间在使用完毕后应该立即释放。
@@ -563,29 +385,7 @@ typedef struct _Qiniu_RS_StatRet {
 调用`Qiniu_RS_BatchDelete`可以批量删除多个文件。
 
 ```{c}
-void batchDelete(Qiniu_Client* client, 
-	Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
-{
-	Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
-	Qiniu_Error err = Qiniu_RS_BatchDelete(client, rets, entries, entryCount);
-
-	int curr = 0;
-	while (curr < entryCount) {
-		printf("\ncode: %d\n", rets[curr].code);
-
-		if (rets[curr].code != 200) {
-			printf("error: %s\n", rets[curr].error);
-		}
-		curr++;
-	}
-
-	free(rets);
-
-	if (err.code != 200) {
-		debug(client, err);
-		return;
-	}
-}
+@gist(gist/server.c#batchDelete)
 ```
 
 和批量查看一样，`entries`是一个指向`Qiniu_RS_EntryPath`结构体数组的指针，`entryCount`为数组`entries`的长度。`Qiniu_RS_BatchDelete`会将删除操作的成功/失败信息依次写入一个由结构体`Qiniu_RS_BatchItemRet`组成的数组空间`rets`。同样需要先申请好相应长度的内存空间。
@@ -593,10 +393,7 @@ void batchDelete(Qiniu_Client* client,
 其中结构体`Qiniu_RS_BatchItemRet`的组成如下：
 
 ```{c}
-typedef struct _Qiniu_RS_BatchItemRet {
-    const char* error;
-    int code;
-}Qiniu_RS_BatchItemRet;
+@gist(../qiniu/rs.h#batchitemret)
 ```
 
 #### 批量复制
@@ -604,37 +401,13 @@ typedef struct _Qiniu_RS_BatchItemRet {
 调用`Qiniu_RS_BatchCopy`可以批量复制多个文件。
 
 ```{c}
-void batchCopy(Qiniu_Client* client, 
-	Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
-{
-	Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
-	Qiniu_Error err = Qiniu_RS_BatchCopy(client, rets, entryPairs, entryCount);
-	int curr = 0;
-
-	while (curr < entryCount) {
-		printf("\ncode: %d\n", rets[curr].code);
-
-		if (rets[curr].code != 200) {
-			printf("error: %s\n", rets[curr].error);
-		}
-		curr++;
-	}
-	free(rets);
-
-	if (err.code != 200) {
-		debug(client, err);
-		return;
-	}
-}
+@gist(gist/server.c#batchCopy)
 ```
 
 批量复制需要指明每个操作的源路径和目标路径，`entryPairs`是一个指向`Qiniu_RS_EntryPathPair`结构体数组的指针，`entryCount`为数组`entryPairs`的长度。结构体`Qiniu_RS_EntryPathPair`结构如下：
 
 ```{c}
-typedef struct _Qiniu_RS_EntryPathPair {
-    Qiniu_RS_EntryPath src;
-    Qiniu_RS_EntryPath dest;
-} Qiniu_RS_EntryPathPair;
+@gist(../qiniu/rs.h#entrypathpair)
 ```
 
 同之前一样 ，`Qiniu_RS_BatchCopy`会将复制操作的成功/失败信息依次写入一个由结构体`Qiniu_RS_BatchItemRet`组成的数组空间`rets`。
@@ -644,28 +417,5 @@ typedef struct _Qiniu_RS_EntryPathPair {
 批量移动和批量复制很类似，唯一的区别就是调用`Qiniu_RS_BatchMove`。
 
 ```{c}
-void batchMove(Qiniu_Client* client, 
-	Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
-{
-	Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
-	Qiniu_Error err = Qiniu_RS_BatchMove(client, rets, entryPairs, entryCount);
-
-	int curr = 0;
-	while (curr < entryCount) {
-		printf("\ncode: %d\n", rets[curr].code);
-
-		if (rets[curr].code != 200) {
-			printf("error: %s\n", rets[curr].error);
-		}
-		curr++;
-	}
-
-	free(rets);
-
-	if (err.code != 200) {
-		debug(client, err);
-		return;
-	}
-}
+@gist(gist/server.c#batchMove)
 ```
-
