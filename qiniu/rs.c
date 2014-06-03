@@ -43,6 +43,25 @@ char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* auth, Qiniu_Mac* mac)
 	if (auth->endUser) {
 		cJSON_AddStringToObject(root, "endUser", auth->endUser);
 	}
+	if (auth->persistentOps) {
+		cJSON_AddStringToObject(root, "persistentOps", auth->persistentOps);
+	}
+	if (auth->persistentNotifyUrl) {
+		cJSON_AddStringToObject(root, "persistentNotifyUrl", auth->persistentNotifyUrl);
+	}
+	if (auth->mimeLimit) {
+		cJSON_AddStringToObject(root, "mimeLimit", auth->mimeLimit);
+	}
+
+	if (auth->fsizeLimit) {
+		cJSON_AddNumberToObject(root, "fsizeLimit", auth->fsizeLimit);
+	}
+	if (auth->detectMime) {
+		cJSON_AddNumberToObject(root, "detectMime", auth->detectMime);
+	}
+	if (auth->insertOnly) {
+		cJSON_AddNumberToObject(root, "insertOnly", auth->insertOnly);
+	}
 
 	if (auth->expires) {
 		expires = auth->expires;
