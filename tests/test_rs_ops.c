@@ -5,15 +5,15 @@
 
 static const char* copyNames[3] = { "testa.tmp", "testb.tmp", "testc.tmp" };
 static const char* moveNames[3] = { "testa.mov.tmp", "testb.mov.tmp", "testc.mov.tmp" };
-static const char bucket[] = "a";
+static const char bucket[] = "csdk";
 static const char key[] = "key";
-static const char domain[] = "aatest.qiniudn.com";
+static const char domain[] = "csdk.qiniudn.com";
 
-void debug(Qiniu_Client* client, Qiniu_Error err) 
-{ 
-	printf("\nerror code: %d, message: %s\n", err.code, err.message); 
-	printf("respose header:\n%s", Qiniu_Buffer_CStr(&client->respHeader)); 
-	printf("respose body:\n%s", Qiniu_Buffer_CStr(&client->b)); 
+void debug(Qiniu_Client* client, Qiniu_Error err)
+{
+	printf("\nerror code: %d, message: %s\n", err.code, err.message);
+	printf("respose header:\n%s", Qiniu_Buffer_CStr(&client->respHeader));
+	printf("respose body:\n%s", Qiniu_Buffer_CStr(&client->b));
 }
 
 static void batchCopy(Qiniu_Client* client,

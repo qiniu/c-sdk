@@ -98,6 +98,13 @@ Qiniu_Error Qiniu_Io_PutBuffer(
 	Qiniu_Io_form form;
 	Qiniu_Io_form_init(&form, uptoken, key, extra);
 
+    if (key == NULL) {
+        // Use an empty string instead of the NULL pointer to prevent the curl lib from crashing
+        // when read it.
+        // **NOTICE**: The magic variable $(filename) will be set as empty string.
+        key = ""
+    }
+
 	curl_formadd(
 		&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file",
 		CURLFORM_BUFFER, key, CURLFORM_BUFFERPTR, buf, CURLFORM_BUFFERLENGTH, fsize, CURLFORM_END);
