@@ -548,9 +548,6 @@ Qiniu_Error Qiniu_Rio_PutFile(
 	Qiniu_Int64 fsize;
 	Qiniu_FileInfo fi;
 	Qiniu_File* f;
-
-    Qiniu_Zero(extra1);
-
 	Qiniu_Error err = Qiniu_File_Open(&f, localFile);
 	if (err.code != 200) {
 		return err;
@@ -560,7 +557,10 @@ Qiniu_Error Qiniu_Rio_PutFile(
 		fsize = Qiniu_FileInfo_Fsize(fi);
 		if (fsize <= Qiniu_Rio_PutExtra_ChunkSize(extra)) { // file is too small, don't need resumable-io
 			Qiniu_File_Close(f);
+
+			Qiniu_Zero(extra1);
 			Qiniu_Io_PutExtra_initFrom(&extra1, extra);
+
 			return Qiniu_Io_PutFile(self, ret, uptoken, key, localFile, &extra1);
 		}
 		err = Qiniu_Rio_Put(self, ret, uptoken, key, Qiniu_FileReaderAt(f), fsize, extra);
