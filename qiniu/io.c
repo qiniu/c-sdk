@@ -85,8 +85,13 @@ Qiniu_Error Qiniu_Io_PutFile(
 	Qiniu_Io_form form;
 	Qiniu_Io_form_init(&form, uptoken, key, extra);
 
-	curl_formadd(
-		&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localFile, CURLFORM_END);
+    if (extra->localFileName != NULL) {
+        curl_formadd(
+            &form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localFile, CURLFORM_FILENAME, extra->localFileName, CURLFORM_END);
+    } else {
+        curl_formadd(
+            &form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localFile, CURLFORM_END);
+    }
 
 	return Qiniu_Io_call(self, ret, form.formpost);
 }

@@ -33,6 +33,10 @@ typedef struct _Qiniu_Io_PutExtra {
 	const char* mimeType;
 	Qiniu_Uint32 crc32;
 	Qiniu_Uint32 checkCrc32;
+
+    // For those file systems that save file name as Unicode strings,
+    // use this field to name the local file name in UTF-8 format for CURL.
+    const char* localFileName;
 } Qiniu_Io_PutExtra;
 
 /*============================================================================*/
