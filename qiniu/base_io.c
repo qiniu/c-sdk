@@ -18,8 +18,8 @@
 #include <unistd.h>
 #define Qiniu_Posix_Handle	int
 #define Qiniu_Posix_Open	open
-#define Qiniu_Posix_Pread	pread
-#define Qiniu_Posix_Fstat	fstat
+#define Qiniu_Posix_Pread   pread
+#define Qiniu_Posix_Fstat   fstat
 #define Qiniu_Posix_Close	close
 #define Qiniu_Posix_InvalidHandle -1
 #endif
@@ -105,26 +105,26 @@ Qiniu_Writer Qiniu_Crc32Writer(Qiniu_Crc32* self, unsigned long inCrc32)
 
 static size_t Qiniu_ReadBuf_Read(void *buf, size_t unused, size_t n, Qiniu_ReadBuf* self)
 {
-	size_t max = self->limit - self->off;
+	Qiniu_Int64 max = self->limit - self->off;
 	if (max <= 0) {
 		return 0;
 	}
-	if (n > max) {
-		n = (size_t)max;
+	if ((Qiniu_Int64)n > max) {
+		n = max & (~(size_t)0L);
 	}
 	memcpy(buf, self->buf + self->off, n);
 	self->off += n;
 	return n;
 }
 
-ssize_t Qiniu_ReadBuf_ReadAt(Qiniu_ReadBuf* self, void *buf, size_t n, off_t off)
+ssize_t Qiniu_ReadBuf_ReadAt(Qiniu_ReadBuf* self, void *buf, size_t n, Qiniu_Off_T off)
 {
-	size_t max = self->limit - (size_t)off;
-	if ((ssize_t)max <= 0) {
+	Qiniu_Int64 max = self->limit - off;
+	if (max <= 0) {
 		return 0;
 	}
-	if (n > max) {
-		n = (size_t)max;
+	if ((Qiniu_Int64)n > max) {
+		n = max & (~(size_t)0L);
 	}
 	memcpy(buf, self->buf + off, n);
 	return n;
@@ -153,22 +153,26 @@ Qiniu_ReaderAt Qiniu_BufReaderAt(Qiniu_ReadBuf* self, const char* buf, size_t by
 
 size_t Qiniu_Section_Read(void* buf, size_t unused, size_t n, Qiniu_Section* self)
 {
-	off_t max = self->limit - self->off;
-	if (max <= 0) {
+	Qiniu_Int64 max = 0;
+    ssize_t readBytes = 0;
+    if (self->limit <= self->off) {
 		return 0;
+    }
+    max = self->limit - self->off;
+	if ((Qiniu_Int64)n > max) {
+		n = max;
 	}
-	if ((off_t)n > max) {
-		n = (size_t)max;
-	}
-	n = self->r.ReadAt(self->r.self, buf, n, self->off);
-	if (n < 0) {
+	readBytes = self->r.ReadAt(self->r.self, buf, n, self->off);
+	if (readBytes < 0) {
 		n = 0;
-	}
+	} else {
+        n = (size_t)readBytes;
+    }
 	self->off += n;
 	return n;
 }
 
-Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, off_t off, off_t n)
+Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, Qiniu_Off_T off, size_t n)
 {
 	Qiniu_Reader ret = {self, (Qiniu_FnRead)Qiniu_Section_Read};
 	self->r = r;
@@ -214,6 +218,30 @@ Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file)
 	return err;
 }
 
+#if defined(_MSC_VER)
+
+#define Qiniu_Posix_Pread Qiniu_Posix_Pread2
+
+int Qiniu_Posix_Fstat(int fd, Qiniu_FileInfo* fi)
+{
+    int ret = 0;
+    Emu_FileInfo fi2;
+
+    Qiniu_Zero(fi2);
+    ret = Qiniu_Posix_Fstat2(fd, fi2);
+    if (ret < 0) {
+        return ret;
+    }
+
+    fi->st_size = (Qiniu_Off_T)st.st_size;
+    fi->st_atime = fi2.st_atime;
+    fi->st_mtime = fi2.st_mtime;
+    fi->st_ctime = fi2.st_ctime;
+    return 0;
+}
+
+#endif
+
 Qiniu_Error Qiniu_File_Stat(Qiniu_File* self, Qiniu_FileInfo* fi)
 {
 	Qiniu_Error err;
@@ -231,7 +259,7 @@ void Qiniu_File_Close(void* self)
 	Qiniu_Posix_Close((Qiniu_Posix_Handle)(size_t)self);
 }
 
-ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, off_t offset)
+ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, Qiniu_Off_T offset)
 {
 	return Qiniu_Posix_Pread((Qiniu_Posix_Handle)(size_t)self, buf, bytes, offset);
 }
