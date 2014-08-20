@@ -160,7 +160,7 @@ size_t Qiniu_Section_Read(void* buf, size_t unused, size_t n, Qiniu_Section* sel
     }
     max = self->limit - self->off;
 	if ((Qiniu_Int64)n > max) {
-		n = max;
+		n = max & (~(size_t)0L);
 	}
 	readBytes = self->r.ReadAt(self->r.self, buf, n, self->off);
 	if (readBytes < 0) {
@@ -222,18 +222,18 @@ Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file)
 
 #define Qiniu_Posix_Pread Qiniu_Posix_Pread2
 
-int Qiniu_Posix_Fstat(int fd, Qiniu_FileInfo* fi)
+int Qiniu_Posix_Fstat(Qiniu_Posix_Handle fd, Qiniu_FileInfo* fi)
 {
     int ret = 0;
     Emu_FileInfo fi2;
 
     Qiniu_Zero(fi2);
-    ret = Qiniu_Posix_Fstat2(fd, fi2);
+    ret = Qiniu_Posix_Fstat2(fd, &fi2);
     if (ret < 0) {
         return ret;
     }
 
-    fi->st_size = (Qiniu_Off_T)st.st_size;
+    fi->st_size = (Qiniu_Off_T)fi2.st_size;
     fi->st_atime = fi2.st_atime;
     fi->st_mtime = fi2.st_mtime;
     fi->st_ctime = fi2.st_ctime;

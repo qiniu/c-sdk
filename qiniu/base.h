@@ -259,7 +259,7 @@ typedef struct _Qiniu_Section {
 	Qiniu_Off_T limit;
 } Qiniu_Section;
 
-Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, Qiniu_Off_T off, Qiniu_Off_T n);
+Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, Qiniu_Off_T off, size_t n);
 
 /*============================================================================*/
 /* type Qiniu_Crc32 */
