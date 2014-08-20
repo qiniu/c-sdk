@@ -548,6 +548,9 @@ Qiniu_Error Qiniu_Rio_PutFile(
 	Qiniu_Int64 fsize;
 	Qiniu_FileInfo fi;
 	Qiniu_File* f;
+
+    Qiniu_Zero(extra1);
+
 	Qiniu_Error err = Qiniu_File_Open(&f, localFile);
 	if (err.code != 200) {
 		return err;
