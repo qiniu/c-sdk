@@ -107,7 +107,7 @@ Qiniu_Error Qiniu_Io_PutBuffer(
         // Use an empty string instead of the NULL pointer to prevent the curl lib from crashing
         // when read it.
         // **NOTICE**: The magic variable $(filename) will be set as empty string.
-        key = ""
+        key = "";
     }
 
 	curl_formadd(
