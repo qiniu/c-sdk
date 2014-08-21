@@ -279,10 +279,10 @@ typedef struct _Qiniu_File Qiniu_File;
 
 #if defined(_MSC_VER)
 typedef struct _Qiniu_FileInfo {
-    Qiniu_Off_T     st_size;    /* total size, in bytes */
-    time_t          st_atime;   /* time of last access */
-    time_t          st_mtime;   /* time of last modification */
-    time_t          st_ctime;   /* time of last status change */
+	Qiniu_Off_T     st_size;    /* total size, in bytes */
+	time_t          st_atime;   /* time of last access */
+	time_t          st_mtime;   /* time of last modification */
+	time_t          st_ctime;   /* time of last status change */
 } Qiniu_FileInfo;
 #else
 typedef struct stat Qiniu_FileInfo;

@@ -154,11 +154,11 @@ Qiniu_ReaderAt Qiniu_BufReaderAt(Qiniu_ReadBuf* self, const char* buf, size_t by
 size_t Qiniu_Section_Read(void* buf, size_t unused, size_t n, Qiniu_Section* self)
 {
 	Qiniu_Int64 max = 0;
-    ssize_t readBytes = 0;
-    if (self->limit <= self->off) {
+	ssize_t readBytes = 0;
+	if (self->limit <= self->off) {
 		return 0;
-    }
-    max = self->limit - self->off;
+	}
+	max = self->limit - self->off;
 	if ((Qiniu_Int64)n > max) {
 		n = max & (~(size_t)0L);
 	}
@@ -166,8 +166,8 @@ size_t Qiniu_Section_Read(void* buf, size_t unused, size_t n, Qiniu_Section* sel
 	if (readBytes < 0) {
 		n = 0;
 	} else {
-        n = (size_t)readBytes;
-    }
+		n = (size_t)readBytes;
+	}
 	self->off += n;
 	return n;
 }
@@ -224,20 +224,20 @@ Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file)
 
 int Qiniu_Posix_Fstat(Qiniu_Posix_Handle fd, Qiniu_FileInfo* fi)
 {
-    int ret = 0;
-    Emu_FileInfo fi2;
+	int ret = 0;
+	Emu_FileInfo fi2;
 
-    Qiniu_Zero(fi2);
-    ret = Qiniu_Posix_Fstat2(fd, &fi2);
-    if (ret < 0) {
-        return ret;
-    }
+	Qiniu_Zero(fi2);
+	ret = Qiniu_Posix_Fstat2(fd, &fi2);
+	if (ret < 0) {
+		return ret;
+	}
 
-    fi->st_size = (Qiniu_Off_T)fi2.st_size;
-    fi->st_atime = fi2.st_atime;
-    fi->st_mtime = fi2.st_mtime;
-    fi->st_ctime = fi2.st_ctime;
-    return 0;
+	fi->st_size = (Qiniu_Off_T)fi2.st_size;
+	fi->st_atime = fi2.st_atime;
+	fi->st_mtime = fi2.st_mtime;
+	fi->st_ctime = fi2.st_ctime;
+	return 0;
 }
 
 #endif

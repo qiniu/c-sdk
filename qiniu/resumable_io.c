@@ -243,7 +243,7 @@ static void Qiniu_Io_PutExtra_initFrom(Qiniu_Io_PutExtra* self, Qiniu_Rio_PutExt
 {
 	if (extra) {
 		self->mimeType = extra->mimeType;
-        self->localFileName = extra->localFileName;
+		self->localFileName = extra->localFileName;
 	} else {
 		memset(self, 0, sizeof(*self));
 	}
