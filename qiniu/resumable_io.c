@@ -322,7 +322,7 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 			bodyLength = blkSize;
 		}
 
-		body1 = Qiniu_SectionReader(&section, f, (off_t)offbase, bodyLength);
+		body1 = Qiniu_SectionReader(&section, f, (Qiniu_Off_T)offbase, bodyLength);
 		body = Qiniu_TeeReader(&tee, body1, h);
 
 		err = Qiniu_Rio_Mkblock(c, ret, blkSize, body, bodyLength);
@@ -347,7 +347,7 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 
 lzRetry:
 		crc32.val = 0;
-		body1 = Qiniu_SectionReader(&section, f, (off_t)offbase + (ret->offset), bodyLength);
+		body1 = Qiniu_SectionReader(&section, f, (Qiniu_Off_T)offbase + (ret->offset), bodyLength);
 		body = Qiniu_TeeReader(&tee, body1, h);
 
 		err = Qiniu_Rio_Blockput(c, ret, body, bodyLength);
@@ -558,7 +558,10 @@ Qiniu_Error Qiniu_Rio_PutFile(
 		fsize = Qiniu_FileInfo_Fsize(fi);
 		if (fsize <= Qiniu_Rio_PutExtra_ChunkSize(extra)) { // file is too small, don't need resumable-io
 			Qiniu_File_Close(f);
+
+			Qiniu_Zero(extra1);
 			Qiniu_Io_PutExtra_initFrom(&extra1, extra);
+
 			return Qiniu_Io_PutFile(self, ret, uptoken, key, localFile, &extra1);
 		}
 		err = Qiniu_Rio_Put(self, ret, uptoken, key, Qiniu_FileReaderAt(f), fsize, extra);

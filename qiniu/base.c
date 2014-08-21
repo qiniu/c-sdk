@@ -108,7 +108,8 @@ static char* Qiniu_escape(const char* s, escapeMode mode, Qiniu_Bool* fesc)
 	char* t;
 
 	for (i = 0; i < len; i++) {
-		c = s[i];
+        // prevent c from sign extension
+		c = ((int)s[i]) & 0xFF;
 		if (Qiniu_shouldEscape(c, mode)) {
 			if (c == ' ' && mode == encodeQueryComponent) {
 				spaceCount++;
@@ -126,7 +127,8 @@ static char* Qiniu_escape(const char* s, escapeMode mode, Qiniu_Bool* fesc)
 	t = (char*)malloc(len + 2*hexCount + 1);
 	j = 0;
 	for (i = 0; i < len; i++) {
-		c = s[i];
+        // prevent c from sign extension
+		c = ((int)s[i]) & 0xFF;
 		if (Qiniu_shouldEscape(c, mode)) {
 			if (c == ' ' && mode == encodeQueryComponent) {
 				t[j] = '+';

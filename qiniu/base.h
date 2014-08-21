@@ -34,6 +34,16 @@ typedef _W64 int ssize_t;
 
 #endif
 
+#if defined(_MSC_VER)
+
+typedef _int64 Qiniu_Off_T;
+
+#elif
+
+typedef off_t Qiniu_Off_T;
+
+#endif
+
 #pragma pack(1)
 
 #ifdef __cplusplus
@@ -163,7 +173,7 @@ Qiniu_Error Qiniu_Copy(Qiniu_Writer w, Qiniu_Reader r, void* buf, size_t n, Qini
 /*============================================================================*/
 /* type Qiniu_ReaderAt */
 
-typedef	ssize_t (*Qiniu_FnReadAt)(void* self, void *buf, size_t bytes, off_t offset);
+typedef	ssize_t (*Qiniu_FnReadAt)(void* self, void *buf, size_t bytes, Qiniu_Off_T offset);
 
 typedef struct _Qiniu_ReaderAt {
 	void* self;
@@ -223,8 +233,8 @@ extern Qiniu_Writer Qiniu_Discard;
 
 typedef struct _Qiniu_ReadBuf {
 	const char* buf;
-	size_t off;
-	size_t limit;
+	Qiniu_Off_T off;
+	Qiniu_Off_T limit;
 } Qiniu_ReadBuf;
 
 Qiniu_Reader Qiniu_BufReader(Qiniu_ReadBuf* self, const char* buf, size_t bytes);
@@ -245,11 +255,11 @@ Qiniu_Reader Qiniu_TeeReader(Qiniu_Tee* self, Qiniu_Reader r, Qiniu_Writer w);
 
 typedef struct _Qiniu_Section {
 	Qiniu_ReaderAt r;
-	off_t off;
-	off_t limit;
+	Qiniu_Off_T off;
+	Qiniu_Off_T limit;
 } Qiniu_Section;
 
-Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, off_t off, off_t n);
+Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, Qiniu_Off_T off, size_t n);
 
 /*============================================================================*/
 /* type Qiniu_Crc32 */
@@ -266,7 +276,17 @@ Qiniu_Writer Qiniu_Crc32Writer(Qiniu_Crc32* self, unsigned long inCrc32);
 /* type Qiniu_File */
 
 typedef struct _Qiniu_File Qiniu_File;
+
+#if defined(_MSC_VER)
+typedef struct _Qiniu_FileInfo {
+    Qiniu_Off_T     st_size;    /* total size, in bytes */
+    time_t          st_atime;   /* time of last access */
+    time_t          st_mtime;   /* time of last modification */
+    time_t          st_ctime;   /* time of last status change */
+} Qiniu_FileInfo;
+#else
 typedef struct stat Qiniu_FileInfo;
+#endif
 
 Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file);
 Qiniu_Error Qiniu_File_Stat(Qiniu_File* self, Qiniu_FileInfo* fi);
@@ -275,7 +295,7 @@ Qiniu_Error Qiniu_File_Stat(Qiniu_File* self, Qiniu_FileInfo* fi);
 
 void Qiniu_File_Close(void* self);
 
-ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, off_t offset);
+ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, Qiniu_Off_T offset);
 
 Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self);
 
