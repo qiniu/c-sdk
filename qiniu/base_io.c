@@ -18,8 +18,8 @@
 #include <unistd.h>
 #define Qiniu_Posix_Handle	int
 #define Qiniu_Posix_Open	open
-#define Qiniu_Posix_Pread   pread
-#define Qiniu_Posix_Fstat   fstat
+#define Qiniu_Posix_Pread	pread
+#define Qiniu_Posix_Fstat	fstat
 #define Qiniu_Posix_Close	close
 #define Qiniu_Posix_InvalidHandle -1
 #endif
