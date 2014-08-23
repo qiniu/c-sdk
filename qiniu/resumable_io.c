@@ -426,6 +426,52 @@ static Qiniu_Error Qiniu_Rio_Mkfile(
 	return err;
 }
 
+static Qiniu_Error Qiniu_Rio_Mkfile2(
+	Qiniu_Client* c, Qiniu_Rio_PutRet* ret, const char* key, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra* extra)
+{
+	size_t i, blkCount = extra->blockCnt;
+	Qiniu_Json* root;
+	Qiniu_Error err;
+	Qiniu_Rio_BlkputRet* prog;
+	Qiniu_Buffer url, body;
+	int j = 0;
+
+	Qiniu_Buffer_Init(&url, 2048);
+	Qiniu_Buffer_AppendFormat(&url, "%s/mkfile/%D", QINIU_UP_HOST, fsize);
+
+	if (key != NULL) {
+		// Allow using empty key
+		Qiniu_Buffer_AppendFormat(&url, "/key/%S", key);
+	}
+	if (extra->xVarsList != NULL && extra->xVarsCount > 0) {
+		for (j = 0; j < extra->xVarsCount; j += 1) {
+			Qiniu_Buffer_AppendFormat(&url, "/%s/%S", (extra->xVarsList[j])[0], (extra->xVarsList[j])[1]);
+		} // for
+	}
+
+	Qiniu_Buffer_Init(&body, 176 * blkCount);
+	for (i = 0; i < blkCount; i++) {
+		prog = &extra->progresses[i];
+		Qiniu_Buffer_Write(&body, prog->ctx, strlen(prog->ctx));
+		Qiniu_Buffer_PutChar(&body, ',');
+	}
+	if (blkCount > 0) {
+		body.curr--;
+	}
+
+	err = Qiniu_Client_CallWithBuffer(
+		c, &root, Qiniu_Buffer_CStr(&url), body.buf, body.curr - body.buf, "text/plain");
+
+	Qiniu_Buffer_Cleanup(&url);
+	Qiniu_Buffer_Cleanup(&body);
+
+	if (err.code == 200) {
+		ret->hash = Qiniu_Json_GetString(root, "hash", NULL);
+		ret->key = Qiniu_Json_GetString(root, "key", NULL);
+	}
+	return err;
+}
+
 /*============================================================================*/
 
 int Qiniu_Rio_BlockCount(Qiniu_Int64 fsize)
@@ -531,7 +577,7 @@ Qiniu_Error Qiniu_Rio_Put(
 	if (nfails != 0) {
 		err = ErrPutFailed;
 	} else {
-		err = Qiniu_Rio_Mkfile(self, ret, key, fsize, &extra);
+		err = Qiniu_Rio_Mkfile2(self, ret, key, fsize, &extra);
 	}
 
 	Qiniu_Rio_PutExtra_Cleanup(&extra);
