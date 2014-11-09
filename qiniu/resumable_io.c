@@ -168,8 +168,8 @@ static void Qiniu_Rio_BlkputRet_Assign(Qiniu_Rio_BlkputRet* self, Qiniu_Rio_Blkp
 /*============================================================================*/
 /* type Qiniu_Rio_PutExtra */
 
-static void notifyNil(void* self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret) {}
-static void notifyErrNil(void* self, int blkIdx, int blkSize, Qiniu_Error err) {}
+static int notifyNil(void* self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret) { return QINIU_RIO_NOTIFY_OK; }
+static int notifyErrNil(void* self, int blkIdx, int blkSize, Qiniu_Error err) { return QINIU_RIO_NOTIFY_OK; }
 
 static Qiniu_Error ErrInvalidPutProgress = {
 	Qiniu_Rio_InvalidPutProgress, "invalid put progress"
@@ -313,6 +313,7 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 	int chunkSize = extra->chunkSize;
 	int bodyLength;
 	int tryTimes;
+    int notifyRet = 0;
 
 	if (ret->ctx == NULL) {
 
@@ -332,7 +333,13 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 		if (ret->crc32 != crc32.val || (int)(ret->offset) != bodyLength) {
 			return ErrUnmatchedChecksum;
 		}
-		extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
+		notifyRet = extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
+        if (notifyRet == QINIU_RIO_NOTIFY_EXIT) {
+            // Terminate the upload process if  the caller requests
+            err.code = 9995;
+            err.message = "Interrupted by the caller";
+            return err;
+        }
 	}
 
 	while ((int)(ret->offset) < blkSize) {
@@ -353,7 +360,14 @@ lzRetry:
 		err = Qiniu_Rio_Blockput(c, ret, body, bodyLength);
 		if (err.code == 200) {
 			if (ret->crc32 == crc32.val) {
-				extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
+				notifyRet = extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
+                if (notifyRet == QINIU_RIO_NOTIFY_EXIT) {
+                    // Terminate the upload process if the caller requests
+                    err.code = 9995;
+                    err.message = "Interrupted by the caller";
+                    return err;
+                }
+
 				continue;
 			}
 			Qiniu_Log_Warn("ResumableBlockput: invalid checksum, retry");
@@ -462,6 +476,11 @@ lzRetry:
 	ret = extra->progresses[blkIdx];
 	err = Qiniu_Rio_ResumableBlockput(c, &ret, task->f, blkIdx, task->blkSize1, extra);
 	if (err.code != 200) {
+        if (err.code == 9995) {
+            // Terminate the upload process if the caller requests
+            return;
+        }
+
 		if (tryTimes > 1 && Qiniu_TemporaryError(err.code)) {
 			tryTimes--;
 			Qiniu_Log_Info("resumable.Put %E, retrying ...", err);

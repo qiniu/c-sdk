@@ -82,8 +82,11 @@ typedef struct _Qiniu_Rio_BlkputRet {
 	const char* host;
 } Qiniu_Rio_BlkputRet;
 
-typedef void (*Qiniu_Rio_FnNotify)(void* recvr, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret);
-typedef void (*Qiniu_Rio_FnNotifyErr)(void* recvr, int blkIdx, int blkSize, Qiniu_Error err);
+#define QINIU_RIO_NOTIFY_OK 0
+#define QINIU_RIO_NOTIFY_EXIT 1
+
+typedef int (*Qiniu_Rio_FnNotify)(void* recvr, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret);
+typedef int (*Qiniu_Rio_FnNotifyErr)(void* recvr, int blkIdx, int blkSize, Qiniu_Error err);
 
 typedef struct _Qiniu_Rio_PutExtra {
 	const char* callbackParams;

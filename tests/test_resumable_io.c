@@ -41,14 +41,16 @@ static void clientIoPutFile(const char* uptoken)
 	Qiniu_Client_Cleanup(&client);
 }
 
-static void notify(void* self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret)
+static int notify(void* self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret)
 {
 	Qiniu_Log_Info("nodify: %d, off: %d", blkIdx, ret->offset);
+    return QINIU_RIO_NOTIFY_OK;
 }
 
-static void notifyErr(void* self, int blkIdx, int blkSize, Qiniu_Error err)
+static int notifyErr(void* self, int blkIdx, int blkSize, Qiniu_Error err)
 {
 	Qiniu_Log_Warn("nodify: %d, err: %E", blkIdx, err);
+    return QINIU_RIO_NOTIFY_OK;
 }
 
 static const Qiniu_Int64 testFsize = 4*1024 + 2;
