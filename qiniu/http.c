@@ -214,6 +214,11 @@ void Qiniu_Client_Cleanup(Qiniu_Client* self)
 	Qiniu_Buffer_Cleanup(&self->respHeader);
 }
 
+void Qiniu_Client_BindNic(Qiniu_Client* self, const char* nic)
+{
+	self->boundNic = nic;
+} // Qiniu_Client_BindNic
+
 CURL* Qiniu_Client_reset(Qiniu_Client* self)
 {
 	CURL* curl = (CURL*)self->curl;
@@ -243,13 +248,24 @@ static CURL* Qiniu_Client_initcall(Qiniu_Client* self, const char* url)
 
 static Qiniu_Error Qiniu_Client_callWithBody(
 	Qiniu_Client* self, Qiniu_Json** ret, const char* url, 
-    const char* body, Qiniu_Int64 bodyLen, const char* mimeType)
+	const char* body, Qiniu_Int64 bodyLen, const char* mimeType)
 {
+	int retCode = 0;
 	Qiniu_Error err;
 	const char* ctxType;
 	char ctxLength[64];
 	Qiniu_Header* headers = NULL;
 	CURL* curl = (CURL*)self->curl;
+
+	// Bind the NIC for sending packets.
+	if (self->boundNic != NULL) {
+		retCode = curl_easy_setopt(curl, CURLOPT_INTERFACE, self->boundNic);
+		if (retCode == CURLE_INTERFACE_FAILED) {
+			err.code = 9994;
+			err.message = "Can not bind the given NIC";
+			return err;
+		}
+	}
 
 	curl_easy_setopt(curl, CURLOPT_POST, 1);
 

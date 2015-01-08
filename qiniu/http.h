@@ -92,10 +92,14 @@ typedef struct _Qiniu_Client {
 	Qiniu_Json* root;
 	Qiniu_Buffer b;
 	Qiniu_Buffer respHeader;
+
+	// Use the following field to specify which NIC to use for sending packets.
+	const char* boundNic;
 } Qiniu_Client;
 
 void Qiniu_Client_InitEx(Qiniu_Client* self, Qiniu_Auth auth, size_t bufSize);
 void Qiniu_Client_Cleanup(Qiniu_Client* self);
+void Qiniu_Client_BindNic(Qiniu_Client* self, const char* nic);
 
 Qiniu_Error Qiniu_Client_Call(Qiniu_Client* self, Qiniu_Json** ret, const char* url);
 Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client* self, const char* url);

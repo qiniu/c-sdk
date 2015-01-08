@@ -53,10 +53,23 @@ Qiniu_Error Qiniu_callex(CURL* curl, Qiniu_Buffer *resp, Qiniu_Json** ret, Qiniu
 static Qiniu_Error Qiniu_Io_call(
 	Qiniu_Client* self, Qiniu_Io_PutRet* ret, struct curl_httppost* formpost)
 {
+	int retCode = 0;
 	Qiniu_Error err;
+	struct curl_slist* headers = NULL;
 
 	CURL* curl = Qiniu_Client_reset(self);
-	struct curl_slist* headers = curl_slist_append(NULL, "Expect:");
+
+	// Bind the NIC for sending packets.
+	if (self->boundNic != NULL) {
+		retCode = curl_easy_setopt(curl, CURLOPT_INTERFACE, self->boundNic);
+		if (retCode == CURLE_INTERFACE_FAILED) {
+			err.code = 9994;
+			err.message = "Can not bind the given NIC";
+			return err;
+		}
+	}
+
+	headers = curl_slist_append(NULL, "Expect:");
 
 	curl_easy_setopt(curl, CURLOPT_URL, QINIU_UP_HOST);
 	curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
