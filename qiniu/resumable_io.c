@@ -386,21 +386,23 @@ static Qiniu_Error Qiniu_Rio_Mkfile(
 	Qiniu_Rio_BlkputRet* prog;
 	Qiniu_Buffer url, body;
 
-	char* entry = Qiniu_String_Concat3(extra->bucket, ":", key);
-
 	Qiniu_Buffer_Init(&url, 1024);
-	Qiniu_Buffer_AppendFormat(&url, "%s/rs-mkfile/%S/fsize/%D", QINIU_UP_HOST, entry, fsize);
-	Qiniu_Free(entry);
+	Qiniu_Buffer_AppendFormat(&url, "%s/mkfile/%D", QINIU_UP_HOST, fsize);
+
+	if (NULL != key) {
+		Qiniu_Buffer_AppendFormat(&url, "/key/%S", key);
+	}
 
 	if (extra->mimeType != NULL) {
 		Qiniu_Buffer_AppendFormat(&url, "/mimeType/%S", extra->mimeType);
 	}
-	if (extra->customMeta != NULL) {
-		Qiniu_Buffer_AppendFormat(&url, "/meta/%S", extra->customMeta);
-	}
-	if (extra->callbackParams != NULL) {
-		Qiniu_Buffer_AppendFormat(&url, "/params/%S", extra->callbackParams);
-	}
+	
+	// if (extra->customMeta != NULL) {
+	// 	Qiniu_Buffer_AppendFormat(&url, "/meta/%S", extra->customMeta);
+	// }
+	// if (extra->callbackParams != NULL) {
+	// 	Qiniu_Buffer_AppendFormat(&url, "/params/%S", extra->callbackParams);
+	// }
 
 	Qiniu_Buffer_Init(&body, 176 * blkCount);
 	for (i = 0; i < blkCount; i++) {
