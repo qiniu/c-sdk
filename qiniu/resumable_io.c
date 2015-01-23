@@ -434,8 +434,12 @@ static Qiniu_Error Qiniu_Rio_Mkfile(
 	Qiniu_Buffer_Cleanup(&body);
 
 	if (err.code == 200) {
-		ret->hash = Qiniu_Json_GetString(root, "hash", NULL);
-		ret->key = Qiniu_Json_GetString(root, "key", NULL);
+		if (extra->callbackRetParser != NULL) {
+			err = (*extra->callbackRetParser)(extra->callbackRet, root);
+		} else {
+			ret->hash = Qiniu_Json_GetString(root, "hash", NULL);
+			ret->key = Qiniu_Json_GetString(root, "key", NULL);
+		}
 	}
 	return err;
 }

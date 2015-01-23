@@ -51,7 +51,8 @@ CURL* Qiniu_Client_reset(Qiniu_Client* self);
 Qiniu_Error Qiniu_callex(CURL* curl, Qiniu_Buffer *resp, Qiniu_Json** ret, Qiniu_Bool simpleError, Qiniu_Buffer *resph);
 
 static Qiniu_Error Qiniu_Io_call(
-	Qiniu_Client* self, Qiniu_Io_PutRet* ret, struct curl_httppost* formpost)
+	Qiniu_Client* self, Qiniu_Io_PutRet* ret, struct curl_httppost* formpost,
+	Qiniu_Io_PutExtra* extra)
 {
 	int retCode = 0;
 	Qiniu_Error err;
@@ -77,8 +78,12 @@ static Qiniu_Error Qiniu_Io_call(
 
 	err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
 	if (err.code == 200 && ret != NULL) {
-		ret->hash = Qiniu_Json_GetString(self->root, "hash", NULL);
-		ret->key = Qiniu_Json_GetString(self->root, "key", NULL);
+		if (extra->callbackRetParser != NULL) {
+			err = (*extra->callbackRetParser)(extra->callbackRet, self->root);
+		} else {
+			ret->hash = Qiniu_Json_GetString(self->root, "hash", NULL);
+			ret->key = Qiniu_Json_GetString(self->root, "key", NULL);
+		} 
 	}
 
 	curl_formfree(formpost);
@@ -106,7 +111,7 @@ Qiniu_Error Qiniu_Io_PutFile(
             &form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localFile, CURLFORM_END);
     }
 
-	return Qiniu_Io_call(self, ret, form.formpost);
+	return Qiniu_Io_call(self, ret, form.formpost, extra);
 }
 
 Qiniu_Error Qiniu_Io_PutBuffer(
@@ -127,6 +132,6 @@ Qiniu_Error Qiniu_Io_PutBuffer(
 		&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file",
 		CURLFORM_BUFFER, key, CURLFORM_BUFFERPTR, buf, CURLFORM_BUFFERLENGTH, fsize, CURLFORM_END);
 
-	return Qiniu_Io_call(self, ret, form.formpost);
+	return Qiniu_Io_call(self, ret, form.formpost, extra);
 }
 
