@@ -18,10 +18,10 @@ typedef struct _Qiniu_Io_form {
 	struct curl_httppost* lastptr;
 } Qiniu_Io_form;
 
-static Qiniu_Io_PutExtra qiniu_defaultExtra = { NULL, NULL, 0, 0 };
+static Qiniu_Io_PutExtra qiniu_defaultExtra = { NULL, NULL, 0, 0, NULL };
 
 static void Qiniu_Io_form_init(
-	Qiniu_Io_form* self, const char* uptoken, const char* key, Qiniu_Io_PutExtra* extra)
+	Qiniu_Io_form* self, const char* uptoken, const char* key, Qiniu_Io_PutExtra** extra)
 {
 	Qiniu_Io_PutExtraParam* param;
 	struct curl_httppost* formpost = NULL;
@@ -29,13 +29,13 @@ static void Qiniu_Io_form_init(
 
 	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "token", CURLFORM_COPYCONTENTS, uptoken, CURLFORM_END);
 
-	if (extra == NULL) {
-		extra = &qiniu_defaultExtra;
+	if (*extra == NULL) {
+		*extra = &qiniu_defaultExtra;
 	}
 	if (key != NULL) {
 		curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "key", CURLFORM_COPYCONTENTS, key, CURLFORM_END);
 	}
-	for (param = extra->params; param != NULL; param = param->next) {
+	for (param = (*extra)->params; param != NULL; param = param->next) {
 		curl_formadd(
 			&formpost, &lastptr, CURLFORM_COPYNAME, param->key, CURLFORM_COPYCONTENTS, param->value, CURLFORM_END);
 	}
@@ -96,7 +96,7 @@ Qiniu_Error Qiniu_Io_PutFile(
 	const char* uptoken, const char* key, const char* localFile, Qiniu_Io_PutExtra* extra)
 {
 	Qiniu_Io_form form;
-	Qiniu_Io_form_init(&form, uptoken, key, extra);
+	Qiniu_Io_form_init(&form, uptoken, key, &extra);
 
     if (extra->localFileName != NULL) {
         curl_formadd(
@@ -114,7 +114,7 @@ Qiniu_Error Qiniu_Io_PutBuffer(
 	const char* uptoken, const char* key, const char* buf, size_t fsize, Qiniu_Io_PutExtra* extra)
 {
 	Qiniu_Io_form form;
-	Qiniu_Io_form_init(&form, uptoken, key, extra);
+	Qiniu_Io_form_init(&form, uptoken, key, &extra);
 
     if (key == NULL) {
         // Use an empty string instead of the NULL pointer to prevent the curl lib from crashing
