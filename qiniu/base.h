@@ -38,7 +38,7 @@ typedef _W64 int ssize_t;
 
 typedef _int64 Qiniu_Off_T;
 
-#elif
+#else
 
 typedef off_t Qiniu_Off_T;
 
