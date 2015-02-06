@@ -189,6 +189,8 @@ void Qiniu_Client_InitEx(Qiniu_Client* self, Qiniu_Auth auth, size_t bufSize)
 
 	Qiniu_Buffer_Init(&self->b, bufSize);
 	Qiniu_Buffer_Init(&self->respHeader, bufSize);
+
+    self->boundNic = NULL;
 }
 
 void Qiniu_Client_InitNoAuth(Qiniu_Client* self, size_t bufSize)
