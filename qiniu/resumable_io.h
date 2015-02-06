@@ -110,6 +110,15 @@ typedef struct _Qiniu_Rio_PutExtra {
 	// which returns a JSON object.
 	void* callbackRet;
 	Qiniu_Error (*callbackRetParser)(void*, Qiniu_Json*);
+
+	// Use xVarsList to pass user defined variables and xVarsCount to pass the count of them.
+	//
+	// (extra->xVarsList[i])[0] set as the variable name, e.g. "x:Price".
+	// **NOTICE**: User defined variable's name MUST starts with a prefix string "x:".
+    //
+	// (extra->xVarsList[i])[1] set as the value, e.g. "priceless".
+	const char* (*xVarsList)[2];
+	int xVarsCount;
 } Qiniu_Rio_PutExtra;
 
 /*============================================================================*/
