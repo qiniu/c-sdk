@@ -18,10 +18,10 @@ typedef struct _Qiniu_Io_form {
 	struct curl_httppost* lastptr;
 } Qiniu_Io_form;
 
-static Qiniu_Io_PutExtra qiniu_defaultExtra = { NULL, NULL, 0, 0 };
+static Qiniu_Io_PutExtra qiniu_defaultExtra = { NULL, NULL, 0, 0, NULL };
 
 static void Qiniu_Io_form_init(
-	Qiniu_Io_form* self, const char* uptoken, const char* key, Qiniu_Io_PutExtra* extra)
+	Qiniu_Io_form* self, const char* uptoken, const char* key, Qiniu_Io_PutExtra** extra)
 {
 	Qiniu_Io_PutExtraParam* param;
 	struct curl_httppost* formpost = NULL;
@@ -29,13 +29,13 @@ static void Qiniu_Io_form_init(
 
 	curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "token", CURLFORM_COPYCONTENTS, uptoken, CURLFORM_END);
 
-	if (extra == NULL) {
-		extra = &qiniu_defaultExtra;
+	if (*extra == NULL) {
+		*extra = &qiniu_defaultExtra;
 	}
 	if (key != NULL) {
 		curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "key", CURLFORM_COPYCONTENTS, key, CURLFORM_END);
 	}
-	for (param = extra->params; param != NULL; param = param->next) {
+	for (param = (*extra)->params; param != NULL; param = param->next) {
 		curl_formadd(
 			&formpost, &lastptr, CURLFORM_COPYNAME, param->key, CURLFORM_COPYCONTENTS, param->value, CURLFORM_END);
 	}
@@ -51,12 +51,26 @@ CURL* Qiniu_Client_reset(Qiniu_Client* self);
 Qiniu_Error Qiniu_callex(CURL* curl, Qiniu_Buffer *resp, Qiniu_Json** ret, Qiniu_Bool simpleError, Qiniu_Buffer *resph);
 
 static Qiniu_Error Qiniu_Io_call(
-	Qiniu_Client* self, Qiniu_Io_PutRet* ret, struct curl_httppost* formpost)
+	Qiniu_Client* self, Qiniu_Io_PutRet* ret, struct curl_httppost* formpost,
+	Qiniu_Io_PutExtra* extra)
 {
+	int retCode = 0;
 	Qiniu_Error err;
+	struct curl_slist* headers = NULL;
 
 	CURL* curl = Qiniu_Client_reset(self);
-	struct curl_slist* headers = curl_slist_append(NULL, "Expect:");
+
+	// Bind the NIC for sending packets.
+	if (self->boundNic != NULL) {
+		retCode = curl_easy_setopt(curl, CURLOPT_INTERFACE, self->boundNic);
+		if (retCode == CURLE_INTERFACE_FAILED) {
+			err.code = 9994;
+			err.message = "Can not bind the given NIC";
+			return err;
+		}
+	}
+
+	headers = curl_slist_append(NULL, "Expect:");
 
 	curl_easy_setopt(curl, CURLOPT_URL, QINIU_UP_HOST);
 	curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
@@ -64,8 +78,12 @@ static Qiniu_Error Qiniu_Io_call(
 
 	err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
 	if (err.code == 200 && ret != NULL) {
-		ret->hash = Qiniu_Json_GetString(self->root, "hash", NULL);
-		ret->key = Qiniu_Json_GetString(self->root, "key", NULL);
+		if (extra->callbackRetParser != NULL) {
+			err = (*extra->callbackRetParser)(extra->callbackRet, self->root);
+		} else {
+			ret->hash = Qiniu_Json_GetString(self->root, "hash", NULL);
+			ret->key = Qiniu_Json_GetString(self->root, "key", NULL);
+		} 
 	}
 
 	curl_formfree(formpost);
@@ -83,12 +101,17 @@ Qiniu_Error Qiniu_Io_PutFile(
 	const char* uptoken, const char* key, const char* localFile, Qiniu_Io_PutExtra* extra)
 {
 	Qiniu_Io_form form;
-	Qiniu_Io_form_init(&form, uptoken, key, extra);
+	Qiniu_Io_form_init(&form, uptoken, key, &extra);
 
-	curl_formadd(
-		&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localFile, CURLFORM_END);
+    if (extra->localFileName != NULL) {
+        curl_formadd(
+            &form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localFile, CURLFORM_FILENAME, extra->localFileName, CURLFORM_END);
+    } else {
+        curl_formadd(
+            &form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localFile, CURLFORM_END);
+    }
 
-	return Qiniu_Io_call(self, ret, form.formpost);
+	return Qiniu_Io_call(self, ret, form.formpost, extra);
 }
 
 Qiniu_Error Qiniu_Io_PutBuffer(
@@ -96,12 +119,19 @@ Qiniu_Error Qiniu_Io_PutBuffer(
 	const char* uptoken, const char* key, const char* buf, size_t fsize, Qiniu_Io_PutExtra* extra)
 {
 	Qiniu_Io_form form;
-	Qiniu_Io_form_init(&form, uptoken, key, extra);
+	Qiniu_Io_form_init(&form, uptoken, key, &extra);
+
+    if (key == NULL) {
+        // Use an empty string instead of the NULL pointer to prevent the curl lib from crashing
+        // when read it.
+        // **NOTICE**: The magic variable $(filename) will be set as empty string.
+        key = "";
+    }
 
 	curl_formadd(
 		&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file",
 		CURLFORM_BUFFER, key, CURLFORM_BUFFERPTR, buf, CURLFORM_BUFFERLENGTH, fsize, CURLFORM_END);
 
-	return Qiniu_Io_call(self, ret, form.formpost);
+	return Qiniu_Io_call(self, ret, form.formpost, extra);
 }
 

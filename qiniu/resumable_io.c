@@ -168,8 +168,8 @@ static void Qiniu_Rio_BlkputRet_Assign(Qiniu_Rio_BlkputRet* self, Qiniu_Rio_Blkp
 /*============================================================================*/
 /* type Qiniu_Rio_PutExtra */
 
-static void notifyNil(void* self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret) {}
-static void notifyErrNil(void* self, int blkIdx, int blkSize, Qiniu_Error err) {}
+static int notifyNil(void* self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret) { return QINIU_RIO_NOTIFY_OK; }
+static int notifyErrNil(void* self, int blkIdx, int blkSize, Qiniu_Error err) { return QINIU_RIO_NOTIFY_OK; }
 
 static Qiniu_Error ErrInvalidPutProgress = {
 	Qiniu_Rio_InvalidPutProgress, "invalid put progress"
@@ -243,6 +243,7 @@ static void Qiniu_Io_PutExtra_initFrom(Qiniu_Io_PutExtra* self, Qiniu_Rio_PutExt
 {
 	if (extra) {
 		self->mimeType = extra->mimeType;
+		self->localFileName = extra->localFileName;
 	} else {
 		memset(self, 0, sizeof(*self));
 	}
@@ -312,6 +313,7 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 	int chunkSize = extra->chunkSize;
 	int bodyLength;
 	int tryTimes;
+    int notifyRet = 0;
 
 	if (ret->ctx == NULL) {
 
@@ -321,7 +323,7 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 			bodyLength = blkSize;
 		}
 
-		body1 = Qiniu_SectionReader(&section, f, (off_t)offbase, bodyLength);
+		body1 = Qiniu_SectionReader(&section, f, (Qiniu_Off_T)offbase, bodyLength);
 		body = Qiniu_TeeReader(&tee, body1, h);
 
 		err = Qiniu_Rio_Mkblock(c, ret, blkSize, body, bodyLength);
@@ -331,7 +333,13 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 		if (ret->crc32 != crc32.val || (int)(ret->offset) != bodyLength) {
 			return ErrUnmatchedChecksum;
 		}
-		extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
+		notifyRet = extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
+        if (notifyRet == QINIU_RIO_NOTIFY_EXIT) {
+            // Terminate the upload process if  the caller requests
+            err.code = 9995;
+            err.message = "Interrupted by the caller";
+            return err;
+        }
 	}
 
 	while ((int)(ret->offset) < blkSize) {
@@ -346,13 +354,20 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 
 lzRetry:
 		crc32.val = 0;
-		body1 = Qiniu_SectionReader(&section, f, (off_t)offbase + (ret->offset), bodyLength);
+		body1 = Qiniu_SectionReader(&section, f, (Qiniu_Off_T)offbase + (ret->offset), bodyLength);
 		body = Qiniu_TeeReader(&tee, body1, h);
 
 		err = Qiniu_Rio_Blockput(c, ret, body, bodyLength);
 		if (err.code == 200) {
 			if (ret->crc32 == crc32.val) {
-				extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
+				notifyRet = extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
+                if (notifyRet == QINIU_RIO_NOTIFY_EXIT) {
+                    // Terminate the upload process if the caller requests
+                    err.code = 9995;
+                    err.message = "Interrupted by the caller";
+                    return err;
+                }
+
 				continue;
 			}
 			Qiniu_Log_Warn("ResumableBlockput: invalid checksum, retry");
@@ -419,6 +434,56 @@ static Qiniu_Error Qiniu_Rio_Mkfile(
 	Qiniu_Buffer_Cleanup(&body);
 
 	if (err.code == 200) {
+		if (extra->callbackRetParser != NULL) {
+			err = (*extra->callbackRetParser)(extra->callbackRet, root);
+		} else {
+			ret->hash = Qiniu_Json_GetString(root, "hash", NULL);
+			ret->key = Qiniu_Json_GetString(root, "key", NULL);
+		}
+	}
+	return err;
+}
+
+static Qiniu_Error Qiniu_Rio_Mkfile2(
+	Qiniu_Client* c, Qiniu_Rio_PutRet* ret, const char* key, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra* extra)
+{
+	size_t i, blkCount = extra->blockCnt;
+	Qiniu_Json* root;
+	Qiniu_Error err;
+	Qiniu_Rio_BlkputRet* prog;
+	Qiniu_Buffer url, body;
+	int j = 0;
+
+	Qiniu_Buffer_Init(&url, 2048);
+	Qiniu_Buffer_AppendFormat(&url, "%s/mkfile/%D", QINIU_UP_HOST, fsize);
+
+	if (key != NULL) {
+		// Allow using empty key
+		Qiniu_Buffer_AppendFormat(&url, "/key/%S", key);
+	}
+	if (extra->xVarsList != NULL && extra->xVarsCount > 0) {
+		for (j = 0; j < extra->xVarsCount; j += 1) {
+			Qiniu_Buffer_AppendFormat(&url, "/%s/%S", (extra->xVarsList[j])[0], (extra->xVarsList[j])[1]);
+		} // for
+	}
+
+	Qiniu_Buffer_Init(&body, 176 * blkCount);
+	for (i = 0; i < blkCount; i++) {
+		prog = &extra->progresses[i];
+		Qiniu_Buffer_Write(&body, prog->ctx, strlen(prog->ctx));
+		Qiniu_Buffer_PutChar(&body, ',');
+	}
+	if (blkCount > 0) {
+		body.curr--;
+	}
+
+	err = Qiniu_Client_CallWithBuffer(
+		c, &root, Qiniu_Buffer_CStr(&url), body.buf, body.curr - body.buf, "text/plain");
+
+	Qiniu_Buffer_Cleanup(&url);
+	Qiniu_Buffer_Cleanup(&body);
+
+	if (err.code == 200) {
 		ret->hash = Qiniu_Json_GetString(root, "hash", NULL);
 		ret->key = Qiniu_Json_GetString(root, "key", NULL);
 	}
@@ -461,6 +526,11 @@ lzRetry:
 	ret = extra->progresses[blkIdx];
 	err = Qiniu_Rio_ResumableBlockput(c, &ret, task->f, blkIdx, task->blkSize1, extra);
 	if (err.code != 200) {
+        if (err.code == 9995) {
+            // Terminate the upload process if the caller requests
+            return;
+        }
+
 		if (tryTimes > 1 && Qiniu_TemporaryError(err.code)) {
 			tryTimes--;
 			Qiniu_Log_Info("resumable.Put %E, retrying ...", err);
@@ -530,7 +600,7 @@ Qiniu_Error Qiniu_Rio_Put(
 	if (nfails != 0) {
 		err = ErrPutFailed;
 	} else {
-		err = Qiniu_Rio_Mkfile(self, ret, key, fsize, &extra);
+		err = Qiniu_Rio_Mkfile2(self, ret, key, fsize, &extra);
 	}
 
 	Qiniu_Rio_PutExtra_Cleanup(&extra);
@@ -557,7 +627,10 @@ Qiniu_Error Qiniu_Rio_PutFile(
 		fsize = Qiniu_FileInfo_Fsize(fi);
 		if (fsize <= Qiniu_Rio_PutExtra_ChunkSize(extra)) { // file is too small, don't need resumable-io
 			Qiniu_File_Close(f);
+
+			Qiniu_Zero(extra1);
 			Qiniu_Io_PutExtra_initFrom(&extra1, extra);
+
 			return Qiniu_Io_PutFile(self, ret, uptoken, key, localFile, &extra1);
 		}
 		err = Qiniu_Rio_Put(self, ret, uptoken, key, Qiniu_FileReaderAt(f), fsize, extra);
