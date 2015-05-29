@@ -49,6 +49,9 @@ char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* auth, Qiniu_Mac* mac)
 	if (auth->persistentNotifyUrl) {
 		cJSON_AddStringToObject(root, "persistentNotifyUrl", auth->persistentNotifyUrl);
 	}
+	if (auth->persistentPipeline) {
+		cJSON_AddStringToObject(root, "persistentPipeline", auth->persistentPipeline);
+	}
 	if (auth->mimeLimit) {
 		cJSON_AddStringToObject(root, "mimeLimit", auth->mimeLimit);
 	}

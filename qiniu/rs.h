@@ -34,6 +34,7 @@ typedef struct _Qiniu_RS_PutPolicy {
     const char* asyncOps;
     const char* persistentOps;
     const char* persistentNotifyUrl;
+    const char* persistentPipeline;
     const char* mimeLimit;
     Qiniu_Uint64 fsizeLimit;
     Qiniu_Uint32 detectMime;
