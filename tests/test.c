@@ -31,12 +31,6 @@ static int teardown(){
 	return 0;
 }
 
-static CU_SuiteInfo suite = { "test_qiniu", setup, teardown, tests_qiniu };
-static CU_SuiteInfo suites[] = {
-	{ "test_qiniu", setup, teardown, tests_qiniu },
-	CU_SUITE_INFO_NULL
-};
-
 int main(){
 	Qiniu_Servend_Init(0);
 
