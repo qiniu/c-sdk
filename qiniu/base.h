@@ -125,6 +125,9 @@ char* Qiniu_String_Concat(const char* s1, ...);
 
 char* Qiniu_String_Format(size_t initSize, const char* fmt, ...);
 
+char* Qiniu_String_Join(const char* deli, char* strs[], int strCount);
+char* Qiniu_String_Dup(const char* src);
+
 /*============================================================================*/
 /* func Qiniu_String_Encode */
 

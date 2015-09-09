@@ -95,11 +95,22 @@ typedef struct _Qiniu_Client {
 
 	// Use the following field to specify which NIC to use for sending packets.
 	const char* boundNic;
+
+    // Use the following field to specify the average transfer speed in bytes per second (Bps)
+    // that the transfer should be below during lowSpeedTime seconds for this SDK to consider
+    // it to be too slow and abort.
+    long lowSpeedLimit;
+
+    // Use the following field to specify the time in number seconds that
+    // the transfer speed should be below the logSpeedLimit for this SDK to consider it
+    // too slow and abort.
+    long lowSpeedTime;
 } Qiniu_Client;
 
 void Qiniu_Client_InitEx(Qiniu_Client* self, Qiniu_Auth auth, size_t bufSize);
 void Qiniu_Client_Cleanup(Qiniu_Client* self);
 void Qiniu_Client_BindNic(Qiniu_Client* self, const char* nic);
+void Qiniu_Client_SetLowSpeedLimit(Qiniu_Client* self, long lowSpeedLimit, long lowSpeedTime);
 
 Qiniu_Error Qiniu_Client_Call(Qiniu_Client* self, Qiniu_Json** ret, const char* url);
 Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client* self, const char* url);

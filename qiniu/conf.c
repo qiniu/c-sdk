@@ -15,6 +15,7 @@ const char* QINIU_SECRET_KEY			= "<Dont send your secret key to anyone>";
 
 const char* QINIU_RS_HOST				= "http://rs.qiniu.com";
 const char* QINIU_UP_HOST				= "http://upload.qiniu.com";
+const char* QINIU_API_HOST				= "http://api.qiniu.com";
 
 /*============================================================================*/
 

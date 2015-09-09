@@ -9,6 +9,7 @@ SOURCE_FILES=\
 	../qiniu/rs.c\
 	../qiniu/io.c\
 	../qiniu/resumable_io.c\
+	../qiniu/fop.c\
 	seq.c\
 	equal.c\
 	test_io_put.c\
@@ -17,11 +18,12 @@ SOURCE_FILES=\
 	test_fmt.c\
 	test.c\
 	test_rs_ops.c\
+	test_fop.c
 
 CUNIT_LIB=../CUnit/CUnit/Sources/.libs
 
 all: $(SOURCE_FILES)
-	gcc $^ -o qiniutest -L$(CUNIT_LIB) -lcurl -lssl -lcrypto -lcunit -lm
+	gcc -g $^ -o qiniutest -L$(CUNIT_LIB) -lcurl -lssl -lcrypto -lcunit -lm
 
 install: all
 	@echo

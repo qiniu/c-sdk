@@ -193,6 +193,9 @@ void Qiniu_Client_InitEx(Qiniu_Client* self, Qiniu_Auth auth, size_t bufSize)
 	Qiniu_Buffer_Init(&self->respHeader, bufSize);
 
 	self->boundNic = NULL;
+
+    self->lowSpeedLimit = 0;
+    self->lowSpeedTime = 0;
 }
 
 void Qiniu_Client_InitNoAuth(Qiniu_Client* self, size_t bufSize)
@@ -222,6 +225,12 @@ void Qiniu_Client_BindNic(Qiniu_Client* self, const char* nic)
 {
 	self->boundNic = nic;
 } // Qiniu_Client_BindNic
+
+void Qiniu_Client_SetLowSpeedLimit(Qiniu_Client* self, long lowSpeedLimit, long lowSpeedTime)
+{
+    self->lowSpeedLimit = lowSpeedLimit;
+    self->lowSpeedTime = lowSpeedTime;
+} // Qiniu_Client_SetLowSpeedLimit
 
 CURL* Qiniu_Client_reset(Qiniu_Client* self)
 {

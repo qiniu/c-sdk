@@ -70,6 +70,22 @@ static Qiniu_Error Qiniu_Io_call(
 		}
 	}
 
+    // Specify the low speed limit and time
+    if (self->lowSpeedLimit > 0 && self->lowSpeedTime > 0) {
+		retCode = curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, self->lowSpeedLimit);
+		if (retCode == CURLE_INTERFACE_FAILED) {
+			err.code = 9994;
+			err.message = "Can not specify the low speed limit";
+			return err;
+		}
+		retCode = curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, self->lowSpeedTime);
+		if (retCode == CURLE_INTERFACE_FAILED) {
+			err.code = 9994;
+			err.message = "Can not specify the low speed time";
+			return err;
+		}
+    }
+
 	headers = curl_slist_append(NULL, "Expect:");
 
 	curl_easy_setopt(curl, CURLOPT_URL, QINIU_UP_HOST);
