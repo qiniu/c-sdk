@@ -7,6 +7,8 @@
  ============================================================================
  */
 
+#include <curl/curl.h>
+
 #include "fop.h"
 #include "../cJSON/cJSON.h"
 
@@ -14,7 +16,7 @@ Qiniu_Error Qiniu_FOP_Pfop(
     Qiniu_Client* self,
     Qiniu_FOP_PfopRet* ret,
     Qiniu_FOP_PfopArgs* args,
-    const char* fop[],
+    char* fop[],
     int fopCount)
 {
     Qiniu_Error err;
@@ -30,7 +32,7 @@ Qiniu_Error Qiniu_FOP_Pfop(
     int i = 0;
 
     // Add encoded bucket
-    encodedBucket = curl_easy_escape(self->curl, args->bucket);
+    encodedBucket = curl_easy_escape(self->curl, args->bucket, strlen(args->bucket));
     if (encodedBucket == NULL) {
         err.code = 499;
         err.message = "No enough memory";
@@ -47,7 +49,7 @@ Qiniu_Error Qiniu_FOP_Pfop(
     itemCount += 1;
 
     // Add encoded key
-    encodedKey = curl_easy_escape(self->curl, args->key);
+    encodedKey = curl_easy_escape(self->curl, args->key, strlen(args->key));
     if (encodedKey == NULL) {
         err.code = 499;
         err.message = "No enough memory";
@@ -71,7 +73,7 @@ Qiniu_Error Qiniu_FOP_Pfop(
         goto PFOP_ERROR_HANDLING;
     }
 
-    encodedFops = curl_easy_escape(self->curl, fops);
+    encodedFops = curl_easy_escape(self->curl, fops, strlen(fops));
     Qiniu_Free(fops);
     if (encodedFops == NULL) {
         err.code = 499;
@@ -90,7 +92,7 @@ Qiniu_Error Qiniu_FOP_Pfop(
 
     // Add encoded notifyURL
     if (args->notifyURL) {
-        encodedNotifyURL = curl_easy_escape(self->curl, args->notifyURL);
+        encodedNotifyURL = curl_easy_escape(self->curl, args->notifyURL, strlen(args->notifyURL));
         if (encodedNotifyURL == NULL) {
             err.code = 499;
             err.message = "No enough memory";
@@ -146,7 +148,7 @@ Qiniu_Error Qiniu_FOP_Pfop(
     );
     Qiniu_Free(body);
     if (err.code == 200) {
-        ret->persistentId = (Qiniu_Int64)Qiniu_Json_GetInt64(ret, "persistenId", 0);
+        ret->persistentId = (Qiniu_Int64)Qiniu_Json_GetInt64(root, "persistenId", 0);
     }
 
 PFOP_ERROR_HANDLING:
