@@ -1,6 +1,5 @@
 #include "../qiniu/fop.h"
 #include "test.h"
-#include <stdio.h>
 
 static void pfop(Qiniu_Client* client)
 {
@@ -18,7 +17,7 @@ static void pfop(Qiniu_Client* client)
     fop[0] = "avthumb/avi/vb/100k";
     err = Qiniu_FOP_Pfop(client, &ret, &args, fop, fopCount);
     CU_ASSERT(err.code == 200);
-    CU_ASSERT(ret.persistentId != 0);
+    CU_ASSERT(ret.persistentId != NULL);
 }
 
 void testFop()

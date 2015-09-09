@@ -25,11 +25,11 @@ extern "C"
 /* @gist pfopargs */
 
 typedef struct _Qiniu_FOP_PfopArgs {
-    const char * bucket;
-    const char * key;
-    const char * notifyURL;
-    int force;
-    const char * pipeline;
+	const char * bucket;
+	const char * key;
+	const char * notifyURL;
+	int force;
+	const char * pipeline;
 } Qiniu_FOP_PfopArgs;
 
 /* @endgist */
@@ -37,7 +37,7 @@ typedef struct _Qiniu_FOP_PfopArgs {
 /* @gist pfopret */
 
 typedef struct _Qiniu_FOP_PfopRet {
-    Qiniu_Int64 persistentId;
+	const char*  persistentId;
 } Qiniu_FOP_PfopRet;
 
 /* @endgist */
