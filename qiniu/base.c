@@ -3,7 +3,7 @@
  Name        : base.c
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 
@@ -97,7 +97,7 @@ static int Qiniu_shouldEscape(int c, escapeMode mode)
 	return 1;
 }
 
-static const char Qiniu_hexTable[] = "0123456789ABCDEF"; 
+static const char Qiniu_hexTable[] = "0123456789ABCDEF";
 
 static char* Qiniu_escape(const char* s, escapeMode mode, Qiniu_Bool* fesc)
 {
@@ -461,7 +461,7 @@ static Qiniu_formatProc qiniu_formatProcs[] = {
 	{ Qiniu_Buffer_appendPercent, '%' },
 };
 
-static Qiniu_FnAppender qiniu_Appenders[128];
+static Qiniu_FnAppender qiniu_Appenders[128] = {0};
 
 void Qiniu_Format_Register(char esc, Qiniu_FnAppender appender)
 {

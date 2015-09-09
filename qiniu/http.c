@@ -3,7 +3,7 @@
  Name        : http.c
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 
@@ -124,6 +124,8 @@ Qiniu_Error Qiniu_callex(CURL* curl, Qiniu_Buffer *resp, Qiniu_Json** ret, Qiniu
 		err.code = curlCode;
 		err.message = "curl_easy_perform error";
 	}
+
+	printf("code %d\n", err.code);
 
 	return err;
 }
@@ -258,7 +260,7 @@ static CURL* Qiniu_Client_initcall(Qiniu_Client* self, const char* url)
 }
 
 static Qiniu_Error Qiniu_Client_callWithBody(
-	Qiniu_Client* self, Qiniu_Json** ret, const char* url, 
+	Qiniu_Client* self, Qiniu_Json** ret, const char* url,
 	const char* body, Qiniu_Int64 bodyLen, const char* mimeType)
 {
 	int retCode = 0;
@@ -388,7 +390,7 @@ Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client* self, const char* url)
 	 * Reason     : memory leak!
 	 */
 	err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
-	curl_slist_free_all(headers); 
+	curl_slist_free_all(headers);
 	return err;
 }
 
