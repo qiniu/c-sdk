@@ -221,6 +221,54 @@ char* Qiniu_String_Concat(const char* s1, ...)
 	return p;
 }
 
+char* Qiniu_String_Join(const char* deli, char* strs[], int strCount)
+{
+	int i = 0;
+	char * ret = NULL;
+	char * pos = NULL;
+	char * tmpRet = NULL;
+	size_t totalLen = 0;
+	size_t copyLen = 0;
+	size_t deliLen = 0;
+
+	if (strCount == 1) {
+		return strdup(strs[0]);
+	}
+
+	for (i = 0; i < strCount; i += 1) {
+		totalLen += strlen(strs[i]);
+	} // for
+
+	deliLen = strlen(deli);
+	totalLen += deliLen * (strCount - 1);
+	ret = (char *)malloc(totalLen + 1);
+	if (ret == NULL) {
+		return NULL;
+	}
+
+	pos = ret;
+	copyLen = strlen(strs[0]);
+	memcpy(pos, strs[0], copyLen);
+	pos += copyLen;
+
+	for (i = 1; i < strCount; i += 1) {
+		memcpy(pos, deli, deliLen);
+		pos += deliLen;
+
+		copyLen = strlen(strs[i]);
+		memcpy(pos, strs[i], copyLen);
+		pos += copyLen;
+	} // for
+
+	ret[totalLen] = '\0';
+	return ret;
+} // Qiniu_String_Join
+
+char* Qiniu_String_Dup(const char* src)
+{
+	return strdup(src);
+} // Qiniu_String_Dup
+
 /*============================================================================*/
 /* func Qiniu_String_Encode */
 

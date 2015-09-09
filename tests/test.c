@@ -20,6 +20,7 @@ void testResumableIoPut();
 void testFmt();
 void testEqual();
 void testRsBatchOps();
+void testFop();
 
 static int setup(){
 	printf("setup\n");
@@ -60,6 +61,7 @@ int main(){
 	CU_add_test(pSuite, "testResumableIoPut", testResumableIoPut);
 	CU_add_test(pSuite, "testIoPut", testIoPut);
 	CU_add_test(pSuite, "testRsBatchOps", testRsBatchOps);
+	CU_add_test(pSuite, "testFop", testFop);
 
 	/* Run all tests using the CUnit Basic interface */
 	CU_basic_set_mode(CU_BRM_VERBOSE);

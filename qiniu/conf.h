@@ -27,6 +27,7 @@ QINIU_DLLIMPORT extern const char* QINIU_SECRET_KEY;
 
 QINIU_DLLIMPORT extern const char* QINIU_RS_HOST;
 QINIU_DLLIMPORT extern const char* QINIU_UP_HOST;
+QINIU_DLLIMPORT extern const char* QINIU_API_HOST;
 
 #ifdef __cplusplus
 }
