@@ -57,3 +57,8 @@ CUnit/doc/headers/Makefile
 CUnit/libtool
 CUnit/stamp-h1
 
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+lib/libqiniu.a
+curl/
