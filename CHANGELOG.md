@@ -19,6 +19,10 @@
   - `GetBandwidthData`
   
   - `GetLogList`
+  
+- **io**新增PutStream
+
+- 新增put_strem和cdn示例代码
 
 ### v6.2.4
 

@@ -8,7 +8,7 @@ int main(int argc, char * argv[])
 	Qiniu_Error err;
 	Qiniu_Client cli;
 	Qiniu_Mac mac;
-    Qiniu_Cdn_RefreshRet ret;
+	Qiniu_Cdn_RefreshRet ret;
 
 	Qiniu_Global_Init(0);
 	Qiniu_Servend_Init(0);
@@ -17,11 +17,11 @@ int main(int argc, char * argv[])
 	mac.accessKey = argv[1];
 	mac.secretKey = argv[2];
 
-    char* urls[2] = {"http://a.com/1.html","http://b.com/2.html"};
+	char* urls[2] = { "http://a.com/1.html","http://b.com/2.html" };
 
 	Qiniu_Client_InitMacAuth(&cli, 1024, &mac);
 
-    err = Qiniu_Cdn_RefreshUrls(&cli,&ret,urls,2);
+	err = Qiniu_Cdn_RefreshUrls(&cli, &ret, urls, 2);
 
 	printf("code:%d\n msg:%s\n", err.code, err.message);
 

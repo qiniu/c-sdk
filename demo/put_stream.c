@@ -5,11 +5,11 @@
 #include "../qiniu/io.h"
 #include "../qiniu/http.h"
 
-size_t rdr(char* buffer,size_t size,size_t n,void* fp)
+size_t rdr(char* buffer, size_t size, size_t n, void* fp)
 {
-    size_t nread = fread(buffer,size,n,fp);
-    if (nread==0) printf("READ DONE.\n");
-    return nread;
+	size_t nread = fread(buffer, size, n, fp);
+	if (nread == 0) printf("READ DONE.\n");
+	return nread;
 }
 
 int main(int argc, char * argv[])
@@ -47,16 +47,16 @@ int main(int argc, char * argv[])
 
 	Qiniu_Client_InitNoAuth(&cli, 8192);
 
-    struct stat fi;
-    stat(localFile, &fi);
-    size_t fsize = fi.st_size;
-    printf("fsize:%d\n",fsize);
+	struct stat fi;
+	stat(localFile, &fi);
+	size_t fsize = fi.st_size;
+	printf("fsize:%d\n", fsize);
 
-    FILE* fp = fopen(localFile,"rb");
+	FILE* fp = fopen(localFile, "rb");
 
-    err = Qiniu_Io_PutStream(&cli,&ret,uptoken,key,fp,fsize,rdr,&extra);
+	err = Qiniu_Io_PutStream(&cli, &ret, uptoken, key, fp, fsize, rdr, &extra);
 
-    fclose(fp);
+	fclose(fp);
 
 	free((void*)uptoken);
 	free((void*)pp.scope);
