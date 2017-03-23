@@ -65,6 +65,9 @@ char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* auth, Qiniu_Mac* mac)
 	if (auth->insertOnly) {
 		cJSON_AddNumberToObject(root, "insertOnly", auth->insertOnly);
 	}
+    if (auth->deleteAfterDays > 0) {
+		cJSON_AddNumberToObject(root, "deleteAfterDays", auth->deleteAfterDays);
+    }
 
 	if (auth->expires) {
 		expires = auth->expires;

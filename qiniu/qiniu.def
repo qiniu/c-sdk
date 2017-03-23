@@ -1,8 +1,14 @@
 EXPORTS
 	QINIU_ACCESS_KEY DATA
 	QINIU_SECRET_KEY DATA
-	QINIU_RS_HOST
-	QINIU_UP_HOST
+	QINIU_RS_HOST DATA
+	QINIU_UP_HOST DATA
+	QINIU_API_HOST DATA
+
+    Qiniu_OK DATA
+    Qiniu_Discard DATA
+    Qiniu_NoAuth DATA
+	Qiniu_Rio_ST DATA
 
 	Qiniu_Free
 	Qiniu_Count_Inc
@@ -14,6 +20,8 @@ EXPORTS
 	Qiniu_Memory_Encode
 	Qiniu_String_Encode
 	Qiniu_String_Decode
+    Qiniu_String_Dup
+    Qiniu_String_Join
 	Qiniu_PathEscape
 	Qiniu_QueryEscape
 	Qiniu_Seconds
@@ -40,7 +48,6 @@ EXPORTS
 	Qiniu_Buffer_Commit
 	Qiniu_Format_Register
 	Qiniu_Null_Fwrite
-	Qiniu_Discard
 	Qiniu_BufReader
 	Qiniu_BufReaderAt
 	Qiniu_TeeReader
@@ -69,7 +76,8 @@ EXPORTS
 	Qiniu_Mutex_Unlock
 	Qiniu_Json_GetString
 	Qiniu_Json_GetInt64
-	Qiniu_NoAuth
+    Qiniu_Json_Destroy
+    Qiniu_Json_GetInt
 	Qiniu_Client_InitEx
 	Qiniu_Client_Cleanup
 	Qiniu_Client_Call
@@ -79,13 +87,18 @@ EXPORTS
 	Qiniu_MacAuth
 	Qiniu_Mac_Sign
 	Qiniu_Mac_SignToken
+    Qiniu_Mac_Auth
+    Qiniu_Mac_Clone
+    Qiniu_Mac_Release
 	Qiniu_Client_InitNoAuth
 	Qiniu_Client_InitMacAuth
+    Qiniu_Client_SetLowSpeedLimit
+
+    Qiniu_FOP_Pfop
 
 	Qiniu_Io_PutFile
 	Qiniu_Io_PutBuffer
 
-	Qiniu_Rio_ST
 	Qiniu_Rio_SetSettings
 	Qiniu_Rio_BlockCount
 	Qiniu_Rio_Put

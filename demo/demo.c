@@ -250,38 +250,38 @@ void demoGetDownloadURL(const char* bucketName, Qiniu_Mac* mac)
     Qiniu_Free(domain);
 }
 
-int main()
+int main(int argc, char** argv)
 {
 
     Qiniu_Client client;
     Qiniu_Mac    mac;
     char* bucketName = "qiniu-demo-test";
 
-    mac.accessKey ="og9UTrj8I83ndelDQrzlpjXS8HwtiQVMV2S_v7D1";
-    mac.secretKey = "oGUsG0nvsCcltrlkci08qY48DaM-uC7MQjsWRPe0";
+    mac.accessKey = argv[1];
+    mac.secretKey = argv[2];
     // 初始化
     Qiniu_Servend_Init(-1);
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
 
     /* 此方法展示如何得到七牛云存储的一个文件的信息*/
-    demoGetFileStat(&client, bucketName, "a.txt");
+    //demoGetFileStat(&client, bucketName, "a.txt");
     /* 此方法展示如何更改七牛云存储的一个文件的名称*/
-    demoMoveFile(&client, bucketName, "a.txt", "b.txt");
+    //demoMoveFile(&client, bucketName, "a.txt", "b.txt");
     /* 此方法展示如何复制七牛云存储的一个文件*/
-    demoCopyFile(&client, bucketName, "a.txt", "a_back.txt");
+    //demoCopyFile(&client, bucketName, "a.txt", "a_back.txt");
     /* 此方法展示如何删除七牛云存储的一个文件*/
-    demoDeleteFile(&client, bucketName, "a_back.txt");
+    //demoDeleteFile(&client, bucketName, "a_back.txt");
     /* 此方法展示如何批量的得到七牛云存储文件的信息*/
-    demoBatchStatFiles(&client, bucketName);
+    //demoBatchStatFiles(&client, bucketName);
     /* 此方法展示如何批量复制七牛云存储文件*/
-    demoBatchCopyFiles(&client, bucketName);
+    //demoBatchCopyFiles(&client, bucketName);
     /* 此方法展示如何批量删除七牛云存储文件*/
-    demoBatchDeleteFiles(&client, bucketName);
+    //demoBatchDeleteFiles(&client, bucketName);
 
     /* 此方法展示如何上传一个本地文件到服务器*/
-    demoUploadFile(&client, bucketName, &mac);
+    //demoUploadFile(&client, bucketName, &mac);
     /*此方法展示如何得到一个服务器上的文件的，下载url*/
-    demoGetDownloadURL(bucketName, &mac);
+    //demoGetDownloadURL(bucketName, &mac);
 
     // 反初始化
     Qiniu_Client_Cleanup(&client);

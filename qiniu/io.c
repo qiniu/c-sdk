@@ -8,6 +8,7 @@
  */
 
 #include "io.h"
+#include "reader.h"
 #include <curl/curl.h>
 
 /*============================================================================*/
@@ -57,6 +58,8 @@ static Qiniu_Error Qiniu_Io_call(
 	int retCode = 0;
 	Qiniu_Error err;
 	struct curl_slist* headers = NULL;
+	const char * upHost = NULL;
+	Qiniu_Rgn_HostVote upHostVote;
 
 	CURL* curl = Qiniu_Client_reset(self);
 
@@ -88,9 +91,38 @@ static Qiniu_Error Qiniu_Io_call(
 
 	headers = curl_slist_append(NULL, "Expect:");
 
-	curl_easy_setopt(curl, CURLOPT_URL, QINIU_UP_HOST);
+	//// For using multi-region storage.
+	{
+		if ((upHost = extra->upHost) == NULL) {
+			if (Qiniu_Rgn_IsEnabled()) {
+				if (extra->upBucket && extra->accessKey) {
+					err = Qiniu_Rgn_Table_GetHost(self->regionTable, self, extra->upBucket, extra->accessKey, extra->upHostFlags, &upHost, &upHostVote);
+				} else {
+					err = Qiniu_Rgn_Table_GetHostByUptoken(self->regionTable, self, extra->uptoken, extra->upHostFlags, &upHost, &upHostVote);
+				} // if
+				if (err.code != 200) {
+					return err;
+				} // if
+			} else {
+				upHost = QINIU_UP_HOST;
+			} // if
+
+			if (upHost == NULL) {
+				err.code = 9988;
+				err.message = "No proper upload host name";
+				return err;
+			} // if
+		} // if
+	} 
+
+	curl_easy_setopt(curl, CURLOPT_URL, upHost);
 	curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+	//// For aborting uploading file.
+	if (extra->upAbortCallback) {
+		curl_easy_setopt(curl, CURLOPT_READFUNCTION, Qiniu_Rd_Reader_Callback);
+	} // if
 
 	err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
 	if (err.code == 200 && ret != NULL) {
@@ -99,7 +131,15 @@ static Qiniu_Error Qiniu_Io_call(
 		} else {
 			ret->hash = Qiniu_Json_GetString(self->root, "hash", NULL);
 			ret->key = Qiniu_Json_GetString(self->root, "key", NULL);
+			ret->persistentId = Qiniu_Json_GetString(self->root, "persistentId", NULL);
 		} 
+	}
+
+	//// For using multi-region storage.
+	{
+		if (Qiniu_Rgn_IsEnabled()) {
+			Qiniu_Rgn_Table_VoteHost(self->regionTable, &upHostVote, err);
+		} // if
 	}
 
 	curl_formfree(formpost);
@@ -116,18 +156,76 @@ Qiniu_Error Qiniu_Io_PutFile(
 	Qiniu_Client* self, Qiniu_Io_PutRet* ret,
 	const char* uptoken, const char* key, const char* localFile, Qiniu_Io_PutExtra* extra)
 {
+	Qiniu_Error err;
+	Qiniu_FileInfo fi;
+	Qiniu_Rd_Reader rdr;
 	Qiniu_Io_form form;
+	size_t fileSize;
+	const char * localFileName;
 	Qiniu_Io_form_init(&form, uptoken, key, &extra);
 
-    if (extra->localFileName != NULL) {
-        curl_formadd(
-            &form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localFile, CURLFORM_FILENAME, extra->localFileName, CURLFORM_END);
-    } else {
-        curl_formadd(
-            &form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localFile, CURLFORM_END);
-    }
+	// BugFix : If the filename attribute of the file form-data section is not assigned or holds an empty string,
+	//          and the real file size is larger than 10MB, then the Go server will return an error like
+	//          "multipart: message too large".
+	//          Assign an arbitary non-empty string to this attribute will force the Go server to write all the data
+	//          into a temporary file and then every thing goes right.
+	localFileName = (extra->localFileName) ? extra->localFileName : "QINIU-C-SDK-UP-FILE";
 
-	return Qiniu_Io_call(self, ret, form.formpost, extra);
+	//// For aborting uploading file.
+	if (extra->upAbortCallback) {
+		Qiniu_Zero(rdr);
+
+		rdr.abortCallback = extra->upAbortCallback;
+		rdr.abortUserData = extra->upAbortUserData;
+
+		err = Qiniu_Rd_Reader_Open(&rdr, localFile);
+		if (err.code != 200) {
+			return err;
+		} // if
+
+		if (extra->upFileSize == 0) {
+			Qiniu_Zero(fi);
+			err = Qiniu_File_Stat(rdr.file, &fi);
+			if (err.code != 200) {
+				return err;
+			} // if
+
+			fileSize = fi.st_size;
+		} else {
+			fileSize = extra->upFileSize;
+		} // if
+
+		curl_formadd(&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file", CURLFORM_STREAM, &rdr, CURLFORM_CONTENTSLENGTH, (long)fileSize, CURLFORM_FILENAME, localFileName, CURLFORM_END);
+	} else {
+	    curl_formadd(&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file", CURLFORM_FILE, localFile, CURLFORM_FILENAME, localFileName, CURLFORM_END);
+	} // if
+
+	//// For using multi-region storage.
+	{
+		if (Qiniu_Rgn_IsEnabled()) {
+			if (!extra->uptoken) {
+				extra->uptoken = uptoken;
+			} // if
+		} // if
+	}
+
+	err = Qiniu_Io_call(self, ret, form.formpost, extra);
+	
+	//// For aborting uploading file.
+	if (extra->upAbortCallback) {
+		Qiniu_Rd_Reader_Close(&rdr);
+		if (err.code == CURLE_ABORTED_BY_CALLBACK) {
+			if (rdr.status == QINIU_RD_ABORT_BY_CALLBACK) {
+				err.code = 9987;
+				err.message = "Upload progress has been aborted by caller";
+			} else if (rdr.status == QINIU_RD_ABORT_BY_READAT) {
+				err.code = 9986;
+				err.message = "Upload progress has been aborted by Qiniu_File_ReadAt()";
+			} // if
+		} // if
+	} // if
+
+	return err;
 }
 
 Qiniu_Error Qiniu_Io_PutBuffer(
@@ -148,6 +246,91 @@ Qiniu_Error Qiniu_Io_PutBuffer(
 		&form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file",
 		CURLFORM_BUFFER, key, CURLFORM_BUFFERPTR, buf, CURLFORM_BUFFERLENGTH, fsize, CURLFORM_END);
 
+	//// For using multi-region storage.
+	{
+		if (Qiniu_Rgn_IsEnabled()) {
+			if (!extra->uptoken) {
+				extra->uptoken = uptoken;
+			} // if
+		} // if
+	}
+
 	return Qiniu_Io_call(self, ret, form.formpost, extra);
 }
 
+// This function  will be called by 'Qiniu_Io_PutStream'
+// In this function, readFunc(read-stream-data) will be set
+static Qiniu_Error Qiniu_Io_call_with_callback(
+        Qiniu_Client* self, Qiniu_Io_PutRet* ret, 
+		struct curl_httppost* formpost,
+        rdFunc rdr,
+        Qiniu_Io_PutExtra* extra)
+{
+    int retCode = 0;
+    Qiniu_Error err;
+    struct curl_slist* headers = NULL;
+
+    CURL* curl = Qiniu_Client_reset(self);
+
+    // Bind the NIC for sending packets.
+    if (self->boundNic != NULL) {
+        retCode = curl_easy_setopt(curl, CURLOPT_INTERFACE, self->boundNic);
+        if (retCode == CURLE_INTERFACE_FAILED) {
+            err.code = 9994;
+            err.message = "Can not bind the given NIC";
+            return err;
+        }
+    }
+
+    headers = curl_slist_append(NULL, "Expect:");
+
+    curl_easy_setopt(curl, CURLOPT_URL, QINIU_UP_HOST);
+    curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_READFUNCTION, rdr);
+
+    err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
+    if (err.code == 200 && ret != NULL) {
+        if (extra->callbackRetParser != NULL) {
+            err = (*extra->callbackRetParser)(extra->callbackRet, self->root);
+        } else {
+            ret->hash = Qiniu_Json_GetString(self->root, "hash", NULL);
+            ret->key = Qiniu_Json_GetString(self->root, "key", NULL);
+        }
+    }
+
+    curl_formfree(formpost);
+    curl_slist_free_all(headers);
+    return err;
+}
+
+Qiniu_Error Qiniu_Io_PutStream(
+    Qiniu_Client* self, Qiniu_Io_PutRet* ret,
+    const char* uptoken, const char* key, 
+	void* ctx, size_t fsize, rdFunc rdr, 
+	Qiniu_Io_PutExtra* extra)
+{
+    Qiniu_Io_form form;
+    Qiniu_Io_form_init(&form, uptoken, key, &extra);
+
+    if (key == NULL) {
+        // Use an empty string instead of the NULL pointer to prevent the curl lib from crashing
+        // when read it.
+        // **NOTICE**: The magic variable $(filename) will be set as empty string.
+        key = "";
+    }
+
+	// Add 'filename' property to make it like a file upload one
+	// Otherwise it may report: CURL_ERROR(18) or "multipart/message too large"
+	// See https://curl.haxx.se/libcurl/c/curl_formadd.html#CURLFORMSTREAM
+	// FIXED by fengyh 2017-03-22 10:30
+    curl_formadd(
+                &form.formpost, &form.lastptr,
+                CURLFORM_COPYNAME, "file",
+				CURLFORM_FILENAME, "filename",
+                CURLFORM_STREAM, ctx,
+                CURLFORM_CONTENTSLENGTH, fsize,
+                CURLFORM_END);
+
+    return Qiniu_Io_call_with_callback(self, ret, form.formpost, rdr, extra);
+}
