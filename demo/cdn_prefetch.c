@@ -25,17 +25,18 @@ int main(int argc, char * argv[])
 
 	printf("code:%d\n msg:%s\n", err.code, err.message);
 
-	if (err.code == 200) {
-		printf("-----------------------------------------\n");
-		printf("      code : %d\n", ret.code);
-		printf("     error : %s\n", ret.error);
-		printf(" requestId : %s\n", ret.requestId);
-		//printf("  invalidUrls : %s\n", ret.invalidUrls);
-		//printf("  invalidDirs : %s\n", ret.invalidDirs);
-		printf("  quotaDay : %d\n", ret.quotaDay);
-		printf("surplusDay : %d\n", ret.surplusDay);
-		printf("-----------------------------------------\n");
-	}
+	//if (err.code == 200) {
+		printf("---------------------------------------------------\n");
+		printf("       code : %d\n", ret.code);
+		printf("  msg/error : %s\n", ret.error);
+		printf("  requestId : %s\n", ret.requestId);
+		printf("invalidUrls : %s\n", ret.invalidUrls);
+		printf("   quotaDay : %d\n", ret.quotaDay);
+		printf(" surplusDay : %d\n", ret.surplusDay);
+		printf("---------------------------------------------------\n");
+	//}
+
+	Qiniu_Free_CdnPrefetchRet(&ret);
 
 	Qiniu_Client_Cleanup(&cli);
 	//Qiniu_MacAuth_Cleanup();

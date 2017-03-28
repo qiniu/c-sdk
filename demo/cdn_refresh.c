@@ -21,23 +21,25 @@ int main(int argc, char * argv[])
 
 	Qiniu_Client_InitMacAuth(&cli, 1024, &mac);
 
-	err = Qiniu_Cdn_RefreshUrls(&cli, &ret, urls, 2);
+	err = Qiniu_Cdn_RefreshUrls(&cli, &ret, urls, 1);
 
 	printf("code:%d\n msg:%s\n", err.code, err.message);
 
-	if (err.code == 200) {
-		printf("-----------------------------------------\n");
+	//if (err.code == 200) {
+		printf("---------------------------------------------------\n");
 		printf("         code : %d\n", ret.code);
-		printf("        error : %s\n", ret.error);
+		printf("    msg/error : %s\n", ret.error);
 		printf("    requestId : %s\n", ret.requestId);
-		//printf("  invalidUrls : %s\n", ret.invalidUrls);
-		//printf("  invalidDirs : %s\n", ret.invalidDirs);
+		printf("  invalidUrls : %s\n", ret.invalidUrls);
+		printf("  invalidDirs : %s\n", ret.invalidDirs);
 		printf("  urlQuotaDay : %d\n", ret.urlQuotaDay);
 		printf("urlSurplusDay : %d\n", ret.urlSurplusDay);
 		printf("  dirQuotaDay : %d\n", ret.dirQuotaDay);
 		printf("dirSurplusDay : %d\n", ret.dirSurplusDay);
-		printf("-----------------------------------------\n");
-	}
+		printf("---------------------------------------------------\n");
+	//}
+
+	Qiniu_Free_CdnRefreshRet(&ret);
 
 	Qiniu_Client_Cleanup(&cli);
 	//Qiniu_MacAuth_Cleanup();
