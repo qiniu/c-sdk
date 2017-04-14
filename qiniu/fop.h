@@ -42,7 +42,7 @@ typedef struct _Qiniu_FOP_PfopRet {
 
 /* @endgist */
 
-Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client* self, Qiniu_FOP_PfopRet* ret, Qiniu_FOP_PfopArgs* args, char* fop[], int fopCount);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client* self, Qiniu_FOP_PfopRet* ret, Qiniu_FOP_PfopArgs* args, char* fop[], int fopCount);
 
 /*============================================================================*/
 

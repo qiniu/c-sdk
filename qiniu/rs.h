@@ -40,6 +40,7 @@ typedef struct _Qiniu_RS_PutPolicy {
     Qiniu_Uint32 detectMime;
     Qiniu_Uint32 insertOnly;
     Qiniu_Uint32 expires;
+    Qiniu_Uint32 deleteAfterDays;
 } Qiniu_RS_PutPolicy;
 
 /* @endgist */
@@ -48,9 +49,9 @@ typedef struct _Qiniu_RS_GetPolicy {
     Qiniu_Uint32 expires;
 } Qiniu_RS_GetPolicy;
 
-char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* policy, Qiniu_Mac* mac);
-char* Qiniu_RS_GetPolicy_MakeRequest(Qiniu_RS_GetPolicy* policy, const char* baseUrl, Qiniu_Mac* mac);
-char* Qiniu_RS_MakeBaseUrl(const char* domain, const char* key);
+QINIU_DLLAPI extern char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* policy, Qiniu_Mac* mac);
+QINIU_DLLAPI extern char* Qiniu_RS_GetPolicy_MakeRequest(Qiniu_RS_GetPolicy* policy, const char* baseUrl, Qiniu_Mac* mac);
+QINIU_DLLAPI extern char* Qiniu_RS_MakeBaseUrl(const char* domain, const char* key);
 
 /*============================================================================*/
 /* func Qiniu_RS_Stat */
@@ -66,25 +67,25 @@ typedef struct _Qiniu_RS_StatRet {
 
 /* @endgist */
 
-Qiniu_Error Qiniu_RS_Stat(
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Stat(
 	Qiniu_Client* self, Qiniu_RS_StatRet* ret, const char* bucket, const char* key);
 
 /*============================================================================*/
 /* func Qiniu_RS_Delete */
 
-Qiniu_Error Qiniu_RS_Delete(Qiniu_Client* self, const char* bucket, const char* key);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Delete(Qiniu_Client* self, const char* bucket, const char* key);
 
 /*============================================================================*/
 /* func Qiniu_RS_Copy */
 
-Qiniu_Error Qiniu_RS_Copy(Qiniu_Client* self, 
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Copy(Qiniu_Client* self, 
         const char* tableNameSrc, const char* keySrc, 
         const char* tableNameDest, const char* keyDest);
 
 /*============================================================================*/
 /* func Qiniu_RS_Move */
 
-Qiniu_Error Qiniu_RS_Move(Qiniu_Client* self, 
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Move(Qiniu_Client* self, 
         const char* tableNameSrc, const char* keySrc, 
         const char* tableNameDest, const char* keyDest);
 
@@ -112,7 +113,7 @@ typedef struct _Qiniu_RS_BatchStatRet {
 
 typedef int Qiniu_ItemCount;
 
-Qiniu_Error Qiniu_RS_BatchStat(
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchStat(
         Qiniu_Client* self, Qiniu_RS_BatchStatRet* rets,
         Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount);
 
@@ -128,7 +129,7 @@ typedef struct _Qiniu_RS_BatchItemRet {
 
 /* @endgist */
 
-Qiniu_Error Qiniu_RS_BatchDelete(
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchDelete(
         Qiniu_Client* self, Qiniu_RS_BatchItemRet* rets,
         Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount);
 
@@ -144,11 +145,11 @@ typedef struct _Qiniu_RS_EntryPathPair {
 
 /* @endgist */
 
-Qiniu_Error Qiniu_RS_BatchMove(
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchMove(
         Qiniu_Client* self, Qiniu_RS_BatchItemRet* rets,
         Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount);
 
-Qiniu_Error Qiniu_RS_BatchCopy(
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchCopy(
         Qiniu_Client* self, Qiniu_RS_BatchItemRet* rets,
         Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount);
 

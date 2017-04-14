@@ -10,7 +10,7 @@
 #include "http.h"
 #include <curl/curl.h>
 #include <openssl/hmac.h>
-#include<openssl/engine.h>
+#include <openssl/engine.h>
 
 #if defined(_WIN32)
 #pragma comment(lib, "libeay32.lib")
@@ -78,7 +78,7 @@ static Qiniu_Error Qiniu_Mac_Auth(
 
 	if (addlen > 0) {
 		HMAC_Update(&ctx, addition, addlen);
-	}
+	} 
 
 	HMAC_Final(&ctx, digest, &dgtlen);
 	HMAC_CTX_cleanup(&ctx);

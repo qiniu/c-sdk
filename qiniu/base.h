@@ -15,14 +15,12 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include "macro.h"
+
 /*============================================================================*/
 /* func type ssize_t */
 
 #ifdef _WIN32
-
-#ifndef QINIU_EXPORTS
-#pragma comment(lib, "qiniu.lib")
-#endif
 
 #include <sys/types.h>
 
@@ -101,7 +99,7 @@ typedef struct _Qiniu_Error {
 
 /* @endgist */
 
-extern Qiniu_Error Qiniu_OK;
+QINIU_DLLAPI extern Qiniu_Error Qiniu_OK;
 
 /*============================================================================*/
 /* type Qiniu_Free */
@@ -113,27 +111,27 @@ void Qiniu_Free(void* addr);
 
 typedef long Qiniu_Count;
 
-Qiniu_Count Qiniu_Count_Inc(Qiniu_Count* self);
-Qiniu_Count Qiniu_Count_Dec(Qiniu_Count* self);
+QINIU_DLLAPI extern Qiniu_Count Qiniu_Count_Inc(Qiniu_Count* self);
+QINIU_DLLAPI extern Qiniu_Count Qiniu_Count_Dec(Qiniu_Count* self);
 
 /*============================================================================*/
 /* func Qiniu_String_Concat */
 
-char* Qiniu_String_Concat2(const char* s1, const char* s2);
-char* Qiniu_String_Concat3(const char* s1, const char* s2, const char* s3);
-char* Qiniu_String_Concat(const char* s1, ...);
+QINIU_DLLAPI extern char* Qiniu_String_Concat2(const char* s1, const char* s2);
+QINIU_DLLAPI extern char* Qiniu_String_Concat3(const char* s1, const char* s2, const char* s3);
+QINIU_DLLAPI extern char* Qiniu_String_Concat(const char* s1, ...);
 
-char* Qiniu_String_Format(size_t initSize, const char* fmt, ...);
+QINIU_DLLAPI extern char* Qiniu_String_Format(size_t initSize, const char* fmt, ...);
 
-char* Qiniu_String_Join(const char* deli, char* strs[], int strCount);
-char* Qiniu_String_Dup(const char* src);
+QINIU_DLLAPI extern char* Qiniu_String_Join(const char* deli, char* strs[], int strCount);
+QINIU_DLLAPI extern char* Qiniu_String_Dup(const char* src);
 
 /*============================================================================*/
 /* func Qiniu_String_Encode */
 
-char* Qiniu_Memory_Encode(const char* buf, const size_t cb);
-char* Qiniu_String_Encode(const char* s);
-char* Qiniu_String_Decode(const char* s);
+QINIU_DLLAPI extern char* Qiniu_Memory_Encode(const char* buf, const size_t cb);
+QINIU_DLLAPI extern char* Qiniu_String_Encode(const char* s);
+QINIU_DLLAPI extern char* Qiniu_String_Decode(const char* s);
 
 /*============================================================================*/
 /* func Qiniu_QueryEscape */
@@ -156,7 +154,7 @@ typedef struct _Qiniu_Reader {
 	Qiniu_FnRead Read;
 } Qiniu_Reader;
 
-Qiniu_Reader Qiniu_FILE_Reader(FILE* fp);
+QINIU_DLLAPI extern Qiniu_Reader Qiniu_FILE_Reader(FILE* fp);
 
 /*============================================================================*/
 /* type Qiniu_Writer */
@@ -168,8 +166,8 @@ typedef struct _Qiniu_Writer {
 	Qiniu_FnWrite Write;
 } Qiniu_Writer;
 
-Qiniu_Writer Qiniu_FILE_Writer(FILE* fp);
-Qiniu_Error Qiniu_Copy(Qiniu_Writer w, Qiniu_Reader r, void* buf, size_t n, Qiniu_Int64* ret);
+QINIU_DLLAPI extern Qiniu_Writer Qiniu_FILE_Writer(FILE* fp);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_Copy(Qiniu_Writer w, Qiniu_Reader r, void* buf, size_t n, Qiniu_Int64* ret);
 
 #define Qiniu_Stderr Qiniu_FILE_Writer(stderr)
 
@@ -196,40 +194,40 @@ typedef struct _Qiniu_Buffer {
 	char* bufEnd;
 } Qiniu_Buffer;
 
-void Qiniu_Buffer_Init(Qiniu_Buffer* self, size_t initSize);
-void Qiniu_Buffer_Reset(Qiniu_Buffer* self);
-void Qiniu_Buffer_AppendInt(Qiniu_Buffer* self, Qiniu_Int64 v);
-void Qiniu_Buffer_AppendUint(Qiniu_Buffer* self, Qiniu_Uint64 v);
-void Qiniu_Buffer_AppendError(Qiniu_Buffer* self, Qiniu_Error v);
-void Qiniu_Buffer_AppendEncodedBinary(Qiniu_Buffer* self, const char* buf, size_t cb);
-void Qiniu_Buffer_AppendFormat(Qiniu_Buffer* self, const char* fmt, ...);
-void Qiniu_Buffer_AppendFormatV(Qiniu_Buffer* self, const char* fmt, Qiniu_Valist* args);
-void Qiniu_Buffer_Cleanup(Qiniu_Buffer* self);
+QINIU_DLLAPI extern void Qiniu_Buffer_Init(Qiniu_Buffer* self, size_t initSize);
+QINIU_DLLAPI extern void Qiniu_Buffer_Reset(Qiniu_Buffer* self);
+QINIU_DLLAPI extern void Qiniu_Buffer_AppendInt(Qiniu_Buffer* self, Qiniu_Int64 v);
+QINIU_DLLAPI extern void Qiniu_Buffer_AppendUint(Qiniu_Buffer* self, Qiniu_Uint64 v);
+QINIU_DLLAPI extern void Qiniu_Buffer_AppendError(Qiniu_Buffer* self, Qiniu_Error v);
+QINIU_DLLAPI extern void Qiniu_Buffer_AppendEncodedBinary(Qiniu_Buffer* self, const char* buf, size_t cb);
+QINIU_DLLAPI extern void Qiniu_Buffer_AppendFormat(Qiniu_Buffer* self, const char* fmt, ...);
+QINIU_DLLAPI extern void Qiniu_Buffer_AppendFormatV(Qiniu_Buffer* self, const char* fmt, Qiniu_Valist* args);
+QINIU_DLLAPI extern void Qiniu_Buffer_Cleanup(Qiniu_Buffer* self);
 
-const char* Qiniu_Buffer_CStr(Qiniu_Buffer* self);
-const char* Qiniu_Buffer_Format(Qiniu_Buffer* self, const char* fmt, ...);
+QINIU_DLLAPI extern const char* Qiniu_Buffer_CStr(Qiniu_Buffer* self);
+QINIU_DLLAPI extern const char* Qiniu_Buffer_Format(Qiniu_Buffer* self, const char* fmt, ...);
 
-void Qiniu_Buffer_PutChar(Qiniu_Buffer* self, char ch);
+QINIU_DLLAPI extern void Qiniu_Buffer_PutChar(Qiniu_Buffer* self, char ch);
 
-size_t Qiniu_Buffer_Len(Qiniu_Buffer* self);
-size_t Qiniu_Buffer_Write(Qiniu_Buffer* self, const void* buf, size_t n);
-size_t Qiniu_Buffer_Fwrite(const void* buf, size_t, size_t n, void* self);
+QINIU_DLLAPI extern size_t Qiniu_Buffer_Len(Qiniu_Buffer* self);
+QINIU_DLLAPI extern size_t Qiniu_Buffer_Write(Qiniu_Buffer* self, const void* buf, size_t n);
+QINIU_DLLAPI extern size_t Qiniu_Buffer_Fwrite(const void* buf, size_t, size_t n, void* self);
 
-Qiniu_Writer Qiniu_BufWriter(Qiniu_Buffer* self);
+QINIU_DLLAPI extern Qiniu_Writer Qiniu_BufWriter(Qiniu_Buffer* self);
 
-char* Qiniu_Buffer_Expand(Qiniu_Buffer* self, size_t n);
-void Qiniu_Buffer_Commit(Qiniu_Buffer* self, char* p);
+QINIU_DLLAPI extern char* Qiniu_Buffer_Expand(Qiniu_Buffer* self, size_t n);
+QINIU_DLLAPI extern void Qiniu_Buffer_Commit(Qiniu_Buffer* self, char* p);
 
 typedef void (*Qiniu_FnAppender)(Qiniu_Buffer* self, Qiniu_Valist* ap);
 
-void Qiniu_Format_Register(char esc, Qiniu_FnAppender appender);
+QINIU_DLLAPI extern void Qiniu_Format_Register(char esc, Qiniu_FnAppender appender);
 
 /*============================================================================*/
 /* func Qiniu_Null_Fwrite */
 
-size_t Qiniu_Null_Fwrite(const void* buf, size_t, size_t n, void* self);
+QINIU_DLLAPI extern size_t Qiniu_Null_Fwrite(const void* buf, size_t, size_t n, void* self);
 
-extern Qiniu_Writer Qiniu_Discard;
+QINIU_DLLAPI extern Qiniu_Writer Qiniu_Discard;
 
 /*============================================================================*/
 /* type Qiniu_ReadBuf */
@@ -240,8 +238,8 @@ typedef struct _Qiniu_ReadBuf {
 	Qiniu_Off_T limit;
 } Qiniu_ReadBuf;
 
-Qiniu_Reader Qiniu_BufReader(Qiniu_ReadBuf* self, const char* buf, size_t bytes);
-Qiniu_ReaderAt Qiniu_BufReaderAt(Qiniu_ReadBuf* self, const char* buf, size_t bytes);
+QINIU_DLLAPI extern Qiniu_Reader Qiniu_BufReader(Qiniu_ReadBuf* self, const char* buf, size_t bytes);
+QINIU_DLLAPI extern Qiniu_ReaderAt Qiniu_BufReaderAt(Qiniu_ReadBuf* self, const char* buf, size_t bytes);
 
 /*============================================================================*/
 /* type Qiniu_Tee */
@@ -251,7 +249,7 @@ typedef struct _Qiniu_Tee {
 	Qiniu_Writer w;
 } Qiniu_Tee;
 
-Qiniu_Reader Qiniu_TeeReader(Qiniu_Tee* self, Qiniu_Reader r, Qiniu_Writer w);
+QINIU_DLLAPI extern Qiniu_Reader Qiniu_TeeReader(Qiniu_Tee* self, Qiniu_Reader r, Qiniu_Writer w);
 
 /*============================================================================*/
 /* type Qiniu_Section */
@@ -262,18 +260,18 @@ typedef struct _Qiniu_Section {
 	Qiniu_Off_T limit;
 } Qiniu_Section;
 
-Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, Qiniu_Off_T off, size_t n);
+QINIU_DLLAPI extern Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, Qiniu_Off_T off, size_t n);
 
 /*============================================================================*/
 /* type Qiniu_Crc32 */
 
-unsigned long Qiniu_Crc32_Update(unsigned long inCrc32, const void *buf, size_t bufLen);
+QINIU_DLLAPI extern unsigned long Qiniu_Crc32_Update(unsigned long inCrc32, const void *buf, size_t bufLen);
 
 typedef struct _Qiniu_Crc32 {
 	unsigned long val;
 } Qiniu_Crc32;
 
-Qiniu_Writer Qiniu_Crc32Writer(Qiniu_Crc32* self, unsigned long inCrc32);
+QINIU_DLLAPI extern Qiniu_Writer Qiniu_Crc32Writer(Qiniu_Crc32* self, unsigned long inCrc32);
 
 /*============================================================================*/
 /* type Qiniu_File */
@@ -288,19 +286,23 @@ typedef struct _Qiniu_FileInfo {
 	time_t          st_ctime;   /* time of last status change */
 } Qiniu_FileInfo;
 #else
+
+#include <sys/stat.h>
+
 typedef struct stat Qiniu_FileInfo;
+
 #endif
 
-Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file);
-Qiniu_Error Qiniu_File_Stat(Qiniu_File* self, Qiniu_FileInfo* fi);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_File_Open(Qiniu_File** pp, const char* file);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_File_Stat(Qiniu_File* self, Qiniu_FileInfo* fi);
 
 #define Qiniu_FileInfo_Fsize(fi) ((fi).st_size)
 
-void Qiniu_File_Close(void* self);
+QINIU_DLLAPI extern void Qiniu_File_Close(void* self);
 
-ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, Qiniu_Off_T offset);
+QINIU_DLLAPI extern ssize_t Qiniu_File_ReadAt(void* self, void *buf, size_t bytes, Qiniu_Off_T offset);
 
-Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self);
+QINIU_DLLAPI extern Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self);
 
 /*============================================================================*/
 /* type Qiniu_Log */
@@ -312,12 +314,12 @@ Qiniu_ReaderAt Qiniu_FileReaderAt(Qiniu_File* self);
 #define Qiniu_Lpanic	4
 #define Qiniu_Lfatal	5
 
-void Qiniu_Logv(Qiniu_Writer w, int level, const char* fmt, Qiniu_Valist* args);
+QINIU_DLLAPI extern void Qiniu_Logv(Qiniu_Writer w, int level, const char* fmt, Qiniu_Valist* args);
 
-void Qiniu_Stderr_Info(const char* fmt, ...);
-void Qiniu_Stderr_Warn(const char* fmt, ...);
+QINIU_DLLAPI extern void Qiniu_Stderr_Info(const char* fmt, ...);
+QINIU_DLLAPI extern void Qiniu_Stderr_Warn(const char* fmt, ...);
 
-void Qiniu_Null_Log(const char* fmt, ...);
+QINIU_DLLAPI extern void Qiniu_Null_Log(const char* fmt, ...);
 
 #ifndef Qiniu_Log_Info
 

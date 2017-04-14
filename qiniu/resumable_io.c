@@ -7,6 +7,7 @@
  ============================================================================
  */
 
+#include "region.h"
 #include "resumable_io.h"
 #include <curl/curl.h>
 #include <sys/stat.h>
@@ -20,6 +21,72 @@
 
 /*============================================================================*/
 /* type Qiniu_Rio_ST - SingleThread */
+
+#if defined(_WIN32)
+
+#include <windows.h>
+
+typedef struct _Qiniu_Rio_MTWG_Data
+{
+    Qiniu_Count addedCount;
+    Qiniu_Count doneCount;
+    HANDLE event;
+} Qiniu_Rio_MTWG_Data;
+
+static void Qiniu_Rio_MTWG_Add(void* self, int n)
+{
+    Qiniu_Count_Inc(&((Qiniu_Rio_MTWG_Data*)self)->addedCount);
+} // Qiniu_Rio_MTWG_Add
+
+static void Qiniu_Rio_MTWG_Done(void* self)
+{
+    Qiniu_Count_Inc(&((Qiniu_Rio_MTWG_Data*)self)->doneCount);
+    SetEvent(((Qiniu_Rio_MTWG_Data*)self)->event);
+} // Qiniu_Rio_MTWG_Done
+
+static void Qiniu_Rio_MTWG_Wait(void* self)
+{
+    Qiniu_Rio_MTWG_Data * data = (Qiniu_Rio_MTWG_Data*)self;
+    Qiniu_Count lastDoneCount = data->doneCount;
+    DWORD ret = 0;
+
+    while (lastDoneCount != data->addedCount) {
+        ret = WaitForSingleObject(((Qiniu_Rio_MTWG_Data*)self)->event, INFINITE);
+        if (ret == WAIT_OBJECT_0) {
+            lastDoneCount = data->doneCount;
+        }
+    } // while
+} // Qiniu_Rio_MTWG_Wait
+
+static void Qiniu_Rio_MTWG_Release(void* self)
+{
+    CloseHandle(((Qiniu_Rio_MTWG_Data*)self)->event);
+    free(self);
+} // Qiniu_Rio_MTWG_Release
+
+static Qiniu_Rio_WaitGroup_Itbl Qiniu_Rio_MTWG_Itbl = {
+    &Qiniu_Rio_MTWG_Add,
+    &Qiniu_Rio_MTWG_Done,
+    &Qiniu_Rio_MTWG_Wait,
+    &Qiniu_Rio_MTWG_Release,
+};
+
+Qiniu_Rio_WaitGroup Qiniu_Rio_MTWG_Create(void)
+{
+    Qiniu_Rio_WaitGroup wg;
+    Qiniu_Rio_MTWG_Data * newData = NULL;
+
+    newData = (Qiniu_Rio_MTWG_Data*)malloc(sizeof(*newData));
+    newData->addedCount = 0;
+    newData->doneCount = 0;
+    newData->event = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+    wg.itbl = &Qiniu_Rio_MTWG_Itbl;
+    wg.self = newData;
+    return wg;
+} // Qiniu_Rio_MTWG_Create
+
+#endif
 
 static void Qiniu_Rio_STWG_Add(void* self, int n) {}
 static void Qiniu_Rio_STWG_Done(void* self)	{}
@@ -45,8 +112,9 @@ static Qiniu_Client* Qiniu_Rio_ST_ClientTls(void* self, Qiniu_Client* mc) {
 	return mc;
 }
 
-static void Qiniu_Rio_ST_RunTask(void* self, void (*task)(void* params), void* params) {
+static int Qiniu_Rio_ST_RunTask(void* self, void (*task)(void* params), void* params) {
 	task(params);
+    return QINIU_RIO_NOTIFY_OK;
 }
 
 static Qiniu_Rio_ThreadModel_Itbl Qiniu_Rio_ST_Itbl = {
@@ -129,7 +197,7 @@ static void Qiniu_Rio_BlkputRet_Cleanup(Qiniu_Rio_BlkputRet* self)
 {
 	if (self->ctx != NULL) {
 		free((void*)self->ctx);
-		self->ctx = NULL;
+		memset(self, 0, sizeof(*self));
 	}
 }
 
@@ -217,6 +285,7 @@ static Qiniu_Error Qiniu_Rio_PutExtra_Init(
 	if (self->threadModel.itbl == NULL) {
 		self->threadModel = settings.threadModel;
 	}
+
 	return Qiniu_OK;
 }
 
@@ -254,28 +323,72 @@ static void Qiniu_Io_PutExtra_initFrom(Qiniu_Io_PutExtra* self, Qiniu_Rio_PutExt
 static Qiniu_Error Qiniu_Rio_bput(
 	Qiniu_Client* self, Qiniu_Rio_BlkputRet* ret, Qiniu_Reader body, int bodyLength, const char* url)
 {
+	Qiniu_Rio_BlkputRet retFromResp;
 	Qiniu_Json* root;
+
 	Qiniu_Error err = Qiniu_Client_CallWithBinary(self, &root, url, body, bodyLength, NULL);
 	if (err.code == 200) {
-		ret->ctx = Qiniu_Json_GetString(root, "ctx", NULL);
-		ret->checksum = Qiniu_Json_GetString(root, "checksum", NULL);
-		ret->host = Qiniu_Json_GetString(root, "host", NULL);
-		ret->crc32 = (Qiniu_Uint32)Qiniu_Json_GetInt64(root, "crc32", 0);
-		ret->offset = (Qiniu_Uint32)Qiniu_Json_GetInt64(root, "offset", 0);
-		if (ret->ctx == NULL || ret->host == NULL || ret->offset == 0) {
+		retFromResp.ctx = Qiniu_Json_GetString(root, "ctx", NULL);
+		retFromResp.checksum = Qiniu_Json_GetString(root, "checksum", NULL);
+		retFromResp.host = Qiniu_Json_GetString(root, "host", NULL);
+		retFromResp.crc32 = (Qiniu_Uint32)Qiniu_Json_GetInt64(root, "crc32", 0);
+		retFromResp.offset = (Qiniu_Uint32)Qiniu_Json_GetInt64(root, "offset", 0);
+
+		if (retFromResp.ctx == NULL || retFromResp.host == NULL || retFromResp.offset == 0) {
 			err.code = 9998;
 			err.message = "unexcepted response: invalid ctx, host or offset";
+			return err;
 		}
+
+		Qiniu_Rio_BlkputRet_Assign(ret, &retFromResp);
 	}
+
 	return err;
 }
 
 static Qiniu_Error Qiniu_Rio_Mkblock(
-	Qiniu_Client* self, Qiniu_Rio_BlkputRet* ret, int blkSize, Qiniu_Reader body, int bodyLength)
+	Qiniu_Client* self, Qiniu_Rio_BlkputRet* ret, int blkSize, Qiniu_Reader body, int bodyLength, Qiniu_Rio_PutExtra* extra)
 {
-	char* url = Qiniu_String_Format(128, "%s/mkblk/%d", QINIU_UP_HOST, blkSize);
-	Qiniu_Error err = Qiniu_Rio_bput(self, ret, body, bodyLength, url);
+	Qiniu_Error err;
+	Qiniu_Rgn_HostVote upHostVote;
+	const char * upHost = NULL;
+	char* url = NULL;
+
+	//// For using multi-region storage.
+	{
+		if ((upHost = extra->upHost) == NULL) {
+			if (Qiniu_Rgn_IsEnabled()) {
+				if (extra->upBucket && extra->accessKey) {
+					err = Qiniu_Rgn_Table_GetHost(self->regionTable, self, extra->upBucket, extra->accessKey, extra->upHostFlags, &upHost, &upHostVote);
+				} else {
+					err = Qiniu_Rgn_Table_GetHostByUptoken(self->regionTable, self, extra->uptoken, extra->upHostFlags, &upHost, &upHostVote);
+				} // if
+				if (err.code != 200) {
+					return err;
+				} // if
+			} else {
+				upHost = QINIU_UP_HOST;
+			} // if
+
+			if (upHost == NULL) {
+				err.code = 9988;
+				err.message = "No proper upload host name";
+				return err;
+			} // if
+		} // if
+	} 
+
+	url = Qiniu_String_Format(128, "%s/mkblk/%d", upHost, blkSize);
+	err = Qiniu_Rio_bput(self, ret, body, bodyLength, url);
 	Qiniu_Free(url);
+
+	//// For using multi-region storage.
+	{
+		if (Qiniu_Rgn_IsEnabled()) {
+			Qiniu_Rgn_Table_VoteHost(self->regionTable, &upHostVote, err);
+		} // if
+	}
+
 	return err;
 }
 
@@ -326,7 +439,7 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 		body1 = Qiniu_SectionReader(&section, f, (Qiniu_Off_T)offbase, bodyLength);
 		body = Qiniu_TeeReader(&tee, body1, h);
 
-		err = Qiniu_Rio_Mkblock(c, ret, blkSize, body, bodyLength);
+		err = Qiniu_Rio_Mkblock(c, ret, blkSize, body, bodyLength, extra);
 		if (err.code != 200) {
 			return err;
 		}
@@ -336,7 +449,7 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 		notifyRet = extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
         if (notifyRet == QINIU_RIO_NOTIFY_EXIT) {
             // Terminate the upload process if  the caller requests
-            err.code = 9995;
+            err.code = Qiniu_Rio_PutInterrupted;
             err.message = "Interrupted by the caller";
             return err;
         }
@@ -363,7 +476,7 @@ lzRetry:
 				notifyRet = extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
                 if (notifyRet == QINIU_RIO_NOTIFY_EXIT) {
                     // Terminate the upload process if the caller requests
-                    err.code = 9995;
+                    err.code = Qiniu_Rio_PutInterrupted;
                     err.message = "Interrupted by the caller";
                     return err;
                 }
@@ -374,7 +487,7 @@ lzRetry:
 			err = ErrUnmatchedChecksum;
 		} else {
 			if (err.code == Qiniu_Rio_InvalidCtx) {
-				ret->ctx = NULL; // reset
+				Qiniu_Rio_BlkputRet_Cleanup(ret); // reset
 				Qiniu_Log_Warn("ResumableBlockput: invalid ctx, please retry");
 				return err;
 			}
@@ -402,7 +515,7 @@ static Qiniu_Error Qiniu_Rio_Mkfile(
 	Qiniu_Buffer url, body;
 
 	Qiniu_Buffer_Init(&url, 1024);
-	Qiniu_Buffer_AppendFormat(&url, "%s/mkfile/%D", QINIU_UP_HOST, fsize);
+	Qiniu_Buffer_AppendFormat(&url, "%s/mkfile/%D", extra->upHost, fsize);
 
 	if (NULL != key) {
 		Qiniu_Buffer_AppendFormat(&url, "/key/%S", key);
@@ -452,12 +565,39 @@ static Qiniu_Error Qiniu_Rio_Mkfile2(
 	size_t i, blkCount = extra->blockCnt;
 	Qiniu_Json* root;
 	Qiniu_Error err;
+	Qiniu_Rgn_HostVote upHostVote;
+	const char * upHost = NULL;
 	Qiniu_Rio_BlkputRet* prog;
 	Qiniu_Buffer url, body;
 	int j = 0;
 
 	Qiniu_Buffer_Init(&url, 2048);
-	Qiniu_Buffer_AppendFormat(&url, "%s/mkfile/%D", QINIU_UP_HOST, fsize);
+
+	//// For using multi-region storage.
+	{
+		if ((upHost = extra->upHost) == NULL) {
+			if (Qiniu_Rgn_IsEnabled()) {
+				if (extra->upBucket && extra->accessKey) {
+					err = Qiniu_Rgn_Table_GetHost(c->regionTable, c, extra->upBucket, extra->accessKey, extra->upHostFlags, &upHost, &upHostVote);
+				} else {
+					err = Qiniu_Rgn_Table_GetHostByUptoken(c->regionTable, c, extra->uptoken, extra->upHostFlags, &upHost, &upHostVote);
+				} // if
+				if (err.code != 200) {
+					return err;
+				} // if
+			} else {
+				upHost = QINIU_UP_HOST;
+			} // if
+
+			if (upHost == NULL) {
+				err.code = 9988;
+				err.message = "No proper upload host name";
+				return err;
+			} // if
+		} // if
+	} 
+
+	Qiniu_Buffer_AppendFormat(&url, "%s/mkfile/%D", upHost, fsize);
 
 	if (key != NULL) {
 		// Allow using empty key
@@ -485,6 +625,13 @@ static Qiniu_Error Qiniu_Rio_Mkfile2(
 	Qiniu_Buffer_Cleanup(&url);
 	Qiniu_Buffer_Cleanup(&body);
 
+	//// For using multi-region storage.
+	{
+		if (Qiniu_Rgn_IsEnabled()) {
+			Qiniu_Rgn_Table_VoteHost(c->regionTable, &upHostVote, err);
+		} // if
+	}
+
 	if (err.code == 200) {
 		ret->hash = Qiniu_Json_GetString(root, "hash", NULL);
 		ret->key = Qiniu_Json_GetString(root, "key", NULL);
@@ -508,6 +655,7 @@ typedef struct _Qiniu_Rio_task {
 	Qiniu_Rio_PutExtra* extra;
 	Qiniu_Rio_WaitGroup wg;
 	int* nfails;
+	Qiniu_Count* ninterrupts;
 	int blkIdx;
 	int blkSize1;
 } Qiniu_Rio_task;
@@ -524,12 +672,25 @@ static void Qiniu_Rio_doTask(void* params)
 	int blkIdx = task->blkIdx;
 	int tryTimes = extra->tryTimes;
 
+	if ((*task->ninterrupts) > 0) {
+		free(task);
+		Qiniu_Count_Inc(task->ninterrupts);
+		wg.itbl->Done(wg.self);
+		return;
+	}
+
+	memset(&ret, 0, sizeof(ret));
+
 lzRetry:
-	ret = extra->progresses[blkIdx];
+	Qiniu_Rio_BlkputRet_Assign(&ret, &extra->progresses[blkIdx]);
 	err = Qiniu_Rio_ResumableBlockput(c, &ret, task->f, blkIdx, task->blkSize1, extra);
 	if (err.code != 200) {
-        if (err.code == 9995) {
+        if (err.code == Qiniu_Rio_PutInterrupted) {
             // Terminate the upload process if the caller requests
+			Qiniu_Rio_BlkputRet_Cleanup(&ret);
+			Qiniu_Count_Inc(task->ninterrupts);
+			free(task);
+			wg.itbl->Done(wg.self);
             return;
         }
 
@@ -544,8 +705,9 @@ lzRetry:
 	} else {
 		Qiniu_Rio_BlkputRet_Assign(&extra->progresses[blkIdx], &ret);
 	}
-	wg.itbl->Done(wg.self);
+	Qiniu_Rio_BlkputRet_Cleanup(&ret);
 	free(task);
+	wg.itbl->Done(wg.self);
 }
 
 /*============================================================================*/
@@ -553,6 +715,9 @@ lzRetry:
 
 static Qiniu_Error ErrPutFailed = {
 	Qiniu_Rio_PutFailed, "resumable put failed"
+};
+static Qiniu_Error ErrPutInterrupted = {
+	Qiniu_Rio_PutInterrupted, "resumable put interrupted"
 };
 
 Qiniu_Error Qiniu_Rio_Put(
@@ -567,18 +732,29 @@ Qiniu_Error Qiniu_Rio_Put(
 	Qiniu_Auth auth, auth1 = self->auth;
 	int i, last, blkSize;
 	int nfails;
+    int retCode;
+    Qiniu_Count ninterrupts;
 	Qiniu_Error err = Qiniu_Rio_PutExtra_Init(&extra, fsize, extra1);
 	if (err.code != 200) {
 		return err;
 	}
 
+	//// For using multi-region storage.
+	{
+		if (Qiniu_Rgn_IsEnabled()) {
+			if (!extra.uptoken) {
+				extra.uptoken = uptoken;
+			} // if
+		} // if
+	}
+
 	tm = extra.threadModel;
 	wg = tm.itbl->WaitGroup(tm.self);
-	wg.itbl->Add(wg.self, extra.blockCnt);
 
 	last = extra.blockCnt - 1;
 	blkSize = 1 << blockBits;
 	nfails = 0;
+    ninterrupts = 0;
 
 	self->auth = auth = Qiniu_UptokenAuth(uptoken);
 
@@ -589,24 +765,39 @@ Qiniu_Error Qiniu_Rio_Put(
 		task->mc = self;
 		task->wg = wg;
 		task->nfails = &nfails;
+		task->ninterrupts = &ninterrupts;
 		task->blkIdx = i;
 		task->blkSize1 = blkSize;
 		if (i == last) {
 			offbase = (Qiniu_Int64)(i) << blockBits;
 			task->blkSize1 = (int)(fsize - offbase);
 		}
-		tm.itbl->RunTask(tm.self, Qiniu_Rio_doTask, task);
-	}
+
+		wg.itbl->Add(wg.self, 1);
+		retCode = tm.itbl->RunTask(tm.self, Qiniu_Rio_doTask, task);
+		if (retCode == QINIU_RIO_NOTIFY_EXIT) {
+			wg.itbl->Done(wg.self);
+			Qiniu_Count_Inc(&ninterrupts);
+            free(task);
+		}
+
+		if (ninterrupts > 0) {
+			break;
+		}
+	} // for
 
 	wg.itbl->Wait(wg.self);
 	if (nfails != 0) {
 		err = ErrPutFailed;
+    } else if (ninterrupts != 0) {
+		err = ErrPutInterrupted;
 	} else {
 		err = Qiniu_Rio_Mkfile2(self, ret, key, fsize, &extra);
 	}
 
 	Qiniu_Rio_PutExtra_Cleanup(&extra);
 
+	wg.itbl->Release(wg.self);
 	auth.itbl->Release(auth.self);
 	self->auth = auth1;
 	return err;

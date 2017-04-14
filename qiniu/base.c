@@ -226,6 +226,7 @@ char* Qiniu_String_Join(const char* deli, char* strs[], int strCount)
 	int i = 0;
 	char * ret = NULL;
 	char * pos = NULL;
+	char * tmpRet = NULL;
 	size_t totalLen = 0;
 	size_t copyLen = 0;
 	size_t deliLen = 0;

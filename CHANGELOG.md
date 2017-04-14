@@ -1,5 +1,29 @@
 ## CHANGE LOG
 
+### v7.x?
+
+>从[github/BluntBlade/20170111.timestamp_token](https://github.com/bluntblade/c-sdk/tree/20170111.timestamp_token)这个分支代码修改而来。
+
+- **http**新增Qiniu_Client_CallWithBuffer2
+
+- **CDN**新增功能：
+
+  - `RefreshUrls`
+  
+  - `RefreshDirs`
+  
+  - `PrefetchUrls`
+  
+  - `GetFluxData`
+  
+  - `GetBandwidthData`
+  
+  - `GetLogList`
+  
+- **io**新增PutStream
+
+- 新增put_strem和cdn示例代码
+
 ### v6.2.4
 
 - 单元测试调整

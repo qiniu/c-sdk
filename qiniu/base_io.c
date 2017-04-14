@@ -12,8 +12,12 @@
 #include <sys/stat.h>
 #include <errno.h>
 
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#endif
+
 #ifdef _WIN32
-#include "../../c-sdk-wdeps/emu-posix/emu_posix.h" // for type Qiniu_Posix_File
+#include "../windows/emu_posix.h" // for type Qiniu_Posix_File
 #else
 #include <unistd.h>
 #define Qiniu_Posix_Handle	int
@@ -87,7 +91,7 @@ unsigned long Qiniu_Crc32_Update(unsigned long inCrc32, const void *buf, size_t 
 	return crc32 ^ 0xFFFFFFFF;
 }
 
-size_t Qiniu_Crc32_Fwrite(const void* buf, size_t cbelem, size_t n, Qiniu_Crc32* self)
+static size_t Qiniu_Crc32_Fwrite(const void* buf, size_t cbelem, size_t n, Qiniu_Crc32* self)
 {
 	self->val = Qiniu_Crc32_Update(self->val, buf, n);
 	return n;
@@ -117,7 +121,7 @@ static size_t Qiniu_ReadBuf_Read(void *buf, size_t unused, size_t n, Qiniu_ReadB
 	return n;
 }
 
-ssize_t Qiniu_ReadBuf_ReadAt(Qiniu_ReadBuf* self, void *buf, size_t n, Qiniu_Off_T off)
+static ssize_t Qiniu_ReadBuf_ReadAt(Qiniu_ReadBuf* self, void *buf, size_t n, Qiniu_Off_T off)
 {
 	Qiniu_Int64 max = self->limit - off;
 	if (max <= 0) {
@@ -151,7 +155,7 @@ Qiniu_ReaderAt Qiniu_BufReaderAt(Qiniu_ReadBuf* self, const char* buf, size_t by
 /*============================================================================*/
 /* type Qiniu_Section */
 
-size_t Qiniu_Section_Read(void* buf, size_t unused, size_t n, Qiniu_Section* self)
+static size_t Qiniu_Section_Read(void* buf, size_t unused, size_t n, Qiniu_Section* self)
 {
 	Qiniu_Int64 max = 0;
 	ssize_t readBytes = 0;
@@ -184,7 +188,7 @@ Qiniu_Reader Qiniu_SectionReader(Qiniu_Section* self, Qiniu_ReaderAt r, Qiniu_Of
 /*============================================================================*/
 /* type Qiniu_Tee */
 
-size_t Qiniu_Tee_Read(void* buf, size_t unused, size_t n, Qiniu_Tee* self)
+static size_t Qiniu_Tee_Read(void* buf, size_t unused, size_t n, Qiniu_Tee* self)
 {
 	size_t nr = self->r.Read(buf, unused, n, self->r.self);
 	if (nr > 0) {
@@ -240,7 +244,7 @@ int Qiniu_Posix_Fstat(Qiniu_Posix_Handle fd, Qiniu_FileInfo* fi)
 	return 0;
 }
 
-#endif
+#else
 
 Qiniu_Error Qiniu_File_Stat(Qiniu_File* self, Qiniu_FileInfo* fi)
 {
@@ -249,10 +253,15 @@ Qiniu_Error Qiniu_File_Stat(Qiniu_File* self, Qiniu_FileInfo* fi)
 		err.code = errno;
 		err.message = "fstat failed";
 	} else {
+#if defined(__APPLE__) && defined(TARGET_OS_MAC)
+		fi->st_size >>= 32;
+#endif
 		err = Qiniu_OK;
 	}
 	return err;
 }
+
+#endif
 
 void Qiniu_File_Close(void* self)
 {
