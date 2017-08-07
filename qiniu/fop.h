@@ -22,27 +22,17 @@ extern "C"
 /*============================================================================*/
 /* func Qiniu_FOP_Pfop */
 
-/* @gist pfopargs */
-
-typedef struct _Qiniu_FOP_PfopArgs {
-	const char * bucket;
-	const char * key;
-	const char * notifyURL;
-	int force;
-	const char * pipeline;
-} Qiniu_FOP_PfopArgs;
-
-/* @endgist */
-
 /* @gist pfopret */
 
 typedef struct _Qiniu_FOP_PfopRet {
-	const char*  persistentId;
+    const char *persistentId;
 } Qiniu_FOP_PfopRet;
 
 /* @endgist */
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client* self, Qiniu_FOP_PfopRet* ret, Qiniu_FOP_PfopArgs* args, char* fop[], int fopCount);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, const char *bucket,
+                                               const char *key, char *fops[], int fopCount, const char *pipeline,
+                                               const char *notifyURL, int force);
 
 /*============================================================================*/
 
