@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
 
     char *accessKey = getenv("QINIU_ACCESS_KEY");
     char *secretKey = getenv("QINIU_SECRET_KEY");
-    char *bucket = "csdk";
+    char *bucket = getenv("QINIU_TEST_BUCKET");
     char *key = "qiniu.png";
     int fileType = 1;
 

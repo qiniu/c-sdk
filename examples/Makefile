@@ -6,16 +6,15 @@ SOURCE_FILES=\
     ../b64/urlsafe_b64.c\
     ../cJSON/cJSON.c\
     ../qiniu/auth_mac.c\
+    ../qiniu/conf.c\
     ../qiniu/base.c\
     ../qiniu/base_io.c\
     ../qiniu/cdn.c\
-    ../qiniu/conf.c\
     ../qiniu/fop.c\
     ../qiniu/http.c\
     ../qiniu/io.c\
     ../qiniu/qetag.c\
     ../qiniu/reader.c\
-    ../qiniu/region.c\
     ../qiniu/resumable_io.c\
     ../qiniu/rs.c\
     ../qiniu/rsf.c\
@@ -59,6 +58,12 @@ rsf_list_bucket: $(SOURCE_FILES) ./rsf_list_bucket.c
 
 up_create_uptoken: $(SOURCE_FILES) ./up_create_uptoken.c
 	gcc -g $^ -o exec_up_create_uptoken $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
+up_form_upload: $(SOURCE_FILES) ./up_form_upload.c
+	gcc -g $^ -o exec_up_form_upload $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
+test1: $(SOURCE_FILES) ./test.c
+	gcc -g $^ -o exec_test1 $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
 clean:
 	rm -rf *.dSYM exec*

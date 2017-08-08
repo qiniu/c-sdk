@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 
     char *accessKey = getenv("QINIU_ACCESS_KEY");
     char *secretKey = getenv("QINIU_SECRET_KEY");
-    char *bucket = "csdk";
+    char *bucket = getenv("QINIU_TEST_BUCKET");
     char *prefix = "";
     char *delimiter = "/";
     char *marker = "";
@@ -35,8 +35,8 @@ int main(int argc, char **argv) {
 
     do {
         Qiniu_Error error = Qiniu_RSF_ListFiles(&client, &listRet, bucket, prefix, delimiter, nextMarker, limit);
-        if(strcmp(nextMarker,"")!=0){
-           Qiniu_Free(nextMarker);
+        if (strcmp(nextMarker, "") != 0) {
+            Qiniu_Free(nextMarker);
         }
         if (error.code != 200) {
             printf("list files of bucket %s error.\n", bucket);
@@ -47,10 +47,10 @@ int main(int argc, char **argv) {
 
             //check next marker
             if (listRet.marker) {
-                size_t markerLen=strlen(listRet.marker)+1;
-                nextMarker = (char*)malloc(sizeof(char)*markerLen);
-                memset(nextMarker,0,markerLen);
-                snprintf(nextMarker,markerLen,"%s",listRet.marker);
+                size_t markerLen = strlen(listRet.marker) + 1;
+                nextMarker = (char *) malloc(sizeof(char) * markerLen);
+                memset(nextMarker, 0, markerLen);
+                snprintf(nextMarker, markerLen, "%s", listRet.marker);
             } else {
                 nextMarker = 0;
             }

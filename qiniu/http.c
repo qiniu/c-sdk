@@ -8,7 +8,6 @@
  */
 
 #include "http.h"
-#include "region.h"
 #include "../cJSON/cJSON.h"
 #include <curl/curl.h>
 
@@ -68,7 +67,6 @@ void Qiniu_Buffer_formatInit();
 
 void Qiniu_Global_Init(long flags) {
     Qiniu_Buffer_formatInit();
-    Qiniu_Rgn_Enable();
     curl_global_init(CURL_GLOBAL_ALL);
 }
 
@@ -260,8 +258,6 @@ void Qiniu_Client_InitEx(Qiniu_Client *self, Qiniu_Auth auth, size_t bufSize) {
 
     self->lowSpeedLimit = 0;
     self->lowSpeedTime = 0;
-
-    self->regionTable = Qiniu_Rgn_Table_Create();
 }
 
 void Qiniu_Client_InitNoAuth(Qiniu_Client *self, size_t bufSize) {
@@ -281,10 +277,6 @@ void Qiniu_Client_Cleanup(Qiniu_Client *self) {
         cJSON_Delete(self->root);
         self->root = NULL;
     }
-    if (self->regionTable != NULL) {
-        Qiniu_Rgn_Table_Destroy(self->regionTable);
-        self->regionTable = NULL;
-    } // if
     Qiniu_Buffer_Cleanup(&self->b);
     Qiniu_Buffer_Cleanup(&self->respHeader);
 }

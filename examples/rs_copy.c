@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
 
     char *accessKey = getenv("QINIU_ACCESS_KEY");
     char *secretKey = getenv("QINIU_SECRET_KEY");
-    char *srcBucket = "csdk";
+    char *srcBucket = getenv("QINIU_TEST_BUCKET");;
     char *srcKey = "qiniu.png";
     char *destBucket = srcBucket;
     char *destKey = "qiniu_copy.png";
