@@ -29,10 +29,10 @@ int main(int argc, char**argv) {
         /*200, 正确返回了, 你可以通过statRet变量查询一些关于这个文件的信息*/
         printf("stat file \t%s:%s success.\n\n", bucket, key);
         printf("file hash: \t%s\n", statRet.hash);
-        printf("file size: \t%ld\n", statRet.fsize);
-        printf("file put time: \t%ld\n", statRet.putTime);
+        printf("file size: \t%lld\n", statRet.fsize);
+        printf("file put time: \t%lld\n", statRet.putTime);
         printf("file mime type: \t%s\n", statRet.mimeType);
-        printf("file type: \t%ld\n", statRet.type);
+        printf("file type: \t%lld\n", statRet.type);
     }
 
     Qiniu_Client_Cleanup(&client);

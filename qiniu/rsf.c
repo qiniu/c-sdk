@@ -88,7 +88,7 @@ Qiniu_Error Qiniu_RSF_ListFiles(Qiniu_Client *self, Qiniu_RSF_ListRet *ret, cons
     if (err.code == 200) {
         ret->marker = Qiniu_Json_GetString(root, "marker", NULL);
         //check common prefixes
-        prefixCount = Qiniu_Json_GetArraySize(root, "commonPrefixes", NULL);
+        prefixCount = Qiniu_Json_GetArraySize(root, "commonPrefixes", 0);
         if (prefixCount > 0) {
             ret->commonPrefix = (Qiniu_RSF_CommonPrefix *) malloc(sizeof(Qiniu_RSF_CommonPrefix) * prefixCount);
             Qiniu_Json *commonPrefixes = Qiniu_Json_GetObjectItem(root, "commonPrefixes", NULL);
