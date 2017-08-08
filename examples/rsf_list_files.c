@@ -15,18 +15,18 @@ int main(int argc, char **argv) {
     char *bucket = "csdk";
     char *prefix = "";
     char *delimiter = "/";
-    char *marker = 0;
-    int limit = 100;
+    char *marker = "";
+    int limit = 3;
 
     Qiniu_Mac mac;
     mac.accessKey = accessKey;
     mac.secretKey = secretKey;
 
-    Qiniu_RSF_CommonPrefix *commonPrefix = 0;
-    Qiniu_RSF_CommonPrefix *nextPrefix = 0;
+    Qiniu_RSF_CommonPrefix *commonPrefix = NULL;
+    Qiniu_RSF_CommonPrefix *nextPrefix = NULL;
 
-    Qiniu_RSF_ListItem *item = 0;
-    Qiniu_RSF_ListItem *nextItem = 0;
+    Qiniu_RSF_ListItem *item = NULL;
+    Qiniu_RSF_ListItem *nextItem = NULL;
 
     //init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
@@ -54,30 +54,31 @@ int main(int argc, char **argv) {
                    item->key, item->hash, item->fsize, item->mimeType, item->putTime, item->endUser, item->type);
             item = item->next;
         }
-    }
 
-    //free
-    commonPrefix = listRet.commonPrefix;
-    nextPrefix = commonPrefix;
-    while (nextPrefix) {
-        commonPrefix = commonPrefix->next;
-        Qiniu_Free((void *) nextPrefix->value);
-        Qiniu_Free(nextPrefix);
+        //free common prefixes
+        commonPrefix = listRet.commonPrefix;
         nextPrefix = commonPrefix;
-    }
-
-    item = listRet.item;
-    nextItem = item;
-    while (nextItem) {
-        item = item->next;
-        Qiniu_Free((void *) nextItem->key);
-        Qiniu_Free((void *) nextItem->hash);
-        Qiniu_Free((void *) nextItem->mimeType);
-        if (nextItem->endUser) {
-            Qiniu_Free((void *) nextItem->endUser);
+        while (nextPrefix) {
+            commonPrefix = commonPrefix->next;
+            Qiniu_Free((void *) nextPrefix->value);
+            Qiniu_Free(nextPrefix);
+            nextPrefix = commonPrefix;
         }
-        Qiniu_Free(nextItem);
+
+        //free items
+        item = listRet.item;
         nextItem = item;
+        while (nextItem) {
+            item = item->next;
+            Qiniu_Free((void *) nextItem->key);
+            Qiniu_Free((void *) nextItem->hash);
+            Qiniu_Free((void *) nextItem->mimeType);
+            if (nextItem->endUser) {
+                Qiniu_Free((void *) nextItem->endUser);
+            }
+            Qiniu_Free(nextItem);
+            nextItem = item;
+        }
     }
 
     Qiniu_Client_Cleanup(&client);
