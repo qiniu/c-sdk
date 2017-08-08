@@ -62,6 +62,7 @@ QINIU_DLLAPI extern void Qiniu_Mutex_Unlock(Qiniu_Mutex* self);
 typedef struct cJSON Qiniu_Json;
 
 QINIU_DLLAPI extern const char* Qiniu_Json_GetString(Qiniu_Json* self, const char* key, const char* defval);
+QINIU_DLLAPI extern int Qiniu_Json_GetArraySize(Qiniu_Json *self, const char* key, Qiniu_Int64 defval);
 QINIU_DLLAPI extern const char* Qiniu_Json_GetStringAt(Qiniu_Json* self, int n, const char* defval);
 QINIU_DLLAPI extern Qiniu_Int64 Qiniu_Json_GetInt64(Qiniu_Json* self, const char* key, Qiniu_Int64 defval);
 QINIU_DLLAPI extern int Qiniu_Json_GetBoolean(Qiniu_Json* self, const char* key, int defval);

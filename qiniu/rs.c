@@ -9,518 +9,627 @@
 #include "rs.h"
 #include "../cJSON/cJSON.h"
 #include <time.h>
+#include <stdio.h>
 
 /*============================================================================*/
 /* type Qiniu_RS_PutPolicy/GetPolicy */
 
-char* Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy* auth, Qiniu_Mac* mac)
-{
-	int expires;
-	time_t deadline;
-	char* authstr;
-	char* token;
+char *Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy *auth, Qiniu_Mac *mac) {
+    int expires;
+    time_t deadline;
+    char *authstr;
+    char *token;
 
-	cJSON* root = cJSON_CreateObject();
+    cJSON *root = cJSON_CreateObject();
 
-	if (auth->scope) {
-		cJSON_AddStringToObject(root, "scope", auth->scope);
-	}
-	if (auth->callbackUrl) {
-		cJSON_AddStringToObject(root, "callbackUrl", auth->callbackUrl);
-	}
-	if (auth->callbackBody) {
-		cJSON_AddStringToObject(root, "callbackBody", auth->callbackBody);
-	}
-	if (auth->asyncOps) {
-		cJSON_AddStringToObject(root, "asyncOps", auth->asyncOps);
-	}
-	if (auth->returnUrl) {
-		cJSON_AddStringToObject(root, "returnUrl", auth->returnUrl);
-	}
-	if (auth->returnBody) {
-		cJSON_AddStringToObject(root, "returnBody", auth->returnBody);
-	}
-	if (auth->endUser) {
-		cJSON_AddStringToObject(root, "endUser", auth->endUser);
-	}
-	if (auth->persistentOps) {
-		cJSON_AddStringToObject(root, "persistentOps", auth->persistentOps);
-	}
-	if (auth->persistentNotifyUrl) {
-		cJSON_AddStringToObject(root, "persistentNotifyUrl", auth->persistentNotifyUrl);
-	}
-	if (auth->persistentPipeline) {
-		cJSON_AddStringToObject(root, "persistentPipeline", auth->persistentPipeline);
-	}
-	if (auth->mimeLimit) {
-		cJSON_AddStringToObject(root, "mimeLimit", auth->mimeLimit);
-	}
-
-	if (auth->fsizeLimit) {
-		cJSON_AddNumberToObject(root, "fsizeLimit", auth->fsizeLimit);
-	}
-	if (auth->detectMime) {
-		cJSON_AddNumberToObject(root, "detectMime", auth->detectMime);
-	}
-	if (auth->insertOnly) {
-		cJSON_AddNumberToObject(root, "insertOnly", auth->insertOnly);
-	}
-    if (auth->deleteAfterDays > 0) {
-		cJSON_AddNumberToObject(root, "deleteAfterDays", auth->deleteAfterDays);
+    if (auth->scope) {
+        cJSON_AddStringToObject(root, "scope", auth->scope);
+    }
+    if (auth->isPrefixalScope) {
+        cJSON_AddNumberToObject(root, "isPrefixalScope", auth->isPrefixalScope);
+    }
+    if (auth->saveKey) {
+        cJSON_AddStringToObject(root, "saveKey", auth->saveKey);
+    }
+    if (auth->callbackUrl) {
+        cJSON_AddStringToObject(root, "callbackUrl", auth->callbackUrl);
+    }
+    if (auth->callbackBody) {
+        cJSON_AddStringToObject(root, "callbackBody", auth->callbackBody);
+    }
+    if (auth->callbackBodyType) {
+        cJSON_AddStringToObject(root, "callbackBodyType", auth->callbackBodyType);
+    }
+    if (auth->callbackHost) {
+        cJSON_AddStringToObject(root, "callbackHost", auth->callbackHost);
+    }
+    if (auth->callbackFetchKey) {
+        cJSON_AddStringToObject(root, "callbackFetchKey", auth->callbackFetchKey);
+    }
+    if (auth->returnUrl) {
+        cJSON_AddStringToObject(root, "returnUrl", auth->returnUrl);
+    }
+    if (auth->returnBody) {
+        cJSON_AddStringToObject(root, "returnBody", auth->returnBody);
+    }
+    if (auth->endUser) {
+        cJSON_AddStringToObject(root, "endUser", auth->endUser);
+    }
+    if (auth->persistentOps) {
+        cJSON_AddStringToObject(root, "persistentOps", auth->persistentOps);
+    }
+    if (auth->persistentNotifyUrl) {
+        cJSON_AddStringToObject(root, "persistentNotifyUrl", auth->persistentNotifyUrl);
+    }
+    if (auth->persistentPipeline) {
+        cJSON_AddStringToObject(root, "persistentPipeline", auth->persistentPipeline);
+    }
+    if (auth->mimeLimit) {
+        cJSON_AddStringToObject(root, "mimeLimit", auth->mimeLimit);
+    }
+    if (auth->fsizeMin) {
+        cJSON_AddNumberToObject(root, "fsizeMin", auth->fsizeLimit);
+    }
+    if (auth->fsizeLimit) {
+        cJSON_AddNumberToObject(root, "fsizeLimit", auth->fsizeLimit);
+    }
+    if (auth->detectMime) {
+        cJSON_AddNumberToObject(root, "detectMime", auth->detectMime);
+    }
+    if (auth->insertOnly) {
+        cJSON_AddNumberToObject(root, "insertOnly", auth->insertOnly);
+    }
+    if (auth->deleteAfterDays) {
+        cJSON_AddNumberToObject(root, "deleteAfterDays", auth->deleteAfterDays);
+    }
+    if (auth->fileType) {
+        cJSON_AddNumberToObject(root, "fileType", auth->fileType);
     }
 
-	if (auth->expires) {
-		expires = auth->expires;
-	} else {
-		expires = 3600; // 1小时
-	}
-	time(&deadline);
-	deadline += expires;
-	cJSON_AddNumberToObject(root, "deadline", deadline);
+    if (auth->expires) {
+        expires = auth->expires;
+    } else {
+        expires = 3600; // 1小时
+    }
+    time(&deadline);
+    deadline += expires;
+    cJSON_AddNumberToObject(root, "deadline", deadline);
 
-	authstr = cJSON_PrintUnformatted(root);
-	cJSON_Delete(root);
+    authstr = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
 
-	token = Qiniu_Mac_SignToken(mac, authstr);
-	Qiniu_Free(authstr);
+    token = Qiniu_Mac_SignToken(mac, authstr);
+    Qiniu_Free(authstr);
 
-	return token;
+    return token;
 }
 
-char* Qiniu_RS_GetPolicy_MakeRequest(Qiniu_RS_GetPolicy* auth, const char* baseUrl, Qiniu_Mac* mac)
-{
-	int expires;
-	time_t deadline;
-	char  e[11];
-	char* authstr;
-	char* token;
-	char* request;
+char *Qiniu_RS_GetPolicy_MakeRequest(Qiniu_RS_GetPolicy *auth, const char *baseUrl, Qiniu_Mac *mac) {
+    int expires;
+    time_t deadline;
+    char e[11];
+    char *authstr;
+    char *token;
+    char *request;
 
-	if (auth->expires) {
-		expires = auth->expires;
-	} else {
-		expires = 3600; // 1小时
-	}
-	time(&deadline);
-	deadline += expires;
-	sprintf(e, "%u", (unsigned int)deadline);
+    if (auth->expires) {
+        expires = auth->expires;
+    } else {
+        expires = 3600; // 1小时
+    }
+    time(&deadline);
+    deadline += expires;
+    sprintf(e, "%u", (unsigned int) deadline);
 
-	if (strchr(baseUrl, '?') != NULL) {
-		authstr = Qiniu_String_Concat3(baseUrl, "&e=", e);
-	} else {
-		authstr = Qiniu_String_Concat3(baseUrl, "?e=", e);
-	}
+    if (strchr(baseUrl, '?') != NULL) {
+        authstr = Qiniu_String_Concat3(baseUrl, "&e=", e);
+    } else {
+        authstr = Qiniu_String_Concat3(baseUrl, "?e=", e);
+    }
 
-	token = Qiniu_Mac_Sign(mac, authstr);
+    token = Qiniu_Mac_Sign(mac, authstr);
 
-	request = Qiniu_String_Concat3(authstr, "&token=", token);
+    request = Qiniu_String_Concat3(authstr, "&token=", token);
 
-	Qiniu_Free(token);
-	Qiniu_Free(authstr);
+    Qiniu_Free(token);
+    Qiniu_Free(authstr);
 
-	return request;
+    return request;
 }
 
-char* Qiniu_RS_MakeBaseUrl(const char* domain, const char* key)
-{
-	Qiniu_Bool fesc;
-	char* baseUrl;
-	char* escapedKey = Qiniu_PathEscape(key, &fesc);
+char *Qiniu_RS_MakeBaseUrl(const char *domain, const char *key) {
+    Qiniu_Bool fesc;
+    char *baseUrl;
+    char *escapedKey = Qiniu_PathEscape(key, &fesc);
 
-	baseUrl = Qiniu_String_Concat("http://", domain, "/", escapedKey, NULL);
+    baseUrl = Qiniu_String_Concat(domain, "/", escapedKey, NULL);
 
-	if (fesc) {
-		Qiniu_Free(escapedKey);
-	}
+    if (fesc) {
+        Qiniu_Free(escapedKey);
+    }
 
-	return baseUrl;
+    return baseUrl;
 }
 
 /*============================================================================*/
 /* func Qiniu_RS_Stat */
 
 Qiniu_Error Qiniu_RS_Stat(
-	Qiniu_Client* self, Qiniu_RS_StatRet* ret, const char* tableName, const char* key)
-{
-	Qiniu_Error err;
-	cJSON* root;
+        Qiniu_Client *self, Qiniu_RS_StatRet *ret, const char *tableName, const char *key) {
+    Qiniu_Error err;
+    cJSON *root;
 
-	char* entryURI = Qiniu_String_Concat3(tableName, ":", key);
-	char* entryURIEncoded = Qiniu_String_Encode(entryURI);
-	char* url = Qiniu_String_Concat3(QINIU_RS_HOST, "/stat/", entryURIEncoded);
+    char *entryURI = Qiniu_String_Concat3(tableName, ":", key);
+    char *entryURIEncoded = Qiniu_String_Encode(entryURI);
+    char *url = Qiniu_String_Concat3(QINIU_RS_HOST, "/stat/", entryURIEncoded);
 
-	Qiniu_Free(entryURI);
-	Qiniu_Free(entryURIEncoded);
+    Qiniu_Free(entryURI);
+    Qiniu_Free(entryURIEncoded);
 
-	err = Qiniu_Client_Call(self, &root, url);
-	Qiniu_Free(url);
+    err = Qiniu_Client_Call(self, &root, url);
+    Qiniu_Free(url);
 
-	if (err.code == 200) {
-		ret->hash = Qiniu_Json_GetString(root, "hash", 0);
-		ret->mimeType = Qiniu_Json_GetString(root, "mimeType", 0);
-		ret->fsize = Qiniu_Json_GetInt64(root, "fsize", 0);
-		ret->putTime = Qiniu_Json_GetInt64(root, "putTime", 0);
-	}
-	return err;
+    if (err.code == 200) {
+        ret->hash = Qiniu_Json_GetString(root, "hash", 0);
+        ret->mimeType = Qiniu_Json_GetString(root, "mimeType", 0);
+        ret->fsize = Qiniu_Json_GetInt64(root, "fsize", 0);
+        ret->putTime = Qiniu_Json_GetInt64(root, "putTime", 0);
+    }
+
+    return err;
 }
 
 /*============================================================================*/
 /* func Qiniu_RS_Delete */
 
-Qiniu_Error Qiniu_RS_Delete(Qiniu_Client* self, const char* tableName, const char* key)
-{
-	Qiniu_Error err;
+Qiniu_Error Qiniu_RS_Delete(Qiniu_Client *self, const char *tableName, const char *key) {
+    Qiniu_Error err;
 
-	char* entryURI = Qiniu_String_Concat3(tableName, ":", key);
-	char* entryURIEncoded = Qiniu_String_Encode(entryURI);
-	char* url = Qiniu_String_Concat3(QINIU_RS_HOST, "/delete/", entryURIEncoded);
+    char *entryURI = Qiniu_String_Concat3(tableName, ":", key);
+    char *entryURIEncoded = Qiniu_String_Encode(entryURI);
+    char *url = Qiniu_String_Concat3(QINIU_RS_HOST, "/delete/", entryURIEncoded);
 
-	Qiniu_Free(entryURI);
-	Qiniu_Free(entryURIEncoded);
+    Qiniu_Free(entryURI);
+    Qiniu_Free(entryURIEncoded);
 
-	err = Qiniu_Client_CallNoRet(self, url);
-	Qiniu_Free(url);
+    err = Qiniu_Client_CallNoRet(self, url);
+    Qiniu_Free(url);
 
-	return err;
+    return err;
 }
 
 /*============================================================================*/
 /* func Qiniu_RS_Copy */
 
-Qiniu_Error Qiniu_RS_Copy(Qiniu_Client* self, 
-	const char* tableNameSrc, const char* keySrc,
-	const char* tableNameDest, const char* keyDest)
-{
-	Qiniu_Error err;
+Qiniu_Error Qiniu_RS_Copy(Qiniu_Client *self,
+                          const char *tableNameSrc, const char *keySrc,
+                          const char *tableNameDest, const char *keyDest) {
+    Qiniu_Error err;
 
-	char* entryURISrc = Qiniu_String_Concat3(tableNameSrc, ":", keySrc);
-	char* entryURISrcEncoded = Qiniu_String_Encode(entryURISrc);
-	char* entryURIDest = Qiniu_String_Concat3(tableNameDest, ":", keyDest);
-	char* entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
-	char* urlPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
+    char *entryURISrc = Qiniu_String_Concat3(tableNameSrc, ":", keySrc);
+    char *entryURISrcEncoded = Qiniu_String_Encode(entryURISrc);
+    char *entryURIDest = Qiniu_String_Concat3(tableNameDest, ":", keyDest);
+    char *entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
+    char *urlPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
 
-	char* url = Qiniu_String_Concat3(QINIU_RS_HOST, "/copy/", urlPart);
+    char *url = Qiniu_String_Concat3(QINIU_RS_HOST, "/copy/", urlPart);
 
-	free(entryURISrc);
-	free(entryURISrcEncoded);
-	free(entryURIDest);
-	free(entryURIDestEncoded);
-	free(urlPart);
+    free(entryURISrc);
+    free(entryURISrcEncoded);
+    free(entryURIDest);
+    free(entryURIDestEncoded);
+    free(urlPart);
 
-	err = Qiniu_Client_CallNoRet(self, url);
-	free(url);
+    err = Qiniu_Client_CallNoRet(self, url);
+    free(url);
 
-	return err;
+    return err;
 }
 
 /*============================================================================*/
 /* func Qiniu_RS_Move */
 
-Qiniu_Error Qiniu_RS_Move(Qiniu_Client* self, 
-	const char* tableNameSrc, const char* keySrc,
-	const char* tableNameDest, const char* keyDest)
-{
-	Qiniu_Error err;
+Qiniu_Error Qiniu_RS_Move(Qiniu_Client *self,
+                          const char *tableNameSrc, const char *keySrc,
+                          const char *tableNameDest, const char *keyDest) {
+    Qiniu_Error err;
 
-	char* entryURISrc = Qiniu_String_Concat3(tableNameSrc, ":", keySrc);
-	char* entryURISrcEncoded = Qiniu_String_Encode(entryURISrc);
-	char* entryURIDest = Qiniu_String_Concat3(tableNameDest, ":", keyDest);
-	char* entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
-	char* urlPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
-	char* url = Qiniu_String_Concat3(QINIU_RS_HOST, "/move/", urlPart);
+    char *entryURISrc = Qiniu_String_Concat3(tableNameSrc, ":", keySrc);
+    char *entryURISrcEncoded = Qiniu_String_Encode(entryURISrc);
+    char *entryURIDest = Qiniu_String_Concat3(tableNameDest, ":", keyDest);
+    char *entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
+    char *urlPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
+    char *url = Qiniu_String_Concat3(QINIU_RS_HOST, "/move/", urlPart);
 
-	free(entryURISrc);
-	free(entryURISrcEncoded);
-	free(entryURIDest);
-	free(entryURIDestEncoded);
-	free(urlPart);
+    free(entryURISrc);
+    free(entryURISrcEncoded);
+    free(entryURIDest);
+    free(entryURIDestEncoded);
+    free(urlPart);
 
-	err = Qiniu_Client_CallNoRet(self, url);
-	free(url);
+    err = Qiniu_Client_CallNoRet(self, url);
+    free(url);
 
-	return err;
+    return err;
+}
+
+/*============================================================================*/
+/* func Qiniu_RS_ChangeMime */
+
+Qiniu_Error Qiniu_RS_ChangeMime(Qiniu_Client *self, const char *bucket, const char *key, const char *newMime) {
+    Qiniu_Error err;
+
+    char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
+    char *entryURIEncoded = Qiniu_String_Encode(entryURI);
+    char *encodedMime = Qiniu_String_Encode(newMime);
+    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/chgm/", entryURIEncoded, "/mime/", encodedMime, 0);
+
+    Qiniu_Free(entryURI);
+    Qiniu_Free(entryURIEncoded);
+    Qiniu_Free(encodedMime);
+
+    err = Qiniu_Client_CallNoRet(self, url);
+    Qiniu_Free(url);
+    return err;
+}
+
+/*============================================================================*/
+/* func Qiniu_RS_ChangeType */
+
+Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const char *bucket, const char *key, const int fileType) {
+    Qiniu_Error err;
+
+    char *fileTypeStr = "0";
+    if (fileType == 1) {
+        fileTypeStr = "1";
+    }
+
+    char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
+    char *entryURIEncoded = Qiniu_String_Encode(entryURI);
+    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/chtype/", entryURIEncoded, "/type/", fileTypeStr, 0);
+
+    Qiniu_Free(entryURI);
+    Qiniu_Free(entryURIEncoded);
+
+    err = Qiniu_Client_CallNoRet(self, url);
+    Qiniu_Free(url);
+    return err;
+}
+
+/*============================================================================*/
+/* func Qiniu_RS_DeleteAfterDays */
+
+Qiniu_Error Qiniu_RS_DeleteAfterDays(Qiniu_Client *self, const char *bucket, const char *key, const int days) {
+    Qiniu_Error err;
+
+    char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
+    char *entryURIEncoded = Qiniu_String_Encode(entryURI);
+
+    char *daysStr = (char *) malloc(sizeof(int) + 1);
+    sprintf(daysStr, "%d", days);
+    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/deleteAfterDays/", entryURIEncoded, "/", daysStr, 0);
+
+    Qiniu_Free(daysStr);
+    Qiniu_Free(entryURI);
+    Qiniu_Free(entryURIEncoded);
+
+    err = Qiniu_Client_CallNoRet(self, url);
+    Qiniu_Free(url);
+    return err;
+}
+
+/*============================================================================*/
+/* func Qiniu_RS_Fetch */
+Qiniu_Error Qiniu_RS_Fetch(Qiniu_Client *self, Qiniu_RS_FetchRet *ret, const char *resURL, const char *bucket,
+                           const char *key) {
+    Qiniu_Error err;
+    cJSON *root;
+
+    char *entryURI = 0;
+    if (key) {
+        entryURI = Qiniu_String_Concat3(bucket, ":", key);
+    } else {
+        entryURI = bucket;
+    }
+
+    char *entryURIEncoded = Qiniu_String_Encode(entryURI);
+    char *encodedResURL = Qiniu_String_Encode(resURL);
+
+    char *url = Qiniu_String_Concat(QINIU_IOVIP_HOST, "/fetch/", encodedResURL, "/to/", entryURIEncoded, 0);
+    Qiniu_Free(encodedResURL);
+    if(key) {
+        //no need to free when key is null
+        Qiniu_Free(entryURI);
+    }
+    Qiniu_Free(entryURIEncoded);
+
+    err = Qiniu_Client_Call(self, &root, url);
+    Qiniu_Free(url);
+
+    if (err.code == 200) {
+        ret->key = Qiniu_Json_GetString(root, "key", 0);
+        ret->hash = Qiniu_Json_GetString(root, "hash", 0);
+        ret->mimeType = Qiniu_Json_GetString(root, "mimeType", 0);
+        ret->fsize = Qiniu_Json_GetInt64(root, "fsize", 0);
+    }
+
+    return err;
+}
+
+/*============================================================================*/
+/* func Qiniu_RS_Prefetch */
+Qiniu_Error Qiniu_RS_Prefetch(Qiniu_Client *self, const char *bucket, const char *key) {
+    Qiniu_Error err;
+
+    char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
+    char *entryURIEncoded = Qiniu_String_Encode(entryURI);
+    char *url = Qiniu_String_Concat3(QINIU_IOVIP_HOST, "/prefetch/", entryURIEncoded);
+
+    Qiniu_Free(entryURI);
+    Qiniu_Free(entryURIEncoded);
+
+    err = Qiniu_Client_CallNoRet(self, url);
+    Qiniu_Free(url);
+
+    return err;
 }
 
 /*============================================================================*/
 /* func Qiniu_RS_BatchStat */
 
 Qiniu_Error Qiniu_RS_BatchStat(
-	Qiniu_Client* self, Qiniu_RS_BatchStatRet* rets,
-	Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
-{
-	int code;
-	Qiniu_Error err;
-	cJSON *root, *arrayItem, *dataItem;
-	char *body = NULL, *bodyTmp = NULL;
-	char *entryURI, *entryURIEncoded, *opBody;
-	Qiniu_RS_EntryPath* entry = entries;
-	Qiniu_ItemCount curr = 0;
-	Qiniu_ItemCount retSize = 0;
-	char* url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+        Qiniu_Client *self, Qiniu_RS_BatchStatRet *rets,
+        Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount) {
+    int code;
+    Qiniu_Error err;
+    cJSON *root, *arrayItem, *dataItem;
+    char *body = NULL, *bodyTmp = NULL;
+    char *entryURI, *entryURIEncoded, *opBody;
+    Qiniu_RS_EntryPath *entry = entries;
+    Qiniu_ItemCount curr = 0;
+    Qiniu_ItemCount retSize = 0;
+    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
 
-	while (curr < entryCount) {
-		entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
-		entryURIEncoded = Qiniu_String_Encode(entryURI);
-		opBody = Qiniu_String_Concat2("op=/stat/", entryURIEncoded);
-		free(entryURI);
-		free(entryURIEncoded);
+    while (curr < entryCount) {
+        entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
+        entryURIEncoded = Qiniu_String_Encode(entryURI);
+        opBody = Qiniu_String_Concat2("op=/stat/", entryURIEncoded);
+        free(entryURI);
+        free(entryURIEncoded);
 
-		if (!body) {
-			bodyTmp = opBody;
-		} else {
-			bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
-			free(opBody);
-		}
-		free(body);
-		body = bodyTmp;
-		curr++;
-		entry = &entries[curr];
-	}
+        if (!body) {
+            bodyTmp = opBody;
+        } else {
+            bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
+            free(opBody);
+        }
+        free(body);
+        body = bodyTmp;
+        curr++;
+        entry = &entries[curr];
+    }
 
-	err = Qiniu_Client_CallWithBuffer(self, &root, 
-	url, body, strlen(body), "application/x-www-form-urlencoded");
-	free(url);
-	/*
-	 * Bug No.(4672) Wang Xiaotao  2013\10\15 17:56:00 
-	 * Change for : free  var 'body'
-	 * Reason     : memory leak!
-	 */
-	free(body);
+    err = Qiniu_Client_CallWithBuffer(self, &root,
+                                      url, body, strlen(body), "application/x-www-form-urlencoded");
+    free(url);
+    free(body);
 
-	retSize = cJSON_GetArraySize(root);
-	
-	curr = 0;
-	while (curr < retSize) {
-		arrayItem = cJSON_GetArrayItem(root, curr);
-		code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
-		dataItem = cJSON_GetObjectItem(arrayItem, "data");
+    retSize = cJSON_GetArraySize(root);
 
-		rets[curr].code = code;
+    curr = 0;
+    while (curr < retSize) {
+        arrayItem = cJSON_GetArrayItem(root, curr);
+        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
-		if (code != 200) {
-			rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
-		} else {
-			rets[curr].data.hash = Qiniu_Json_GetString(dataItem, "hash", 0);
-			rets[curr].data.mimeType = Qiniu_Json_GetString(dataItem, "mimeType", 0);
-			rets[curr].data.fsize = Qiniu_Json_GetInt64(dataItem, "fsize", 0);
-			rets[curr].data.putTime = Qiniu_Json_GetInt64(dataItem, "putTime", 0);
-		}
-		curr++;
-	}
+        rets[curr].code = code;
 
-	return err;
+        if (code != 200) {
+            rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
+        } else {
+            rets[curr].data.hash = Qiniu_Json_GetString(dataItem, "hash", 0);
+            rets[curr].data.mimeType = Qiniu_Json_GetString(dataItem, "mimeType", 0);
+            rets[curr].data.fsize = Qiniu_Json_GetInt64(dataItem, "fsize", 0);
+            rets[curr].data.putTime = Qiniu_Json_GetInt64(dataItem, "putTime", 0);
+        }
+        curr++;
+    }
+
+    return err;
 }
 
 /*============================================================================*/
 /* func Qiniu_RS_BatchDelete */
 
 Qiniu_Error Qiniu_RS_BatchDelete(
-	Qiniu_Client* self, Qiniu_RS_BatchItemRet* rets,
-	Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
-{
-	int code;
-	Qiniu_Error err;
-	cJSON *root, *arrayItem, *dataItem;
-	char *body = NULL, *bodyTmp = NULL;
-	char *entryURI, *entryURIEncoded, *opBody;
-	Qiniu_ItemCount curr = 0;
-	Qiniu_ItemCount retSize = 0;
-	Qiniu_RS_EntryPath* entry = entries;
-	char* url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+        Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+        Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount) {
+    int code;
+    Qiniu_Error err;
+    cJSON *root, *arrayItem, *dataItem;
+    char *body = NULL, *bodyTmp = NULL;
+    char *entryURI, *entryURIEncoded, *opBody;
+    Qiniu_ItemCount curr = 0;
+    Qiniu_ItemCount retSize = 0;
+    Qiniu_RS_EntryPath *entry = entries;
+    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
 
-	curr = 0;
-	while (curr < entryCount) {
-		entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
-		entryURIEncoded = Qiniu_String_Encode(entryURI);
-		opBody = Qiniu_String_Concat2("op=/delete/", entryURIEncoded);
-		free(entryURI);
-		free(entryURIEncoded);
+    curr = 0;
+    while (curr < entryCount) {
+        entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
+        entryURIEncoded = Qiniu_String_Encode(entryURI);
+        opBody = Qiniu_String_Concat2("op=/delete/", entryURIEncoded);
+        free(entryURI);
+        free(entryURIEncoded);
 
-		if (!body) {
-			bodyTmp = opBody;
-		} else {
-			bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
-			free(opBody);
-		}
-		free(body);
-		body = bodyTmp;
-		curr++;
-		entry = &entries[curr];
-	}
+        if (!body) {
+            bodyTmp = opBody;
+        } else {
+            bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
+            free(opBody);
+        }
+        free(body);
+        body = bodyTmp;
+        curr++;
+        entry = &entries[curr];
+    }
 
-	err = Qiniu_Client_CallWithBuffer(self, &root, 
-	url, body, strlen(body), "application/x-www-form-urlencoded");
-	free(url);
-	/*
-	 * Bug No.(4672) Wang Xiaotao  2013\10\15 17:56:00 
-	 * Change for : free  var 'body'
-	 * Reason     : memory leak!
-	 */
-	free(body);
+    err = Qiniu_Client_CallWithBuffer(self, &root,
+                                      url, body, strlen(body), "application/x-www-form-urlencoded");
+    free(url);
+    free(body);
 
-	retSize = cJSON_GetArraySize(root);
+    retSize = cJSON_GetArraySize(root);
 
-	curr = 0;
-	while (curr < retSize) {
-		arrayItem = cJSON_GetArrayItem(root, curr);
-		code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
-		dataItem = cJSON_GetObjectItem(arrayItem, "data");
+    curr = 0;
+    while (curr < retSize) {
+        arrayItem = cJSON_GetArrayItem(root, curr);
+        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
-		rets[curr].code = code;
+        rets[curr].code = code;
 
-		if (code != 200) {
-			rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
-		}
-		curr++;
-	}
+        if (code != 200) {
+            rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
+        }
+        curr++;
+    }
 
-	return err;
+    return err;
 }
 
 /*============================================================================*/
 /* func Qiniu_RS_BatchMove */
 
 Qiniu_Error Qiniu_RS_BatchMove(
-	Qiniu_Client* self, Qiniu_RS_BatchItemRet* rets,
-	Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
-{
-	int code;
-	Qiniu_Error err;
-	cJSON *root, *arrayItem, *dataItem;
-	char *body = NULL, *bodyTmp = NULL;
-	char *entryURISrc, *entryURISrcEncoded, *opBody;
-	char *entryURIDest, *entryURIDestEncoded, *bodyPart;
-	Qiniu_ItemCount curr = 0;
-	Qiniu_ItemCount retSize = 0;
-	Qiniu_RS_EntryPathPair* entryPair = entryPairs;
-	char* url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+        Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+        Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount) {
+    int code;
+    Qiniu_Error err;
+    cJSON *root, *arrayItem, *dataItem;
+    char *body = NULL, *bodyTmp = NULL;
+    char *entryURISrc, *entryURISrcEncoded, *opBody;
+    char *entryURIDest, *entryURIDestEncoded, *bodyPart;
+    Qiniu_ItemCount curr = 0;
+    Qiniu_ItemCount retSize = 0;
+    Qiniu_RS_EntryPathPair *entryPair = entryPairs;
+    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
 
-	curr = 0;
-	while (curr < entryCount) {
-		entryURISrc = Qiniu_String_Concat3(entryPair->src.bucket, ":", entryPair->src.key);
-		entryURISrcEncoded = Qiniu_String_Encode(entryURISrc);
-		entryURIDest = Qiniu_String_Concat3(entryPair->dest.bucket, ":", entryPair->dest.key);
-		entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
+    curr = 0;
+    while (curr < entryCount) {
+        entryURISrc = Qiniu_String_Concat3(entryPair->src.bucket, ":", entryPair->src.key);
+        entryURISrcEncoded = Qiniu_String_Encode(entryURISrc);
+        entryURIDest = Qiniu_String_Concat3(entryPair->dest.bucket, ":", entryPair->dest.key);
+        entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
 
-		bodyPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
-		opBody = Qiniu_String_Concat2("op=/move/", bodyPart);
-		free(entryURISrc);
-		free(entryURISrcEncoded);
-		free(entryURIDest);
-		free(entryURIDestEncoded);
-		free(bodyPart);
+        bodyPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
+        opBody = Qiniu_String_Concat2("op=/move/", bodyPart);
+        free(entryURISrc);
+        free(entryURISrcEncoded);
+        free(entryURIDest);
+        free(entryURIDestEncoded);
+        free(bodyPart);
 
-		if (!body) {
-			bodyTmp = opBody;
-		} else {
-			bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
-			free(opBody);
-		}
-		free(body);
-		body = bodyTmp;
-		curr++;
-		entryPair = &entryPairs[curr];
-	}
+        if (!body) {
+            bodyTmp = opBody;
+        } else {
+            bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
+            free(opBody);
+        }
+        free(body);
+        body = bodyTmp;
+        curr++;
+        entryPair = &entryPairs[curr];
+    }
 
-	err = Qiniu_Client_CallWithBuffer(self, &root, 
-	url, body, strlen(body), "application/x-www-form-urlencoded");
-	free(url);
-	/*
-	 * Bug No.(4672) Wang Xiaotao  2013\10\15 17:56:00 
-	 * Change for : free  var 'body'
-	 * Reason     : memory leak!
-	 */
-	free(body);
+    err = Qiniu_Client_CallWithBuffer(self, &root,
+                                      url, body, strlen(body), "application/x-www-form-urlencoded");
+    free(url);
+    free(body);
 
-	retSize = cJSON_GetArraySize(root);
-	
-	curr = 0;
-	while (curr < retSize) {
-		arrayItem = cJSON_GetArrayItem(root, curr);
-		code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
-		dataItem = cJSON_GetObjectItem(arrayItem, "data");
+    retSize = cJSON_GetArraySize(root);
 
-		rets[curr].code = code;
+    curr = 0;
+    while (curr < retSize) {
+        arrayItem = cJSON_GetArrayItem(root, curr);
+        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
-		if (code != 200) {
-			rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
-		}
-		curr++;
-	}
+        rets[curr].code = code;
 
-	return err;
+        if (code != 200) {
+            rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
+        }
+        curr++;
+    }
+
+    return err;
 }
 
 /*============================================================================*/
 /* func Qiniu_RS_BatchCopy */
 
 Qiniu_Error Qiniu_RS_BatchCopy(
-	Qiniu_Client* self, Qiniu_RS_BatchItemRet* rets,
-	Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
-{
-	int code;
-	Qiniu_Error err;
-	cJSON *root, *arrayItem, *dataItem;
-	char *body = NULL, *bodyTmp = NULL;
-	char *entryURISrc, *entryURISrcEncoded, *opBody;
-	char *entryURIDest, *entryURIDestEncoded, *bodyPart;
-	Qiniu_ItemCount curr = 0;
-	Qiniu_ItemCount retSize = 0;
-	Qiniu_RS_EntryPathPair* entryPair = entryPairs;
-	char* url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+        Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+        Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount) {
+    int code;
+    Qiniu_Error err;
+    cJSON *root, *arrayItem, *dataItem;
+    char *body = NULL, *bodyTmp = NULL;
+    char *entryURISrc, *entryURISrcEncoded, *opBody;
+    char *entryURIDest, *entryURIDestEncoded, *bodyPart;
+    Qiniu_ItemCount curr = 0;
+    Qiniu_ItemCount retSize = 0;
+    Qiniu_RS_EntryPathPair *entryPair = entryPairs;
+    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
 
-	curr = 0;
-	while (curr < entryCount) {
-		entryURISrc = Qiniu_String_Concat3(entryPair->src.bucket, ":", entryPair->src.key);
-		entryURISrcEncoded = Qiniu_String_Encode(entryURISrc);
-		entryURIDest = Qiniu_String_Concat3(entryPair->dest.bucket, ":", entryPair->dest.key);
-		entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
-		
-		bodyPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
-		opBody = Qiniu_String_Concat2("op=/copy/", bodyPart);
-		free(entryURISrc);
-		free(entryURISrcEncoded);
-		free(entryURIDest);
-		free(entryURIDestEncoded);
-		free(bodyPart);
+    curr = 0;
+    while (curr < entryCount) {
+        entryURISrc = Qiniu_String_Concat3(entryPair->src.bucket, ":", entryPair->src.key);
+        entryURISrcEncoded = Qiniu_String_Encode(entryURISrc);
+        entryURIDest = Qiniu_String_Concat3(entryPair->dest.bucket, ":", entryPair->dest.key);
+        entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
 
-		if (!body) {
-			bodyTmp = opBody;
-		} else {
-			bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
-			free(opBody);
-		}
-		free(body);
-		body = bodyTmp;
-		curr++;
-		entryPair = &entryPairs[curr];
-	}
+        bodyPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
+        opBody = Qiniu_String_Concat2("op=/copy/", bodyPart);
+        free(entryURISrc);
+        free(entryURISrcEncoded);
+        free(entryURIDest);
+        free(entryURIDestEncoded);
+        free(bodyPart);
 
-	err = Qiniu_Client_CallWithBuffer(self, &root, 
-	url, body, strlen(body), "application/x-www-form-urlencoded");
-	free(url);
-	/*
-	 * Bug No.(4672) Wang Xiaotao  2013\10\15 17:56:00 
-	 * Change for : free  var 'body'
-	 * Reason     : memory leak!
-	 */
-	free(body);
+        if (!body) {
+            bodyTmp = opBody;
+        } else {
+            bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
+            free(opBody);
+        }
+        free(body);
+        body = bodyTmp;
+        curr++;
+        entryPair = &entryPairs[curr];
+    }
 
-	retSize = cJSON_GetArraySize(root);
-	
-	curr = 0;
-	while (curr < retSize) {
-		arrayItem = cJSON_GetArrayItem(root, curr);
-		code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
-		dataItem = cJSON_GetObjectItem(arrayItem, "data");
+    err = Qiniu_Client_CallWithBuffer(self, &root,
+                                      url, body, strlen(body), "application/x-www-form-urlencoded");
+    free(url);
+    free(body);
 
-		rets[curr].code = code;
+    retSize = cJSON_GetArraySize(root);
 
-		if (code != 200) {
-			rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
-		}
-		curr++;
-	}
+    curr = 0;
+    while (curr < retSize) {
+        arrayItem = cJSON_GetArrayItem(root, curr);
+        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
-	return err;
+        rets[curr].code = code;
+
+        if (code != 200) {
+            rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
+        }
+        curr++;
+    }
+
+    return err;
 }

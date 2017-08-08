@@ -21,6 +21,8 @@ QINIU_DLLAPI extern const char* QINIU_ACCESS_KEY;
 QINIU_DLLAPI extern const char* QINIU_SECRET_KEY;
 
 QINIU_DLLAPI extern const char* QINIU_RS_HOST;
+QINIU_DLLAPI extern const char* QINIU_RSF_HOST;
+QINIU_DLLAPI extern const char* QINIU_IOVIP_HOST;
 QINIU_DLLAPI extern const char* QINIU_UP_HOST;
 QINIU_DLLAPI extern const char* QINIU_UC_HOST;
 QINIU_DLLAPI extern const char* QINIU_API_HOST;
