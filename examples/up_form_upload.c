@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
     Qiniu_Io_PutRet putRet;
     Qiniu_Client client;
     Qiniu_RS_PutPolicy putPolicy;
-    Qiniu_Io_PutExtra *putExtra = NULL;
+    Qiniu_Io_PutExtra putExtra;
 
     char *accessKey = getenv("QINIU_ACCESS_KEY");
     char *secretKey = getenv("QINIU_SECRET_KEY");
@@ -24,17 +24,23 @@ int main(int argc, char **argv) {
     mac.secretKey = secretKey;
 
     Qiniu_Zero(putPolicy);
+    Qiniu_Zero(putExtra);
+
     putPolicy.scope = bucket;
     char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
 
     //设置机房域名
     //Qiniu_Use_Zone_Beimei(Qiniu_False);
     //Qiniu_Use_Zone_Huabei(Qiniu_True);
-    //Qiniu_Use_Zone_Huadong(Qiniu_True);
+    Qiniu_Use_Zone_Huadong(Qiniu_True);
     //Qiniu_Use_Zone_Huanan(Qiniu_True);
+
+    //put extra
+    //putExtra.upHost="http://nbxs-gate-up.qiniu.com";
+
     //init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
-    Qiniu_Error error = Qiniu_Io_PutFile(&client, &putRet, uptoken, key, localFile, putExtra);
+    Qiniu_Error error = Qiniu_Io_PutFile(&client, &putRet, uptoken, key, localFile, &putExtra);
     if (error.code != 200) {
         printf("upload file %s:%s error.\n", bucket, key);
         debug_log(&client, error);
