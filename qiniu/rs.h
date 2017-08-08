@@ -27,7 +27,7 @@ extern "C"
 typedef struct _Qiniu_RS_PutPolicy {
     const char *scope;
     const char *saveKey;
-    const Qiniu_Uint32 isPrefixalScope;
+    Qiniu_Uint32 isPrefixalScope;
     const char *callbackUrl;
     const char *callbackHost;
     const char *callbackBody;

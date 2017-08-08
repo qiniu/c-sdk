@@ -57,11 +57,13 @@ rsf_list_files: $(SOURCE_FILES) ./rsf_list_files.c
 rsf_list_bucket: $(SOURCE_FILES) ./rsf_list_bucket.c
 	gcc -g $^ -o exec_rsf_list_bucket $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
-
+up_create_uptoken: $(SOURCE_FILES) ./up_create_uptoken.c
+	gcc -g $^ -o exec_up_create_uptoken $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
 clean:
 	rm -rf *.dSYM exec*
 
 all: rs_stat rs_delete rs_copy rs_move rs_change_type rs_change_mime rs_delete_after_days rs_prefetch rs_fetch \
      rsf_list_files rsf_list_bucket \
-     fop_video_avthumb
+     fop_video_avthumb \
+     up_create_uptoken

@@ -34,14 +34,14 @@ char *Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy *auth, Qiniu_Mac *mac) {
     if (auth->callbackUrl) {
         cJSON_AddStringToObject(root, "callbackUrl", auth->callbackUrl);
     }
+    if (auth->callbackHost) {
+        cJSON_AddStringToObject(root, "callbackHost", auth->callbackHost);
+    }
     if (auth->callbackBody) {
         cJSON_AddStringToObject(root, "callbackBody", auth->callbackBody);
     }
     if (auth->callbackBodyType) {
         cJSON_AddStringToObject(root, "callbackBodyType", auth->callbackBodyType);
-    }
-    if (auth->callbackHost) {
-        cJSON_AddStringToObject(root, "callbackHost", auth->callbackHost);
     }
     if (auth->callbackFetchKey) {
         cJSON_AddStringToObject(root, "callbackFetchKey", auth->callbackFetchKey);
