@@ -262,7 +262,7 @@ Qiniu_Error Qiniu_RS_ChangeMime(Qiniu_Client *self, const char *bucket, const ch
     char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
     char *entryURIEncoded = Qiniu_String_Encode(entryURI);
     char *encodedMime = Qiniu_String_Encode(newMime);
-    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/chgm/", entryURIEncoded, "/mime/", encodedMime, 0);
+    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/chgm/", entryURIEncoded, "/mime/", encodedMime, NULL);
 
     Qiniu_Free(entryURI);
     Qiniu_Free(entryURIEncoded);
@@ -286,7 +286,7 @@ Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const char *bucket, const ch
 
     char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
     char *entryURIEncoded = Qiniu_String_Encode(entryURI);
-    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/chtype/", entryURIEncoded, "/type/", fileTypeStr, 0);
+    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/chtype/", entryURIEncoded, "/type/", fileTypeStr, NULL);
 
     Qiniu_Free(entryURI);
     Qiniu_Free(entryURIEncoded);
@@ -307,7 +307,7 @@ Qiniu_Error Qiniu_RS_DeleteAfterDays(Qiniu_Client *self, const char *bucket, con
 
     char *daysStr = (char *) malloc(sizeof(int) + 1);
     sprintf(daysStr, "%d", days);
-    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/deleteAfterDays/", entryURIEncoded, "/", daysStr, 0);
+    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/deleteAfterDays/", entryURIEncoded, "/", daysStr, NULL);
 
     Qiniu_Free(daysStr);
     Qiniu_Free(entryURI);
