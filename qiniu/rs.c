@@ -175,6 +175,7 @@ Qiniu_Error Qiniu_RS_Stat(
         ret->fsize = Qiniu_Json_GetInt64(root, "fsize", 0);
         ret->putTime = Qiniu_Json_GetInt64(root, "putTime", 0);
     }
+
     return err;
 }
 

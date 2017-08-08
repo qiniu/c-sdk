@@ -196,11 +196,17 @@ Qiniu_Json *Qiniu_Json_GetObjectItem(Qiniu_Json *self, const char *key, Qiniu_Js
 } // Qiniu_Json_GetObjectItem
 
 int Qiniu_Json_GetArraySize(Qiniu_Json *self, const char *key, Qiniu_Int64 defval) {
+    Qiniu_Json *sub;
     int size;
     if (self == NULL) {
         return defval;
     }
-    size = cJSON_GetArraySize(self);
+    sub = cJSON_GetObjectItem(self, key);
+    if (sub != NULL) {
+        size = cJSON_GetArraySize(sub);
+    } else {
+        size = defval;
+    }
     return size;
 } // Qiniu_Json_GetArraySize
 

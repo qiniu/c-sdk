@@ -14,6 +14,8 @@ Qiniu_Error Qiniu_RSF_ListFiles(Qiniu_Client *self, Qiniu_RSF_ListRet *ret, cons
                                 const char *delimiter, const char *marker, int limit) {
     Qiniu_Error err;
     int i;
+    int prefixCount;
+    int itemCount;
 
     if (limit < 1 || limit > 1000) {
         err.code = 400;
@@ -77,10 +79,56 @@ Qiniu_Error Qiniu_RSF_ListFiles(Qiniu_Client *self, Qiniu_RSF_ListRet *ret, cons
         Qiniu_Free(encodedMarker);
     }
 
-    err = Qiniu_Client_Call(self, root, url);
+    err = Qiniu_Client_Call(self, &root, url);
     Qiniu_Free(url);
     if (err.code == 200) {
+        ret->marker = Qiniu_Json_GetString(root, "marker", 0);
+        //check common prefixes
+        prefixCount = Qiniu_Json_GetArraySize(root, "commonPrefixes", 0);
+        if (prefixCount > 0) {
+            ret->commonPrefix = (Qiniu_RSF_CommonPrefix *) malloc(sizeof(Qiniu_RSF_CommonPrefix) * prefixCount);
+            Qiniu_Json *commonPrefixes = Qiniu_Json_GetObjectItem(root, "commonPrefixes", 0);
+            Qiniu_RSF_CommonPrefix *nextCommonPrefix = 0;
 
+            for (i = prefixCount - 1; i >= 0; i--) {
+                char *commonPrefix = strdup(Qiniu_Json_GetArrayItem(commonPrefixes, i, 0)->valuestring);
+                Qiniu_RSF_CommonPrefix *commonPrefixElem = (Qiniu_RSF_CommonPrefix *) malloc(
+                        sizeof(Qiniu_RSF_CommonPrefix));
+                commonPrefixElem->value = commonPrefix;
+                commonPrefixElem->next = nextCommonPrefix;
+                ret->commonPrefix[i] = *commonPrefixElem;
+                nextCommonPrefix = commonPrefixElem;
+            }
+        } else {
+            ret->commonPrefix = 0;
+        }
+        //check items
+        itemCount = Qiniu_Json_GetArraySize(root, "items", 0);
+        if (itemCount > 0) {
+            ret->item = (Qiniu_RSF_ListItem *) malloc(sizeof(Qiniu_RSF_ListItem) * itemCount);
+            Qiniu_Json *items = Qiniu_Json_GetObjectItem(root, "items", 0);
+            Qiniu_RSF_ListItem *nextItem = 0;
+            for (i = itemCount - 1; i >= 0; i--) {
+                Qiniu_Json *itemObj = Qiniu_Json_GetArrayItem(items, i, 0);
+                Qiniu_RSF_ListItem *item = (Qiniu_RSF_ListItem *) malloc(sizeof(Qiniu_RSF_ListItem));
+                item->key = strdup(Qiniu_Json_GetString(itemObj, "key", 0));
+                item->hash = strdup(Qiniu_Json_GetString(itemObj, "hash", 0));
+                item->mimeType = strdup(Qiniu_Json_GetString(itemObj, "mimeType", 0));
+                if (Qiniu_Json_GetString(itemObj, "endUser", 0) != 0) {
+                    item->endUser = strdup(Qiniu_Json_GetString(itemObj, "endUser", 0));
+                } else {
+                    item->endUser = 0;
+                }
+                item->putTime = Qiniu_Json_GetInt64(itemObj, "putTime", 0);
+                item->fsize = Qiniu_Json_GetInt64(itemObj, "fsize", 0);
+                item->type = Qiniu_Json_GetInt64(itemObj, "type", 0);
+                item->next = nextItem;
+                ret->item[i] = *item;
+                nextItem = item;
+            }
+        } else {
+            ret->item = 0;
+        }
     }
 
     return err;

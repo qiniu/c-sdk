@@ -14,13 +14,19 @@ int main(int argc, char **argv) {
     char *secretKey = getenv("QINIU_SECRET_KEY");
     char *bucket = "csdk";
     char *prefix = "";
-    char *delimiter = 0;
+    char *delimiter = "/";
     char *marker = 0;
     int limit = 100;
 
     Qiniu_Mac mac;
     mac.accessKey = accessKey;
     mac.secretKey = secretKey;
+
+    Qiniu_RSF_CommonPrefix *commonPrefix = 0;
+    Qiniu_RSF_CommonPrefix *nextPrefix = 0;
+
+    Qiniu_RSF_ListItem *item = 0;
+    Qiniu_RSF_ListItem *nextItem = 0;
 
     //init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
@@ -31,7 +37,47 @@ int main(int argc, char **argv) {
     } else {
         /*200, 正确返回了, 你可以通过listRet变量查询文件列表信息*/
         printf("list files of bucket %s success.\n\n", bucket);
+        //marker
+        printf("next marker: %s\n", listRet.marker);
 
+        //common prefixes
+        commonPrefix = listRet.commonPrefix;
+        while (commonPrefix) {
+            printf("commonPrefix: %s\n", commonPrefix->value);
+            commonPrefix = commonPrefix->next;
+        }
+
+        //items
+        item = listRet.item;
+        while (item) {
+            printf("key: %s, hash: %s, fsize: %ld, mime: %s, putTime: %ld, endUser: %s, type: %ld\n",
+                   item->key, item->hash, item->fsize, item->mimeType, item->putTime, item->endUser, item->type);
+            item = item->next;
+        }
+    }
+
+    //free
+    commonPrefix = listRet.commonPrefix;
+    nextPrefix = commonPrefix;
+    while (nextPrefix) {
+        commonPrefix = commonPrefix->next;
+        Qiniu_Free((void *) nextPrefix->value);
+        Qiniu_Free(nextPrefix);
+        nextPrefix = commonPrefix;
+    }
+
+    item = listRet.item;
+    nextItem = item;
+    while (nextItem) {
+        item = item->next;
+        Qiniu_Free((void *) nextItem->key);
+        Qiniu_Free((void *) nextItem->hash);
+        Qiniu_Free((void *) nextItem->mimeType);
+        if (nextItem->endUser) {
+            Qiniu_Free((void *) nextItem->endUser);
+        }
+        Qiniu_Free(nextItem);
+        nextItem = item;
     }
 
     Qiniu_Client_Cleanup(&client);
