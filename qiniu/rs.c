@@ -250,7 +250,6 @@ Qiniu_Error Qiniu_RS_Move(Qiniu_Client *self, const char *srcBucket, const char 
     }
     char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/move/", urlPart, forcePart, NULL);
 
-
     free(entryURISrc);
     free(entryURISrcEncoded);
     free(entryURIDest);
@@ -339,7 +338,7 @@ Qiniu_Error Qiniu_RS_Fetch(Qiniu_Client *self, Qiniu_RS_FetchRet *ret, const cha
     if (key) {
         entryURI = Qiniu_String_Concat3(bucket, ":", key);
     } else {
-        entryURI = bucket;
+        entryURI = strdup(bucket);
     }
 
     char *entryURIEncoded = Qiniu_String_Encode(entryURI);
@@ -347,10 +346,8 @@ Qiniu_Error Qiniu_RS_Fetch(Qiniu_Client *self, Qiniu_RS_FetchRet *ret, const cha
 
     char *url = Qiniu_String_Concat(QINIU_IOVIP_HOST, "/fetch/", encodedResURL, "/to/", entryURIEncoded, 0);
     Qiniu_Free(encodedResURL);
-    if (key) {
-        //no need to free when key is null
-        Qiniu_Free(entryURI);
-    }
+
+    Qiniu_Free(entryURI);
     Qiniu_Free(entryURIEncoded);
 
     err = Qiniu_Client_Call(self, &root, url);

@@ -32,7 +32,7 @@ int main(int argc, char**argv) {
         printf("fetch file %s -> %s:%s success.\n",resURL, bucket,key);
         printf("file key: \t%s\n",fetchRet.key);
         printf("file hash: \t%s\n", fetchRet.hash);
-        printf("file size: \t%ld\n", fetchRet.fsize);
+        printf("file size: \t%lld\n", fetchRet.fsize);
         printf("file mime type: \t%s\n", fetchRet.mimeType);
     }
 
@@ -46,7 +46,7 @@ int main(int argc, char**argv) {
         printf("fetch file %s -> %s success.\n",resURL, bucket);
         printf("file key: \t%s\n",fetchRet.key);
         printf("file hash: \t%s\n", fetchRet.hash);
-        printf("file size: \t%ld\n", fetchRet.fsize);
+        printf("file size: \t%lld\n", fetchRet.fsize);
         printf("file mime type: \t%s\n", fetchRet.mimeType);
     }
 
