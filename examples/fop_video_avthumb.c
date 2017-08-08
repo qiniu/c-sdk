@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
     char *bucket = "csdk";
     char *key = "qiniu.mp4";
     char *pipeline = "sdktest";
-    char *notifyURL = "http://api.example.com/pfop/notify";
+    char *notifyURL = NULL;
     int force = 0;
 
     Qiniu_Mac mac;

@@ -15,16 +15,16 @@
 Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, const char *bucket, const char *key,
                            char *fops[], int fopCount, const char *pipeline, const char *notifyURL, int force) {
     Qiniu_Error err;
-    cJSON *root = 0;
-    char *fopsStr = 0;
-    char *encodedBucket = 0;
-    char *encodedKey = 0;
-    char *encodedFops = 0;
-    char *encodedNotifyURL = 0;
-    char *encodedPipeline = 0;
-    char *forceStr = 0;
-    char *url = 0;
-    char *body = 0;
+    cJSON *root;
+    char *fopsStr = NULL;
+    char *encodedBucket = NULL;
+    char *encodedKey = NULL;
+    char *encodedFops = NULL;
+    char *encodedNotifyURL = NULL;
+    char *encodedPipeline = NULL;
+    char *forceStr = NULL;
+    char *url = NULL;
+    char *body = NULL;
     Qiniu_Bool escapeBucketOk;
     Qiniu_Bool escapeKeyOk;
     Qiniu_Bool escapeFopsOk;
@@ -55,7 +55,7 @@ Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, const cha
     }
 
     body = Qiniu_String_Concat("bucket=", encodedBucket, "&key=", encodedKey, "&fops=", encodedFops,
-                               "&pipeline=", encodedPipeline, "&notifyURL=", encodedNotifyURL, "&force=", forceStr, 0);
+                               "&pipeline=", encodedPipeline, "&notifyURL=", encodedNotifyURL, "&force=", forceStr, NULL);
     if (escapeBucketOk) {
         Qiniu_Free(encodedBucket);
     }
