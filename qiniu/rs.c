@@ -201,9 +201,8 @@ Qiniu_Error Qiniu_RS_Delete(Qiniu_Client *self, const char *bucket, const char *
 /*============================================================================*/
 /* func Qiniu_RS_Copy */
 
-Qiniu_Error Qiniu_RS_Copy(Qiniu_Client *self,
-                          const char *srcBucket, const char *srcKey,
-                          const char *destBucket, const char *destKey) {
+Qiniu_Error Qiniu_RS_Copy(Qiniu_Client *self, const char *srcBucket, const char *srcKey,
+                          const char *destBucket, const char *destKey, Qiniu_Bool force) {
     Qiniu_Error err;
 
     char *entryURISrc = Qiniu_String_Concat3(srcBucket, ":", srcKey);
@@ -211,8 +210,13 @@ Qiniu_Error Qiniu_RS_Copy(Qiniu_Client *self,
     char *entryURIDest = Qiniu_String_Concat3(destBucket, ":", destKey);
     char *entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
     char *urlPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
-
-    char *url = Qiniu_String_Concat3(QINIU_RS_HOST, "/copy/", urlPart);
+    char *forcePart = NULL;
+    if (force == Qiniu_True) {
+        forcePart = "/force/1";
+    } else {
+        forcePart = "/force/0";
+    }
+    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/copy/", urlPart, forcePart, NULL);
 
     free(entryURISrc);
     free(entryURISrcEncoded);
@@ -229,9 +233,8 @@ Qiniu_Error Qiniu_RS_Copy(Qiniu_Client *self,
 /*============================================================================*/
 /* func Qiniu_RS_Move */
 
-Qiniu_Error Qiniu_RS_Move(Qiniu_Client *self,
-                          const char *srcBucket, const char *srcKey,
-                          const char *destBucket, const char *destKey) {
+Qiniu_Error Qiniu_RS_Move(Qiniu_Client *self, const char *srcBucket, const char *srcKey,
+                          const char *destBucket, const char *destKey, Qiniu_Bool force) {
     Qiniu_Error err;
 
     char *entryURISrc = Qiniu_String_Concat3(srcBucket, ":", srcKey);
@@ -239,7 +242,14 @@ Qiniu_Error Qiniu_RS_Move(Qiniu_Client *self,
     char *entryURIDest = Qiniu_String_Concat3(destBucket, ":", destKey);
     char *entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
     char *urlPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
-    char *url = Qiniu_String_Concat3(QINIU_RS_HOST, "/move/", urlPart);
+    char *forcePart = NULL;
+    if (force == Qiniu_True) {
+        forcePart = "/force/1";
+    } else {
+        forcePart = "/force/0";
+    }
+    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/move/", urlPart, forcePart, NULL);
+
 
     free(entryURISrc);
     free(entryURISrcEncoded);
@@ -337,7 +347,7 @@ Qiniu_Error Qiniu_RS_Fetch(Qiniu_Client *self, Qiniu_RS_FetchRet *ret, const cha
 
     char *url = Qiniu_String_Concat(QINIU_IOVIP_HOST, "/fetch/", encodedResURL, "/to/", entryURIEncoded, 0);
     Qiniu_Free(encodedResURL);
-    if(key) {
+    if (key) {
         //no need to free when key is null
         Qiniu_Free(entryURI);
     }

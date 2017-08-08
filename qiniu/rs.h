@@ -88,16 +88,14 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Delete(Qiniu_Client *self, const char *
 /*============================================================================*/
 /* func Qiniu_RS_Copy */
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Copy(Qiniu_Client *self,
-                                              const char *srcBucket, const char *srcKey,
-                                              const char *destBucket, const char *destKey);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Copy(Qiniu_Client *self, const char *srcBucket, const char *srcKey,
+                                              const char *destBucket, const char *destKey, Qiniu_Bool force);
 
 /*============================================================================*/
 /* func Qiniu_RS_Move */
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Move(Qiniu_Client *self,
-                                              const char *srcBucket, const char *srcKey,
-                                              const char *destBucket, const char *destKey);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Move(Qiniu_Client *self, const char *srcBucket, const char *srcKey,
+                                              const char *destBucket, const char *destKey, Qiniu_Bool force);
 
 /*============================================================================*/
 /* func Qiniu_RS_ChangeMime */
@@ -126,8 +124,8 @@ typedef struct _Qiniu_RS_FetchRet {
 /* @endgist */
 
 /* func Qiniu_RS_Fetch */
-QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Fetch(Qiniu_Client *self, Qiniu_RS_FetchRet *ret, const char *resURL, const char *bucket,
-                                               const char *key);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Fetch(Qiniu_Client *self, Qiniu_RS_FetchRet *ret, const char *resURL,
+                                               const char *bucket, const char *key);
 
 /*============================================================================*/
 /* func Qiniu_RS_Prefetch */
