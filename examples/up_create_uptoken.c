@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
     putPolicy.scope = bucket;
     putPolicy.expires = 7200; //单位秒
     uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
-    printf("expire:\t%s\n\n", uptoken);
+    printf("deadline:\t%s\n\n", uptoken);
     Qiniu_Free(uptoken);
 
     //覆盖上传凭证
@@ -105,5 +105,13 @@ int main(int argc, char **argv) {
     printf("persistent:\t%s\n\n", uptoken);
     Qiniu_Free(uptoken);
     Qiniu_Free(persistentFops);
+
+    //带有效期文件上传
+    Qiniu_Zero(putPolicy);
+    putPolicy.scope = bucket;
+    putPolicy.deleteAfterDays = 7;
+    uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
+    printf("deleteAfterDays:\t%s\n\n", uptoken);
+    Qiniu_Free(uptoken);
 
 }
