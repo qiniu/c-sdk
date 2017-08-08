@@ -8,6 +8,7 @@
  */
 
 #include "rsf.h"
+#include <stdio.h>
 #include "../cJSON/cJSON.h"
 
 Qiniu_Error Qiniu_RSF_ListFiles(Qiniu_Client *self, Qiniu_RSF_ListRet *ret, const char *bucket, const char *prefix,
@@ -47,7 +48,7 @@ Qiniu_Error Qiniu_RSF_ListFiles(Qiniu_Client *self, Qiniu_RSF_ListRet *ret, cons
     if (marker) {
         encodedMarker = Qiniu_QueryEscape(marker, &escapeMarkerOk);
     } else {
-        marker = "";
+        encodedMarker = "";
     }
 
     if (delimiter) {
@@ -56,12 +57,13 @@ Qiniu_Error Qiniu_RSF_ListFiles(Qiniu_Client *self, Qiniu_RSF_ListRet *ret, cons
         encodedDelimiter = "";
     }
 
-    char *limitStr = (char *) malloc(sizeof(int) + 1);
-    sprintf(limitStr, "%d", limit);
+    size_t limitLen = snprintf(0, 0, "%d", limit) + 1;
+    char *limitStr = (char *) malloc(sizeof(char) * limitLen);
+    memset(limitStr, 0, limitLen);
+    snprintf(limitStr, limitLen, "%d", limit);
 
     url = Qiniu_String_Concat(QINIU_RSF_HOST, "/list?", "bucket=", encodedBucket, "&prefix=", encodedPrefix,
                               "&delimiter=", encodedDelimiter, "&marker=", encodedMarker, "&limit=", limitStr, 0);
-
     Qiniu_Free(limitStr);
     if (escapeBucketOk) {
         Qiniu_Free(encodedBucket);
