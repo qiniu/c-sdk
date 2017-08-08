@@ -54,3 +54,4 @@ rsf_list_bucket: $(SOURCE_FILES) ./rsf_list_bucket.c
 clean:
 	rm -rf *.dSYM exec*
 
+all: rs_stat rs_delete rs_change_type rs_change_mime rs_delete_after_days rs_prefetch rs_fetch fop_video_avthumb rsf_list_files rsf_list_bucket

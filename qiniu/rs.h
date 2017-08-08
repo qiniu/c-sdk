@@ -89,15 +89,15 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Delete(Qiniu_Client *self, const char *
 /* func Qiniu_RS_Copy */
 
 QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Copy(Qiniu_Client *self,
-                                              const char *tableNameSrc, const char *keySrc,
-                                              const char *tableNameDest, const char *keyDest);
+                                              const char *srcBucket, const char *srcKey,
+                                              const char *destBucket, const char *destKey);
 
 /*============================================================================*/
 /* func Qiniu_RS_Move */
 
 QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Move(Qiniu_Client *self,
-                                              const char *tableNameSrc, const char *keySrc,
-                                              const char *tableNameDest, const char *keyDest);
+                                              const char *srcBucket, const char *srcKey,
+                                              const char *destBucket, const char *destKey);
 
 /*============================================================================*/
 /* func Qiniu_RS_ChangeMime */

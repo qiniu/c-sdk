@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
             //items
             item = listRet.item;
             while (item) {
-                printf("key: %s, hash: %s, fsize: %ld, mime: %s, putTime: %ld, endUser: %s, type: %ld\n",
+                printf("key: %s, hash: %s, fsize: %lld, mime: %s, putTime: %lld, endUser: %s, type: %lld\n",
                        item->key, item->hash, item->fsize, item->mimeType, item->putTime, item->endUser, item->type);
                 item = item->next;
             }
