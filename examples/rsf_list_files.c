@@ -7,6 +7,8 @@
 #include "debug.h"
 
 int main(int argc, char **argv) {
+    Qiniu_Global_Init(-1);
+
     Qiniu_RSF_ListRet listRet;
     Qiniu_Client client;
 

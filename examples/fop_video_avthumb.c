@@ -7,6 +7,8 @@
 #include "debug.h"
 
 int main(int argc, char **argv) {
+    Qiniu_Global_Init(-1);
+
     Qiniu_FOP_PfopRet pfopRet;
     Qiniu_Client client;
 

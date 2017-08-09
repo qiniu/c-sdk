@@ -7,6 +7,8 @@
 #include "debug.h"
 
 int main(int argc, char **argv) {
+    Qiniu_Global_Init(-1);
+
     Qiniu_RS_BatchItemRet *itemRets;
     Qiniu_Client client;
     int i;

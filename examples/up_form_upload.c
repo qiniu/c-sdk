@@ -8,6 +8,8 @@
 #include "debug.h"
 
 int main(int argc, char **argv) {
+    Qiniu_Global_Init(-1);
+
     Qiniu_Io_PutRet putRet;
     Qiniu_Client client;
     Qiniu_RS_PutPolicy putPolicy;
