@@ -17,21 +17,20 @@ int main(int argc, char **argv) {
 
 
     //urls to refresh
-    char *urls[] = {
-            "http://csdk.qiniudn.com/qiniu1.png",
-            "http://csdk.qiniudn.com/qiniu2.png",
-            "http://csdk.qiniudn.com/qiniu3.png"
+    char *dirs[] = {
+            "http://csdk.qiniudn.com/image1/",
+            "http://csdk.qiniudn.com/image2/",
+            "http://csdk.qiniudn.com/image3/"
     };
 
     //init
-    Qiniu_Zero(ret);
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
-    error = Qiniu_CDN_RefreshUrls(&client, &ret, urls, 3);
+    error = Qiniu_CDN_RefreshDirs(&client, &ret, dirs, 3);
     if (error.code != 200) {
-        printf("refresh urls error.\n");
+        printf("refresh dirs error.\n");
         debug_log(&client, error);
     } else {
-        printf("refresh urls success.\n");
+        printf("refresh dirs success.\n");
         printf("Code: %d\n", ret.code);
         printf("Error: %s\n", ret.error);
         printf("RequestId: %s\n", ret.requestId);
@@ -55,5 +54,6 @@ int main(int argc, char **argv) {
 
         Qiniu_Free_CDNRefreshRet(&ret);
     }
+
     Qiniu_Client_Cleanup(&client);
 }

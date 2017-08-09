@@ -151,6 +151,19 @@ const char *Qiniu_Json_GetStringAt(Qiniu_Json *self, int n, const char *defval) 
     }
 }
 
+int Qiniu_Json_GetInt(Qiniu_Json *self, const char *key, int defval){
+    Qiniu_Json *sub;
+    if (self == NULL) {
+        return defval;
+    }
+    sub = cJSON_GetObjectItem(self, key);
+    if (sub != NULL && sub->type == cJSON_Number) {
+        return (int) sub->valuedouble;
+    } else {
+        return defval;
+    }
+}
+
 Qiniu_Int64 Qiniu_Json_GetInt64(Qiniu_Json *self, const char *key, Qiniu_Int64 defval) {
     Qiniu_Json *sub;
     if (self == NULL) {
@@ -225,7 +238,7 @@ void Qiniu_Json_Destroy(Qiniu_Json *self) {
     cJSON_Delete(self);
 } // Qiniu_Json_Destroy
 
-Qiniu_Uint32 Qiniu_Json_GetInt(Qiniu_Json *self, const char *key, Qiniu_Uint32 defval) {
+Qiniu_Uint32 Qiniu_Json_GetUInt32(Qiniu_Json *self, const char *key, Qiniu_Uint32 defval) {
     Qiniu_Json *sub;
     if (self == NULL) {
         return defval;
@@ -429,11 +442,6 @@ Qiniu_Error Qiniu_Client_Call(Qiniu_Client *self, Qiniu_Json **ret, const char *
 
 
     err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
-    /*
-     * Bug No.(4601) Wang Xiaotao 2013\10\12 17:09:02
-     * Change for : free  var headers 'variable'
-     * Reason     : memory leak!
-     */
     curl_slist_free_all(headers);
     *ret = self->root;
     return err;
@@ -452,12 +460,6 @@ Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client *self, const char *url) {
     }
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-    /*
-     * Bug No.(4601) Wang Xiaotao 2013\10\12 17:09:02
-     * Change for : free  var headers 'variable'
-     * Reason     : memory leak!
-     */
     err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
     curl_slist_free_all(headers);
     return err;

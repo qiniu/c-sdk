@@ -95,7 +95,7 @@ Qiniu_Error Qiniu_RSF_ListFiles(Qiniu_Client *self, Qiniu_RSF_ListRet *ret, cons
             char **p = ret->commonPrefixes;
             Qiniu_Json *commonPrefixes = Qiniu_Json_GetObjectItem(root, "commonPrefixes", NULL);
             for (i = 0; i < prefixCount; i++) {
-                *p =  Qiniu_Json_GetArrayItem(commonPrefixes, i, NULL)->valuestring;
+                *p = Qiniu_Json_GetArrayItem(commonPrefixes, i, NULL)->valuestring;
                 ++p;
             }
         } else {
@@ -110,7 +110,7 @@ Qiniu_Error Qiniu_RSF_ListFiles(Qiniu_Client *self, Qiniu_RSF_ListRet *ret, cons
 
             Qiniu_Json *items = Qiniu_Json_GetObjectItem(root, "items", NULL);
             Qiniu_RSF_ListItem *nextItem = 0;
-            for (i = itemCount - 1; i >= 0; i--) {
+            for (i = 0; i < itemCount; i++) {
                 Qiniu_Json *itemObj = Qiniu_Json_GetArrayItem(items, i, NULL);
                 Qiniu_RSF_ListItem item;
                 item.key = Qiniu_Json_GetString(itemObj, "key", NULL);

@@ -89,6 +89,15 @@ up_chunk_upload: $(SOURCE_FILES) ./up_chunk_upload.c
 cdn_refresh_urls: $(SOURCE_FILES) ./cdn_refresh_urls.c
 	gcc -g $^ -o exec_cdn_refresh_urls $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
+cdn_refresh_dirs: $(SOURCE_FILES) ./cdn_refresh_dirs.c
+	gcc -g $^ -o exec_cdn_refresh_dirs $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
+cdn_prefetch_urls: $(SOURCE_FILES) ./cdn_prefetch_urls.c
+	gcc -g $^ -o exec_cdn_prefetch_urls $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
+cdn_get_log_list: $(SOURCE_FILES) ./cdn_get_log_list.c
+	gcc -g $^ -o exec_cdn_get_log_list $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
 test1: $(SOURCE_FILES) ./test.c
 	gcc -g $^ -o exec_test1 $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
@@ -99,4 +108,5 @@ all: rs_stat rs_delete rs_copy rs_move rs_change_type rs_change_mime rs_delete_a
     rs_batch_stat rs_batch_delete rs_batch_copy rs_batch_change_type rs_batch_change_mime rs_batch_delete_after_days \
     rsf_list_files rsf_list_bucket \
     fop_video_avthumb \
-    up_create_uptoken up_form_upload up_chunk_upload
+    up_create_uptoken up_form_upload up_chunk_upload \
+    cdn_refresh_urls cdn_refresh_dirs cdn_prefetch_urls cdn_get_log_list
