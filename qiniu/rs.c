@@ -719,7 +719,62 @@ Qiniu_Error Qiniu_RS_BatchChangeType(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
 
 Qiniu_Error Qiniu_RS_BatchChangeMime(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
                                      Qiniu_RS_EntryChangeMime *entries, Qiniu_ItemCount entryCount) {
+    int code;
     Qiniu_Error err;
+    cJSON *root, *arrayItem, *dataItem;
+    char *body = NULL, *bodyTmp = NULL;
+    char *entryURI, *entryURIEncoded, *mimeEncoded, *opBody, *bodyPart;
+
+    Qiniu_ItemCount curr = 0;
+    Qiniu_ItemCount retSize = 0;
+    Qiniu_RS_EntryChangeMime *entry = entries;
+    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+
+    curr = 0;
+    while (curr < entryCount) {
+        entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
+        entryURIEncoded = Qiniu_String_Encode(entryURI);
+        mimeEncoded = Qiniu_String_Encode(entry->mime);
+
+        bodyPart = Qiniu_String_Concat(entryURIEncoded, "/mime/", mimeEncoded, NULL);
+        opBody = Qiniu_String_Concat2("op=/chgm/", bodyPart);
+        Qiniu_Free(entryURI);
+        Qiniu_Free(entryURIEncoded);
+        Qiniu_Free(mimeEncoded);
+        Qiniu_Free(bodyPart);
+
+        if (!body) {
+            bodyTmp = opBody;
+        } else {
+            bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
+            free(opBody);
+        }
+        free(body);
+        body = bodyTmp;
+        curr++;
+        entry = &entries[curr];
+    }
+
+    err = Qiniu_Client_CallWithBuffer(self, &root,
+                                      url, body, strlen(body), "application/x-www-form-urlencoded");
+    free(url);
+    free(body);
+
+    retSize = cJSON_GetArraySize(root);
+
+    curr = 0;
+    while (curr < retSize) {
+        arrayItem = cJSON_GetArrayItem(root, curr);
+        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        dataItem = cJSON_GetObjectItem(arrayItem, "data");
+
+        rets[curr].code = code;
+
+        if (code != 200) {
+            rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
+        }
+        curr++;
+    }
 
     return err;
 }

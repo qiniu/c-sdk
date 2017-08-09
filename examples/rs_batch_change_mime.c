@@ -21,17 +21,17 @@ int main(int argc, char **argv) {
     mac.secretKey = secretKey;
 
     Qiniu_ItemCount entryCount = 10;
-    Qiniu_RS_EntryChangeType *entries = (Qiniu_RS_EntryChangeType *) malloc(
-            sizeof(Qiniu_RS_EntryChangeType) * entryCount);
+    Qiniu_RS_EntryChangeMime *entries = (Qiniu_RS_EntryChangeMime *) malloc(
+            sizeof(Qiniu_RS_EntryChangeMime) * entryCount);
     for (i = 0; i < entryCount; i++) {
-        Qiniu_RS_EntryChangeType entry;
+        Qiniu_RS_EntryChangeMime entry;
         entry.bucket = bucket;
 
         size_t indexLen = snprintf(NULL, 0, "%d", i) + 1;
         char *indexStr = (char *) calloc(sizeof(char), indexLen);
         snprintf(indexStr, indexLen, "%d", i);
         entry.key = Qiniu_String_Concat2(key, indexStr);
-        entry.fileType = 1;//改为低频存储
+        entry.mime = "image/x-png";
         entries[i] = entry;
     }
 
@@ -39,13 +39,13 @@ int main(int argc, char **argv) {
 
     //init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
-    Qiniu_Error error = Qiniu_RS_BatchChangeType(&client, itemRets, entries, entryCount);
+    Qiniu_Error error = Qiniu_RS_BatchChangeMime(&client, itemRets, entries, entryCount);
     if (error.code / 100 != 2) {
-        printf("batch change file type error.\n");
+        printf("batch change file mime error.\n");
         debug_log(&client, error);
     } else {
         /*200, 正确返回了, 你可以通过itemRets变量查询一些关于这个文件的信息*/
-        printf("batch change file type success.\n\n");
+        printf("batch change file mime success.\n\n");
 
         for (i = 0; i < entryCount; i++) {
             int code = itemRets[i].code;
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
     }
 
     for (i = 0; i < entryCount; i++) {
-        Qiniu_RS_EntryChangeType entry = entries[i];
+        Qiniu_RS_EntryChangeMime entry = entries[i];
         Qiniu_Free((void *) entry.key);
     }
 
