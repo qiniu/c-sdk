@@ -16,17 +16,15 @@ int main(int argc, char **argv) {
     char *prefix = "";
     char *delimiter = "/";
     char *marker = "";
-    int limit = 3;
+    int limit = 100;
+    int i;
 
     Qiniu_Mac mac;
     mac.accessKey = accessKey;
     mac.secretKey = secretKey;
 
-    Qiniu_RSF_CommonPrefix *commonPrefix = NULL;
-    Qiniu_RSF_CommonPrefix *nextPrefix = NULL;
-
-    Qiniu_RSF_ListItem *item = NULL;
-    Qiniu_RSF_ListItem *nextItem = NULL;
+    char **commonPrefixes = NULL;
+    Qiniu_RSF_ListItem *items = NULL;
 
     //init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
@@ -41,43 +39,26 @@ int main(int argc, char **argv) {
         printf("next marker: %s\n", listRet.marker);
 
         //common prefixes
-        commonPrefix = listRet.commonPrefix;
-        while (commonPrefix) {
-            printf("commonPrefix: %s\n", commonPrefix->value);
-            commonPrefix = commonPrefix->next;
+        commonPrefixes = listRet.commonPrefixes;
+        for (i = 0; i < listRet.commonPrefixesCount; i++) {
+            printf("commonPrefix: %s\n", *commonPrefixes);
+            ++commonPrefixes;
         }
 
         //items
-        item = listRet.item;
-        while (item) {
+        items = listRet.items;
+        for (i = 0; i < listRet.itemsCount; i++) {
+            Qiniu_RSF_ListItem item = listRet.items[i];
             printf("key: %s, hash: %s, fsize: %lld, mime: %s, putTime: %lld, endUser: %s, type: %lld\n",
-                   item->key, item->hash, item->fsize, item->mimeType, item->putTime, item->endUser, item->type);
-            item = item->next;
+                   item.key, item.hash, item.fsize, item.mimeType, item.putTime, item.endUser, item.type);
         }
 
-        //free common prefixes
-        commonPrefix = listRet.commonPrefix;
-        nextPrefix = commonPrefix;
-        while (nextPrefix) {
-            commonPrefix = commonPrefix->next;
-            Qiniu_Free((void *) nextPrefix->value);
-            Qiniu_Free(nextPrefix);
-            nextPrefix = commonPrefix;
+        //free
+        if (listRet.commonPrefixes != NULL) {
+            Qiniu_Free(listRet.commonPrefixes);
         }
-
-        //free items
-        item = listRet.item;
-        nextItem = item;
-        while (nextItem) {
-            item = item->next;
-            Qiniu_Free((void *) nextItem->key);
-            Qiniu_Free((void *) nextItem->hash);
-            Qiniu_Free((void *) nextItem->mimeType);
-            if (nextItem->endUser) {
-                Qiniu_Free((void *) nextItem->endUser);
-            }
-            Qiniu_Free(nextItem);
-            nextItem = item;
+        if (listRet.items != NULL) {
+            Qiniu_Free(listRet.items);
         }
     }
 
