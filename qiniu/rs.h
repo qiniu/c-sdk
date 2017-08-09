@@ -198,7 +198,7 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchCopy(Qiniu_Client *self, Qiniu_RS_
 typedef struct _Qiniu_RS_EntryChangeType {
     const char *bucket;
     const char *key;
-    const int fileType;
+    int fileType;
 } Qiniu_RS_EntryChangeType;
 
 typedef struct _Qiniu_RS_EntryChangeMime {
