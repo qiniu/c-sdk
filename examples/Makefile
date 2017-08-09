@@ -53,6 +53,12 @@ rs_batch_stat: $(SOURCE_FILES) ./rs_batch_stat.c
 rs_batch_delete: $(SOURCE_FILES) ./rs_batch_delete.c
 	gcc -g $^ -o exec_rs_batch_delete $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
+rs_batch_copy: $(SOURCE_FILES) ./rs_batch_copy.c
+	gcc -g $^ -o exec_rs_batch_copy $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
+rs_batch_move: $(SOURCE_FILES) ./rs_batch_move.c
+	gcc -g $^ -o exec_rs_batch_move $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
 rs_batch_change_type: $(SOURCE_FILES) ./rs_batch_change_type.c
 	gcc -g $^ -o exec_rs_batch_change_type $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
@@ -90,6 +96,7 @@ clean:
 	rm -rf *.dSYM exec*
 
 all: rs_stat rs_delete rs_copy rs_move rs_change_type rs_change_mime rs_delete_after_days rs_prefetch rs_fetch \
-     rsf_list_files rsf_list_bucket \
-     fop_video_avthumb \
-     up_create_uptoken up_form_upload up_chunk_upload
+    rs_batch_stat rs_batch_delete rs_batch_copy rs_batch_change_type rs_batch_change_mime rs_batch_delete_after_days \
+    rsf_list_files rsf_list_bucket \
+    fop_video_avthumb \
+    up_create_uptoken up_form_upload up_chunk_upload

@@ -31,6 +31,7 @@ int main(int argc, char **argv) {
         char *indexStr = (char *) calloc(sizeof(char), indexLen);
         snprintf(indexStr, indexLen, "%d", i);
         entry.key = Qiniu_String_Concat2(key, indexStr);
+        Qiniu_Free(indexStr);
         entry.mime = "image/x-png";
         entries[i] = entry;
     }

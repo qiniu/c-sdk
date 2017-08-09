@@ -21,32 +21,40 @@ int main(int argc, char **argv) {
     mac.secretKey = secretKey;
 
     Qiniu_ItemCount entryCount = 10;
-    Qiniu_RS_EntryDeleteAfterDays *entries = (Qiniu_RS_EntryDeleteAfterDays *) malloc(
-            sizeof(Qiniu_RS_EntryDeleteAfterDays) * entryCount);
+    Qiniu_RS_EntryPathPair *entryPairs = (Qiniu_RS_EntryPathPair *) malloc(sizeof(Qiniu_RS_EntryPathPair) * entryCount);
     for (i = 0; i < entryCount; i++) {
-        Qiniu_RS_EntryDeleteAfterDays entry;
-        entry.bucket = bucket;
+        //src
+        Qiniu_RS_EntryPath srcEntry;
+        srcEntry.bucket = bucket;
+        srcEntry.key = key;
 
+        //dest
+        Qiniu_RS_EntryPath destEntry;
+        destEntry.bucket = bucket;
         size_t indexLen = snprintf(NULL, 0, "%d", i) + 1;
         char *indexStr = (char *) calloc(sizeof(char), indexLen);
         snprintf(indexStr, indexLen, "%d", i);
-        entry.key = Qiniu_String_Concat2(key, indexStr);
+        destEntry.key = Qiniu_String_Concat2(key, indexStr);
         Qiniu_Free(indexStr);
-        entry.days = 7;//设置7天有效期
-        entries[i] = entry;
+
+        //pack
+        Qiniu_RS_EntryPathPair entryPair;
+        entryPair.src = srcEntry;
+        entryPair.dest = destEntry;
+        entryPair.force = Qiniu_True;
+        entryPairs[i] = entryPair;
     }
 
     itemRets = (Qiniu_RS_BatchItemRet *) malloc(sizeof(Qiniu_RS_BatchItemRet) * entryCount);
 
     //init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
-    Qiniu_Error error = Qiniu_RS_BatchDeleteAfterDays(&client, itemRets, entries, entryCount);
+    Qiniu_Error error = Qiniu_RS_BatchCopy(&client, itemRets, entryPairs, entryCount);
     if (error.code / 100 != 2) {
-        printf("batch deleteAfterDays file error.\n");
+        printf("batch copy file error.\n");
         debug_log(&client, error);
     } else {
-        /*200, 正确返回了, 你可以通过itemRets变量查询一些关于这个文件的信息*/
-        printf("batch deleteAfterDays file success.\n\n");
+        printf("batch copy file success.\n\n");
 
         for (i = 0; i < entryCount; i++) {
             int code = itemRets[i].code;
@@ -59,11 +67,11 @@ int main(int argc, char **argv) {
     }
 
     for (i = 0; i < entryCount; i++) {
-        Qiniu_RS_EntryDeleteAfterDays entry = entries[i];
-        Qiniu_Free((void *) entry.key);
+        Qiniu_RS_EntryPathPair entryPair = entryPairs[i];
+        Qiniu_Free((void *) entryPair.dest.key);
     }
 
-    Qiniu_Free(entries);
+    Qiniu_Free(entryPairs);
     Qiniu_Free(itemRets);
     Qiniu_Client_Cleanup(&client);
 }
