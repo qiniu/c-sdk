@@ -47,6 +47,7 @@ int main(int argc, char **argv) {
     } else {
         /*200, 正确返回了, 你可以通过statRet变量查询一些关于这个文件的信息*/
         printf("upload file %s:%s success.\n\n", bucket, key);
+        printf("key:\t%s\n",putRet.key);
         printf("hash:\t%s\n", putRet.hash);
     }
 

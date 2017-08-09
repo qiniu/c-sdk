@@ -62,6 +62,9 @@ up_create_uptoken: $(SOURCE_FILES) ./up_create_uptoken.c
 up_form_upload: $(SOURCE_FILES) ./up_form_upload.c
 	gcc -g $^ -o exec_up_form_upload $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
+up_chunk_upload: $(SOURCE_FILES) ./up_chunk_upload.c
+	gcc -g $^ -o exec_up_chunk_upload $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
 cdn_refresh_urls: $(SOURCE_FILES) ./cdn_refresh_urls.c
 	gcc -g $^ -o exec_cdn_refresh_urls $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
@@ -74,4 +77,4 @@ clean:
 all: rs_stat rs_delete rs_copy rs_move rs_change_type rs_change_mime rs_delete_after_days rs_prefetch rs_fetch \
      rsf_list_files rsf_list_bucket \
      fop_video_avthumb \
-     up_create_uptoken
+     up_create_uptoken up_form_upload up_chunk_upload

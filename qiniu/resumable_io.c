@@ -16,7 +16,7 @@
 
 #define defaultTryTimes        3
 #define defaultWorkers        4
-#define defaultChunkSize    (256 * 1024) // 256k
+#define defaultChunkSize    (2 * 1024 * 1024) // 2MB
 
 /*============================================================================*/
 /* type Qiniu_Rio_ST - SingleThread */
@@ -250,7 +250,7 @@ static Qiniu_Error Qiniu_Rio_PutExtra_Init(
         return ErrInvalidPutProgress;
     }
 
-    if (extra) {
+    if (extra != NULL) {
         *self = *extra;
     } else {
         memset(self, 0, sizeof(Qiniu_Rio_PutExtra));
@@ -473,59 +473,6 @@ static Qiniu_Error Qiniu_Rio_Mkfile(
     size_t i, blkCount = extra->blockCnt;
     Qiniu_Json *root;
     Qiniu_Error err;
-    Qiniu_Rio_BlkputRet *prog;
-    Qiniu_Buffer url, body;
-
-    Qiniu_Buffer_Init(&url, 1024);
-    Qiniu_Buffer_AppendFormat(&url, "%s/mkfile/%D", extra->upHost, fsize);
-
-    if (NULL != key) {
-        Qiniu_Buffer_AppendFormat(&url, "/key/%S", key);
-    }
-
-    if (extra->mimeType != NULL) {
-        Qiniu_Buffer_AppendFormat(&url, "/mimeType/%S", extra->mimeType);
-    }
-
-    // if (extra->customMeta != NULL) {
-    // 	Qiniu_Buffer_AppendFormat(&url, "/meta/%S", extra->customMeta);
-    // }
-    // if (extra->callbackParams != NULL) {
-    // 	Qiniu_Buffer_AppendFormat(&url, "/params/%S", extra->callbackParams);
-    // }
-
-    Qiniu_Buffer_Init(&body, 176 * blkCount);
-    for (i = 0; i < blkCount; i++) {
-        prog = &extra->progresses[i];
-        Qiniu_Buffer_Write(&body, prog->ctx, strlen(prog->ctx));
-        Qiniu_Buffer_PutChar(&body, ',');
-    }
-    if (blkCount > 0) {
-        body.curr--;
-    }
-
-    err = Qiniu_Client_CallWithBuffer(
-            c, &root, Qiniu_Buffer_CStr(&url), body.buf, body.curr - body.buf, "text/plain");
-
-    Qiniu_Buffer_Cleanup(&url);
-    Qiniu_Buffer_Cleanup(&body);
-
-    if (err.code == 200) {
-        if (extra->callbackRetParser != NULL) {
-            err = (*extra->callbackRetParser)(extra->callbackRet, root);
-        } else {
-            ret->hash = Qiniu_Json_GetString(root, "hash", NULL);
-            ret->key = Qiniu_Json_GetString(root, "key", NULL);
-        }
-    }
-    return err;
-}
-
-static Qiniu_Error Qiniu_Rio_Mkfile2(
-        Qiniu_Client *c, Qiniu_Rio_PutRet *ret, const char *key, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra *extra) {
-    size_t i, blkCount = extra->blockCnt;
-    Qiniu_Json *root;
-    Qiniu_Error err;
     const char *upHost = NULL;
     Qiniu_Rio_BlkputRet *prog;
     Qiniu_Buffer url, body;
@@ -568,6 +515,7 @@ static Qiniu_Error Qiniu_Rio_Mkfile2(
     if (err.code == 200) {
         ret->hash = Qiniu_Json_GetString(root, "hash", NULL);
         ret->key = Qiniu_Json_GetString(root, "key", NULL);
+        ret->persistentId = Qiniu_Json_GetString(root, "persistentId", NULL);
     }
     return err;
 }
@@ -713,7 +661,7 @@ Qiniu_Error Qiniu_Rio_Put(
     } else if (ninterrupts != 0) {
         err = ErrPutInterrupted;
     } else {
-        err = Qiniu_Rio_Mkfile2(self, ret, key, fsize, &extra);
+        err = Qiniu_Rio_Mkfile(self, ret, key, fsize, &extra);
     }
 
     Qiniu_Rio_PutExtra_Cleanup(&extra);
