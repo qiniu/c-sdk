@@ -529,7 +529,12 @@ Qiniu_Error Qiniu_RS_BatchMove(
         entryURIDest = Qiniu_String_Concat3(entryPair->dest.bucket, ":", entryPair->dest.key);
         entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
 
-        bodyPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
+        char *forceStr = "0";
+        if (entryPair->force == Qiniu_True) {
+            forceStr = "1";
+        }
+
+        bodyPart = Qiniu_String_Concat(entryURISrcEncoded, "/", entryURIDestEncoded, "/force/", forceStr, NULL);
         opBody = Qiniu_String_Concat2("op=/move/", bodyPart);
         free(entryURISrc);
         free(entryURISrcEncoded);
@@ -597,7 +602,12 @@ Qiniu_Error Qiniu_RS_BatchCopy(
         entryURIDest = Qiniu_String_Concat3(entryPair->dest.bucket, ":", entryPair->dest.key);
         entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
 
-        bodyPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
+        char *forceStr = "0";
+        if (entryPair->force == Qiniu_True) {
+            forceStr = "1";
+        }
+
+        bodyPart = Qiniu_String_Concat(entryURISrcEncoded, "/", entryURIDestEncoded, "/force/", forceStr, NULL);
         opBody = Qiniu_String_Concat2("op=/copy/", bodyPart);
         free(entryURISrc);
         free(entryURISrcEncoded);
@@ -637,6 +647,27 @@ Qiniu_Error Qiniu_RS_BatchCopy(
         }
         curr++;
     }
+
+    return err;
+}
+
+Qiniu_Error Qiniu_RS_BatchChangeType(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+                                     Qiniu_RS_EntryChangeType *entry, Qiniu_ItemCount entryCount) {
+ Qiniu_Error err;
+
+    return err;
+}
+
+Qiniu_Error Qiniu_RS_BatchChangeMime(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+                                     Qiniu_RS_EntryChangeMime *entry, Qiniu_ItemCount entryCount) {
+    Qiniu_Error err;
+
+    return err;
+}
+
+Qiniu_Error Qiniu_RS_BatchDeleteAfterDays(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+                                          Qiniu_RS_EntryDeleteAfterDays *entry, Qiniu_ItemCount entryCount) {
+    Qiniu_Error err;
 
     return err;
 }

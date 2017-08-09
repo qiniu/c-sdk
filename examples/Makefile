@@ -47,6 +47,9 @@ rs_prefetch: $(SOURCE_FILES) ./rs_prefetch.c
 rs_fetch: $(SOURCE_FILES) ./rs_fetch.c
 	gcc -g $^ -o exec_rs_fetch $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
+rs_batch_stat: $(SOURCE_FILES) ./rs_batch_stat.c
+	gcc -g $^ -o exec_rs_batch_stat $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
 fop_video_avthumb: $(SOURCE_FILES) ./fop_video_avthumb.c
 	gcc -g $^ -o exec_fop_video_avthumb $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
