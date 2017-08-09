@@ -56,6 +56,9 @@ rs_batch_change_type: $(SOURCE_FILES) ./rs_batch_change_type.c
 rs_batch_change_mime: $(SOURCE_FILES) ./rs_batch_change_mime.c
 	gcc -g $^ -o exec_rs_batch_change_mime $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
+rs_batch_delete_after_days: $(SOURCE_FILES) ./rs_batch_delete_after_days.c
+	gcc -g $^ -o exec_rs_batch_delete_after_days $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
 fop_video_avthumb: $(SOURCE_FILES) ./fop_video_avthumb.c
 	gcc -g $^ -o exec_fop_video_avthumb $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 

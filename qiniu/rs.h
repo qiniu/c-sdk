@@ -210,7 +210,7 @@ typedef struct _Qiniu_RS_EntryChangeMime {
 typedef struct _Qiniu_RS_EntryDeleteAfterDays {
     const char *bucket;
     const char *key;
-    const int deleteAfterDays;
+    int days;
 } Qiniu_RS_EntryDeleteAfterDays;
 
 QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchChangeType(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
