@@ -572,7 +572,7 @@ void Qiniu_Free_CDNPrefetchRet(Qiniu_CDN_PrefetchRet *ret) {
 }
 
 void Qiniu_Free_CDNFluxRet(Qiniu_CDN_FluxRet *ret) {
-    int i, j;
+    int i;
 
     if (ret->data != NULL) {
         for (i = 0; i < ret->domainsCount; ++i) {
@@ -588,7 +588,7 @@ void Qiniu_Free_CDNFluxRet(Qiniu_CDN_FluxRet *ret) {
 }
 
 void Qiniu_Free_CDNBandwidthRet(Qiniu_CDN_BandwidthRet *ret) {
-    int i, j;
+    int i;
 
     if (ret->data != NULL) {
         for (i = 0; i < ret->domainsCount; ++i) {
@@ -604,7 +604,7 @@ void Qiniu_Free_CDNBandwidthRet(Qiniu_CDN_BandwidthRet *ret) {
 }
 
 void Qiniu_Free_CDNLogListRet(Qiniu_CDN_LogListRet *ret) {
-    int i, j;
+    int i;
     if (ret->data != NULL) {
         for (i = 0; i < ret->domainsCount; i++) {
             if (ret->data[i].itemsCount > 0) {

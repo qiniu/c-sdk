@@ -104,7 +104,7 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_OK;
 /*============================================================================*/
 /* type Qiniu_Free */
 
-void Qiniu_Free(void* addr);
+QINIU_DLLAPI extern void Qiniu_Free(void* addr);
 
 /*============================================================================*/
 /* type Qiniu_Count */

@@ -79,7 +79,7 @@ void Qiniu_Use_Zone_Huanan(Qiniu_Bool useHttps) {
 }
 
 //设置北美机房域名
-void Qiniu_Use_Zone_Beimei(Qiniu_Bool useHttps) {
+QINIU_DLLAPI extern void Qiniu_Use_Zone_Beimei(Qiniu_Bool useHttps) {
     if (useHttps == Qiniu_True) {
         QINIU_RS_HOST = "https://rs-na0.qiniu.com";
         QINIU_RSF_HOST = "https://rsf-na0.qiniu.com";
