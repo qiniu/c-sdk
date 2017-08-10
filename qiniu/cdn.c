@@ -710,7 +710,19 @@ QINIU_DLLAPI void Qiniu_Free_CDNPrefetchRet(Qiniu_CDN_PrefetchRet *ret) {
 }
 
 QINIU_DLLAPI void Qiniu_Free_CDNFluxRet(Qiniu_CDN_FluxRet *ret) {
+    int i, j;
 
+    if (ret->data != NULL) {
+        for (i = 0; i < ret->domainsCount; ++i) {
+            if (ret->data[i].china != NULL) {
+                Qiniu_Free(ret->data[i].china);
+            }
+            if (ret->data[i].oversea != NULL) {
+                Qiniu_Free(ret->data[i].oversea);
+            }
+        }
+        Qiniu_Free(ret->data);
+    }
 }
 
 QINIU_DLLAPI void Qiniu_Free_CDNBandwidthRet(Qiniu_CDN_BandwidthRet *ret) {
@@ -725,7 +737,7 @@ QINIU_DLLAPI void Qiniu_Free_CDNBandwidthRet(Qiniu_CDN_BandwidthRet *ret) {
                 Qiniu_Free(ret->data[i].oversea);
             }
         }
-        free(ret->data);
+        Qiniu_Free(ret->data);
     }
 }
 
