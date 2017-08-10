@@ -3,6 +3,7 @@
 //
 
 #include "../qiniu/rs.h"
+#include "../qiniu/conf.h"
 #include <stdlib.h>
 #include "debug.h"
 
@@ -13,12 +14,19 @@ int main(int argc, char **argv) {
     char *accessKey = getenv("QINIU_ACCESS_KEY");
     char *secretKey = getenv("QINIU_SECRET_KEY");
     char *bucket = getenv("QINIU_TEST_BUCKET");
+
+    if (str_empty(accessKey) || str_empty(accessKey) || str_empty(bucket)) {
+        printf("please fill `test-env.sh` and then run `source test-env.sh` first\n");
+        return -1;
+    }
+
     char *key = "qiniu.png";
 
     Qiniu_Mac mac;
     mac.accessKey = accessKey;
     mac.secretKey = secretKey;
 
+    Qiniu_Use_Zone_Huadong(Qiniu_True);
     //init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
     Qiniu_Error error = Qiniu_RS_Stat(&client, &statRet, bucket, key);
