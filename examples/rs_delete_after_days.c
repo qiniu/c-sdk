@@ -6,14 +6,16 @@
 #include <stdlib.h>
 #include "debug.h"
 
-int main(int argc, char**argv) {
+int main(int argc, char **argv) {
+    Qiniu_Global_Init(-1);
+
     Qiniu_Client client;
 
     char *accessKey = getenv("QINIU_ACCESS_KEY");
     char *secretKey = getenv("QINIU_SECRET_KEY");
-    char *bucket = "csdk";
+    char *bucket = getenv("QINIU_TEST_BUCKET");
     char *key = "qiniu.png";
-    int days=7;
+    int days = 7;
 
     Qiniu_Mac mac;
     mac.accessKey = accessKey;
@@ -21,7 +23,7 @@ int main(int argc, char**argv) {
 
     //init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
-    Qiniu_Error error = Qiniu_RS_DeleteAfterDays(&client, bucket, key,days);
+    Qiniu_Error error = Qiniu_RS_DeleteAfterDays(&client, bucket, key, days);
     if (error.code != 200) {
         printf("deleteAfterDays file %s:%s error.\n", bucket, key);
         debug_log(&client, error);

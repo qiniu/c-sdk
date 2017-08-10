@@ -3,9 +3,11 @@
 #include <stdlib.h>
 
 int main(int argc, char **argv) {
-    char *bucket = "csdk";
+    Qiniu_Global_Init(-1);
+
     char *accessKey = getenv("QINIU_ACCESS_KEY");
     char *secretKey = getenv("QINIU_SECRET_KEY");
+    char *bucket = getenv("QINIU_TEST_BUCKET");
     Qiniu_Mac mac;
 
     mac.accessKey = accessKey;

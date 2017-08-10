@@ -77,8 +77,8 @@ typedef struct _Qiniu_RS_StatRet {
 
 /* @endgist */
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Stat(
-        Qiniu_Client *self, Qiniu_RS_StatRet *ret, const char *bucket, const char *key);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Stat(Qiniu_Client *self, Qiniu_RS_StatRet *ret,
+                                              const char *bucket, const char *key);
 
 /*============================================================================*/
 /* func Qiniu_RS_Delete */
@@ -155,9 +155,8 @@ typedef struct _Qiniu_RS_BatchStatRet {
 
 typedef int Qiniu_ItemCount;
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchStat(
-        Qiniu_Client *self, Qiniu_RS_BatchStatRet *rets,
-        Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchStat(Qiniu_Client *self, Qiniu_RS_BatchStatRet *rets,
+                                                   Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount);
 
 /*============================================================================*/
 /* func Qiniu_RS_BatchDelete */
@@ -171,9 +170,8 @@ typedef struct _Qiniu_RS_BatchItemRet {
 
 /* @endgist */
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchDelete(
-        Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
-        Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchDelete(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+                                                     Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount);
 
 /*============================================================================*/
 /* func Qiniu_RS_BatchMove/Copy */
@@ -183,19 +181,47 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchDelete(
 typedef struct _Qiniu_RS_EntryPathPair {
     Qiniu_RS_EntryPath src;
     Qiniu_RS_EntryPath dest;
+    Qiniu_Bool force;
 } Qiniu_RS_EntryPathPair;
 
 /* @endgist */
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchMove(
-        Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
-        Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchMove(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+                                                   Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount);
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchCopy(
-        Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
-        Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchCopy(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+                                                   Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount);
 
 /*============================================================================*/
+/* func Qiniu_RS_BatchChgm/Chtype/DeleteAfterDays */
+
+typedef struct _Qiniu_RS_EntryChangeType {
+    const char *bucket;
+    const char *key;
+    int fileType;
+} Qiniu_RS_EntryChangeType;
+
+typedef struct _Qiniu_RS_EntryChangeMime {
+    const char *bucket;
+    const char *key;
+    const char *mime;
+} Qiniu_RS_EntryChangeMime;
+
+typedef struct _Qiniu_RS_EntryDeleteAfterDays {
+    const char *bucket;
+    const char *key;
+    int days;
+} Qiniu_RS_EntryDeleteAfterDays;
+
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchChangeType(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+                                                         Qiniu_RS_EntryChangeType *entry, Qiniu_ItemCount entryCount);
+
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchChangeMime(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+                                                         Qiniu_RS_EntryChangeMime *entry, Qiniu_ItemCount entryCount);
+
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchDeleteAfterDays(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+                                                              Qiniu_RS_EntryDeleteAfterDays *entry,
+                                                              Qiniu_ItemCount entryCount);
 
 #pragma pack()
 

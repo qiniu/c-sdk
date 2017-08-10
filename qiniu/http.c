@@ -8,7 +8,6 @@
  */
 
 #include "http.h"
-#include "region.h"
 #include "../cJSON/cJSON.h"
 #include <curl/curl.h>
 
@@ -68,7 +67,6 @@ void Qiniu_Buffer_formatInit();
 
 void Qiniu_Global_Init(long flags) {
     Qiniu_Buffer_formatInit();
-    Qiniu_Rgn_Enable();
     curl_global_init(CURL_GLOBAL_ALL);
 }
 
@@ -153,6 +151,19 @@ const char *Qiniu_Json_GetStringAt(Qiniu_Json *self, int n, const char *defval) 
     }
 }
 
+int Qiniu_Json_GetInt(Qiniu_Json *self, const char *key, int defval) {
+    Qiniu_Json *sub;
+    if (self == NULL) {
+        return defval;
+    }
+    sub = cJSON_GetObjectItem(self, key);
+    if (sub != NULL && sub->type == cJSON_Number) {
+        return (int) sub->valuedouble;
+    } else {
+        return defval;
+    }
+}
+
 Qiniu_Int64 Qiniu_Json_GetInt64(Qiniu_Json *self, const char *key, Qiniu_Int64 defval) {
     Qiniu_Json *sub;
     if (self == NULL) {
@@ -161,6 +172,19 @@ Qiniu_Int64 Qiniu_Json_GetInt64(Qiniu_Json *self, const char *key, Qiniu_Int64 d
     sub = cJSON_GetObjectItem(self, key);
     if (sub != NULL && sub->type == cJSON_Number) {
         return (Qiniu_Int64) sub->valuedouble;
+    } else {
+        return defval;
+    }
+}
+
+Qiniu_Uint64 Qiniu_Json_GetUInt64(Qiniu_Json *self, const char *key, Qiniu_Uint64 defval) {
+    Qiniu_Json *sub;
+    if (self == NULL) {
+        return defval;
+    }
+    sub = cJSON_GetObjectItem(self, key);
+    if (sub != NULL && sub->type == cJSON_Number) {
+        return (Qiniu_Uint64) sub->valuedouble;
     } else {
         return defval;
     }
@@ -227,7 +251,7 @@ void Qiniu_Json_Destroy(Qiniu_Json *self) {
     cJSON_Delete(self);
 } // Qiniu_Json_Destroy
 
-Qiniu_Uint32 Qiniu_Json_GetInt(Qiniu_Json *self, const char *key, Qiniu_Uint32 defval) {
+Qiniu_Uint32 Qiniu_Json_GetUInt32(Qiniu_Json *self, const char *key, Qiniu_Uint32 defval) {
     Qiniu_Json *sub;
     if (self == NULL) {
         return defval;
@@ -260,8 +284,6 @@ void Qiniu_Client_InitEx(Qiniu_Client *self, Qiniu_Auth auth, size_t bufSize) {
 
     self->lowSpeedLimit = 0;
     self->lowSpeedTime = 0;
-
-    self->regionTable = Qiniu_Rgn_Table_Create();
 }
 
 void Qiniu_Client_InitNoAuth(Qiniu_Client *self, size_t bufSize) {
@@ -281,10 +303,6 @@ void Qiniu_Client_Cleanup(Qiniu_Client *self) {
         cJSON_Delete(self->root);
         self->root = NULL;
     }
-    if (self->regionTable != NULL) {
-        Qiniu_Rgn_Table_Destroy(self->regionTable);
-        self->regionTable = NULL;
-    } // if
     Qiniu_Buffer_Cleanup(&self->b);
     Qiniu_Buffer_Cleanup(&self->respHeader);
 }
@@ -437,11 +455,6 @@ Qiniu_Error Qiniu_Client_Call(Qiniu_Client *self, Qiniu_Json **ret, const char *
 
 
     err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
-    /*
-     * Bug No.(4601) Wang Xiaotao 2013\10\12 17:09:02
-     * Change for : free  var headers 'variable'
-     * Reason     : memory leak!
-     */
     curl_slist_free_all(headers);
     *ret = self->root;
     return err;
@@ -460,12 +473,6 @@ Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client *self, const char *url) {
     }
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-    /*
-     * Bug No.(4601) Wang Xiaotao 2013\10\12 17:09:02
-     * Change for : free  var headers 'variable'
-     * Reason     : memory leak!
-     */
     err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
     curl_slist_free_all(headers);
     return err;

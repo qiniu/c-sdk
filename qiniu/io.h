@@ -11,7 +11,6 @@
 #define QINIU_IO_H
 
 #include "http.h"
-#include "region.h"
 #include "reader.h"
 
 #pragma pack(1)
@@ -45,19 +44,11 @@ typedef struct _Qiniu_Io_PutExtra {
 	void* callbackRet;
 	Qiniu_Error (*callbackRetParser)(void*, Qiniu_Json*);
 
-	// For those who want to send request to specific host.
-	const char* upHost;
-	Qiniu_Uint32 upHostFlags;
-	const char* upBucket;
-	const char* accessKey;
-	const char* uptoken;
-
 	// For those who want to abort uploading data to server.
 	void * upAbortUserData;
 	Qiniu_Rd_FnAbort upAbortCallback;
 
-	// Use the following field to specify the size of an uploading file definitively.
-	size_t upFileSize;
+    const char *upHost;
 } Qiniu_Io_PutExtra;
 
 /*============================================================================*/

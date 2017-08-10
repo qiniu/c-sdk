@@ -64,7 +64,10 @@ typedef struct cJSON Qiniu_Json;
 QINIU_DLLAPI extern const char* Qiniu_Json_GetString(Qiniu_Json* self, const char* key, const char* defval);
 QINIU_DLLAPI extern int Qiniu_Json_GetArraySize(Qiniu_Json *self, const char* key, Qiniu_Int64 defval);
 QINIU_DLLAPI extern const char* Qiniu_Json_GetStringAt(Qiniu_Json* self, int n, const char* defval);
+QINIU_DLLAPI extern Qiniu_Uint32 Qiniu_Json_GetUInt32(Qiniu_Json *self, const char *key, Qiniu_Uint32 defval);
 QINIU_DLLAPI extern Qiniu_Int64 Qiniu_Json_GetInt64(Qiniu_Json* self, const char* key, Qiniu_Int64 defval);
+QINIU_DLLAPI extern Qiniu_Uint64 Qiniu_Json_GetUInt64(Qiniu_Json* self, const char* key, Qiniu_Uint64 defval);
+QINIU_DLLAPI extern int Qiniu_Json_GetInt(Qiniu_Json *self, const char *key, int defval);
 QINIU_DLLAPI extern int Qiniu_Json_GetBoolean(Qiniu_Json* self, const char* key, int defval);
 QINIU_DLLAPI extern Qiniu_Json* Qiniu_Json_GetObjectItem(Qiniu_Json* self, const char* key, Qiniu_Json* defval);
 QINIU_DLLAPI extern Qiniu_Json* Qiniu_Json_GetArrayItem(Qiniu_Json* self, int n, Qiniu_Json* defval);
@@ -92,8 +95,6 @@ QINIU_DLLAPI extern Qiniu_Auth Qiniu_NoAuth;
 /*============================================================================*/
 /* type Qiniu_Client */
 
-struct _Qiniu_Rgn_RegionTable;
-
 typedef struct _Qiniu_Client {
 	void* curl;
 	Qiniu_Auth auth;
@@ -113,9 +114,6 @@ typedef struct _Qiniu_Client {
 	// the transfer speed should be below the logSpeedLimit for this SDK to consider it
 	// too slow and abort.
 	long lowSpeedTime;
-
-	// Use the following field to manange information of multi-region.
-	struct _Qiniu_Rgn_RegionTable * regionTable;
 } Qiniu_Client;
 
 QINIU_DLLAPI extern void Qiniu_Client_InitEx(Qiniu_Client* self, Qiniu_Auth auth, size_t bufSize);

@@ -7,12 +7,7 @@
 
 #include "http.h"
 
-typedef struct __Qiniu_RSF_CommonPrefix {
-    const char *value;
-    struct __Qiniu_RSF_CommonPrefix *next;
-} Qiniu_RSF_CommonPrefix;
-
-typedef struct __Qiniu_RSF_ListItem {
+typedef struct _Qiniu_RSF_ListItem {
     const char *key;
     const char *hash;
     const char *mimeType;
@@ -20,13 +15,14 @@ typedef struct __Qiniu_RSF_ListItem {
     Qiniu_Int64 fsize;
     Qiniu_Int64 putTime;
     Qiniu_Int64 type;
-    struct __Qiniu_RSF_ListItem *next;
 } Qiniu_RSF_ListItem;
 
-typedef struct __Qiniu_RSF_ListRet {
+typedef struct _Qiniu_RSF_ListRet {
     const char *marker;
-    struct __Qiniu_RSF_CommonPrefix *commonPrefix;
-    struct __Qiniu_RSF_ListItem *item;
+    char **commonPrefixes;
+    int commonPrefixesCount;
+    struct _Qiniu_RSF_ListItem *items;
+    int itemsCount;
 } Qiniu_RSF_ListRet;
 
 QINIU_DLLAPI extern Qiniu_Error Qiniu_RSF_ListFiles(Qiniu_Client *self, Qiniu_RSF_ListRet *ret, const char *bucket,

@@ -96,9 +96,6 @@ typedef int (*Qiniu_Rio_FnNotify)(void* recvr, int blkIdx, int blkSize, Qiniu_Ri
 typedef int (*Qiniu_Rio_FnNotifyErr)(void* recvr, int blkIdx, int blkSize, Qiniu_Error err);
 
 typedef struct _Qiniu_Rio_PutExtra {
-	const char* callbackParams;
-	const char* bucket;
-	const char* customMeta;
 	const char* mimeType;
 	int chunkSize;
 	int tryTimes;
@@ -129,10 +126,6 @@ typedef struct _Qiniu_Rio_PutExtra {
 
 	// For those who want to send request to specific host.
 	const char* upHost;
-	Qiniu_Uint32 upHostFlags;
-	const char* upBucket;
-	const char* accessKey;
-	const char* uptoken;
 } Qiniu_Rio_PutExtra;
 
 /*============================================================================*/

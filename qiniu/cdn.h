@@ -14,185 +14,153 @@
 #include "macro.h"
 #include "http.h"
 
- #ifdef __cplusplus
+#ifdef __cplusplus
  extern "C"
  {
  #endif
 
-#define TRUE 1
-#define FALSE 0
 
-typedef unsigned char BOOL;
+QINIU_DLLAPI extern char *Qiniu_CDN_CreateTimestampAntiLeechURL(const char *host, const char *fileName, char *queryStr,
+                                                                Qiniu_Uint64 deadline, const char *cryptKey);
 
-typedef struct _Qiniu_Cdn_RefreshRet {
-	int    code;
-	char*  error;
-	char*  requestId;
-	char*  invalidUrls;
-	char*  invalidDirs;
-	int    urlQuotaDay;
-	int    urlSurplusDay;
-	int    dirQuotaDay;
-	int    dirSurplusDay;
+/*============================================================================*/
 
-} Qiniu_Cdn_RefreshRet;
+typedef struct _Qiniu_CDN_RefreshRet {
+    int code;
+    const char *error;
+    const char *requestId;
+    char **invalidUrls;
+    int invalidUrlsCount;
+    char **invalidDirs;
+    int invalidDirsCount;
+    int urlQuotaDay;
+    int urlSurplusDay;
+    int dirQuotaDay;
+    int dirSurplusDay;
 
-typedef struct _Qiniu_Cdn_PrefetchRet {
-	int    code;
-	char*  error;
-	char*  requestId;
-	char*  invalidUrls;
-	int    quotaDay;
-	int    surplusDay;
+} Qiniu_CDN_RefreshRet;
 
-} Qiniu_Cdn_PrefetchRet;
+/* func Qiniu_CDN_RefreshUrls*/
+QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_RefreshUrls(Qiniu_Client *self, Qiniu_CDN_RefreshRet *ret, const char *urls[],
+                                                      const int urlsCount);
 
-/********************************
- *          time : string
- *     val_china : int
- *   val_oversea : int
- ********************************/
-typedef struct _Qiniu_Cdn_FluxOrBandwidthDataItem {
-	char* time;
-	int   val_china;
-	int   val_oversea;
-}Qiniu_Cdn_FluxDataItem, Qiniu_Cdn_BandwidthDataItem;
+/* func Qiniu_CDN_RefreshDirs*/
+QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_RefreshDirs(Qiniu_Client *self, Qiniu_CDN_RefreshRet *ret, const char *dirs[],
+                                                      const int dirsCount);
 
-/************************************
- *  domain : string
- *  item_a : array
- *   count : int (item array size)
- ************************************/
-typedef struct _Qiniu_Cdn_FluxData {
-	char*                   domain;
-	Qiniu_Cdn_FluxDataItem* item_a;
-	int                     count;
-	BOOL                    hasValue;
-} Qiniu_Cdn_FluxData;
+/*============================================================================*/
+typedef struct _Qiniu_CDN_PrefetchRet {
+    int code;
+    const char *error;
+    const char *requestId;
+    char **invalidUrls;
+    int invalidUrlsCount;
+    int quotaDay;
+    int surplusDay;
 
-/************************************
- *  domain : string
- *  item_a : array
- *   count : int (item array size)
- ************************************/
-typedef struct _Qiniu_Cdn_BandwidthData {
-	char*                        domain;
-	Qiniu_Cdn_BandwidthDataItem* item_a;
-	int                          count;
-	BOOL                         hasValue;
-} Qiniu_Cdn_BandwidthData;
+} Qiniu_CDN_PrefetchRet;
 
-/************************************
- *   code : int
- *  error : string
- * data_a : array
- *    num : int (data array size)
- ************************************/
-typedef struct _Qiniu_Cdn_FluxRet {
-	int                 code;
-	char*               error;
-	Qiniu_Cdn_FluxData* data_a;
-	int                 num;
-}Qiniu_Cdn_FluxRet;
+/* func Qiniu_CDN_PrefetchUrls*/
+QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_PrefetchUrls(Qiniu_Client *self, Qiniu_CDN_PrefetchRet *ret,
+                                                       const char *urls[], const int urlsCount);
 
-typedef struct _Qiniu_Cdn_BandwidthRet {
-	int                      code;
-	char*                    error;
-	Qiniu_Cdn_BandwidthData* data_a;
-	int                      num;
-}Qiniu_Cdn_BandwidthRet;
+/*============================================================================*/
 
-/********************************
- *       name : string
- *       size : int
- *      mtime : int
- *        url : string
- ********************************/
-typedef struct _Qiniu_Cdn_LogListDataItem {
-	char* name;
-	int   size;
-	int   mtime;
-	char* url;
-}Qiniu_Cdn_LogListDataItem;
+typedef struct _Qiniu_CDN_FluxData {
+    char *domain;
+    Qiniu_Uint64 *china;
+    int chinaCount;
+    Qiniu_Uint64 *oversea;
+    int overseaCount;
+} Qiniu_CDN_FluxData;
 
-/************************************
- *   domain : string
- *   item_a : array
- *    count : int (item array size)
- * hasValue : BOOL
- ************************************/
-typedef struct _Qiniu_Cdn_LogListData {
-	char*                      domain;
-	Qiniu_Cdn_LogListDataItem* item_a;
-	int                        count;
-	BOOL                       hasValue;
-}Qiniu_Cdn_LogListData;
+typedef struct _Qiniu_CDN_BandwidthData {
+    char *domain;
+    Qiniu_Uint64 *china;
+    int chinaCount;
+    Qiniu_Uint64 *oversea;
+    int overseaCount;
+} Qiniu_CDN_BandwidthData;
 
-/************************************
- *    code : int
- *   error : string
- *  data_a : array
- *     num : int (data array size)
- ************************************/
-typedef struct _Qiniu_Cdn_LogListRet {
-	int                    code;
-	char*                  error;
-	Qiniu_Cdn_LogListData* data_a;
-	int                    num;
-}Qiniu_Cdn_LogListRet;
+typedef struct _Qiniu_CDN_FluxRet {
+    int code;
+    const char *error;
+    char **time;
+    int timeCount;
+    Qiniu_CDN_FluxData *data;
+    int domainsCount;
+} Qiniu_CDN_FluxRet;
 
-#pragma pack(1)
+typedef struct _Qiniu_CDN_BandwidthRet {
+    int code;
+    const char *error;
+    char **time;
+    int timeCount;
+    Qiniu_CDN_BandwidthData *data;
+    int domainsCount;
+} Qiniu_CDN_BandwidthRet;
 
-QINIU_DLLAPI extern char * Qiniu_Cdn_MakeDownloadUrlWithDeadline(const char * key, const char * url, Qiniu_Uint64 deadline);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_GetFluxData(Qiniu_Client *self, Qiniu_CDN_FluxRet *ret,
+                                                      const char *startDate, const char *endDate,
+                                                      const char *granularity, char *domains[],
+                                                      const int domainsCount);
 
-#pragma pack()
+QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_GetBandwidthData(Qiniu_Client *self, Qiniu_CDN_BandwidthRet *ret,
+                                                           const char *startDate, const char *endDate,
+                                                           const char *granularity, char *domains[],
+                                                           const int domainsCount);
 
-//=====================================================================
-// ADDED CDN FUNCTIONS:
-// 1. RefreshUrls
-// 2. RefreshDirs
-// 3. PrefetchUrls
-// 4. GetFluxData
-// 5. GetBandwidthData
-// 6. GetLogList
-// *. Parse/Free
-// MODIFIED by fengyh 2017-03-28 11:50
-//======================================================================
+/*============================================================================*/
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_Cdn_RefreshUrls(Qiniu_Client* self, Qiniu_Cdn_RefreshRet* ret, const char* urls[], const int num);
+typedef struct _Qiniu_CDN_LogListDataItem {
+    const char *name;
+    const char *url;
+    Qiniu_Int64 size;
+    Qiniu_Int64 mtime;
+} Qiniu_CDN_LogListDataItem;
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_Cdn_RefreshDirs(Qiniu_Client* self, Qiniu_Cdn_RefreshRet* ret, const char* dirs[], const int num);
+typedef struct _Qiniu_CDN_LogListData {
+    const char *domain;
+    int itemsCount;
+    struct _Qiniu_CDN_LogListDataItem *items;
+} Qiniu_CDN_LogListData;
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_Cdn_PrefetchUrls(Qiniu_Client* self, Qiniu_Cdn_PrefetchRet* ret, const char* urls[], const int num);
+typedef struct _Qiniu_CDN_LogListRet {
+    int code;
+    const char *error;
+    struct _Qiniu_CDN_LogListData *data;
+    int domainsCount;
+} Qiniu_CDN_LogListRet;
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_Cdn_GetFluxData(Qiniu_Client* self, Qiniu_Cdn_FluxRet* ret,
-	const char* startDate, const char* endDate, const char* granularity, const char* domains[], const int num);
+/* func Qiniu_CDN_GetLogList*/
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_Cdn_GetBandwidthData(Qiniu_Client* self, Qiniu_Cdn_BandwidthRet* ret,
-	const char* startDate, const char* endDate, const char* granularity, const char* domains[], const int num);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_GetLogList(Qiniu_Client *self, Qiniu_CDN_LogListRet *ret,
+                                                     char *domains[], int domainsCount, const char *day);
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_Cdn_GetLogList(Qiniu_Client* self, Qiniu_Cdn_LogListRet* ret,
-	const char* day, const char* domains[], const int num);
+/* func Qiniu_Parse_* */
+QINIU_DLLAPI extern Qiniu_Error Qiniu_Parse_CDNRefreshRet(Qiniu_Json *root, Qiniu_CDN_RefreshRet *ret);
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_Parse_CdnRefreshRet(Qiniu_Json* root, Qiniu_Cdn_RefreshRet* ret);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_Parse_CDNPrefetchRet(Qiniu_Json *root, Qiniu_CDN_PrefetchRet *ret);
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_Parse_CdnPrefetchRet(Qiniu_Json* root, Qiniu_Cdn_PrefetchRet* ret);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_Parse_CDNFluxRet(Qiniu_Json *root, Qiniu_CDN_FluxRet *ret, char *domains[],
+                                                       const int num);
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_Parse_CdnFluxRet(Qiniu_Json* root, Qiniu_Cdn_FluxRet* ret, const char* domains[], const int num);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_Parse_CDNBandwidthRet(Qiniu_Json *root, Qiniu_CDN_BandwidthRet *ret,
+                                                            char *domains[], const int num);
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_Parse_CdnBandwidthRet(Qiniu_Json* root, Qiniu_Cdn_BandwidthRet* ret, const char* domains[], const int num);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_Parse_CDNLogListRet(Qiniu_Json *root, Qiniu_CDN_LogListRet *ret,
+                                                          char *domains[], const int num);
 
-QINIU_DLLAPI extern Qiniu_Error Qiniu_Parse_CdnLogListRet(Qiniu_Json* root, Qiniu_Cdn_LogListRet* ret, const char* domains[], const int num);
+/* func Qiniu_Free_* */
+QINIU_DLLAPI extern void Qiniu_Free_CDNRefreshRet(Qiniu_CDN_RefreshRet *ret);
 
-QINIU_DLLAPI extern void Qiniu_Free_CdnRefreshRet(Qiniu_Cdn_RefreshRet* ret);
+QINIU_DLLAPI extern void Qiniu_Free_CDNPrefetchRet(Qiniu_CDN_PrefetchRet *ret);
 
-QINIU_DLLAPI extern void Qiniu_Free_CdnPrefetchRet(Qiniu_Cdn_PrefetchRet* ret);
+QINIU_DLLAPI extern void Qiniu_Free_CDNFluxRet(Qiniu_CDN_FluxRet *ret);
 
-QINIU_DLLAPI extern void Qiniu_Free_CdnFluxRet(Qiniu_Cdn_FluxRet* ret);
+QINIU_DLLAPI extern void Qiniu_Free_CDNBandwidthRet(Qiniu_CDN_BandwidthRet *ret);
 
-QINIU_DLLAPI extern void Qiniu_Free_CdnBandwidthRet(Qiniu_Cdn_BandwidthRet* ret);
-
-QINIU_DLLAPI extern void Qiniu_Free_CdnLogListRet(Qiniu_Cdn_LogListRet* ret);
+QINIU_DLLAPI extern void Qiniu_Free_CDNLogListRet(Qiniu_CDN_LogListRet *ret);
 
 //=====================================================================
 

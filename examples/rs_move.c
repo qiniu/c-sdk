@@ -7,12 +7,13 @@
 #include "debug.h"
 
 int main(int argc, char **argv) {
-    Qiniu_RS_StatRet statRet;
+    Qiniu_Global_Init(-1);
+
     Qiniu_Client client;
 
     char *accessKey = getenv("QINIU_ACCESS_KEY");
     char *secretKey = getenv("QINIU_SECRET_KEY");
-    char *srcBucket = "csdk";
+    char *srcBucket = getenv("QINIU_TEST_BUCKET");;
     char *srcKey = "qiniu.png";
     char *destBucket = srcBucket;
     char *destKey = "qiniu_move.png";
