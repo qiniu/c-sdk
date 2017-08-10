@@ -66,6 +66,7 @@ QINIU_DLLAPI extern int Qiniu_Json_GetArraySize(Qiniu_Json *self, const char* ke
 QINIU_DLLAPI extern const char* Qiniu_Json_GetStringAt(Qiniu_Json* self, int n, const char* defval);
 QINIU_DLLAPI extern Qiniu_Uint32 Qiniu_Json_GetUInt32(Qiniu_Json *self, const char *key, Qiniu_Uint32 defval);
 QINIU_DLLAPI extern Qiniu_Int64 Qiniu_Json_GetInt64(Qiniu_Json* self, const char* key, Qiniu_Int64 defval);
+QINIU_DLLAPI extern Qiniu_Uint64 Qiniu_Json_GetUInt64(Qiniu_Json* self, const char* key, Qiniu_Uint64 defval);
 QINIU_DLLAPI extern int Qiniu_Json_GetInt(Qiniu_Json *self, const char *key, int defval);
 QINIU_DLLAPI extern int Qiniu_Json_GetBoolean(Qiniu_Json* self, const char* key, int defval);
 QINIU_DLLAPI extern Qiniu_Json* Qiniu_Json_GetObjectItem(Qiniu_Json* self, const char* key, Qiniu_Json* defval);

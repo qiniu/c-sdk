@@ -187,8 +187,8 @@ QINIU_DLLAPI Qiniu_Error Qiniu_CDN_RefreshUrls(Qiniu_Client *self, Qiniu_CDN_Ref
 
     char *path = "/v2/tune/refresh";
     char *url = Qiniu_String_Concat2(QINIU_FUSION_HOST, path);
-    cJSON *root = cJSON_CreateObject();
-    cJSON *pUrls = cJSON_CreateStringArray(urls, urlsCount);
+    Qiniu_Json *root = cJSON_CreateObject();
+    Qiniu_Json *pUrls = cJSON_CreateStringArray(urls, urlsCount);
     cJSON_AddItemToObject(root, "urls", pUrls);
     char *body = cJSON_PrintUnformatted(root);
 
@@ -215,8 +215,8 @@ QINIU_DLLAPI Qiniu_Error Qiniu_CDN_RefreshDirs(Qiniu_Client *self, Qiniu_CDN_Ref
     char *path = "/v2/tune/refresh";
     char *url = Qiniu_String_Concat2(QINIU_FUSION_HOST, path);
 
-    cJSON *root = cJSON_CreateObject();
-    cJSON *pDirs = cJSON_CreateStringArray(dirs, dirsCount);
+    Qiniu_Json *root = cJSON_CreateObject();
+    Qiniu_Json *pDirs = cJSON_CreateStringArray(dirs, dirsCount);
     cJSON_AddItemToObject(root, "dirs", pDirs);
     char *body = cJSON_PrintUnformatted(root);
 
@@ -243,8 +243,8 @@ QINIU_DLLAPI Qiniu_Error Qiniu_CDN_PrefetchUrls(Qiniu_Client *self, Qiniu_CDN_Pr
     char *path = "/v2/tune/prefetch";
     char *url = Qiniu_String_Concat2(QINIU_FUSION_HOST, path);
 
-    cJSON *root = cJSON_CreateObject();
-    cJSON *url_a = cJSON_CreateStringArray(urls, num);
+    Qiniu_Json *root = cJSON_CreateObject();
+    Qiniu_Json *url_a = cJSON_CreateStringArray(urls, num);
     cJSON_AddItemToObject(root, "urls", url_a);
     char *body = cJSON_PrintUnformatted(root);
 
@@ -280,7 +280,7 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_GetFluxData(
 
     char *domains_str = Qiniu_String_Join(";", domains, num);
 
-    cJSON *root = cJSON_CreateObject();
+    Qiniu_Json *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "startDate", startDate);
     cJSON_AddStringToObject(root, "endDate", endDate);
     cJSON_AddStringToObject(root, "granularity", granularity);
@@ -319,7 +319,7 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_GetBandwidthData(
 
     char *domains_str = Qiniu_String_Join(";", domains, num);
 
-    cJSON *root = cJSON_CreateObject();
+    Qiniu_Json *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "startDate", startDate);
     cJSON_AddStringToObject(root, "endDate", endDate);
     cJSON_AddStringToObject(root, "granularity", granularity);
@@ -345,7 +345,7 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_GetBandwidthData(
 }
 
 QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_GetLogList(Qiniu_Client *self, Qiniu_CDN_LogListRet *ret,
-                                                     char *domains[], const char *day, const int domainsCount) {
+                                                     char *domains[], const int domainsCount, const char *day) {
     Qiniu_Error err;
 
     char *path = "/v2/tune/log/list";
@@ -353,7 +353,7 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_GetLogList(Qiniu_Client *self, Qiniu_C
 
     char *domainsStr = Qiniu_String_Join(";", domains, domainsCount);
 
-    cJSON *root = cJSON_CreateObject();
+    Qiniu_Json *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "day", day);
     cJSON_AddStringToObject(root, "domains", domainsStr);
     char *body = cJSON_PrintUnformatted(root);
@@ -384,7 +384,7 @@ QINIU_DLLAPI Qiniu_Error Qiniu_Parse_CDNRefreshRet(Qiniu_Json *root, Qiniu_CDN_R
     ret->error = Qiniu_Json_GetString(root, "error", NULL);
     ret->requestId = Qiniu_Json_GetString(root, "requestId", NULL);
 
-    cJSON *invalidUrls = cJSON_GetObjectItem(root, "invalidUrls");
+    Qiniu_Json *invalidUrls = cJSON_GetObjectItem(root, "invalidUrls");
     int invalidUrlsCount = cJSON_GetArraySize(invalidUrls);
     if (invalidUrlsCount > 0) {
         ret->invalidUrlsCount = invalidUrlsCount;
@@ -399,7 +399,7 @@ QINIU_DLLAPI Qiniu_Error Qiniu_Parse_CDNRefreshRet(Qiniu_Json *root, Qiniu_CDN_R
         ret->invalidUrls = NULL;
     }
 
-    cJSON *invalidDirs = cJSON_GetObjectItem(root, "invalidDirs");
+    Qiniu_Json *invalidDirs = cJSON_GetObjectItem(root, "invalidDirs");
     int invalidDirsCount = cJSON_GetArraySize(invalidDirs);
     if (invalidDirsCount > 0) {
         ret->invalidDirsCount = invalidDirsCount;
@@ -433,7 +433,7 @@ QINIU_DLLAPI Qiniu_Error Qiniu_Parse_CDNPrefetchRet(Qiniu_Json *root, Qiniu_CDN_
     ret->error = Qiniu_Json_GetString(root, "error", "");
     ret->requestId = Qiniu_Json_GetString(root, "requestId", "");
 
-    cJSON *invalidUrls = cJSON_GetObjectItem(root, "invalidUrls");
+    Qiniu_Json *invalidUrls = cJSON_GetObjectItem(root, "invalidUrls");
     int invalidUrlsCount = cJSON_GetArraySize(invalidUrls);
     if (invalidUrlsCount > 0) {
         ret->invalidUrlsCount = invalidUrlsCount;
@@ -458,87 +458,89 @@ QINIU_DLLAPI Qiniu_Error Qiniu_Parse_CDNPrefetchRet(Qiniu_Json *root, Qiniu_CDN_
 }
 
 QINIU_DLLAPI Qiniu_Error Qiniu_Parse_CDNFluxRet(Qiniu_Json *root, Qiniu_CDN_FluxRet *ret, char *domains[],
-                                                const int num) {
+                                                const int domainsCount) {
     Qiniu_Error err;
     int i, j;
 
     ret->code = Qiniu_Json_GetInt(root, "code", 0);
-    ret->error = Qiniu_Json_GetString(root, "error", "");
-    ret->num = num;
-    ret->data_a = (Qiniu_CDN_FluxData *) malloc(sizeof(Qiniu_CDN_FluxData) * num);
+    ret->error = Qiniu_Json_GetString(root, "error", NULL);
+    ret->domainsCount = domainsCount;
 
-    cJSON *tr = cJSON_GetObjectItem(root, "time");
-    if (tr == NULL) {
+    //parse time
+    int timeCount = Qiniu_Json_GetArraySize(root, "time", 0);
+    if (timeCount == 0) {
+        ret->time = NULL;
+        ret->timeCount = 0;
+        ret->data = NULL;
+
         err.code = 9999;
-        err.message = "Failed to parse cdn-flux-ret-time";
+        err.message = "No cdn flux time";
         return err;
     }
 
-    cJSON *dr = cJSON_GetObjectItem(root, "data");
-    if (dr == NULL) {
+    Qiniu_Json *time = Qiniu_Json_GetObjectItem(root, "time", NULL);
+    ret->timeCount = timeCount;
+    ret->time = (char **) malloc(sizeof(char **) * timeCount);
+    char **pTime = ret->time;
+    for (i = 0; i < timeCount; i++) {
+        char *tVal = Qiniu_Json_GetArrayItem(time, i, NULL)->valuestring;
+        *pTime = tVal;
+        ++pTime;
+    }
+
+    //parse data
+    Qiniu_Json *data = Qiniu_Json_GetObjectItem(root, "data", NULL);
+    if (data == NULL) {
+        ret->data = NULL;
         err.code = 9999;
-        err.message = "Failed to parse cdn cdn-flux-ret-data";
+        err.message = "No cdn flux data";
         return err;
     }
 
-    int count = cJSON_GetArraySize(tr);
+    ret->data = (Qiniu_CDN_FluxData *) malloc(sizeof(Qiniu_CDN_FluxData) * domainsCount);
+    for (i = 0; i < domainsCount; ++i) {
+        char *domain = domains[i];
 
-    for (i = 0; i < num; ++i) {
-        cJSON *item = cJSON_GetObjectItem(dr, domains[i]);
-        if (item == NULL) {
-            ret->data_a[i].hasValue = FALSE;
-            ret->data_a[i].count = 0;
-            continue;
-        }
+        Qiniu_CDN_FluxData fluxData;
+        fluxData.domain = domain;
 
-        ret->data_a[i].hasValue = TRUE;
-        ret->data_a[i].count = count;
-
-        ret->data_a[i].domain = (char *) calloc(256, 1);
-        strcpy(ret->data_a[i].domain, domains[i]);
-
-        ret->data_a[i].item_a = (Qiniu_CDN_FluxDataItem *) malloc(sizeof(Qiniu_CDN_FluxDataItem) * count);
-
-        for (j = 0; j < count; ++j) {
-            ret->data_a[i].item_a[j].time = (char *) calloc(64, 1);
-            strcpy(ret->data_a[i].item_a[j].time, cJSON_GetArrayItem(tr, j)->valuestring);
-        }
-
-        cJSON *item_china = cJSON_GetObjectItem(item, "china");
-        if (item_china != NULL) {
-            for (j = 0; j < count; ++j) {
-                cJSON *v = cJSON_GetArrayItem(item_china, j);
-                if (v != NULL) {
-                    ret->data_a[i].item_a[j].val_china = v->valueint;
-                }
-                else {
-                    ret->data_a[i].item_a[j].val_china = 0;
+        Qiniu_Json *domainFluxObj = Qiniu_Json_GetObjectItem(data, domain, NULL);
+        if (domainFluxObj == NULL) {
+            fluxData.chinaCount = 0;
+            fluxData.china = NULL;
+            fluxData.overseaCount = 0;
+            fluxData.oversea = NULL;
+        } else {
+            //parse china
+            Qiniu_Json *china = Qiniu_Json_GetObjectItem(domainFluxObj, "china", NULL);
+            if (china == NULL) {
+                fluxData.chinaCount = 0;
+                fluxData.china = NULL;
+            } else {
+                int chinaCount = Qiniu_Json_GetArraySize(domainFluxObj, "china", 0);
+                fluxData.chinaCount = chinaCount;
+                fluxData.china = (Qiniu_Uint64 *) malloc(sizeof(Qiniu_Uint64) * chinaCount);
+                for (j = 0; j < chinaCount; j++) {
+                    fluxData.china[j] = (Qiniu_Uint64) Qiniu_Json_GetArrayItem(china, j, 0)->valuedouble;
                 }
             }
-        }
-        else {
-            for (j = 0; j < count; ++j) {
-                ret->data_a[i].item_a[j].val_china = 0;
-            }
-        }
 
-        cJSON *item_oversea = cJSON_GetObjectItem(item, "oversea");
-        if (item_oversea != NULL) {
-            for (j = 0; j < count; ++j) {
-                cJSON *v = cJSON_GetArrayItem(item_oversea, j);
-                if (v != NULL) {
-                    ret->data_a[i].item_a[j].val_oversea = v->valueint;
-                }
-                else {
-                    ret->data_a[i].item_a[j].val_oversea = 0;
+            //parse oversea
+            Qiniu_Json *oversea = Qiniu_Json_GetObjectItem(domainFluxObj, "oversea", NULL);
+            if (oversea == NULL) {
+                fluxData.overseaCount = 0;
+                fluxData.oversea = NULL;
+            } else {
+                int overseaCount = Qiniu_Json_GetArraySize(domainFluxObj, "oversea", 0);
+                fluxData.overseaCount = overseaCount;
+                fluxData.oversea = (Qiniu_Uint64 *) malloc(sizeof(Qiniu_Uint64) * overseaCount);
+                for (j = 0; j < overseaCount; j++) {
+                    fluxData.oversea[j] = (Qiniu_Uint64) Qiniu_Json_GetArrayItem(oversea, j, 0)->valuedouble;
                 }
             }
+
         }
-        else {
-            for (j = 0; j < count; ++j) {
-                ret->data_a[i].item_a[j].val_oversea = 0;
-            }
-        }
+        ret->data[i] = fluxData;
     }
 
     err.code = 200;
@@ -548,87 +550,89 @@ QINIU_DLLAPI Qiniu_Error Qiniu_Parse_CDNFluxRet(Qiniu_Json *root, Qiniu_CDN_Flux
 }
 
 QINIU_DLLAPI Qiniu_Error Qiniu_Parse_CDNBandwidthRet(Qiniu_Json *root, Qiniu_CDN_BandwidthRet *ret,
-                                                     char *domains[], const int num) {
+                                                     char *domains[], const int domainsCount) {
     Qiniu_Error err;
     int i, j;
 
     ret->code = Qiniu_Json_GetInt(root, "code", 0);
-    ret->error = Qiniu_Json_GetString(root, "error", "");
-    ret->num = num;
-    ret->data_a = (Qiniu_CDN_BandwidthData *) malloc(sizeof(Qiniu_CDN_BandwidthData) * num);
+    ret->error = Qiniu_Json_GetString(root, "error", NULL);
+    ret->domainsCount = domainsCount;
 
-    cJSON *tr = cJSON_GetObjectItem(root, "time");
-    if (tr == NULL) {
+    //parse time
+    int timeCount = Qiniu_Json_GetArraySize(root, "time", 0);
+    if (timeCount == 0) {
+        ret->time = NULL;
+        ret->timeCount = 0;
+        ret->data = NULL;
+
         err.code = 9999;
-        err.message = "Failed to parse cdn time";
+        err.message = "No cdn bandwidth time";
         return err;
     }
 
-    cJSON *dr = cJSON_GetObjectItem(root, "data");
-    if (dr == NULL) {
+    Qiniu_Json *time = Qiniu_Json_GetObjectItem(root, "time", NULL);
+    ret->timeCount = timeCount;
+    ret->time = (char **) malloc(sizeof(char **) * timeCount);
+    char **pTime = ret->time;
+    for (i = 0; i < timeCount; i++) {
+        char *tVal = Qiniu_Json_GetArrayItem(time, i, NULL)->valuestring;
+        *pTime = tVal;
+        ++pTime;
+    }
+
+    //parse data
+    Qiniu_Json *data = Qiniu_Json_GetObjectItem(root, "data", NULL);
+    if (data == NULL) {
+        ret->data = NULL;
         err.code = 9999;
-        err.message = "Failed to parse cdn data";
+        err.message = "No cdn bandwidth data";
         return err;
     }
 
-    int count = cJSON_GetArraySize(tr);
+    ret->data = (Qiniu_CDN_BandwidthData *) malloc(sizeof(Qiniu_CDN_BandwidthData) * domainsCount);
+    for (i = 0; i < domainsCount; ++i) {
+        char *domain = domains[i];
 
-    for (i = 0; i < num; ++i) {
-        cJSON *item = cJSON_GetObjectItem(dr, domains[i]);
-        if (item == NULL) {
-            ret->data_a[i].hasValue = FALSE;
-            ret->data_a[i].count = 0;
-            continue;
-        }
+        Qiniu_CDN_BandwidthData bandData;
+        bandData.domain = domain;
 
-        ret->data_a[i].hasValue = TRUE;
-        ret->data_a[i].count = count;
-
-        ret->data_a[i].domain = (char *) calloc(256, 1);
-        strcpy(ret->data_a[i].domain, domains[i]);
-
-        ret->data_a[i].item_a = (Qiniu_CDN_FluxDataItem *) malloc(sizeof(Qiniu_CDN_FluxDataItem) * count);
-
-        for (j = 0; j < count; ++j) {
-            ret->data_a[i].item_a[j].time = (char *) calloc(64, 1);
-            strcpy(ret->data_a[i].item_a[j].time, cJSON_GetArrayItem(tr, j)->valuestring);
-        }
-
-        cJSON *item_china = cJSON_GetObjectItem(item, "china");
-        if (item_china != NULL) {
-            for (j = 0; j < count; ++j) {
-                cJSON *v = cJSON_GetArrayItem(item_china, j);
-                if (v != NULL) {
-                    ret->data_a[i].item_a[j].val_china = v->valueint;
-                }
-                else {
-                    ret->data_a[i].item_a[j].val_china = 0;
+        Qiniu_Json *domainBandObj = Qiniu_Json_GetObjectItem(data, domain, NULL);
+        if (domainBandObj == NULL) {
+            bandData.chinaCount = 0;
+            bandData.china = NULL;
+            bandData.overseaCount = 0;
+            bandData.oversea = NULL;
+        } else {
+            //parse china
+            Qiniu_Json *china = Qiniu_Json_GetObjectItem(domainBandObj, "china", NULL);
+            if (china == NULL) {
+                bandData.chinaCount = 0;
+                bandData.china = NULL;
+            } else {
+                int chinaCount = Qiniu_Json_GetArraySize(domainBandObj, "china", 0);
+                bandData.chinaCount = chinaCount;
+                bandData.china = (Qiniu_Uint64 *) malloc(sizeof(Qiniu_Uint64) * chinaCount);
+                for (j = 0; j < chinaCount; j++) {
+                    bandData.china[j] = (Qiniu_Uint64) Qiniu_Json_GetArrayItem(china, j, 0)->valuedouble;
                 }
             }
-        }
-        else {
-            for (j = 0; j < count; ++j) {
-                ret->data_a[i].item_a[j].val_china = 0;
-            }
-        }
 
-        cJSON *item_oversea = cJSON_GetObjectItem(item, "oversea");
-        if (item_oversea != NULL) {
-            for (j = 0; j < count; ++j) {
-                cJSON *v = cJSON_GetArrayItem(item_oversea, j);
-                if (v != NULL) {
-                    ret->data_a[i].item_a[j].val_oversea = v->valueint;
-                }
-                else {
-                    ret->data_a[i].item_a[j].val_oversea = 0;
+            //parse oversea
+            Qiniu_Json *oversea = Qiniu_Json_GetObjectItem(domainBandObj, "oversea", NULL);
+            if (oversea == NULL) {
+                bandData.overseaCount = 0;
+                bandData.oversea = NULL;
+            } else {
+                int overseaCount = Qiniu_Json_GetArraySize(domainBandObj, "oversea", 0);
+                bandData.overseaCount = overseaCount;
+                bandData.oversea = (Qiniu_Uint64 *) malloc(sizeof(Qiniu_Uint64) * overseaCount);
+                for (j = 0; j < overseaCount; j++) {
+                    bandData.oversea[j] = (Qiniu_Uint64) Qiniu_Json_GetArrayItem(oversea, j, 0)->valuedouble;
                 }
             }
+
         }
-        else {
-            for (j = 0; j < count; ++j) {
-                ret->data_a[i].item_a[j].val_oversea = 0;
-            }
-        }
+        ret->data[i] = bandData;
     }
 
     err.code = 200;
@@ -650,7 +654,7 @@ QINIU_DLLAPI Qiniu_Error Qiniu_Parse_CDNLogListRet(Qiniu_Json *root, Qiniu_CDN_L
     if (data == NULL) {
         ret->data = NULL;
         err.code = 9999;
-        err.message = "no cdn log data";
+        err.message = "No cdn log data";
         return err;
     }
 
@@ -706,42 +710,22 @@ QINIU_DLLAPI void Qiniu_Free_CDNPrefetchRet(Qiniu_CDN_PrefetchRet *ret) {
 }
 
 QINIU_DLLAPI void Qiniu_Free_CDNFluxRet(Qiniu_CDN_FluxRet *ret) {
-    int i, j;
-    if (ret->error != NULL) {
-        free(ret->error);
-    }
 
-    if (ret->data_a != NULL) {
-        for (i = 0; i < ret->num; ++i) {
-            if (ret->data_a[i].hasValue != NULL) {
-                free(ret->data_a[i].domain);
-                for (j = 0; j < ret->data_a[i].count; ++j) {
-                    free(ret->data_a[i].item_a[j].time);
-                }
-                free(ret->data_a[i].item_a);
-            }
-        }
-        free(ret->data_a);
-    }
 }
 
 QINIU_DLLAPI void Qiniu_Free_CDNBandwidthRet(Qiniu_CDN_BandwidthRet *ret) {
     int i, j;
-    if (ret->error != NULL) {
-        free(ret->error);
-    }
 
-    if (ret->data_a != NULL) {
-        for (i = 0; i < ret->num; ++i) {
-            if (ret->data_a[i].hasValue != NULL) {
-                free(ret->data_a[i].domain);
-                for (j = 0; j < ret->data_a[i].count; ++j) {
-                    free(ret->data_a[i].item_a[j].time);
-                }
-                free(ret->data_a[i].item_a);
+    if (ret->data != NULL) {
+        for (i = 0; i < ret->domainsCount; ++i) {
+            if (ret->data[i].china != NULL) {
+                Qiniu_Free(ret->data[i].china);
+            }
+            if (ret->data[i].oversea != NULL) {
+                Qiniu_Free(ret->data[i].oversea);
             }
         }
-        free(ret->data_a);
+        free(ret->data);
     }
 }
 

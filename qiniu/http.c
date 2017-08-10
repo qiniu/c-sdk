@@ -151,7 +151,7 @@ const char *Qiniu_Json_GetStringAt(Qiniu_Json *self, int n, const char *defval) 
     }
 }
 
-int Qiniu_Json_GetInt(Qiniu_Json *self, const char *key, int defval){
+int Qiniu_Json_GetInt(Qiniu_Json *self, const char *key, int defval) {
     Qiniu_Json *sub;
     if (self == NULL) {
         return defval;
@@ -172,6 +172,19 @@ Qiniu_Int64 Qiniu_Json_GetInt64(Qiniu_Json *self, const char *key, Qiniu_Int64 d
     sub = cJSON_GetObjectItem(self, key);
     if (sub != NULL && sub->type == cJSON_Number) {
         return (Qiniu_Int64) sub->valuedouble;
+    } else {
+        return defval;
+    }
+}
+
+Qiniu_Uint64 Qiniu_Json_GetUInt64(Qiniu_Json *self, const char *key, Qiniu_Uint64 defval) {
+    Qiniu_Json *sub;
+    if (self == NULL) {
+        return defval;
+    }
+    sub = cJSON_GetObjectItem(self, key);
+    if (sub != NULL && sub->type == cJSON_Number) {
+        return (Qiniu_Uint64) sub->valuedouble;
     } else {
         return defval;
     }

@@ -98,6 +98,12 @@ cdn_prefetch_urls: $(SOURCE_FILES) ./cdn_prefetch_urls.c
 cdn_get_log_list: $(SOURCE_FILES) ./cdn_get_log_list.c
 	gcc -g $^ -o exec_cdn_get_log_list $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
+cdn_get_flux_data: $(SOURCE_FILES) ./cdn_get_flux_data.c
+	gcc -g $^ -o exec_cdn_get_flux_data $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
+cdn_get_bandwidth_data: $(SOURCE_FILES) ./cdn_get_bandwidth_data.c
+	gcc -g $^ -o exec_cdn_get_bandwidth_data $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
 test1: $(SOURCE_FILES) ./test.c
 	gcc -g $^ -o exec_test1 $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 

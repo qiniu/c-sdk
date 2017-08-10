@@ -5,7 +5,6 @@ int main(int argc, char **argv) {
     Qiniu_Client client;
     Qiniu_CDN_LogListRet ret;
     Qiniu_Error error;
-    char **p;
     int i, j;
 
     char *accessKey = getenv("QINIU_ACCESS_KEY");
@@ -27,7 +26,7 @@ int main(int argc, char **argv) {
     //init
     Qiniu_Zero(ret);
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
-    error = Qiniu_CDN_GetLogList(&client, &ret, domains, day, domainsCount);
+    error = Qiniu_CDN_GetLogList(&client, &ret, domains, domainsCount,day);
     if (error.code != 200) {
         printf("get domain logs error.\n");
         debug_log(&client, error);
@@ -41,7 +40,6 @@ int main(int argc, char **argv) {
 
         //data
         for (i = 0; i < ret.domainsCount; i++) {
-            printf("%d\n", i);
             Qiniu_CDN_LogListData logData = ret.data[i];
             if (logData.itemsCount == 0) {
                 printf("domain: %s, no log data\n", logData.domain);
