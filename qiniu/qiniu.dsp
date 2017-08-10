@@ -164,11 +164,11 @@ SOURCE=..\cJSON\cJSON.h
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\c-sdk-wdeps\emu-posix\emu_posix.c"
+SOURCE=".\emu_posix.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\c-sdk-wdeps\emu-posix\emu_posix.h"
+SOURCE=".\emu_posix.h"
 # End Source File
 # Begin Source File
 

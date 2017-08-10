@@ -1,166 +1,168 @@
 EXPORTS
-  QINIU_ACCESS_KEY DATA
-  QINIU_API_HOST DATA
-  QINIU_FUSION_HOST DATA
-  QINIU_IOVIP_HOST DATA
-  QINIU_RSF_HOST DATA
-  QINIU_RS_HOST DATA
-  QINIU_SECRET_KEY DATA
-  QINIU_UC_HOST DATA
-  QINIU_UP_HOST DATA
-  Qiniu_OK DATA
-  Qiniu_Discard DATA
-  Qiniu_NoAuth DATA
-  Qiniu_Rio_ST DATA
+	QINIU_ACCESS_KEY DATA
+	QINIU_API_HOST DATA
+	QINIU_FUSION_HOST DATA
+	QINIU_IOVIP_HOST DATA
+	QINIU_RSF_HOST DATA
+	QINIU_RS_HOST DATA
+	QINIU_SECRET_KEY DATA
+	QINIU_UC_HOST DATA
+	QINIU_UP_HOST DATA
+	Qiniu_OK DATA
+	Qiniu_Discard DATA
+	Qiniu_NoAuth DATA
+	Qiniu_Rio_ST DATA
 
-  Qiniu_BufReader
-  Qiniu_BufReaderAt
-  Qiniu_BufWriter
-  Qiniu_Buffer_AppendEncodedBinary
-  Qiniu_Buffer_AppendError
-  Qiniu_Buffer_AppendFormat
-  Qiniu_Buffer_AppendFormatV
-  Qiniu_Buffer_AppendInt
-  Qiniu_Buffer_AppendUint
-  Qiniu_Buffer_CStr
-  Qiniu_Buffer_Cleanup
-  Qiniu_Buffer_Commit
-  Qiniu_Buffer_Expand
-  Qiniu_Buffer_Format
-  Qiniu_Buffer_Fwrite
-  Qiniu_Buffer_Init
-  Qiniu_Buffer_Len
-  Qiniu_Buffer_PutChar
-  Qiniu_Buffer_Reset
-  Qiniu_Buffer_Write
+	Qiniu_String_Encode
+	Qiniu_BufReader
+	Qiniu_BufReaderAt
+	Qiniu_BufWriter
+	Qiniu_Buffer_AppendEncodedBinary
+	Qiniu_Buffer_AppendError
+	Qiniu_Buffer_AppendFormat
+	Qiniu_Buffer_AppendFormatV
+	Qiniu_Buffer_AppendInt
+	Qiniu_Buffer_AppendUint
+	Qiniu_Buffer_CStr
+	Qiniu_Buffer_Cleanup
+	Qiniu_Buffer_Commit
+	Qiniu_Buffer_Expand
+	Qiniu_Buffer_Format
+	Qiniu_Buffer_Fwrite
+	Qiniu_Buffer_Init
+	Qiniu_Buffer_Len
+	Qiniu_Buffer_PutChar
+	Qiniu_Buffer_Reset
+	Qiniu_Buffer_Write
 
-  Qiniu_CDN_CreateTimestampAntiLeechURL
-  Qiniu_CDN_GetBandwidthData
-  Qiniu_CDN_GetFluxData
-  Qiniu_CDN_GetLogList
-  Qiniu_CDN_PrefetchUrls
-  Qiniu_CDN_RefreshDirs
-  Qiniu_CDN_RefreshUrls
-  Qiniu_Free_CDNBandwidthRet
-  Qiniu_Free_CDNFluxRet
-  Qiniu_Free_CDNLogListRet
-  Qiniu_Free_CDNPrefetchRet
-  Qiniu_Free_CDNRefreshRet
+	Qiniu_CDN_CreateTimestampAntiLeechURL
+	Qiniu_CDN_GetBandwidthData
+	Qiniu_CDN_GetFluxData
+	Qiniu_CDN_GetLogList
+	Qiniu_CDN_PrefetchUrls
+	Qiniu_CDN_RefreshDirs
+	Qiniu_CDN_RefreshUrls
 
-  Qiniu_Client_BindNic
-  Qiniu_Client_Call
-  Qiniu_Client_CallNoRet
-  Qiniu_Client_CallWithBinary
-  Qiniu_Client_CallWithBuffer
-  Qiniu_Client_CallWithBuffer2
-  Qiniu_Client_Cleanup
-  Qiniu_Client_InitEx
-  Qiniu_Client_InitMacAuth
-  Qiniu_Client_InitNoAuth
-  Qiniu_Client_SetLowSpeedLimit
-  Qiniu_Copy
-  Qiniu_Count_Dec
-  Qiniu_Count_Inc
-  Qiniu_Crc32Writer
-  Qiniu_Crc32_Update
-  Qiniu_Rd_Reader_Open
-  Qiniu_FILE_Reader
-  Qiniu_FILE_Writer
-  Qiniu_FOP_Pfop
-  Qiniu_FileReaderAt
-  Qiniu_File_Close
-  Qiniu_File_Open
-  Qiniu_File_Stat
-  Qiniu_Format_Register
+	Qiniu_Free_CDNBandwidthRet
+	Qiniu_Free_CDNFluxRet
+	Qiniu_Free_CDNLogListRet
+	Qiniu_Free_CDNPrefetchRet
+	Qiniu_Free_CDNRefreshRet
 
-  Qiniu_Int64 Qiniu_Json_GetInt64
-  Qiniu_Io_PutBuffer
-  Qiniu_Io_PutFile
-  Qiniu_Io_PutStream
-  Qiniu_Json* Qiniu_Json_GetArrayItem
-  Qiniu_Json* Qiniu_Json_GetObjectItem
-  Qiniu_Json_Destroy
-  Qiniu_Json_GetArraySize
-  Qiniu_Json_GetBoolean
-  Qiniu_Json_GetInt
-  Qiniu_Json_GetString
-  Qiniu_Json_GetStringAt
-  Qiniu_Json_GetUInt64
-  Qiniu_Logv
-  Qiniu_Mac_Sign
-  Qiniu_Mac_SignToken
-  Qiniu_Memory_Encode
-  Qiniu_Mutex_Cleanup
-  Qiniu_Mutex_Init
-  Qiniu_Mutex_Lock
-  Qiniu_Mutex_Unlock
-  Qiniu_Null_Fwrite
-  Qiniu_Null_Log
-
-  Qiniu_Parse_CDNBandwidthRet
-  Qiniu_Parse_CDNFluxRet
-  Qiniu_Parse_CDNLogListRet
-  Qiniu_Parse_CDNPrefetchRet
-  Qiniu_Parse_CDNRefreshRet
-  Qiniu_Posix_Close
-  Qiniu_Posix_Fstat2
-  Qiniu_Posix_GetTimeOfDay
-  Qiniu_Posix_Open
-  Qiniu_Posix_Pread2
-  Qiniu_Qetag_AllocateBlock
-  Qiniu_Qetag_CommitBlock
-  Qiniu_Qetag_Destroy
-  Qiniu_Qetag_DigestBuffer
-  Qiniu_Qetag_DigestFile
-  Qiniu_Qetag_Final
-  Qiniu_Qetag_New
-  Qiniu_Qetag_Reset
-  Qiniu_Qetag_Update
-  Qiniu_Qetag_UpdateBlock
-  Qiniu_RSF_ListFiles
-  Qiniu_RS_BatchChangeMime
-  Qiniu_RS_BatchChangeType
-  Qiniu_RS_BatchCopy
-  Qiniu_RS_BatchDelete
-  Qiniu_RS_BatchDeleteAfterDays
-  Qiniu_RS_BatchMove
-  Qiniu_RS_BatchStat
-  Qiniu_RS_ChangeMime
-  Qiniu_RS_ChangeType
-  Qiniu_RS_Copy
-  Qiniu_RS_Delete
-  Qiniu_RS_DeleteAfterDays
-  Qiniu_RS_Fetch
-  Qiniu_RS_GetPolicy_MakeRequest
-  Qiniu_RS_MakeBaseUrl
-  Qiniu_RS_Move
-  Qiniu_RS_Prefetch
-  Qiniu_RS_PutPolicy_Token
-  Qiniu_RS_Stat
-  Qiniu_Rd_Reader_Callback
-  Qiniu_Rd_Reader_Close
-  Qiniu_Rd_Reader_Open
-  Qiniu_Rio_BlockCount
-  Qiniu_Rio_Put
-  Qiniu_Rio_PutFile
-  Qiniu_Rio_SetSettings
-  Qiniu_SectionReader
-  Qiniu_Stderr_Info
-  Qiniu_Stderr_Warn
-  Qiniu_String_Concat
-  Qiniu_String_Concat2
-  Qiniu_String_Concat3
-  Qiniu_String_Decode
-  Qiniu_String_Dup
-  Qiniu_String_Encode
-  Qiniu_String_Format
-  Qiniu_String_Join
-  Qiniu_TeeReader
-  Qiniu_Tm_LocalTime
-  Qiniu_Json_GetUInt32
-  Qiniu_Use_Zone_Beimei
-  Qiniu_Use_Zone_Huabei
-  Qiniu_Use_Zone_Huadong
-  Qiniu_Use_Zone_Huanan
-  Qiniu_MD5_HexStr
-  Qiniu_File_ReadAt
+	Qiniu_Global_Init
+	Qiniu_Global_Cleanup
+	Qiniu_Client_BindNic
+	Qiniu_Client_Call
+	Qiniu_Client_CallNoRet
+	Qiniu_Client_CallWithBinary
+	Qiniu_Client_CallWithBuffer
+	Qiniu_Client_CallWithBuffer2
+	Qiniu_Client_Cleanup
+	Qiniu_Client_InitEx
+	Qiniu_Client_InitMacAuth
+	Qiniu_Client_InitNoAuth
+	Qiniu_Client_SetLowSpeedLimit
+	Qiniu_Copy
+	Qiniu_Count_Dec
+	Qiniu_Count_Inc
+	Qiniu_Crc32Writer
+	Qiniu_Crc32_Update
+	Qiniu_Rd_Reader_Open
+	Qiniu_FILE_Reader
+	Qiniu_FILE_Writer
+	Qiniu_FOP_Pfop
+	Qiniu_FileReaderAt
+	Qiniu_File_Close
+	Qiniu_File_Open
+	Qiniu_File_Stat
+	Qiniu_Format_Register
+	Qiniu_Json_GetInt64
+	Qiniu_Io_PutBuffer
+	Qiniu_Io_PutFile
+	Qiniu_Io_PutStream
+	Qiniu_Json_GetArrayItem
+	Qiniu_Json_GetObjectItem
+	Qiniu_Json_Destroy
+	Qiniu_Json_GetArraySize
+	Qiniu_Json_GetBoolean
+	Qiniu_Json_GetInt
+	Qiniu_Json_GetString
+	Qiniu_Json_GetStringAt
+	Qiniu_Json_GetUInt64
+	Qiniu_Logv
+	Qiniu_Mac_Sign
+	Qiniu_Mac_SignToken
+	Qiniu_Memory_Encode
+	Qiniu_Mutex_Cleanup
+	Qiniu_Mutex_Init
+	Qiniu_Mutex_Lock
+	Qiniu_Mutex_Unlock
+	Qiniu_Null_Fwrite
+	Qiniu_Null_Log
+	Qiniu_Parse_CDNBandwidthRet
+	Qiniu_Parse_CDNFluxRet
+	Qiniu_Parse_CDNLogListRet
+	Qiniu_Parse_CDNPrefetchRet
+	Qiniu_Parse_CDNRefreshRet
+	Qiniu_Posix_Close
+	Qiniu_Posix_Fstat2
+	Qiniu_Posix_GetTimeOfDay
+	Qiniu_Posix_Open
+	Qiniu_Posix_Pread2
+	Qiniu_Qetag_AllocateBlock
+	Qiniu_Qetag_CommitBlock
+	Qiniu_Qetag_Destroy
+	Qiniu_Qetag_DigestBuffer
+	Qiniu_Qetag_DigestFile
+	Qiniu_Qetag_Final
+	Qiniu_Qetag_New
+	Qiniu_Qetag_Reset
+	Qiniu_Qetag_Update
+	Qiniu_Qetag_UpdateBlock
+	Qiniu_RSF_ListFiles
+	Qiniu_RS_BatchChangeMime
+	Qiniu_RS_BatchChangeType
+	Qiniu_RS_BatchCopy
+	Qiniu_RS_BatchDelete
+	Qiniu_RS_BatchDeleteAfterDays
+	Qiniu_RS_BatchMove
+	Qiniu_RS_BatchStat
+	Qiniu_RS_ChangeMime
+	Qiniu_RS_ChangeType
+	Qiniu_RS_Copy
+	Qiniu_RS_Delete
+	Qiniu_RS_DeleteAfterDays
+	Qiniu_RS_Fetch
+	Qiniu_RS_GetPolicy_MakeRequest
+	Qiniu_RS_MakeBaseUrl
+	Qiniu_RS_Move
+	Qiniu_RS_Prefetch
+	Qiniu_RS_PutPolicy_Token
+	Qiniu_RS_Stat
+	Qiniu_Rd_Reader_Callback
+	Qiniu_Rd_Reader_Close
+	Qiniu_Rd_Reader_Open
+	Qiniu_Rio_BlockCount
+	Qiniu_Rio_Put
+	Qiniu_Rio_PutFile
+	Qiniu_Rio_SetSettings
+	Qiniu_SectionReader
+	Qiniu_Stderr_Info
+	Qiniu_Stderr_Warn
+	Qiniu_String_Concat
+	Qiniu_String_Concat2
+	Qiniu_String_Concat3
+	Qiniu_String_Decode
+	Qiniu_String_Dup
+	Qiniu_String_Format
+	Qiniu_String_Join
+	Qiniu_TeeReader
+	Qiniu_Tm_LocalTime
+	Qiniu_Json_GetUInt32
+	Qiniu_Use_Zone_Beimei
+	Qiniu_Use_Zone_Huabei
+	Qiniu_Use_Zone_Huadong
+	Qiniu_Use_Zone_Huanan
+	Qiniu_MD5_HexStr
+	Qiniu_File_ReadAt
+	Qiniu_Free

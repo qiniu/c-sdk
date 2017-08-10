@@ -21,14 +21,14 @@ extern "C"
 {
 #endif
 
-extern void Qiniu_Global_Init(long flags);
-extern void Qiniu_Global_Cleanup();
+QINIU_DLLAPI extern void Qiniu_Global_Init(long flags);
+QINIU_DLLAPI extern void Qiniu_Global_Cleanup();
 
-extern void Qiniu_MacAuth_Init();
-extern void Qiniu_MacAuth_Cleanup();
+QINIU_DLLAPI extern void Qiniu_MacAuth_Init();
+QINIU_DLLAPI extern void Qiniu_MacAuth_Cleanup();
 
-extern void Qiniu_Servend_Init(long flags);
-extern void Qiniu_Servend_Cleanup();
+QINIU_DLLAPI extern void Qiniu_Servend_Init(long flags);
+QINIU_DLLAPI extern void Qiniu_Servend_Cleanup();
 
 #ifdef __cplusplus
 }
