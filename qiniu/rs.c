@@ -344,7 +344,7 @@ Qiniu_Error Qiniu_RS_Fetch(Qiniu_Client *self, Qiniu_RS_FetchRet *ret, const cha
     char *entryURIEncoded = Qiniu_String_Encode(entryURI);
     char *encodedResURL = Qiniu_String_Encode(resURL);
 
-    char *url = Qiniu_String_Concat(QINIU_IOVIP_HOST, "/fetch/", encodedResURL, "/to/", entryURIEncoded, 0);
+    char *url = Qiniu_String_Concat(QINIU_IOVIP_HOST, "/fetch/", encodedResURL, "/to/", entryURIEncoded, NULL);
     Qiniu_Free(encodedResURL);
 
     Qiniu_Free(entryURI);

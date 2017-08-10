@@ -20,9 +20,8 @@
  #endif
 
 
-QINIU_DLLAPI extern char *Qiniu_CDN_MakeDownloadUrlWithDeadline(const char *key, const char *url,
-                                                                Qiniu_Uint64 deadline);
-
+QINIU_DLLAPI extern char *Qiniu_CDN_CreateTimestampAntiLeechURL(const char *host, const char *fileName, char *queryStr,
+                                                                Qiniu_Uint64 deadline, const char *cryptKey);
 
 /*============================================================================*/
 
@@ -42,11 +41,11 @@ typedef struct _Qiniu_CDN_RefreshRet {
 } Qiniu_CDN_RefreshRet;
 
 /* func Qiniu_CDN_RefreshUrls*/
-QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_RefreshUrls(Qiniu_Client *self, Qiniu_CDN_RefreshRet *ret, char *urls[],
+QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_RefreshUrls(Qiniu_Client *self, Qiniu_CDN_RefreshRet *ret, const char *urls[],
                                                       const int urlsCount);
 
 /* func Qiniu_CDN_RefreshDirs*/
-QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_RefreshDirs(Qiniu_Client *self, Qiniu_CDN_RefreshRet *ret, char *dirs[],
+QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_RefreshDirs(Qiniu_Client *self, Qiniu_CDN_RefreshRet *ret, const char *dirs[],
                                                       const int dirsCount);
 
 /*============================================================================*/
@@ -63,7 +62,7 @@ typedef struct _Qiniu_CDN_PrefetchRet {
 
 /* func Qiniu_CDN_PrefetchUrls*/
 QINIU_DLLAPI extern Qiniu_Error Qiniu_CDN_PrefetchUrls(Qiniu_Client *self, Qiniu_CDN_PrefetchRet *ret,
-                                                       char *urls[], const int num);
+                                                       const char *urls[], const int urlsCount);
 
 /*============================================================================*/
 

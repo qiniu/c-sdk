@@ -104,6 +104,9 @@ cdn_get_flux_data: $(SOURCE_FILES) ./cdn_get_flux_data.c
 cdn_get_bandwidth_data: $(SOURCE_FILES) ./cdn_get_bandwidth_data.c
 	gcc -g $^ -o exec_cdn_get_bandwidth_data $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
+cdn_create_timestamp_url: $(SOURCE_FILES) ./cdn_create_timestamp_url.c
+	gcc -g $^ -o exec_cdn_create_timestamp_url $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
 test1: $(SOURCE_FILES) ./test.c
 	gcc -g $^ -o exec_test1 $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
@@ -115,4 +118,5 @@ all: rs_stat rs_delete rs_copy rs_move rs_change_type rs_change_mime rs_delete_a
     rsf_list_files rsf_list_bucket \
     fop_video_avthumb \
     up_create_uptoken up_form_upload up_chunk_upload \
-    cdn_refresh_urls cdn_refresh_dirs cdn_prefetch_urls cdn_get_log_list
+    cdn_refresh_urls cdn_refresh_dirs cdn_prefetch_urls cdn_get_log_list \
+    cdn_create_timestamp_url cdn_get_bandwidth_data cdn_get_flux_data
