@@ -174,6 +174,7 @@ Qiniu_Error Qiniu_RS_Stat(
         ret->mimeType = Qiniu_Json_GetString(root, "mimeType", 0);
         ret->fsize = Qiniu_Json_GetInt64(root, "fsize", 0);
         ret->putTime = Qiniu_Json_GetInt64(root, "putTime", 0);
+        ret->type = Qiniu_Json_GetInt64(root, "type", 0);
     }
 
     return err;

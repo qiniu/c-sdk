@@ -9,7 +9,6 @@
 int main(int argc, char **argv) {
     Qiniu_Global_Init(-1);
 
-    Qiniu_RS_StatRet statRet;
     Qiniu_Client client;
 
     char *accessKey = getenv("QINIU_ACCESS_KEY");
