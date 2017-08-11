@@ -114,8 +114,8 @@ clean:
 	rm -rf *.dSYM exec*
 
 all: rs_stat rs_delete rs_copy rs_move rs_change_type rs_change_mime rs_delete_after_days rs_prefetch rs_fetch \
-    rs_batch_stat rs_batch_delete rs_batch_copy rs_batch_change_type rs_batch_change_mime rs_batch_delete_after_days \
-    rsf_list_files rsf_list_bucket \
+    rs_batch_stat rs_batch_delete rs_batch_copy rs_batch_move rs_batch_change_type rs_batch_change_mime \
+    rs_batch_delete_after_days rsf_list_files rsf_list_bucket \
     fop_video_avthumb \
     up_create_uptoken up_form_upload up_chunk_upload \
     cdn_refresh_urls cdn_refresh_dirs cdn_prefetch_urls cdn_get_log_list \
