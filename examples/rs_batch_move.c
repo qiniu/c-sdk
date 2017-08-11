@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
         printf("batch copy file success.\n\n");
 
         for (i = 0; i < entryCount; i++) {
-            int code = itemRets[i].code;ma
+            int code = itemRets[i].code;
             if (code == 200) {
                 printf("success: %d\n", code);
             } else {
