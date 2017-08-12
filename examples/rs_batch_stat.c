@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
         entries[i] = entry;
     }
 
-    statRets = (Qiniu_RS_BatchStatRet *) malloc(sizeof(Qiniu_RS_StatRet) * entryCount);
+    statRets = (Qiniu_RS_BatchStatRet *) malloc(sizeof(Qiniu_RS_BatchStatRet) * entryCount);
 
     //init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);

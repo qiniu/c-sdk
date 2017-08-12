@@ -20,7 +20,8 @@ int main(int argc, char **argv) {
     char *delimiter = "/";
     char *marker = "";
     char *nextMarker = marker;
-    int limit = 3;
+    Qiniu_Bool isNewMarker = Qiniu_False;
+    int limit = 10;
     int i;
 
     Qiniu_Mac mac;
@@ -30,31 +31,32 @@ int main(int argc, char **argv) {
     char **commonPrefixes = NULL;
     Qiniu_RSF_ListItem *items = NULL;
 
-    //init
-    Qiniu_Client_InitMacAuth(&client, 1024, &mac);
-
     do {
+        //init
+        Qiniu_Client_InitMacAuth(&client, 1024, &mac);
         Qiniu_Error error = Qiniu_RSF_ListFiles(&client, &listRet, bucket, prefix, delimiter, nextMarker, limit);
-        if (strcmp(nextMarker, "") != 0) {
-            Qiniu_Free(nextMarker);
-        }
+
         if (error.code != 200) {
             printf("list files of bucket %s error.\n", bucket);
             debug_log(&client, error);
-        } else {
+            nextMarker = "";
+        }
+        else {
             /*200, 正确返回了, 你可以通过listRet变量查询文件列表信息*/
             printf("list files of bucket %s success.\n\n", bucket);
 
             //check next marker
-            if (listRet.marker) {
-                size_t markerLen = strlen(listRet.marker) + 1;
-                nextMarker = (char *) malloc(sizeof(char) * markerLen);
-                memset(nextMarker, 0, markerLen);
-                snprintf(nextMarker, markerLen, "%s", listRet.marker);
-            } else {
-                nextMarker = 0;
+            if (isNewMarker == Qiniu_True) {
+                free(nextMarker);
             }
 
+            if (!str_empty(listRet.marker)) {
+                nextMarker = strdup(listRet.marker);
+                isNewMarker = Qiniu_True;
+            }
+            else {
+                nextMarker = NULL;
+            }
             printf("next marker: %s\n", nextMarker);
 
             //common prefixes
@@ -79,8 +81,10 @@ int main(int argc, char **argv) {
             if (listRet.items != NULL) {
                 Qiniu_Free(listRet.items);
             }
-        }
-    } while (nextMarker != 0);
 
-    Qiniu_Client_Cleanup(&client);
+            Qiniu_Zero(listRet);
+        }
+
+        Qiniu_Client_Cleanup(&client);
+    } while (!str_empty(nextMarker));
 }
