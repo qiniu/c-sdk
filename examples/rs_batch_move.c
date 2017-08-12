@@ -56,10 +56,10 @@ int main(int argc, char **argv) {
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
     Qiniu_Error error = Qiniu_RS_BatchMove(&client, itemRets, entryPairs, entryCount);
     if (error.code / 100 != 2) {
-        printf("batch copy file error.\n");
+        printf("batch move file error.\n");
         debug_log(&client, error);
     } else {
-        printf("batch copy file success.\n\n");
+        printf("batch move file success.\n\n");
 
         for (i = 0; i < entryCount; i++) {
             int code = itemRets[i].code;
