@@ -12,6 +12,8 @@
 
 参考代码：[C SDK Examples](https://github.com/qiniu/c-sdk/tree/master/examples)
 
+编译库文件：[Linux & Mac 编译静态或动态库](https://github.com/qiniu/c-sdk/wiki)
+
 ## Windows 程序员
 
 预编译SDK： https://github.com/qiniu/c-sdk-for-windows
