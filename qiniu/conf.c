@@ -94,5 +94,22 @@ QINIU_DLLAPI extern void Qiniu_Use_Zone_Beimei(Qiniu_Bool useHttps) {
         QINIU_IOVIP_HOST = "http://iovip-na0.qbox.me";
     }
 }
+
+//设置新加坡机房
+QINIU_DLLAPI extern void Qiniu_Use_Zone_As0(Qiniu_Bool useHttps) {
+    if (useHttps == Qiniu_True) {
+        QINIU_RS_HOST = "https://rs-as0.qiniu.com";
+        QINIU_RSF_HOST = "https://rsf-as0.qiniu.com";
+        QINIU_API_HOST = "https://api-as0.qiniu.com";
+        QINIU_UP_HOST = "https://upload-as0.qbox.me";
+        QINIU_IOVIP_HOST = "https://iovip-as0.qbox.me";
+    } else {
+        QINIU_RS_HOST = "http://rs-as0.qiniu.com";
+        QINIU_RSF_HOST = "http://rsf-as0.qiniu.com";
+        QINIU_API_HOST = "http://api-as0.qiniu.com";
+        QINIU_UP_HOST = "http://upload-as0.qiniu.com";
+        QINIU_IOVIP_HOST = "http://iovip-as0.qbox.me";
+    }
+}
 /*============================================================================*/
 
