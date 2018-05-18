@@ -8,7 +8,7 @@
  */
 #include "conf.h"
 
-const char *version = "6.2.6";
+const char *version = "7.0.0";
 
 /*============================================================================*/
 
@@ -30,8 +30,8 @@ const char *QINIU_IOVIP_HOST = "http://iovip.qbox.me";
 //设置华东机房域名
 void Qiniu_Use_Zone_Huadong(Qiniu_Bool useHttps) {
     if (useHttps == Qiniu_True) {
-        QINIU_RS_HOST = "https://rs.qiniu.com";
-        QINIU_RSF_HOST = "https://rsf.qiniu.com";
+        QINIU_RS_HOST = "https://rs.qbox.me";
+        QINIU_RSF_HOST = "https://rsf.qbox.me";
         QINIU_API_HOST = "https://api.qiniu.com";
         QINIU_UP_HOST = "https://upload.qbox.me";
         QINIU_IOVIP_HOST = "https://iovip.qbox.me";
@@ -47,8 +47,8 @@ void Qiniu_Use_Zone_Huadong(Qiniu_Bool useHttps) {
 //设置华北机房域名
 void Qiniu_Use_Zone_Huabei(Qiniu_Bool useHttps) {
     if (useHttps == Qiniu_True) {
-        QINIU_RS_HOST = "https://rs-z1.qiniu.com";
-        QINIU_RSF_HOST = "https://rsf-z1.qiniu.com";
+        QINIU_RS_HOST = "https://rs-z1.qbox.me";
+        QINIU_RSF_HOST = "https://rsf-z1.qbox.me";
         QINIU_API_HOST = "https://api-z1.qiniu.com";
         QINIU_UP_HOST = "https://upload-z1.qbox.me";
         QINIU_IOVIP_HOST = "https://iovip-z1.qbox.me";
@@ -64,8 +64,8 @@ void Qiniu_Use_Zone_Huabei(Qiniu_Bool useHttps) {
 //设置华南机房域名
 void Qiniu_Use_Zone_Huanan(Qiniu_Bool useHttps) {
     if (useHttps == Qiniu_True) {
-        QINIU_RS_HOST = "https://rs-z2.qiniu.com";
-        QINIU_RSF_HOST = "https://rsf-z2.qiniu.com";
+        QINIU_RS_HOST = "https://rs-z2.qbox.me";
+        QINIU_RSF_HOST = "https://rsf-z2.qbox.me";
         QINIU_API_HOST = "https://api-z2.qiniu.com";
         QINIU_UP_HOST = "https://upload-z2.qbox.me";
         QINIU_IOVIP_HOST = "https://iovip-z2.qbox.me";
@@ -81,8 +81,8 @@ void Qiniu_Use_Zone_Huanan(Qiniu_Bool useHttps) {
 //设置北美机房域名
 QINIU_DLLAPI extern void Qiniu_Use_Zone_Beimei(Qiniu_Bool useHttps) {
     if (useHttps == Qiniu_True) {
-        QINIU_RS_HOST = "https://rs-na0.qiniu.com";
-        QINIU_RSF_HOST = "https://rsf-na0.qiniu.com";
+        QINIU_RS_HOST = "https://rs-na0.qbox.me";
+        QINIU_RSF_HOST = "https://rsf-na0.qbox.me";
         QINIU_API_HOST = "https://api-na0.qiniu.com";
         QINIU_UP_HOST = "https://upload-na0.qbox.me";
         QINIU_IOVIP_HOST = "https://iovip-na0.qbox.me";
@@ -92,6 +92,23 @@ QINIU_DLLAPI extern void Qiniu_Use_Zone_Beimei(Qiniu_Bool useHttps) {
         QINIU_API_HOST = "http://api-na0.qiniu.com";
         QINIU_UP_HOST = "http://upload-na0.qiniu.com";
         QINIU_IOVIP_HOST = "http://iovip-na0.qbox.me";
+    }
+}
+
+//设置新加坡机房
+QINIU_DLLAPI extern void Qiniu_Use_Zone_As0(Qiniu_Bool useHttps) {
+    if (useHttps == Qiniu_True) {
+        QINIU_RS_HOST = "https://rs-as0.qbox.me";
+        QINIU_RSF_HOST = "https://rsf-as0.qbox.me";
+        QINIU_API_HOST = "https://api-as0.qiniu.com";
+        QINIU_UP_HOST = "https://upload-as0.qbox.me";
+        QINIU_IOVIP_HOST = "https://iovip-as0.qbox.me";
+    } else {
+        QINIU_RS_HOST = "http://rs-as0.qiniu.com";
+        QINIU_RSF_HOST = "http://rsf-as0.qiniu.com";
+        QINIU_API_HOST = "http://api-as0.qiniu.com";
+        QINIU_UP_HOST = "http://upload-as0.qiniu.com";
+        QINIU_IOVIP_HOST = "http://iovip-as0.qbox.me";
     }
 }
 /*============================================================================*/
