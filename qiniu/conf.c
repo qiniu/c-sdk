@@ -96,7 +96,7 @@ QINIU_DLLAPI extern void Qiniu_Use_Zone_Beimei(Qiniu_Bool useHttps) {
 }
 
 //设置新加坡机房
-QINIU_DLLAPI extern void Qiniu_Use_Zone_As0(Qiniu_Bool useHttps) {
+QINIU_DLLAPI extern void Qiniu_Use_Zone_Dongnanya(Qiniu_Bool useHttps) {
     if (useHttps == Qiniu_True) {
         QINIU_RS_HOST = "https://rs-as0.qbox.me";
         QINIU_RSF_HOST = "https://rsf-as0.qbox.me";
