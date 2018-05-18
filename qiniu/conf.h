@@ -37,6 +37,7 @@ QINIU_DLLAPI extern void Qiniu_Use_Zone_Huanan(Qiniu_Bool useHttps);
 
 QINIU_DLLAPI extern void Qiniu_Use_Zone_Beimei(Qiniu_Bool useHttps);
 
+QINIU_DLLAPI extern void Qiniu_Use_Zone_As0(Qiniu_Bool useHttps);
 
 #ifdef __cplusplus
 }
