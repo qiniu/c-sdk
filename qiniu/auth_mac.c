@@ -51,7 +51,6 @@ static Qiniu_Error Qiniu_Mac_Auth(
 	char* enc_digest;
 	char digest[EVP_MAX_MD_SIZE + 1];
 	unsigned int dgtlen = sizeof(digest);
-	HMAC_CTX ctx;
 	Qiniu_Mac mac;
 
 	char const* path = strstr(url, "://");
@@ -70,18 +69,32 @@ static Qiniu_Error Qiniu_Mac_Auth(
 		mac.accessKey = QINIU_ACCESS_KEY;
 		mac.secretKey = QINIU_SECRET_KEY;
 	}
-
+#if OPENSSL_VERSION_NUMBER < 0x10100000
+	HMAC_CTX ctx;
 	HMAC_CTX_init(&ctx);
 	HMAC_Init_ex(&ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
 	HMAC_Update(&ctx, path, strlen(path));
 	HMAC_Update(&ctx, "\n", 1);
-
 	if (addlen > 0) {
 		HMAC_Update(&ctx, addition, addlen);
-	} 
+	}
+	HMAC_Final(&ctx, digest, &digest_len);
+	HMAC_cleanup(&ctx);
 
-	HMAC_Final(&ctx, digest, &dgtlen);
-	HMAC_CTX_cleanup(&ctx);
+#endif
+
+#if OPENSSL_VERSION_NUMBER > 0x101000000
+    HMAC_CTX *ctx=HMAC_CTX_new();
+    HMAC_Init_ex(ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
+    HMAC_Update(ctx, path, strlen(path));
+	HMAC_Update(ctx, "\n", 1);
+	if (addlen > 0) {
+		HMAC_Update(ctx, addition, addlen);
+	}
+    HMAC_Final(ctx, digest, &digest_len);
+    HMAC_CTX_free(ctx);
+#endif
+	
 
 	enc_digest = Qiniu_Memory_Encode(digest, dgtlen);
 
@@ -146,7 +159,7 @@ char* Qiniu_Mac_Sign(Qiniu_Mac* self, char* data)
 	char* encoded_digest;
 	char digest[EVP_MAX_MD_SIZE + 1];
 	unsigned int dgtlen = sizeof(digest);
-	HMAC_CTX ctx;
+	
 	Qiniu_Mac mac;
 
 	if (self) {
@@ -155,13 +168,21 @@ char* Qiniu_Mac_Sign(Qiniu_Mac* self, char* data)
 		mac.accessKey = QINIU_ACCESS_KEY;
 		mac.secretKey = QINIU_SECRET_KEY;
 	}
-
+#if OPENSSL_VERSION_NUMBER < 0x10100000
+	HMAC_CTX ctx;
 	HMAC_CTX_init(&ctx);
 	HMAC_Init_ex(&ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
 	HMAC_Update(&ctx, data, strlen(data));
 	HMAC_Final(&ctx, digest, &dgtlen);
 	HMAC_CTX_cleanup(&ctx);
-
+#endif
+#if OPENSSL_VERSION_NUMBER > 0x101000000
+	HMAC_CTX *ctx=HMAC_CTX_new();
+    HMAC_Init_ex(ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
+    HMAC_Update(ctx, data, strlen(data));
+    HMAC_Final(ctx, digest, &digest_len);
+    HMAC_CTX_free(ctx);
+#endif
 	encoded_digest = Qiniu_Memory_Encode(digest, dgtlen);
 	sign = Qiniu_String_Concat3(mac.accessKey, ":", encoded_digest);
 	Qiniu_Free(encoded_digest);
@@ -189,4 +210,5 @@ char* Qiniu_Mac_SignToken(Qiniu_Mac* self, char* policy_str)
 }
 
 /*============================================================================*/
+
 
