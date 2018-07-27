@@ -180,7 +180,7 @@ char* Qiniu_Mac_Sign(Qiniu_Mac* self, char* data)
 	HMAC_CTX *ctx=HMAC_CTX_new();
     HMAC_Init_ex(ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
     HMAC_Update(ctx, data, strlen(data));
-    HMAC_Final(ctx, digest, &digest_len);
+    HMAC_Final(ctx, digest, &dgtlen);
     HMAC_CTX_free(ctx);
 #endif
 	encoded_digest = Qiniu_Memory_Encode(digest, dgtlen);
