@@ -83,7 +83,7 @@ static Qiniu_Error Qiniu_Mac_Auth(
 
 #endif
 
-#if OPENSSL_VERSION_NUMBER > 0x101000000
+#if OPENSSL_VERSION_NUMBER > 0x10100000
     HMAC_CTX *ctx=HMAC_CTX_new();
     HMAC_Init_ex(ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
     HMAC_Update(ctx, path, strlen(path));
