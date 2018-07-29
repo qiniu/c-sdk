@@ -82,7 +82,7 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_Io_PutStream(
 	Qiniu_Io_PutRet* ret,
     const char* uptoken, const char* key, 
 	void* ctx, // 'ctx' is the same as rdr's last param
-	size_t fsize, 
+	int64_t fsize, 
 	rdFunc rdr, 
 	Qiniu_Io_PutExtra* extra);
 
