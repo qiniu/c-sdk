@@ -168,6 +168,7 @@ char* Qiniu_Mac_Sign(Qiniu_Mac* self, char* data)
 		mac.accessKey = QINIU_ACCESS_KEY;
 		mac.secretKey = QINIU_SECRET_KEY;
 	}
+
 #if OPENSSL_VERSION_NUMBER < 0x10100000
 	HMAC_CTX ctx;
 	HMAC_CTX_init(&ctx);
@@ -176,7 +177,7 @@ char* Qiniu_Mac_Sign(Qiniu_Mac* self, char* data)
 	HMAC_Final(&ctx, digest, &digest_len);
 	HMAC_CTX_cleanup(&ctx);
 #endif
-#if OPENSSL_VERSION_NUMBER > 0x101000000
+#if OPENSSL_VERSION_NUMBER > 0x10100000
 	HMAC_CTX *ctx=HMAC_CTX_new();
     HMAC_Init_ex(ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
     HMAC_Update(ctx, data, strlen(data));
