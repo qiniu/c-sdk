@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="qiniu">
+      <UniqueIdentifier>{4b419d13-d250-4340-8ce5-73611d03ced6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="deps">
+      <UniqueIdentifier>{db0e8ac6-338a-4c2c-9821-1fb571fcab37}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="auth_mac.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+    <ClCompile Include="base.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+    <ClCompile Include="base_io.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+    <ClCompile Include="conf.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+    <ClCompile Include="http.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+    <ClCompile Include="io.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+    <ClCompile Include="resumable_io.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+    <ClCompile Include="rs.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\cJSON\cJSON.c">
+      <Filter>deps</Filter>
+    </ClCompile>
+    <ClCompile Include="emu_posix.c">
+      <Filter>deps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\b64\urlsafe_b64.c">
+      <Filter>deps</Filter>
+    </ClCompile>
+    <ClCompile Include="cdn.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+    <ClCompile Include="fop.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+    <ClCompile Include="qetag.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+    <ClCompile Include="reader.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+    <ClCompile Include="rsf.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+    <ClCompile Include="tm.c">
+      <Filter>qiniu</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="base.h">
+      <Filter>qiniu</Filter>
+    </ClInclude>
+    <ClInclude Include="conf.h">
+      <Filter>qiniu</Filter>
+    </ClInclude>
+    <ClInclude Include="http.h">
+      <Filter>qiniu</Filter>
+    </ClInclude>
+    <ClInclude Include="io.h">
+      <Filter>qiniu</Filter>
+    </ClInclude>
+    <ClInclude Include="resumable_io.h">
+      <Filter>qiniu</Filter>
+    </ClInclude>
+    <ClInclude Include="rs.h">
+      <Filter>qiniu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\b64\b64.h">
+      <Filter>deps</Filter>
+    </ClInclude>
+    <ClInclude Include="..\cJSON\cJSON.h">
+      <Filter>deps</Filter>
+    </ClInclude>
+    <ClInclude Include="emu_posix.h">
+      <Filter>deps</Filter>
+    </ClInclude>
+    <ClInclude Include="cdn.h">
+      <Filter>qiniu</Filter>
+    </ClInclude>
+    <ClInclude Include="fop.h">
+      <Filter>qiniu</Filter>
+    </ClInclude>
+    <ClInclude Include="macro.h">
+      <Filter>qiniu</Filter>
+    </ClInclude>
+    <ClInclude Include="qetag.h">
+      <Filter>qiniu</Filter>
+    </ClInclude>
+    <ClInclude Include="reader.h">
+      <Filter>qiniu</Filter>
+    </ClInclude>
+    <ClInclude Include="rsf.h">
+      <Filter>qiniu</Filter>
+    </ClInclude>
+    <ClInclude Include="tm.h">
+      <Filter>qiniu</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="qiniu.def" />
+  </ItemGroup>
+</Project>
