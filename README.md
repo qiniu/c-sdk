@@ -20,6 +20,8 @@
 
 已测试代码：https://github.com/qiniudemo/c-sdk-demo
 
+编译方法：[Windows下c-sdk编译方法](https://github.com/qiniu/c-sdk/wiki/Windows%E4%B8%8B-C-SDK%E7%9A%84%E7%BC%96%E8%AF%91)
+
 ## 贡献代码
 
 1. Fork
