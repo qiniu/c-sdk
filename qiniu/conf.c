@@ -23,7 +23,7 @@ const char *QINIU_FUSION_HOST = "http://fusion.qiniuapi.com";
 const char *QINIU_UC_HOST = "https://uc.qbox.me";
 
 //默认华东机房
-const char *QINIU_UP_HOST = "https://upload.qiniup.com";
+const char *QINIU_UP_HOST = "http://upload.qiniup.com";
 const char *QINIU_IOVIP_HOST = "http://iovip.qbox.me";
 
 
@@ -39,7 +39,7 @@ void Qiniu_Use_Zone_Huadong(Qiniu_Bool useHttps) {
         QINIU_RS_HOST = "http://rs.qiniu.com";
         QINIU_RSF_HOST = "http://rsf.qiniu.com";
         QINIU_API_HOST = "http://api.qiniu.com";
-        QINIU_UP_HOST = "https://upload.qiniup.com";
+        QINIU_UP_HOST = "http://upload.qiniup.com";
         QINIU_IOVIP_HOST = "http://iovip.qbox.me";
     }
 }
