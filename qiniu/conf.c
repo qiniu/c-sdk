@@ -23,7 +23,7 @@ const char *QINIU_FUSION_HOST = "http://fusion.qiniuapi.com";
 const char *QINIU_UC_HOST = "https://uc.qbox.me";
 
 //默认华东机房
-const char *QINIU_UP_HOST = "http://upload.qiniu.com";
+const char *QINIU_UP_HOST = "http://upload.qiniup.com";
 const char *QINIU_IOVIP_HOST = "http://iovip.qbox.me";
 
 
@@ -33,13 +33,13 @@ void Qiniu_Use_Zone_Huadong(Qiniu_Bool useHttps) {
         QINIU_RS_HOST = "https://rs.qbox.me";
         QINIU_RSF_HOST = "https://rsf.qbox.me";
         QINIU_API_HOST = "https://api.qiniu.com";
-        QINIU_UP_HOST = "https://upload.qbox.me";
+        QINIU_UP_HOST = "https://up.qiniup.com";
         QINIU_IOVIP_HOST = "https://iovip.qbox.me";
     } else {
         QINIU_RS_HOST = "http://rs.qiniu.com";
         QINIU_RSF_HOST = "http://rsf.qiniu.com";
         QINIU_API_HOST = "http://api.qiniu.com";
-        QINIU_UP_HOST = "http://upload.qiniu.com";
+        QINIU_UP_HOST = "http://upload.qiniup.com";
         QINIU_IOVIP_HOST = "http://iovip.qbox.me";
     }
 }
@@ -50,13 +50,13 @@ void Qiniu_Use_Zone_Huabei(Qiniu_Bool useHttps) {
         QINIU_RS_HOST = "https://rs-z1.qbox.me";
         QINIU_RSF_HOST = "https://rsf-z1.qbox.me";
         QINIU_API_HOST = "https://api-z1.qiniu.com";
-        QINIU_UP_HOST = "https://upload-z1.qbox.me";
+        QINIU_UP_HOST = "https://up-z1.qiniup.com";
         QINIU_IOVIP_HOST = "https://iovip-z1.qbox.me";
     } else {
         QINIU_RS_HOST = "http://rs-z1.qiniu.com";
         QINIU_RSF_HOST = "http://rsf-z1.qiniu.com";
         QINIU_API_HOST = "http://api-z1.qiniu.com";
-        QINIU_UP_HOST = "http://upload-z1.qiniu.com";
+        QINIU_UP_HOST = "http://upload-z1.qiniup.com";
         QINIU_IOVIP_HOST = "http://iovip-z1.qbox.me";
     }
 }
@@ -67,13 +67,13 @@ void Qiniu_Use_Zone_Huanan(Qiniu_Bool useHttps) {
         QINIU_RS_HOST = "https://rs-z2.qbox.me";
         QINIU_RSF_HOST = "https://rsf-z2.qbox.me";
         QINIU_API_HOST = "https://api-z2.qiniu.com";
-        QINIU_UP_HOST = "https://upload-z2.qbox.me";
+        QINIU_UP_HOST = "https://up-z2.qiniup.com";
         QINIU_IOVIP_HOST = "https://iovip-z2.qbox.me";
     } else {
         QINIU_RS_HOST = "http://rs-z2.qiniu.com";
         QINIU_RSF_HOST = "http://rsf-z2.qiniu.com";
         QINIU_API_HOST = "http://api-z2.qiniu.com";
-        QINIU_UP_HOST = "http://upload-z2.qiniu.com";
+        QINIU_UP_HOST = "http://upload-z2.qiniup.com";
         QINIU_IOVIP_HOST = "http://iovip-z2.qbox.me";
     }
 }
@@ -84,13 +84,13 @@ QINIU_DLLAPI extern void Qiniu_Use_Zone_Beimei(Qiniu_Bool useHttps) {
         QINIU_RS_HOST = "https://rs-na0.qbox.me";
         QINIU_RSF_HOST = "https://rsf-na0.qbox.me";
         QINIU_API_HOST = "https://api-na0.qiniu.com";
-        QINIU_UP_HOST = "https://upload-na0.qbox.me";
+        QINIU_UP_HOST = "https://up-na0.qiniup.com";
         QINIU_IOVIP_HOST = "https://iovip-na0.qbox.me";
     } else {
         QINIU_RS_HOST = "http://rs-na0.qiniu.com";
         QINIU_RSF_HOST = "http://rsf-na0.qiniu.com";
         QINIU_API_HOST = "http://api-na0.qiniu.com";
-        QINIU_UP_HOST = "http://upload-na0.qiniu.com";
+        QINIU_UP_HOST = "http://upload-na0.qiniup.com";
         QINIU_IOVIP_HOST = "http://iovip-na0.qbox.me";
     }
 }
@@ -101,13 +101,13 @@ QINIU_DLLAPI extern void Qiniu_Use_Zone_Dongnanya(Qiniu_Bool useHttps) {
         QINIU_RS_HOST = "https://rs-as0.qbox.me";
         QINIU_RSF_HOST = "https://rsf-as0.qbox.me";
         QINIU_API_HOST = "https://api-as0.qiniu.com";
-        QINIU_UP_HOST = "https://upload-as0.qbox.me";
+        QINIU_UP_HOST = "https://up-as0.qiniup.com";
         QINIU_IOVIP_HOST = "https://iovip-as0.qbox.me";
     } else {
         QINIU_RS_HOST = "http://rs-as0.qiniu.com";
         QINIU_RSF_HOST = "http://rsf-as0.qiniu.com";
         QINIU_API_HOST = "http://api-as0.qiniu.com";
-        QINIU_UP_HOST = "http://upload-as0.qiniu.com";
+        QINIU_UP_HOST = "http://upload-as0.qiniup.com";
         QINIU_IOVIP_HOST = "http://iovip-as0.qbox.me";
     }
 }
