@@ -16,7 +16,7 @@
 
 #define defaultTryTimes        3
 #define defaultWorkers        4
-#define defaultChunkSize    (2 * 1024 * 1024) // 2MB
+#define defaultChunkSize    (4 * 1024 * 1024) // 4MB
 
 /*============================================================================*/
 /* type Qiniu_Rio_ST - SingleThread */
