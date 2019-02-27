@@ -160,6 +160,17 @@ char* Qiniu_QueryEscape(const char* s, Qiniu_Bool* fesc)
 }
 
 /*============================================================================*/
+/* func Qiniu_String_Copy */
+
+char* Qiniu_String_Copy(const char* s) {
+	int lens = (int) strlen(s);
+	char *p = (char *) malloc(lens + 1);
+	memcpy(p, s, lens);
+	p[lens] = '\0';
+	return p;
+}
+
+/*============================================================================*/
 /* func Qiniu_String_Concat */
 
 char* Qiniu_String_Concat2(const char* s1, const char* s2)
