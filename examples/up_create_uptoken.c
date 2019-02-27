@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     //自定义上传回复（非callback模式）凭证
     Qiniu_Zero(putPolicy);
     putPolicy.scope = bucket;
-    putPolicy.returnBody = "{\"key\":\"$(key)\",\"hash\":\"$(etag)\",\"fsize\":$(fsize),\"bucket\":\"$(bucket)\",\"name\":\"$(x:name)\"";
+    putPolicy.returnBody = "{\"key\":\"$(key)\",\"hash\":\"$(etag)\",\"fsize\":$(fsize),\"bucket\":\"$(bucket)\",\"name\":\"$(x:name)\"}";
     uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
     printf("returnBody:\t%s\n\n", uptoken);
     Qiniu_Free(uptoken);
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     putPolicy.scope = bucket;
     putPolicy.callbackUrl = "http://api.example.com/upload/callback";
     putPolicy.callbackBodyType = "application/json";
-    putPolicy.callbackBody = "{\"key\":\"$(key)\",\"hash\":\"$(etag)\",\"fsize\":$(fsize),\"bucket\":\"$(bucket)\",\"name\":\"$(x:name)\"";
+    putPolicy.callbackBody = "{\"key\":\"$(key)\",\"hash\":\"$(etag)\",\"fsize\":$(fsize),\"bucket\":\"$(bucket)\",\"name\":\"$(x:name)\"}";
     uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
     printf("callback(json):\t%s\n\n", uptoken);
     Qiniu_Free(uptoken);
