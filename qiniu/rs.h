@@ -123,6 +123,12 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const ch
                                                     const int fileType);
 
 /*============================================================================*/
+/* func Qiniu_RS_ChangeStatus */
+
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_ChangeStatus(Qiniu_Client *self, const char *bucket, const char *key, const int status);
+
+
+/*============================================================================*/
 /* func Qiniu_RS_DeleteAfterDays */
 QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_DeleteAfterDays(Qiniu_Client *self, const char *bucket, const char *key,
                                                          const int days);

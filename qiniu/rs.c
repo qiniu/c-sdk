@@ -355,6 +355,27 @@ Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const char *bucket, const ch
 }
 
 /*============================================================================*/
+/* func Qiniu_RS_ChangeStatus */
+
+Qiniu_Error Qiniu_RS_ChangeStatus(Qiniu_Client *self, const char *bucket, const char *key, const int status) {
+    Qiniu_Error err;
+
+    char *statusStr = "0";
+    if (status == 1) {
+        statusStr = "1";
+    }
+
+    char *entryURIEncoded = Qiniu_String_Concat3(bucket, ":", key);
+    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/chstatus/", entryURIEncoded, "/status/", statusStr, NULL);
+
+    Qiniu_Free(entryURIEncoded);
+
+    err = Qiniu_Client_CallNoRet(self, url);
+    Qiniu_Free(url);
+    return err;
+}
+
+/*============================================================================*/
 /* func Qiniu_RS_DeleteAfterDays */
 
 Qiniu_Error Qiniu_RS_DeleteAfterDays(Qiniu_Client *self, const char *bucket, const char *key, const int days) {
