@@ -277,7 +277,7 @@ void resumableUploadWithKey(Qiniu_Mac *mac, const char *bucket, const char *key,
 
 int main() {
 	char *accessKey = "<ak>";
-    char *secretKey = "<sk>";
+	char *secretKey = "<sk>";
 	char *bucket = "<bucket>";
 	char *key = "<key>";
 	char *localFile = "<filepath>";
