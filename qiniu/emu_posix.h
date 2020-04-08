@@ -9,6 +9,7 @@
 #ifndef QINIU_EMU_POSIX_H
 #define QINIU_EMU_POSIX_H
 
+#ifdef _WIN32
 #include <windows.h>
 #include <sys/types.h>
 
@@ -53,5 +54,6 @@ QINIU_DLLAPI extern unsigned _int64 Qiniu_Posix_GetTimeOfDay(void);
 #ifdef __cplusplus
 }
 #endif
+#endif /* _WIN32 */
 
 #endif /* QINIU_EMU_POSIX_H */
