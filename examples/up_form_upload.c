@@ -40,6 +40,11 @@ int main(int argc, char **argv) {
     //put extra
     //putExtra.upHost="http://nbxs-gate-up.qiniu.com";
 
+    //put extra
+    // const char* ips[1] = {"124.160.115.130"};
+    // putExtra.upIps = ips;
+    // putExtra.ipCount = 1;
+
     //init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
     Qiniu_Error error = Qiniu_Io_PutFile(&client, &putRet, uptoken, key, localFile, &putExtra);
