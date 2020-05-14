@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "../qiniu/base.h"
+#include "../qiniu/http.h"
 
 /*debug 函数*/
 void debug_log(Qiniu_Client *client, Qiniu_Error err) {

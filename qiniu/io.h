@@ -48,7 +48,10 @@ typedef struct _Qiniu_Io_PutExtra {
 	void * upAbortUserData;
 	Qiniu_Rd_FnAbort upAbortCallback;
 
-    const char *upHost;
+    const char* upHost;
+    const char** upIps;
+    Qiniu_Count ipCount;
+    Qiniu_Count ipIndex;
 } Qiniu_Io_PutExtra;
 
 /*============================================================================*/
