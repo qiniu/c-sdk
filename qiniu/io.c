@@ -51,6 +51,17 @@ CURL *Qiniu_Client_reset(Qiniu_Client *self);
 
 Qiniu_Error Qiniu_callex(CURL *curl, Qiniu_Buffer *resp, Qiniu_Json **ret, Qiniu_Bool simpleError, Qiniu_Buffer *resph);
 
+const char* Get_Qiniu_UpHost(Qiniu_Io_PutExtra *extra) {
+    const char* upHost = QINIU_UP_HOST;
+    if (extra && extra->ipCount != 0) {
+        Qiniu_Count oldIndex = Qiniu_Count_Inc(&extra->ipIndex);
+        upHost = extra->upIps[abs(oldIndex % extra->ipCount)];
+    } else if (extra && extra->upHost != NULL) {
+        upHost = extra->upHost;
+    }
+    return upHost;
+}
+
 static Qiniu_Error Qiniu_Io_call(
         Qiniu_Client *self, Qiniu_Io_PutRet *ret, struct curl_httppost *formpost,
         Qiniu_Io_PutExtra *extra) {
@@ -90,10 +101,7 @@ static Qiniu_Error Qiniu_Io_call(
     headers = curl_slist_append(NULL, "Expect:");
 
     //// For using multi-region storage.
-    if (extra && (upHost = extra->upHost) == NULL) {
-        upHost = QINIU_UP_HOST;
-    } // if
-
+    upHost = Get_Qiniu_UpHost(extra);
 
     curl_easy_setopt(curl, CURLOPT_URL, upHost);
     curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
