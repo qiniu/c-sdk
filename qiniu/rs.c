@@ -152,6 +152,54 @@ char *Qiniu_RS_MakeBaseUrl(const char *domain, const char *key) {
 }
 
 /*============================================================================*/
+/* func Qiniu_RS_CreateBucket */
+
+Qiniu_Error Qiniu_RS_CreateBucket(Qiniu_Client *self, const char *bucketName, const char *region) {
+    Qiniu_Error err;
+    cJSON *root;
+
+    char *bucketNameEncoded = Qiniu_String_Encode(bucketName);
+    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/mkbucketv2/", bucketNameEncoded, "/region/", region, NULL);
+
+    err = Qiniu_Client_CallNoRet(self, url);
+    Qiniu_Free(url);
+
+    return err;
+}
+
+/*============================================================================*/
+/* func Qiniu_RS_Buckets */
+
+Qiniu_Error Qiniu_RS_Buckets(Qiniu_Client *self, Qiniu_RS_BucketsRet *ret) {
+    Qiniu_Error err;
+    cJSON *root;
+
+    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/buckets");
+
+    err = Qiniu_Client_Call(self, &root, url);
+    Qiniu_Free(url);
+
+    if (err.code == 200) {
+        root = root->child;
+        Qiniu_RS_BucketsRet *first = ret;
+        while (root != NULL) {
+            ret->bucket = Qiniu_String_Copy(root->valuestring);
+            if (root->next == NULL) {
+                ret->next = NULL;
+                break;
+            } else {
+                ret = ret->next = (Qiniu_RS_BucketsRet*) malloc(sizeof(Qiniu_RS_BucketsRet));
+                root = root->next;
+            }
+        }
+        ret = first;
+        Qiniu_Free(first);
+    }
+
+    return err;
+}
+
+/*============================================================================*/
 /* func Qiniu_RS_Stat */
 
 Qiniu_Error Qiniu_RS_Stat(
@@ -299,6 +347,27 @@ Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const char *bucket, const ch
     char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/chtype/", entryURIEncoded, "/type/", fileTypeStr, NULL);
 
     Qiniu_Free(entryURI);
+    Qiniu_Free(entryURIEncoded);
+
+    err = Qiniu_Client_CallNoRet(self, url);
+    Qiniu_Free(url);
+    return err;
+}
+
+/*============================================================================*/
+/* func Qiniu_RS_ChangeStatus */
+
+Qiniu_Error Qiniu_RS_ChangeStatus(Qiniu_Client *self, const char *bucket, const char *key, const int status) {
+    Qiniu_Error err;
+
+    char *statusStr = "0";
+    if (status == 1) {
+        statusStr = "1";
+    }
+
+    char *entryURIEncoded = Qiniu_String_Concat3(bucket, ":", key);
+    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/chstatus/", entryURIEncoded, "/status/", statusStr, NULL);
+
     Qiniu_Free(entryURIEncoded);
 
     err = Qiniu_Client_CallNoRet(self, url);

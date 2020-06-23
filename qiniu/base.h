@@ -115,6 +115,11 @@ QINIU_DLLAPI extern Qiniu_Count Qiniu_Count_Inc(Qiniu_Count* self);
 QINIU_DLLAPI extern Qiniu_Count Qiniu_Count_Dec(Qiniu_Count* self);
 
 /*============================================================================*/
+/* func Qiniu_String_Copy */
+
+QINIU_DLLAPI extern char* Qiniu_String_Copy(const char* s);
+
+/*============================================================================*/
 /* func Qiniu_String_Concat */
 
 QINIU_DLLAPI extern char* Qiniu_String_Concat2(const char* s1, const char* s2);

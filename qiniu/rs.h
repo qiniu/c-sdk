@@ -63,6 +63,21 @@ QINIU_DLLAPI extern char *Qiniu_RS_GetPolicy_MakeRequest(Qiniu_RS_GetPolicy *pol
 QINIU_DLLAPI extern char *Qiniu_RS_MakeBaseUrl(const char *domain, const char *key);
 
 /*============================================================================*/
+/* func Qiniu_RS_CreateBucket */
+
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_CreateBucket(Qiniu_Client *self, const char *bucketName, const char *region);
+
+/*============================================================================*/
+/* func Qiniu_RS_Buckets */
+
+typedef struct _Qiniu_RS_BucketsRet {
+    const char *bucket;
+    struct _Qiniu_RS_BucketsRet *next;
+}Qiniu_RS_BucketsRet;
+
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_Buckets(Qiniu_Client *self, Qiniu_RS_BucketsRet *ret);
+
+/*============================================================================*/
 /* func Qiniu_RS_Stat */
 
 /* @gist statret */
@@ -106,6 +121,12 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_ChangeMime(Qiniu_Client *self, const ch
 /*  func Qiniu_RS_ChangeType */
 QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const char *bucket, const char *key,
                                                     const int fileType);
+
+/*============================================================================*/
+/* func Qiniu_RS_ChangeStatus */
+
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_ChangeStatus(Qiniu_Client *self, const char *bucket, const char *key, const int status);
+
 
 /*============================================================================*/
 /* func Qiniu_RS_DeleteAfterDays */
