@@ -30,10 +30,10 @@ int main(int argc, char **argv) {
 
     char **commonPrefixes = NULL;
     Qiniu_RSF_ListItem *items = NULL;
+    
+    Qiniu_Client_InitMacAuth(&client, 1024, &mac);
 
     do {
-        //init
-        Qiniu_Client_InitMacAuth(&client, 1024, &mac);
         Qiniu_Error error = Qiniu_RSF_ListFiles(&client, &listRet, bucket, prefix, delimiter, nextMarker, limit);
 
         if (error.code != 200) {
@@ -85,6 +85,7 @@ int main(int argc, char **argv) {
             Qiniu_Zero(listRet);
         }
 
-        Qiniu_Client_Cleanup(&client);
     } while (!str_empty(nextMarker));
+    
+    Qiniu_Client_Cleanup(&client);
 }
