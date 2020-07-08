@@ -10,6 +10,8 @@
 #include "emu_posix.h"
 #include <sys/stat.h>
 
+#ifdef _WIN32
+
 Qiniu_Posix_Handle Qiniu_Posix_Open(const char* file, int oflag, int mode)
 {
 	Qiniu_Posix_Handle fd = CreateFileA(
@@ -87,3 +89,5 @@ unsigned _int64 Qiniu_Posix_GetTimeOfDay(void)
 	uint.u.HighPart = tv.dwHighDateTime;
 	return uint.QuadPart / 1000L;
 } // Qiniu_Posix_GetTimeOfDay
+
+#endif /* _WIN32 */
