@@ -1,10 +1,12 @@
 # Qiniu Resource Storage SDK for C/C++
 
 [![Build Status](https://api.travis-ci.org/qiniu/c-sdk.png?branch=master)](https://travis-ci.org/qiniu/c-sdk)
+[![GitHub release](https://img.shields.io/github/v/tag/qiniu/c-sdk.svg?label=release)](https://github.com/qiniu/c-sdk/releases)
+[![Coverage Status](https://codecov.io/gh/qiniu/c-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/qiniu/c-sdk)
 
 [![Qiniu Logo](http://devtools.qiniu.com/qiniu-logo.jpg)](http://qiniu.com/)
 
-此 C/C++ SDK 适用于 兼容C89标准的C/C++编译器，基于七牛云存储官方API构建。使用此 SDK 构建您的网络应用程序，能让您以非常便捷地方式将数据安全地存储到七牛云存储上。无论您的网络应用是一个网站程序，还是包括从云端（服务端程序）到终端（手持设备应用）的架构的服务或应用，通过七牛云存储及其 SDK，都能让您应用程序的终端用户高速上传和下载，同时也让您的服务端更加轻盈。
+此 C/C++ SDK 适用于 兼容C89标准的C/C++编译器，基于七牛云存储官方API构建。使用此 SDK 构建您的网络应用程序，能让您以非常便捷的方式将数据安全地存储到七牛云存储上。无论您的网络应用是一个网站程序，还是包括从云端（服务端程序）到终端（手持设备应用）的架构的服务或应用，通过七牛云存储及其 SDK，都能让您应用程序的终端用户高速上传和下载，同时也让您的服务端更加轻盈。
 
 ## 使用
 

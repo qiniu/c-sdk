@@ -1,1 +1,1 @@
-cd CUnit; aclocal; autoconf; autoreconf; ./configure; make
+cd CUnit; aclocal; autoconf; automake --add missing; autoreconf; ./configure; make
