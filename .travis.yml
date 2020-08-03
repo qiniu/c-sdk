@@ -1,3 +1,15 @@
 language: c
 before_script:
   - export IS_TRAVIS=true
+
+script:
+  - ./configure && make && make test
+  
+
+env:
+  global:
+    - CODECOV_TOKEN=:b779adbc-4768-467b-9fe0-a377d9290224
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
