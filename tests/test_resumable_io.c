@@ -14,11 +14,11 @@
 #include <string.h>
 #include <curl/curl.h>
 
-static const char bucket[] = "csdk";
-static const char key[] = "key2";
-static const char domain[] = "csdk.qiniudn.com";
+static const char bucket[] = "east3";
+static const char key[] = "csdk-key";
+static const char domain[] = "pw8b601nr.bkt.clouddn.com";
 
-static void clientIoPutFile(const char* uptoken)
+static void clientIoPutFile(const char *uptoken)
 {
 	Qiniu_Error err;
 	Qiniu_Client client;
@@ -28,7 +28,7 @@ static void clientIoPutFile(const char* uptoken)
 	Qiniu_Client_InitNoAuth(&client, 1024);
 
 	Qiniu_Zero(extra);
-	extra.bucket = bucket;
+	// extra.bucket = bucket;//solve compile test error
 
 	err = Qiniu_Rio_PutFile(&client, &putRet, uptoken, key, __FILE__, &extra);
 	CU_ASSERT(err.code == 200);
@@ -41,21 +41,21 @@ static void clientIoPutFile(const char* uptoken)
 	Qiniu_Client_Cleanup(&client);
 }
 
-static int notify(void* self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret)
+static int notify(void *self, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet *ret)
 {
 	Qiniu_Log_Info("nodify: %d, off: %d", blkIdx, ret->offset);
-    return QINIU_RIO_NOTIFY_OK;
+	return QINIU_RIO_NOTIFY_OK;
 }
 
-static int notifyErr(void* self, int blkIdx, int blkSize, Qiniu_Error err)
+static int notifyErr(void *self, int blkIdx, int blkSize, Qiniu_Error err)
 {
 	Qiniu_Log_Warn("nodify: %d, err: %E", blkIdx, err);
-    return QINIU_RIO_NOTIFY_OK;
+	return QINIU_RIO_NOTIFY_OK;
 }
 
-static const Qiniu_Int64 testFsize = 4*1024 + 2;
+static const Qiniu_Int64 testFsize = 4 * 1024 + 2;
 
-static void clientIoPutBuffer(const char* uptoken)
+static void clientIoPutBuffer(const char *uptoken)
 {
 	Qiniu_Error err;
 	Qiniu_Client client;
@@ -68,7 +68,7 @@ static void clientIoPutBuffer(const char* uptoken)
 	Qiniu_Client_InitNoAuth(&client, 1024);
 
 	Qiniu_Zero(extra);
-	extra.bucket = bucket;
+	// extra.bucket = bucket;//solve compile test error
 	extra.notify = notify;
 	extra.notifyErr = notifyErr;
 	extra.chunkSize = 1024;
@@ -86,7 +86,7 @@ static void clientIoPutBuffer(const char* uptoken)
 	Qiniu_Client_Cleanup(&client);
 }
 
-static void clientIoGet(const char* url)
+static void clientIoGet(const char *url)
 {
 	Qiniu_Eq eq;
 	Qiniu_Seq seq;
@@ -95,7 +95,7 @@ static void clientIoGet(const char* url)
 	Qiniu_Writer w = Qiniu_EqWriter(&eq, in);
 
 	long code, httpCode;
-	CURL* curl = curl_easy_init();
+	CURL *curl = curl_easy_init();
 	Qiniu_Buffer respHeader;
 	Qiniu_Buffer_Init(&respHeader, 1024);
 
@@ -126,9 +126,9 @@ void testResumableIoPut(void)
 	Qiniu_Client client;
 	Qiniu_RS_PutPolicy putPolicy;
 	Qiniu_RS_GetPolicy getPolicy;
-	char* uptoken;
-	char* dnBaseUrl;
-	char* dnRequest;
+	char *uptoken;
+	char *dnBaseUrl;
+	char *dnRequest;
 
 	Qiniu_Client_InitMacAuth(&client, 1024, NULL);
 
@@ -155,4 +155,3 @@ void testResumableIoPut(void)
 
 	Qiniu_Client_Cleanup(&client);
 }
-

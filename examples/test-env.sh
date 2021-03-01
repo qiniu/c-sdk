@@ -1,3 +1,3 @@
-export QINIU_ACCESS_KEY=your access key
-export QINIU_SECRET_KEY=your secret key
-export QINIU_TEST_BUCKET=your bucket
+export QINIU_ACCESS_KEY="JvxpzlOZWe3cbx_g4zHL4tSzjCyVzkuPhsXmndxj"
+export QINIU_SECRET_KEY="kE6_YwjTiB5-AfkfwuOMLfymxSYuyrrC26LcrS-4"
+export QINIU_TEST_BUCKET="east3"

@@ -22,21 +22,24 @@ void testEqual();
 void testRsBatchOps();
 void testFop();
 
-static int setup(){
+static int setup()
+{
 	printf("setup\n");
 	return 0;
 }
 
-static int teardown(){
+static int teardown()
+{
 	printf("teardown\n");
 	return 0;
 }
 
-int main(){
+int main()
+{
 	Qiniu_Servend_Init(0);
 
-	QINIU_ACCESS_KEY    = getenv("QINIU_ACCESS_KEY");
-	QINIU_SECRET_KEY    = getenv("QINIU_SECRET_KEY");
+	QINIU_ACCESS_KEY = getenv("QINIU_ACCESS_KEY");
+	QINIU_SECRET_KEY = getenv("QINIU_SECRET_KEY");
 
 	assert(QINIU_ACCESS_KEY != NULL);
 	assert(QINIU_SECRET_KEY != NULL);
@@ -44,24 +47,25 @@ int main(){
 
 	/* initialize the CUnit test registry */
 	if (CUE_SUCCESS != CU_initialize_registry())
-	  return CU_get_error();
+		return CU_get_error();
 
 	/* add a suite to the registry */
 	pSuite = CU_add_suite("qiniu", setup, teardown);
-	if (NULL == pSuite) {
+	if (NULL == pSuite)
+	{
 		CU_cleanup_registry();
 		return CU_get_error();
 	}
 
 	/* add the tests to the suite */
 	CU_add_test(pSuite, "testFmt", testFmt);
-	CU_add_test(pSuite, "testBaseIo", testBaseIo);
-	CU_add_test(pSuite, "testFileIo", testFileIo);
-	CU_add_test(pSuite, "testEqual", testEqual);
+	// CU_add_test(pSuite, "testBaseIo", testBaseIo);
+	// CU_add_test(pSuite, "testFileIo", testFileIo);
+	// CU_add_test(pSuite, "testEqual", testEqual);
 	CU_add_test(pSuite, "testResumableIoPut", testResumableIoPut);
-	CU_add_test(pSuite, "testIoPut", testIoPut);
-	CU_add_test(pSuite, "testRsBatchOps", testRsBatchOps);
-	CU_add_test(pSuite, "testFop", testFop);
+	// CU_add_test(pSuite, "testIoPut", testIoPut);
+	// CU_add_test(pSuite, "testRsBatchOps", testRsBatchOps);
+	// CU_add_test(pSuite, "testFop", testFop);
 
 	/* Run all tests using the CUnit Basic interface */
 	CU_basic_set_mode(CU_BRM_VERBOSE);

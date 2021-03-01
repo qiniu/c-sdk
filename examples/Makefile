@@ -1,5 +1,5 @@
-INCLUDE_PATH=-I. -I../b64 -I../cJSON -I../qiniu -I/usr/local/Cellar/openssl/1.0.2k/include
-LINK_PATH=-L/usr/local/Cellar/openssl/1.0.2k/lib
+INCLUDE_PATH=-I. -I../b64 -I../cJSON -I../qiniu -I/usr/local/Cellar/openssl/1.0.2r/include
+LINK_PATH=-L/usr/local/Cellar/openssl/1.0.2r/lib
 
 SOURCE_FILES=\
     ../b64/b64.c\
