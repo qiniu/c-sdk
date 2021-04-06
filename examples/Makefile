@@ -18,7 +18,8 @@ SOURCE_FILES=\
     ../qiniu/resumable_io.c\
     ../qiniu/rs.c\
     ../qiniu/rsf.c\
-    ../qiniu/tm.c
+    ../qiniu/tm.c\
+	../qiniu/multipart_upload.c
 
 rs_stat: $(SOURCE_FILES) ./rs_stat.c
 	gcc -g $^ -o exec_rs_stat $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
@@ -106,6 +107,9 @@ cdn_get_bandwidth_data: $(SOURCE_FILES) ./cdn_get_bandwidth_data.c
 
 cdn_create_timestamp_url: $(SOURCE_FILES) ./cdn_create_timestamp_url.c
 	gcc -g $^ -o exec_cdn_create_timestamp_url $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+
+up_multipart_sample: $(SOURCE_FILES) ./up_multipart_sample.c
+	gcc -g $^ -o exec_up_multipart_sample $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
 
 test1: $(SOURCE_FILES) ./test.c
 	gcc -g $^ -o exec_test1 $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
