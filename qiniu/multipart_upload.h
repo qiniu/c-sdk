@@ -27,7 +27,7 @@ extern "C"
 
     typedef struct _Qiniu_Multipart_PutExtra
     {
-        const char *upHost;
+        const char *upHost; //it's better move upHost to client
         Qiniu_Int64 partSize;
         const char *mimeType;
         int tryTimes;
@@ -58,8 +58,6 @@ extern "C"
 
     } Qiniu_Multipart_PutExtra;
 
-    typedef Qiniu_Io_PutRet Qiniu_Multipart_PutRet;
-
     typedef struct
     {
         char *uploadId;
@@ -72,11 +70,18 @@ extern "C"
             int partNum;
         } * PartEtag;
 
+        int totalPartNum;
+
     } Qiniu_UploadParts_Ret;
+    typedef struct
+    {
+        char *hash;
+        char *key;
+    } Qiniu_CompleteUpload_Ret;
 
     QINIU_DLLAPI extern Qiniu_Error
     Qiniu_Multipart_PutWithKey(
-        Qiniu_Client *client, Qiniu_Multipart_PutRet *ret,
+        Qiniu_Client *client, Qiniu_CompleteUpload_Ret *ret,
         const char *uptoken, const char *key, const char *localFile, Qiniu_Multipart_PutExtra *extraParam);
 
     /*============================================================================*/
