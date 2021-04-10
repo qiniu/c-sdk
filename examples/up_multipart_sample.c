@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 {
     Qiniu_Global_Init(-1);
     setLocalHost();
-    Qiniu_CompleteUpload_Ret putRet;
+    Qiniu_MultipartUpload_Result putRet;
     Qiniu_Client client;
     Qiniu_RS_PutPolicy putPolicy;
     Qiniu_Multipart_PutExtra putExtra;
@@ -29,6 +29,7 @@ int main(int argc, char **argv)
     Qiniu_Zero(putPolicy);
     Qiniu_Zero(putExtra);
     putExtra.mimeType = "video/mp4";
+    putExtra.enableContentMd5 = 1;
 
     putPolicy.scope = bucket;
     char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
@@ -36,7 +37,7 @@ int main(int argc, char **argv)
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
 
     Qiniu_Int64 fsize = 0;
-    Qiniu_Error error = Qiniu_Multipart_PutWithKey(&client, &putRet, uptoken, key, localFile, &putExtra);
+    Qiniu_Error error = Qiniu_Multipart_PutFile(&client, uptoken, key, localFile, &putExtra, &putRet);
     if (error.code != 200)
     {
         printf("upload file %s:%s error.\n", bucket, key);

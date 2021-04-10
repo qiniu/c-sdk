@@ -27,62 +27,28 @@ extern "C"
 
     typedef struct _Qiniu_Multipart_PutExtra
     {
-        const char *upHost; //it's better move upHost to client
-        Qiniu_Int64 partSize;
+        const char *upHost;   //it's better move upHost to client
+        Qiniu_Int64 partSize; //size for each part
         const char *mimeType;
         int tryTimes;
-        // void *notifyRecvr;
-        // Qiniu_Rio_FnNotify notify;
-        // Qiniu_Rio_FnNotifyErr notifyErr;
-        // Qiniu_Rio_BlkputRet* progresses;
-        // size_t blockCnt;
-        // Qiniu_Rio_ThreadModel threadModel;
-
-        // For those file systems that save file name as Unicode strings,
-        // use this field to name the local file name in UTF-8 format for CURL.
-        const char *localFileName;
-
-        // For those who want to invoke a upload callback on the business server
-        // which returns a JSON object.
-        void *callbackRet;
-        Qiniu_Error (*callbackRetParser)(void *, Qiniu_Json *);
-
-        // Use xVarsList to pass user defined variables and xVarsCount to pass the count of them.
-        //
-        // (extra->xVarsList[i])[0] set as the variable name, e.g. "x:Price".
-        // **NOTICE**: User defined variable's name MUST starts with a prefix string "x:".
-        //
-        // (extra->xVarsList[i])[1] set as the value, e.g. "priceless".
-        // const char *(*xVarsList)[2];
-        // int xVarsCount;
-
+        Qiniu_Bool enableContentMd5;
     } Qiniu_Multipart_PutExtra;
 
     typedef struct
     {
-        char *uploadId;
-    } Qiniu_InitPart_Ret;
-    typedef struct
-    {
-        struct
-        {
-            char *etag;
-            int partNum;
-        } * PartEtag;
-
-        int totalPartNum;
-
-    } Qiniu_UploadParts_Ret;
-    typedef struct
-    {
         char *hash;
         char *key;
-    } Qiniu_CompleteUpload_Ret;
+    } Qiniu_MultipartUpload_Result;
 
-    QINIU_DLLAPI extern Qiniu_Error
-    Qiniu_Multipart_PutWithKey(
-        Qiniu_Client *client, Qiniu_CompleteUpload_Ret *ret,
-        const char *uptoken, const char *key, const char *localFile, Qiniu_Multipart_PutExtra *extraParam);
+    /*
+    func: Qiniu_Multipart_PutFile
+    input: it's allowed(but not recommend) to set key="" ,which means the keyname is empty string,
+            if key=NULL means the keyname is determined by server;
+    note: the client not support concurrent usage , detail refer to: https://developer.qiniu.com/kodo/sdk/cpp             
+    */
+    QINIU_DLLAPI extern Qiniu_Error Qiniu_Multipart_PutFile(
+        Qiniu_Client *client, const char *uptoken, const char *key,
+        const char *localFile, Qiniu_Multipart_PutExtra *extraParam, Qiniu_MultipartUpload_Result *ret);
 
     /*============================================================================*/
 

@@ -750,6 +750,13 @@ void Qiniu_Logv(Qiniu_Writer w, int ilvl, const char *fmt, Qiniu_Valist *args)
 	Qiniu_Buffer_Cleanup(&log);
 }
 
+void Qiniu_Stderr_Debug(const char *fmt, ...)
+{
+	Qiniu_Valist args;
+	va_start(args.items, fmt);
+	Qiniu_Logv(Qiniu_Stderr, Qiniu_Ldebug, fmt, &args);
+}
+
 void Qiniu_Stderr_Info(const char *fmt, ...)
 {
 	Qiniu_Valist args;
@@ -764,4 +771,10 @@ void Qiniu_Stderr_Warn(const char *fmt, ...)
 	Qiniu_Logv(Qiniu_Stderr, Qiniu_Lwarn, fmt, &args);
 }
 
+void Qiniu_Stderr_Error(const char *fmt, ...)
+{
+	Qiniu_Valist args;
+	va_start(args.items, fmt);
+	Qiniu_Logv(Qiniu_Stderr, Qiniu_Lerror, fmt, &args);
+}
 /*============================================================================*/

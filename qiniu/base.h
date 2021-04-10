@@ -328,26 +328,32 @@ typedef struct stat Qiniu_FileInfo;
 
 	QINIU_DLLAPI extern void Qiniu_Logv(Qiniu_Writer w, int level, const char *fmt, Qiniu_Valist *args);
 
+	QINIU_DLLAPI extern void Qiniu_Stderr_Debug(const char *fmt, ...);
 	QINIU_DLLAPI extern void Qiniu_Stderr_Info(const char *fmt, ...);
 	QINIU_DLLAPI extern void Qiniu_Stderr_Warn(const char *fmt, ...);
+	QINIU_DLLAPI extern void Qiniu_Stderr_Error(const char *fmt, ...);
 
 	QINIU_DLLAPI extern void Qiniu_Null_Log(const char *fmt, ...);
 
-#ifndef Qiniu_Log_Info
+	// #ifndef Qiniu_Log_Info
 
 #ifdef QINIU_DISABLE_LOG
 
+#define Qiniu_Log_Debug Qiniu_Null_Log
 #define Qiniu_Log_Info Qiniu_Null_Log
 #define Qiniu_Log_Warn Qiniu_Null_Log
+#define Qiniu_Log_Error Qiniu_Null_Log
 
 #else
 
+#define Qiniu_Log_Debug Qiniu_Stderr_Debug
 #define Qiniu_Log_Info Qiniu_Stderr_Info
 #define Qiniu_Log_Warn Qiniu_Stderr_Warn
+#define Qiniu_Log_Error Qiniu_Stderr_Error
 
 #endif
 
-#endif
+	// #endif
 
 	/*============================================================================*/
 

@@ -99,9 +99,10 @@ extern "C"
 
 	typedef struct _Qiniu_Client
 	{
+		const char *upHost;
 		void *curl;
 		Qiniu_Auth auth;
-		Qiniu_Json *root;
+		Qiniu_Json *root; //store resp until next req begin
 		Qiniu_Buffer b;
 		Qiniu_Buffer respHeader;
 
@@ -137,6 +138,9 @@ extern "C"
 		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
 		const char *body, size_t bodyLen, const char *mimeType);
 
+	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithMethod(
+		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+		Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod);
 	/*============================================================================*/
 	/* func Qiniu_Client_InitNoAuth/InitMacAuth  */
 
