@@ -140,7 +140,7 @@ extern "C"
 
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithMethod(
 		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
-		Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod);
+		Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5);
 	/*============================================================================*/
 	/* func Qiniu_Client_InitNoAuth/InitMacAuth  */
 

@@ -98,14 +98,15 @@ Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const char *e
             thisPartSize = fsize - (totalPartNum - 1) * partSize;
         }
         Qiniu_Reader thisPartBody = Qiniu_SectionReader(&section, *reader, (Qiniu_Off_T)thisPartOffset, thisPartSize);
+        const char *md5str;
         if (extraParam->enableContentMd5)
         {
-            const char *md5str = caculatePartMd5(*reader, thisPartOffset, thisPartSize);
+            md5str = caculatePartMd5(*reader, thisPartOffset, thisPartSize);
             Qiniu_Log_Debug("partNum:%d, local Md5:%s ", partNum, md5str);
         }
 
         Qiniu_Json *result;
-        err = Qiniu_Client_CallWithMethod(client, &result, reqUrl, thisPartBody, thisPartSize, "application/octet-stream", "PUT");
+        err = Qiniu_Client_CallWithMethod(client, &result, reqUrl, thisPartBody, thisPartSize, "application/octet-stream", "PUT", md5str);
         Qiniu_Free(reqUrl);
 
         if (err.code != 200)

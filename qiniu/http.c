@@ -435,7 +435,7 @@ static CURL *Qiniu_Client_initcall(Qiniu_Client *self, const char *url)
 
 static Qiniu_Error Qiniu_Client_callWithBody(
     Qiniu_Client *self, Qiniu_Json **ret, const char *url,
-    const char *body, Qiniu_Int64 bodyLen, const char *mimeType)
+    const char *body, Qiniu_Int64 bodyLen, const char *mimeType, const char *md5)
 {
     int retCode = 0;
     Qiniu_Error err;
@@ -471,6 +471,11 @@ static Qiniu_Error Qiniu_Client_callWithBody(
     headers = curl_slist_append(NULL, ctxLength);
     headers = curl_slist_append(headers, ctxType);
     headers = curl_slist_append(headers, "Expect:");
+    if (md5 != NULL)
+    {
+        char *contentMd5 = Qiniu_String_Concat2("Content-MD5: ", md5);
+        headers = curl_slist_append(headers, contentMd5);
+    }
 
     if (self->auth.itbl != NULL)
     {
@@ -505,7 +510,7 @@ static Qiniu_Error Qiniu_Client_callWithBody(
 
 Qiniu_Error Qiniu_Client_CallWithMethod(
     Qiniu_Client *self, Qiniu_Json **ret, const char *url,
-    Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod)
+    Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5)
 {
     CURL *curl = Qiniu_Client_initcall_withMethod(self, url, httpMethod);
 
@@ -513,7 +518,7 @@ Qiniu_Error Qiniu_Client_CallWithMethod(
     curl_easy_setopt(curl, CURLOPT_READFUNCTION, body.Read);
     curl_easy_setopt(curl, CURLOPT_READDATA, body.self);
 
-    return Qiniu_Client_callWithBody(self, ret, url, NULL, bodyLen, mimeType);
+    return Qiniu_Client_callWithBody(self, ret, url, NULL, bodyLen, mimeType, md5);
 }
 
 Qiniu_Error Qiniu_Client_CallWithBinary(
@@ -526,7 +531,7 @@ Qiniu_Error Qiniu_Client_CallWithBinary(
     curl_easy_setopt(curl, CURLOPT_READFUNCTION, body.Read);
     curl_easy_setopt(curl, CURLOPT_READDATA, body.self);
 
-    return Qiniu_Client_callWithBody(self, ret, url, NULL, bodyLen, mimeType);
+    return Qiniu_Client_callWithBody(self, ret, url, NULL, bodyLen, mimeType, NULL);
 }
 
 Qiniu_Error Qiniu_Client_CallWithBuffer(
@@ -538,7 +543,7 @@ Qiniu_Error Qiniu_Client_CallWithBuffer(
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, bodyLen);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
 
-    return Qiniu_Client_callWithBody(self, ret, url, body, bodyLen, mimeType);
+    return Qiniu_Client_callWithBody(self, ret, url, body, bodyLen, mimeType, NULL);
 }
 
 Qiniu_Error Qiniu_Client_CallWithBuffer2(
@@ -550,7 +555,7 @@ Qiniu_Error Qiniu_Client_CallWithBuffer2(
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, bodyLen);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
 
-    return Qiniu_Client_callWithBody(self, ret, url, NULL, bodyLen, mimeType);
+    return Qiniu_Client_callWithBody(self, ret, url, NULL, bodyLen, mimeType, NULL);
 }
 
 Qiniu_Error Qiniu_Client_Call(Qiniu_Client *self, Qiniu_Json **ret, const char *url)
