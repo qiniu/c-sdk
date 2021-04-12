@@ -21,7 +21,7 @@ void testFmt();
 void testEqual();
 void testRsBatchOps();
 void testFop();
-void testMultipartUpload();
+void testMultipartUpload_singlePart();
 
 static int setup()
 {
@@ -64,7 +64,7 @@ int main()
 	// CU_add_test(pSuite, "testFileIo", testFileIo);
 	// CU_add_test(pSuite, "testEqual", testEqual);
 	// CU_add_test(pSuite, "testResumableIoPut", testResumableIoPut);
-	CU_add_test(pSuite, "testMultipartUpload", testMultipartUpload);
+	CU_add_test(pSuite, "testMultipartUpload", testMultipartUpload_singlePart);
 	// CU_add_test(pSuite, "testIoPut", testIoPut);
 	// CU_add_test(pSuite, "testRsBatchOps", testRsBatchOps);
 	// CU_add_test(pSuite, "testFop", testFop);
