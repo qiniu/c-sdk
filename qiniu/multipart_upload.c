@@ -154,7 +154,18 @@ Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const char *e
     return err;
 }
 
-Qiniu_Error complete_upload(Qiniu_Client *client, const char *bucket, const char *encodedKey, const char *uploadId, Qiniu_Multipart_PutExtra *extraParam, Qiniu_UploadParts_Ret *uploadPartsRet, Qiniu_MultipartUpload_Result *completeRet)
+cJSON *buildJsonMap(int kvNum, const char *(*kvpairs)[2])
+{
+    cJSON *map = cJSON_CreateObject();
+    for (int i = 0; i < kvNum; i++)
+    {
+        cJSON_AddStringToObject(map, kvpairs[i][0], kvpairs[i][1]);
+    }
+    return map;
+}
+
+Qiniu_Error
+complete_upload(Qiniu_Client *client, const char *bucket, const char *encodedKey, const char *uploadId, Qiniu_Multipart_PutExtra *extraParam, Qiniu_UploadParts_Ret *uploadPartsRet, Qiniu_MultipartUpload_Result *completeRet)
 {
     //step1: build body
     cJSON *root = cJSON_CreateObject();
@@ -168,7 +179,17 @@ Qiniu_Error complete_upload(Qiniu_Client *client, const char *bucket, const char
     }
     cJSON_AddItemToObject(root, "parts", parts);
     cJSON_AddStringToObject(root, "mimeType", extraParam->mimeType);
-    //TODO:metaData,customVars
+    //add metaData,customVars
+    if (extraParam->xVarsCount > 0)
+    {
+        cJSON *xvarMap = buildJsonMap(extraParam->xVarsCount, extraParam->xVarsList);
+        cJSON_AddItemToObject(root, "customVars", xvarMap);
+    }
+    if (extraParam->metaCount > 0)
+    {
+        cJSON *metaMap = buildJsonMap(extraParam->metaCount, extraParam->metaList);
+        cJSON_AddItemToObject(root, "metadata", metaMap);
+    }
 
     char *body = cJSON_PrintUnformatted(root);
     Qiniu_Log_Debug("upload.body:%s ", body);

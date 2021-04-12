@@ -40,6 +40,12 @@ int main(int argc, char **argv)
     putExtra.enableContentMd5 = 1;
     putExtra.notify = testNotify;
     putExtra.notifyErr = testNotifyErr;
+    putExtra.metaCount = 2;
+    putExtra.metaList = malloc(putExtra.metaCount * sizeof(char *[2]));
+    putExtra.metaList[0][0] = "metakey1";
+    putExtra.metaList[0][1] = "metaval1";
+    putExtra.metaList[1][0] = "metakey2";
+    putExtra.metaList[1][1] = "metaval2";
 
     putPolicy.scope = bucket;
     char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);

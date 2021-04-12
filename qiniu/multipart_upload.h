@@ -43,6 +43,16 @@ extern "C"
         Qiniu_Bool enableContentMd5; //calulate md5  and set to request.header["Content-MD5"]
         NotifyFunc notify;
         NotifyErrFunc notifyErr;
+
+        // Use xVarsList to pass user defined variables and xVarsCount to pass the count of them.
+        // (extra->xVarsList[i])[0] set as the name, e.g. "x:Price", MUST starts with "x:".
+        // (extra->xVarsList[i])[1] set as the value, e.g. "fiveRMB".
+        const char *(*xVarsList)[2];
+        int xVarsCount;
+
+        const char *(*metaList)[2];
+        int metaCount;
+
     } Qiniu_Multipart_PutExtra;
 
     typedef struct
