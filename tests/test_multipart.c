@@ -63,7 +63,7 @@ static const char *putFile_multipart(const char *bucket, const char *key, const 
     return putRet.key;
 }
 
-void testMultipartUpload_singlePart(void)
+void testMultipartUpload_smallfile(void)
 {
     setLocalHost();
     Qiniu_Client client;
@@ -74,9 +74,9 @@ void testMultipartUpload_singlePart(void)
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
 
     const char *keys[] = {
-        "testKey", //normal keyname
-        "",        //empty string keyname
-        NULL};     //no keyname, determined by server
+        "smallfile", //normal keyname
+        "",          //empty string keyname
+        NULL};       //no keyname, determined by server(eg:hash as keyname)
     for (int i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
     {
         const char *inputKey = keys[i];
@@ -87,7 +87,7 @@ void testMultipartUpload_singlePart(void)
             Qiniu_RS_Delete(&client, bucket, inputKey);
         }
         //step2: upload file
-        const char *returnKey = putFile_multipart(bucket, inputKey, "txt", __FILE__, &mac);
+        const char *returnKey = putFile_multipart(bucket, inputKey, "txt", __FILE__, &mac); //upload current file
 
         //step3: stat file
         Qiniu_RS_StatRet statResult;
@@ -99,6 +99,39 @@ void testMultipartUpload_singlePart(void)
         err = Qiniu_RS_Delete(&client, bucket, returnKey);
         CU_ASSERT(err.code == 200);
     }
+
+    Qiniu_Client_Cleanup(&client);
+
+    printf("\n testMultipartUpload ok\n\n");
+}
+
+void testMultipartUpload_largefile(void)
+{
+    setLocalHost();
+    Qiniu_Client client;
+    Qiniu_Zero(client);
+
+    Qiniu_Error err;
+    Qiniu_Mac mac = {QINIU_ACCESS_KEY, QINIU_SECRET_KEY};
+    Qiniu_Client_InitMacAuth(&client, 1024, &mac);
+
+    const char *inputKey = "largefile";
+
+    //step1: delete  file if exist
+    Qiniu_RS_Delete(&client, bucket, inputKey);
+
+    //step2: upload file
+    const char *returnKey = putFile_multipart(bucket, inputKey, "mp3", "./test5m.mp3", &mac);
+
+    //step3: stat file
+    Qiniu_RS_StatRet statResult;
+    err = Qiniu_RS_Stat(&client, &statResult, bucket, returnKey);
+    CU_ASSERT(err.code == 200);
+    CU_ASSERT(strcmp(statResult.mimeType, "mp3") == 0);
+
+    //step4: delete file
+    err = Qiniu_RS_Delete(&client, bucket, returnKey);
+    CU_ASSERT(err.code == 200);
 
     Qiniu_Client_Cleanup(&client);
 
