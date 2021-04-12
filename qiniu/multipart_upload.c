@@ -59,7 +59,7 @@ void Qiniu_UploadParts_Ret_Clean(Qiniu_UploadParts_Ret *p)
 Qiniu_Error init_upload(Qiniu_Client *client, const char *bucket, const char *encodedKey, Qiniu_Multipart_PutExtra *extraParam, Qiniu_InitPart_Ret *initPartRet)
 {
     Qiniu_Error err;
-    const char *uphost = client->upHost;
+    const char *uphost = extraParam->upHost;
     char *reqUrl = Qiniu_String_Concat(uphost, "/buckets/", bucket, "/objects/", encodedKey,
                                        "/uploads", NULL);
 
@@ -101,7 +101,7 @@ Qiniu_Error upload_one_part(Qiniu_Client *client, int tryTimes, const char *reqU
 Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const char *encodedKey, const char *uploadId, Qiniu_ReaderAt *reader, Qiniu_Int64 fsize, Qiniu_Multipart_PutExtra *extraParam, Qiniu_UploadParts_Ret *uploadPartsRet)
 {
     Qiniu_Error err;
-    const char *uphost = client->upHost;
+    const char *uphost = extraParam->upHost;
 
     Qiniu_Int64 partSize = extraParam->partSize;
     int totalPartNum = (fsize + partSize - 1) / partSize;
@@ -166,7 +166,7 @@ Qiniu_Error complete_upload(Qiniu_Client *client, const char *bucket, const char
 
     //step2:send req
     Qiniu_Error err;
-    char *reqUrl = Qiniu_String_Concat(client->upHost, "/buckets/", bucket, "/objects/", encodedKey, "/uploads/", uploadId, NULL);
+    char *reqUrl = Qiniu_String_Concat(extraParam->upHost, "/buckets/", bucket, "/objects/", encodedKey, "/uploads/", uploadId, NULL);
     Qiniu_Json *result;
     err = Qiniu_Client_CallWithBuffer(client, &result, reqUrl, body, strlen(body), "application/json");
     if (err.code != 200)
@@ -209,7 +209,7 @@ Qiniu_Error openFileReader(const char *localFile, Qiniu_File **f, Qiniu_Int64 *f
 const Qiniu_Int64 Min_Part_Size = (1 << 20); //1MB
 const Qiniu_Int64 Max_Part_Size = (1 << 30); //1GB
 
-Qiniu_Error verifyParam(Qiniu_Client *client, Qiniu_Multipart_PutExtra *param)
+Qiniu_Error verifyParam(Qiniu_Multipart_PutExtra *param)
 {
     Qiniu_Error err = {200, ""};
     if (param->partSize == 0)
@@ -226,9 +226,9 @@ Qiniu_Error verifyParam(Qiniu_Client *client, Qiniu_Multipart_PutExtra *param)
     {
         param->tryTimes = 1;
     }
-    if (client->upHost == NULL)
+    if (param->upHost == NULL)
     {
-        client->upHost = QINIU_UP_HOST;
+        param->upHost = QINIU_UP_HOST;
     }
 
     return err;
@@ -238,7 +238,7 @@ Qiniu_Error Qiniu_Multipart_PutFile(Qiniu_Client *client, const char *uptoken, c
                                     const char *localFile, Qiniu_Multipart_PutExtra *extraParam, Qiniu_MultipartUpload_Result *uploadResult)
 {
     Qiniu_Error err;
-    err = verifyParam(client, extraParam);
+    err = verifyParam(extraParam);
     if (err.code != 200)
     {
         Qiniu_Log_Error("invalid param err:%d, errMsg:%s", err.code, err.message);

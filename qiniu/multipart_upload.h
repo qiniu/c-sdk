@@ -27,10 +27,11 @@ extern "C"
 
     typedef struct _Qiniu_Multipart_PutExtra
     {
+        const char *upHost;   //if not set explicitly ,will use global QINIU_UP_HOST;
         Qiniu_Int64 partSize; //size for each part
         const char *mimeType;
         int tryTimes;
-        Qiniu_Bool enableContentMd5;
+        Qiniu_Bool enableContentMd5; //calulate md5  and set to request.header["Content-MD5"]
     } Qiniu_Multipart_PutExtra;
 
     typedef struct

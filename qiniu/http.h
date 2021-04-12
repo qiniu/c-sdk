@@ -99,7 +99,6 @@ extern "C"
 
 	typedef struct _Qiniu_Client
 	{
-		const char *upHost;
 		void *curl;
 		Qiniu_Auth auth;
 		Qiniu_Json *root; //store resp until next req begin
