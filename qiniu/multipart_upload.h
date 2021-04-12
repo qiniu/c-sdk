@@ -24,6 +24,15 @@ extern "C"
 #endif
 
     /*============================================================================*/
+    typedef struct
+    {
+        char *md5;
+        char *etag;
+        int partNum; //Attention: partNum start with 1
+    } Qiniu_UploadPartResp;
+
+    typedef void (*NotifyFunc)(Qiniu_UploadPartResp *partResp);
+    typedef void (*NotifyErrFunc)(int partNum, Qiniu_Error err);
 
     typedef struct _Qiniu_Multipart_PutExtra
     {
@@ -32,6 +41,8 @@ extern "C"
         const char *mimeType;
         int tryTimes;
         Qiniu_Bool enableContentMd5; //calulate md5  and set to request.header["Content-MD5"]
+        NotifyFunc notify;
+        NotifyErrFunc notifyErr;
     } Qiniu_Multipart_PutExtra;
 
     typedef struct

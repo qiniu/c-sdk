@@ -31,27 +31,23 @@ void Qiniu_InitPart_Ret_Clean(Qiniu_InitPart_Ret *p)
 {
     free(p->uploadId);
 }
-typedef struct
-{
-    char *etag;
-    int partNum;
-} Qiniu_PartEtag;
 
 typedef struct
 {
-    Qiniu_PartEtag *PartEtag;
+    Qiniu_UploadPartResp *PartsRet;
     int totalPartNum;
 } Qiniu_UploadParts_Ret;
 
 void Qiniu_UploadParts_Ret_Clean(Qiniu_UploadParts_Ret *p)
 {
-    if (p->PartEtag != NULL)
+    if (p->PartsRet != NULL)
     {
         for (int i = 0; i < p->totalPartNum; i++)
         {
-            free(p->PartEtag[i].etag);
+            free(p->PartsRet[i].etag);
+            free(p->PartsRet[i].md5);
         }
-        free(p->PartEtag);
+        free(p->PartsRet);
     }
     p->totalPartNum = 0;
 }
@@ -74,10 +70,10 @@ Qiniu_Error init_upload(Qiniu_Client *client, const char *bucket, const char *en
     return err;
 }
 
-Qiniu_Error upload_one_part(Qiniu_Client *client, int tryTimes, const char *reqUrl, int partNum, Qiniu_ReaderAt reader, Qiniu_Int64 partOffset, Qiniu_Int64 partSize, const char *md5str, Qiniu_PartEtag *ret)
+Qiniu_Error upload_one_part(Qiniu_Client *client, Qiniu_Multipart_PutExtra *extraParam, const char *reqUrl, int partNum, Qiniu_ReaderAt reader, Qiniu_Int64 partOffset, Qiniu_Int64 partSize, const char *md5str, Qiniu_UploadPartResp *ret)
 {
     Qiniu_Error err;
-    for (int try = 0; try < tryTimes; try ++)
+    for (int try = 0; try < extraParam->tryTimes; try ++)
     {
         Qiniu_Section section;
         Qiniu_Reader thisPartBody = Qiniu_SectionReader(&section, reader, (Qiniu_Off_T)partOffset, partSize);
@@ -89,12 +85,24 @@ Qiniu_Error upload_one_part(Qiniu_Client *client, int tryTimes, const char *reqU
             continue;
         }
 
-        Qiniu_Log_Debug("partNum:%d,remote md5:%s ", partNum, Qiniu_Json_GetString(result, "md5", NULL));
+        const char *md5 = Qiniu_Json_GetString(result, "md5", NULL);
         const char *etag = Qiniu_Json_GetString(result, "etag", NULL);
         ret->etag = Qiniu_String_Dup(etag);
+        ret->md5 = Qiniu_String_Dup(md5);
         ret->partNum = partNum;
+        Qiniu_Log_Debug("partNum:%d,remote md5:%s ", partNum, md5);
         break;
     }
+    //notify callback
+    if ((err.code == 200) && extraParam->notify)
+    {
+        extraParam->notify(ret);
+    }
+    if ((err.code != 200) && extraParam->notifyErr)
+    {
+        extraParam->notifyErr(partNum, err);
+    }
+
     return err;
 }
 
@@ -112,7 +120,7 @@ Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const char *e
     int lastPart = totalPartNum - 1;
 
     uploadPartsRet->totalPartNum = totalPartNum;
-    uploadPartsRet->PartEtag = malloc(totalPartNum * sizeof(*(uploadPartsRet->PartEtag)));
+    uploadPartsRet->PartsRet = malloc(totalPartNum * sizeof(*(uploadPartsRet->PartsRet)));
     for (int partNum = 0; partNum < totalPartNum; partNum++)
     {
         int partNumInReq = partNum + 1; //partNum start from 1
@@ -134,7 +142,7 @@ Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const char *e
             Qiniu_Log_Debug("partNum:%d, local Md5:%s ", partNumInReq, md5str);
         }
 
-        err = upload_one_part(client, extraParam->tryTimes, reqUrl, partNumInReq, *reader, thisPartOffset, thisPartSize, md5str, &uploadPartsRet->PartEtag[partNum]);
+        err = upload_one_part(client, extraParam, reqUrl, partNumInReq, *reader, thisPartOffset, thisPartSize, md5str, &uploadPartsRet->PartsRet[partNum]);
         Qiniu_Free(reqUrl);
 
         if (err.code != 200)
@@ -154,12 +162,14 @@ Qiniu_Error complete_upload(Qiniu_Client *client, const char *bucket, const char
     for (int i = 0; i < uploadPartsRet->totalPartNum; i++)
     {
         cJSON *part = cJSON_CreateObject();
-        cJSON_AddStringToObject(part, "etag", uploadPartsRet->PartEtag[i].etag);
-        cJSON_AddNumberToObject(part, "partNumber", uploadPartsRet->PartEtag[i].partNum);
+        cJSON_AddStringToObject(part, "etag", uploadPartsRet->PartsRet[i].etag);
+        cJSON_AddNumberToObject(part, "partNumber", uploadPartsRet->PartsRet[i].partNum);
         cJSON_AddItemToArray(parts, part);
     }
     cJSON_AddItemToObject(root, "parts", parts);
     cJSON_AddStringToObject(root, "mimeType", extraParam->mimeType);
+    //TODO:metaData,customVars
+
     char *body = cJSON_PrintUnformatted(root);
     Qiniu_Log_Debug("upload.body:%s ", body);
     cJSON_Delete(root);

@@ -5,6 +5,15 @@
 
 void setLocalHost();
 
+void testNotify(Qiniu_UploadPartResp *resp)
+{
+    Qiniu_Log_Debug("testNotify partNum:%d,remote md5:%s ", resp->partNum, resp->md5);
+}
+void testNotifyErr(int partNum, Qiniu_Error err)
+{
+    Qiniu_Log_Error("testNotifyErr partNum:%d,%E", partNum, err);
+}
+
 int main(int argc, char **argv)
 {
     setLocalHost(); //using localhost for debug
@@ -29,6 +38,8 @@ int main(int argc, char **argv)
     Qiniu_Zero(putExtra);
     putExtra.mimeType = "video/mp4";
     putExtra.enableContentMd5 = 1;
+    putExtra.notify = testNotify;
+    putExtra.notifyErr = testNotifyErr;
 
     putPolicy.scope = bucket;
     char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
