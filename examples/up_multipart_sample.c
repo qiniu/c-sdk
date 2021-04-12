@@ -45,9 +45,7 @@ int main(int argc, char **argv)
     else
     {
         /*200, 正确返回了, 你可以通过statRet变量查询一些关于这个文件的信息*/
-        printf("upload file success dstbucket:%s, dstKey:%s \n\n", bucket, key);
-        printf("key:\t%s\n", putRet.key);
-        printf("hash:\t%s\n", putRet.hash);
+        printf("upload file success dstbucket:%s, dstKey:%s, hash:%s \n\n", bucket, putRet.key, putRet.hash);
     }
 
     Qiniu_Free(uptoken);

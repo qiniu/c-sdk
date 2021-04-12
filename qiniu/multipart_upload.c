@@ -33,15 +33,16 @@ void Qiniu_InitPart_Ret_Clean(Qiniu_InitPart_Ret *p)
 }
 typedef struct
 {
-    struct
-    {
-        char *etag;
-        int partNum;
-    } * PartEtag;
+    char *etag;
+    int partNum;
+} Qiniu_PartEtag;
 
+typedef struct
+{
+    Qiniu_PartEtag *PartEtag;
     int totalPartNum;
-
 } Qiniu_UploadParts_Ret;
+
 void Qiniu_UploadParts_Ret_Clean(Qiniu_UploadParts_Ret *p)
 {
     if (p->PartEtag != NULL)
@@ -73,6 +74,30 @@ Qiniu_Error init_upload(Qiniu_Client *client, const char *bucket, const char *en
     return err;
 }
 
+Qiniu_Error upload_one_part(Qiniu_Client *client, int tryTimes, const char *reqUrl, int partNum, Qiniu_ReaderAt reader, Qiniu_Int64 partOffset, Qiniu_Int64 partSize, const char *md5str, Qiniu_PartEtag *ret)
+{
+    Qiniu_Error err;
+    for (int try = 0; try < tryTimes; try ++)
+    {
+        Qiniu_Section section;
+        Qiniu_Reader thisPartBody = Qiniu_SectionReader(&section, reader, (Qiniu_Off_T)partOffset, partSize);
+        Qiniu_Json *result;
+        err = Qiniu_Client_CallWithMethod(client, &result, reqUrl, thisPartBody, partSize, NULL, "PUT", md5str);
+        if (err.code != 200)
+        {
+            Qiniu_Log_Error("upload_part: partNum:%d, err:%d, errMsg:%s ", partNum, err.code, err.message);
+            continue;
+        }
+
+        Qiniu_Log_Debug("partNum:%d,remote md5:%s ", partNum, Qiniu_Json_GetString(result, "md5", NULL));
+        const char *etag = Qiniu_Json_GetString(result, "etag", NULL);
+        ret->etag = Qiniu_String_Dup(etag);
+        ret->partNum = partNum;
+        break;
+    }
+    return err;
+}
+
 Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const char *encodedKey, const char *uploadId, Qiniu_ReaderAt *reader, Qiniu_Int64 fsize, Qiniu_Multipart_PutExtra *extraParam, Qiniu_UploadParts_Ret *uploadPartsRet)
 {
     Qiniu_Error err;
@@ -93,41 +118,30 @@ Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const char *e
         int partNumInReq = partNum + 1; //partNum start from 1
         char partNumStr[10];            //valid partNum ={"1"~"10000"}
         sprintf(partNumStr, "%d", partNumInReq);
-        char *reqUrl = Qiniu_String_Concat(uphost, "/buckets/", bucket, "/objects/", encodedKey,
-                                           "/uploads/", uploadId, "/", partNumStr, NULL);
-        Qiniu_Section section;
+        char *reqUrl = Qiniu_String_Concat(uphost, "/buckets/", bucket, "/objects/", encodedKey, "/uploads/", uploadId, "/", partNumStr, NULL);
+
         Qiniu_Int64 thisPartOffset = partNum * partSize;
         Qiniu_Int64 thisPartSize = partSize;
         if (partNum == lastPart)
         {
             thisPartSize = fsize - (totalPartNum - 1) * partSize;
         }
-        Qiniu_Reader thisPartBody = Qiniu_SectionReader(&section, *reader, (Qiniu_Off_T)thisPartOffset, thisPartSize);
+
         const char *md5str;
         if (extraParam->enableContentMd5)
         {
             md5str = caculatePartMd5(*reader, thisPartOffset, thisPartSize);
-            Qiniu_Log_Debug("partNum:%d, local Md5:%s ", partNum, md5str);
+            Qiniu_Log_Debug("partNum:%d, local Md5:%s ", partNumInReq, md5str);
         }
 
-        Qiniu_Json *result;
-        err = Qiniu_Client_CallWithMethod(client, &result, reqUrl, thisPartBody, thisPartSize, "application/octet-stream", "PUT", md5str);
+        err = upload_one_part(client, extraParam->tryTimes, reqUrl, partNumInReq, *reader, thisPartOffset, thisPartSize, md5str, &uploadPartsRet->PartEtag[partNum]);
         Qiniu_Free(reqUrl);
 
         if (err.code != 200)
         {
-            Qiniu_Log_Error("upload_part: partNum:%d, err:%d, errMsg:%s ", partNumInReq, err.code, err.message);
             Qiniu_UploadParts_Ret_Clean(uploadPartsRet);
             return err;
         }
-        else
-        {
-            Qiniu_Log_Debug("partNum:%d,remote md5:%s ", partNum, Qiniu_Json_GetString(result, "md5", NULL));
-            const char *etag = Qiniu_Json_GetString(result, "etag", NULL);
-            uploadPartsRet->PartEtag[partNum].etag = Qiniu_String_Dup(etag);
-            uploadPartsRet->PartEtag[partNum].partNum = partNumInReq;
-        }
-        Qiniu_Log_Debug("upload_part: uploadid:%s, partNum:%d ", uploadId, partNum);
     }
     return err;
 }
@@ -208,6 +222,10 @@ Qiniu_Error verifyParam(Qiniu_Multipart_PutExtra *param)
         err.message = "partSize must between 1MB and 1GB";
         return err;
     }
+    if (param->tryTimes == 0)
+    {
+        param->tryTimes = 1;
+    }
     return err;
 }
 //TODO: support more put policy
@@ -221,8 +239,7 @@ Qiniu_Error Qiniu_Multipart_PutFile(Qiniu_Client *client, const char *uptoken, c
         Qiniu_Log_Error("invalid param err:%d, errMsg:%s", err.code, err.message);
         return err;
     }
-    Qiniu_Auth authBackup = client->auth;
-    client->auth = Qiniu_UptokenAuth(uptoken);
+
     char *bucket = extractBucket(uptoken);
     if (bucket == NULL)
     {
@@ -234,6 +251,9 @@ Qiniu_Error Qiniu_Multipart_PutFile(Qiniu_Client *client, const char *uptoken, c
 
     bool hasKey = (key != NULL);
     char *encodedKey = encodeKey(key, hasKey);
+    Qiniu_Auth authBackup = client->auth;
+    client->auth = Qiniu_UptokenAuth(uptoken);
+
     //step1: init part
     Qiniu_InitPart_Ret initPartRet;
     err = init_upload(client, bucket, encodedKey, extraParam, &initPartRet);
@@ -241,6 +261,7 @@ Qiniu_Error Qiniu_Multipart_PutFile(Qiniu_Client *client, const char *uptoken, c
     {
         Qiniu_Log_Error("initUpload err:%d, errMsg:%s ", err.code, err.message);
         Qiniu_Multi_Free(3, (void *)client->auth.self, (void *)bucket, (void *)encodedKey);
+        client->auth = authBackup;
         return err;
     }
 
@@ -253,6 +274,7 @@ Qiniu_Error Qiniu_Multipart_PutFile(Qiniu_Client *client, const char *uptoken, c
         Qiniu_Log_Error("openFileReader err:%d, errMsg:%s ", err.code, err.message);
         Qiniu_Multi_Free(3, (void *)client->auth.self, (void *)bucket, (void *)encodedKey);
         Qiniu_InitPart_Ret_Clean(&initPartRet);
+        client->auth = authBackup;
         return err;
     }
     const char *uploadId = initPartRet.uploadId;
@@ -266,6 +288,7 @@ Qiniu_Error Qiniu_Multipart_PutFile(Qiniu_Client *client, const char *uptoken, c
         Qiniu_Log_Error("upload_part err:%d, errMsg:%s ", err.code, err.message);
         Qiniu_Multi_Free(3, (void *)client->auth.self, (void *)bucket, (void *)encodedKey);
         Qiniu_InitPart_Ret_Clean(&initPartRet);
+        client->auth = authBackup;
         return err;
     }
 
