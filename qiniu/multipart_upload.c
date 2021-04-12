@@ -21,11 +21,16 @@
 char *extractBucket(const char *uptoken);
 char *encodeKey(const char *key, bool hasKey);
 const char *caculatePartMd5(Qiniu_ReaderAt reader, Qiniu_Int64 offset, Qiniu_Int64 partSize);
+void Qiniu_Multi_Free(int n, ...);
 
 typedef struct
 {
     char *uploadId;
 } Qiniu_InitPart_Ret;
+void Qiniu_InitPart_Ret_Clean(Qiniu_InitPart_Ret *p)
+{
+    free(p->uploadId);
+}
 typedef struct
 {
     struct
@@ -142,7 +147,7 @@ Qiniu_Error complete_upload(Qiniu_Client *client, const char *bucket, const char
     cJSON_AddItemToObject(root, "parts", parts);
     cJSON_AddStringToObject(root, "mimeType", extraParam->mimeType);
     char *body = cJSON_PrintUnformatted(root);
-    Qiniu_Log_Info("complete.body:%s ", body);
+    Qiniu_Log_Debug("upload.body:%s ", body);
     cJSON_Delete(root);
 
     //step2:send req
@@ -152,7 +157,7 @@ Qiniu_Error complete_upload(Qiniu_Client *client, const char *bucket, const char
     err = Qiniu_Client_CallWithBuffer(client, &result, reqUrl, body, strlen(body), "application/json");
     if (err.code != 200)
     {
-        Qiniu_Log_Warn("complete_upload: uploadId:%s, err:%d, errMsg:%s ", uploadId, err.code, err.message);
+        Qiniu_Log_Error("cupload: uploadId:%s, err:%d, errMsg:%s ", uploadId, err.code, err.message);
         Qiniu_Free(reqUrl);
         Qiniu_Free(body);
         return err;
@@ -164,7 +169,7 @@ Qiniu_Error complete_upload(Qiniu_Client *client, const char *bucket, const char
         completeRet->hash = Qiniu_String_Dup(hash);
         completeRet->key = Qiniu_String_Dup(key);
     }
-    Qiniu_Log_Info("completeUpload: uploadid:%s, hash:%s, key:%s ", uploadId, completeRet->hash, completeRet->key);
+    Qiniu_Log_Debug("Upload result: uploadid:%s, hash:%s, key:%s ", uploadId, completeRet->hash, completeRet->key);
     Qiniu_Free(body);
     Qiniu_Free(reqUrl);
     return err;
@@ -216,17 +221,17 @@ Qiniu_Error Qiniu_Multipart_PutFile(Qiniu_Client *client, const char *uptoken, c
         Qiniu_Log_Error("invalid param err:%d, errMsg:%s", err.code, err.message);
         return err;
     }
-
+    Qiniu_Auth authBackup = client->auth;
     client->auth = Qiniu_UptokenAuth(uptoken);
     char *bucket = extractBucket(uptoken);
     if (bucket == NULL)
     {
         err.code = 400;
         err.message = "invalid uptoken,parse uptoken failed";
-        //Qiniu_Multi_Free(client->auth.self);
+        Qiniu_Multi_Free(1, (void *)client->auth.self);
         return err;
     }
-    // const char *uphost = get_Qiniu_UpHost(client);
+
     bool hasKey = (key != NULL);
     char *encodedKey = encodeKey(key, hasKey);
     //step1: init part
@@ -235,7 +240,7 @@ Qiniu_Error Qiniu_Multipart_PutFile(Qiniu_Client *client, const char *uptoken, c
     if (err.code != 200)
     {
         Qiniu_Log_Error("initUpload err:%d, errMsg:%s ", err.code, err.message);
-        // Qiniu_Multi_Free(client->auth.self,bucket,encodedKey); //TODO
+        Qiniu_Multi_Free(3, (void *)client->auth.self, (void *)bucket, (void *)encodedKey);
         return err;
     }
 
@@ -246,7 +251,8 @@ Qiniu_Error Qiniu_Multipart_PutFile(Qiniu_Client *client, const char *uptoken, c
     if (err.code != 200)
     {
         Qiniu_Log_Error("openFileReader err:%d, errMsg:%s ", err.code, err.message);
-        // Qiniu_Multi_Free(client->auth.self,bucket,encodedKey); //TODO
+        Qiniu_Multi_Free(3, (void *)client->auth.self, (void *)bucket, (void *)encodedKey);
+        Qiniu_InitPart_Ret_Clean(&initPartRet);
         return err;
     }
     const char *uploadId = initPartRet.uploadId;
@@ -258,6 +264,8 @@ Qiniu_Error Qiniu_Multipart_PutFile(Qiniu_Client *client, const char *uptoken, c
     if (err.code != 200)
     {
         Qiniu_Log_Error("upload_part err:%d, errMsg:%s ", err.code, err.message);
+        Qiniu_Multi_Free(3, (void *)client->auth.self, (void *)bucket, (void *)encodedKey);
+        Qiniu_InitPart_Ret_Clean(&initPartRet);
         return err;
     }
 
@@ -266,14 +274,17 @@ Qiniu_Error Qiniu_Multipart_PutFile(Qiniu_Client *client, const char *uptoken, c
     if (err.code != 200)
     {
         Qiniu_Log_Error("complete_upload err:%d, errMsg:%s ", err.code, err.message);
-        return err;
     }
-    Qiniu_Log_Debug("completeUpload ok for uploadId: %s", uploadId);
+    else
+    {
+        Qiniu_Log_Debug("Upload ok for uploadId: %s", uploadId);
+    }
+
     //step4: free memory
-    Qiniu_Free(bucket);
-    Qiniu_Free(encodedKey);
-    Qiniu_FreeV2(&(client->auth.self));
+    Qiniu_Multi_Free(3, (void *)client->auth.self, (void *)bucket, (void *)encodedKey);
+    Qiniu_InitPart_Ret_Clean(&initPartRet);
     Qiniu_UploadParts_Ret_Clean(&uploadPartsRet);
+    client->auth = authBackup;
     return err;
 }
 
@@ -345,6 +356,19 @@ const char *caculatePartMd5(Qiniu_ReaderAt reader, Qiniu_Int64 offset, Qiniu_Int
 }
 
 //-----------------------------------
+void Qiniu_Multi_Free(int n, ...)
+{
+    void *p;
+    va_list v1;
+    va_start(v1, n);
+    for (int i = 0; i < n; i++)
+    {
+        p = va_arg(v1, void *);
+        free(p);
+    }
+    va_end(v1);
+}
+
 typedef struct
 {
     void *ptrList[200];

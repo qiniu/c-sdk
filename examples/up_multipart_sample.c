@@ -10,7 +10,7 @@ int main(int argc, char **argv)
     Qiniu_Global_Init(-1);
     setLocalHost();
     Qiniu_MultipartUpload_Result putRet;
-    Qiniu_Client client;
+    Qiniu_Client client; //client不支持并发
     Qiniu_RS_PutPolicy putPolicy;
     Qiniu_Multipart_PutExtra putExtra;
     client.upHost = QINIU_UP_HOST;
@@ -19,8 +19,7 @@ int main(int argc, char **argv)
     char *secretKey = "SrRuUVfDX6drVRvpyN8mv8Vcm9XnMZzlbDfvVfMe";
     char *bucket = "sdk";
     char *key = "testkey";
-    char *localFile = "/Users/liangzeng/qbox/sdk/c-sdk/test5m.mp3";
-    // char *localFile = "/Users/liangzeng/qbox/sdk/c-sdk/testfile";
+    char *localFile = "./test5m.mp3";
 
     Qiniu_Mac mac;
     mac.accessKey = accessKey;
