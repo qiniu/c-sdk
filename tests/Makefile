@@ -12,6 +12,8 @@ SOURCE_FILES=\
 	../qiniu/rs.c\
 	../qiniu/io.c\
 	../qiniu/resumable_io.c\
+	../qiniu/multipart_upload.c\
+	../qiniu/tm.c\
 	../qiniu/fop.c\
 	../qiniu/reader.c\
 	seq.c\
@@ -21,7 +23,8 @@ SOURCE_FILES=\
 	test_base_io.c\
 	test_fmt.c\
 	test.c\
-	test_rs_ops.c
+	test_rs_ops.c\
+	test_multipart.c
 
 #To Gen CUnit-Libs:  cd c-sdk/CUnit;  ./configure; make
 CUNIT_LIB=../CUnit/CUnit/Sources/.libs

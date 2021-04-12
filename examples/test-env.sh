@@ -1,3 +1,3 @@
-export QINIU_ACCESS_KEY="JvxpzlOZWe3cbx_g4zHL4tSzjCyVzkuPhsXmndxj"
-export QINIU_SECRET_KEY="kE6_YwjTiB5-AfkfwuOMLfymxSYuyrrC26LcrS-4"
-export QINIU_TEST_BUCKET="east3"
+export QINIU_ACCESS_KEY="4_odedBxmrAHiu4Y0Qp0HPG0NANCf6VAsAjWL_k9"
+export QINIU_SECRET_KEY="SrRuUVfDX6drVRvpyN8mv8Vcm9XnMZzlbDfvVfMe"
+export QINIU_TEST_BUCKET="sdk"

@@ -27,7 +27,6 @@ extern "C"
 
     typedef struct _Qiniu_Multipart_PutExtra
     {
-        const char *upHost;   //it's better move upHost to client
         Qiniu_Int64 partSize; //size for each part
         const char *mimeType;
         int tryTimes;

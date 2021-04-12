@@ -209,7 +209,7 @@ Qiniu_Error openFileReader(const char *localFile, Qiniu_File **f, Qiniu_Int64 *f
 const Qiniu_Int64 Min_Part_Size = (1 << 20); //1MB
 const Qiniu_Int64 Max_Part_Size = (1 << 30); //1GB
 
-Qiniu_Error verifyParam(Qiniu_Multipart_PutExtra *param)
+Qiniu_Error verifyParam(Qiniu_Client *client, Qiniu_Multipart_PutExtra *param)
 {
     Qiniu_Error err = {200, ""};
     if (param->partSize == 0)
@@ -226,6 +226,11 @@ Qiniu_Error verifyParam(Qiniu_Multipart_PutExtra *param)
     {
         param->tryTimes = 1;
     }
+    if (client->upHost == NULL)
+    {
+        client->upHost = QINIU_UP_HOST;
+    }
+
     return err;
 }
 //TODO: support more put policy
@@ -233,7 +238,7 @@ Qiniu_Error Qiniu_Multipart_PutFile(Qiniu_Client *client, const char *uptoken, c
                                     const char *localFile, Qiniu_Multipart_PutExtra *extraParam, Qiniu_MultipartUpload_Result *uploadResult)
 {
     Qiniu_Error err;
-    err = verifyParam(extraParam);
+    err = verifyParam(client, extraParam);
     if (err.code != 200)
     {
         Qiniu_Log_Error("invalid param err:%d, errMsg:%s", err.code, err.message);

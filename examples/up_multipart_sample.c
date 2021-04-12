@@ -7,13 +7,13 @@ void setLocalHost();
 
 int main(int argc, char **argv)
 {
+    setLocalHost(); //using localhost for debug
     Qiniu_Global_Init(-1);
-    setLocalHost();
     Qiniu_MultipartUpload_Result putRet;
     Qiniu_Client client; //client不支持并发
     Qiniu_RS_PutPolicy putPolicy;
     Qiniu_Multipart_PutExtra putExtra;
-    client.upHost = QINIU_UP_HOST;
+    Qiniu_Zero(client); //must initial memory,otherwise will use random ptr;
 
     char *accessKey = "4_odedBxmrAHiu4Y0Qp0HPG0NANCf6VAsAjWL_k9";
     char *secretKey = "SrRuUVfDX6drVRvpyN8mv8Vcm9XnMZzlbDfvVfMe";
@@ -35,7 +35,6 @@ int main(int argc, char **argv)
 
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
 
-    Qiniu_Int64 fsize = 0;
     Qiniu_Error error = Qiniu_Multipart_PutFile(&client, uptoken, key, localFile, &putExtra, &putRet);
     if (error.code != 200)
     {
