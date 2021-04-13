@@ -20,7 +20,7 @@ static const char domain[] = "pw8b601nr.bkt.clouddn.com";
 
 static void clientIoGet(const char *url, Qiniu_Int64 fsize);
 
-static void setLocalHost()
+static void setLocalHost() //TODO:ci should set host to public cloud
 {
     QINIU_RS_HOST = "http://127.0.0.1:9400";
     QINIU_RSF_HOST = "http://127.0.0.1:10500";
@@ -102,7 +102,7 @@ void testMultipartUpload_smallfile(void)
 
     Qiniu_Client_Cleanup(&client);
 
-    printf("\n testMultipartUpload ok\n\n");
+    printf("\n testMultipartUpload_smallfile ok\n\n");
 }
 
 void testMultipartUpload_largefile(void)
@@ -128,6 +128,7 @@ void testMultipartUpload_largefile(void)
     err = Qiniu_RS_Stat(&client, &statResult, bucket, returnKey);
     CU_ASSERT(err.code == 200);
     CU_ASSERT(strcmp(statResult.mimeType, "mp3") == 0);
+    CU_ASSERT(statResult.fsize == 5097014);
 
     //step4: delete file
     err = Qiniu_RS_Delete(&client, bucket, returnKey);
@@ -135,5 +136,39 @@ void testMultipartUpload_largefile(void)
 
     Qiniu_Client_Cleanup(&client);
 
-    printf("\n testMultipartUpload ok\n\n");
+    printf("\n testMultipartUpload_largefile ok\n\n");
+}
+
+void testMultipartUpload_emptyfile(void)
+{
+    setLocalHost();
+    Qiniu_Client client;
+    Qiniu_Zero(client);
+
+    Qiniu_Error err;
+    Qiniu_Mac mac = {QINIU_ACCESS_KEY, QINIU_SECRET_KEY};
+    Qiniu_Client_InitMacAuth(&client, 1024, &mac);
+
+    const char *inputKey = "emptyfile";
+
+    //step1: delete  file if exist
+    Qiniu_RS_Delete(&client, bucket, inputKey);
+
+    //step2: upload file
+    const char *returnKey = putFile_multipart(bucket, inputKey, "txt", "./test_emptyfile.txt", &mac);
+
+    //step3: stat file
+    Qiniu_RS_StatRet statResult;
+    err = Qiniu_RS_Stat(&client, &statResult, bucket, returnKey);
+    CU_ASSERT(err.code == 200);
+    CU_ASSERT(statResult.fsize == 0);
+    CU_ASSERT(strcmp(statResult.mimeType, "txt") == 0);
+
+    //step4: delete file
+    err = Qiniu_RS_Delete(&client, bucket, returnKey);
+    CU_ASSERT(err.code == 200);
+
+    Qiniu_Client_Cleanup(&client);
+
+    printf("\n testMultipartUpload_emptyfile ok\n\n");
 }

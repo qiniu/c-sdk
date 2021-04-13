@@ -50,6 +50,8 @@ extern "C"
         const char *(*xVarsList)[2];
         int xVarsCount;
 
+        //(extra->metaList[i])[0] :set metakey
+        //(extra->metaList[i])[1] :set metavalue
         const char *(*metaList)[2];
         int metaCount;
 
@@ -69,8 +71,11 @@ extern "C"
     */
     QINIU_DLLAPI extern Qiniu_Error Qiniu_Multipart_PutFile(
         Qiniu_Client *client, const char *uptoken, const char *key,
-        const char *localFile, Qiniu_Multipart_PutExtra *extraParam, Qiniu_MultipartUpload_Result *ret);
+        const char *fileName, Qiniu_Multipart_PutExtra *extraParam, Qiniu_MultipartUpload_Result *uploadResult);
 
+    QINIU_DLLAPI extern Qiniu_Error Qiniu_Multipart_Put(
+        Qiniu_Client *client, const char *uptoken, const char *key,
+        Qiniu_ReaderAt reader, Qiniu_Int64 fsize, Qiniu_Multipart_PutExtra *extraParam, Qiniu_MultipartUpload_Result *uploadResult);
     /*============================================================================*/
 
 #pragma pack()
