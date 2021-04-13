@@ -24,6 +24,7 @@ void testFop();
 void testMultipartUpload_smallfile();
 void testMultipartUpload_largefile();
 void testMultipartUpload_emptyfile();
+void testMultipartUpload_inMemoryData();
 
 static int setup()
 {
@@ -69,6 +70,7 @@ int main()
 	CU_add_test(pSuite, "testMultipartUpload_smallfile", testMultipartUpload_smallfile);
 	CU_add_test(pSuite, "testMultipartUpload_largefile", testMultipartUpload_largefile);
 	CU_add_test(pSuite, "testMultipartUpload_emptyfile", testMultipartUpload_emptyfile);
+	CU_add_test(pSuite, "testMultipartUpload_inMemoryData", testMultipartUpload_inMemoryData);
 	// CU_add_test(pSuite, "testIoPut", testIoPut);
 	// CU_add_test(pSuite, "testRsBatchOps", testRsBatchOps);
 	// CU_add_test(pSuite, "testFop", testFop);
