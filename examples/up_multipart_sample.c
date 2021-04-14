@@ -28,7 +28,6 @@ int main(int argc, char **argv)
     char *secretKey = getenv("QINIU_SECRET_KEY");
     char *bucket = getenv("QINIU_TEST_BUCKET");
     char *key = "testkey";
-    char *localFile = "./test5m.mp3";
 
     Qiniu_Mac mac;
     mac.accessKey = accessKey;
@@ -51,8 +50,8 @@ int main(int argc, char **argv)
     char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
 
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
-
-    Qiniu_Error error = Qiniu_Multipart_PutFile(&client, uptoken, key, localFile, &putExtra, &putRet);
+    Qiniu_RS_Delete(&client, bucket, key);
+    Qiniu_Error error = Qiniu_Multipart_PutFile(&client, uptoken, key, __FILE__, &putExtra, &putRet);
     if (error.code != 200)
     {
         printf("upload file %s:%s error.\n", bucket, key);
@@ -60,7 +59,6 @@ int main(int argc, char **argv)
     }
     else
     {
-        /*200, 正确返回了, 你可以通过statRet变量查询一些关于这个文件的信息*/
         printf("upload file success dstbucket:%s, dstKey:%s, hash:%s \n\n", bucket, putRet.key, putRet.hash);
     }
 

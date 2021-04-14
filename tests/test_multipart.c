@@ -42,7 +42,7 @@ static const char *putMemoryData_multipart(const char *bucket, const char *key, 
 
     Qiniu_Zero(putExtra);
     putExtra.mimeType = mimeType;
-    putExtra.enableContentMd5 = 1;
+    putExtra.enableContentMd5 = 0;
     putExtra.partSize = (4 << 20);
     putExtra.tryTimes = 2;
 
