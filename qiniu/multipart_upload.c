@@ -99,7 +99,7 @@ Qiniu_Error upload_one_part(Qiniu_Client *client, Qiniu_Multipart_PutExtra *extr
         ret->etag = Qiniu_String_Dup(etag);
         ret->md5 = Qiniu_String_Dup(md5);
         ret->partNum = partNum;
-        Qiniu_Log_Debug("partNum:%d,remote md5:%s ", partNum, md5);
+        // Qiniu_Log_Debug("partNum:%d,remote md5:%s ", partNum, md5);
         break;
     }
     //notify callback
@@ -148,7 +148,7 @@ Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const char *e
         if (extraParam->enableContentMd5)
         {
             md5str = caculatePartMd5(*reader, thisPartOffset, thisPartSize);
-            Qiniu_Log_Debug("partNum:%d, local Md5:%s ", partNumInReq, md5str);
+            // Qiniu_Log_Debug("partNum:%d, local Md5:%s ", partNumInReq, md5str);
         }
 
         err = upload_one_part(client, extraParam, reqUrl, partNumInReq, *reader, thisPartOffset, thisPartSize, md5str, &uploadPartsRet->PartsRet[partNum]);
@@ -192,7 +192,7 @@ Qiniu_Error complete_upload(
     }
 
     char *body = cJSON_PrintUnformatted(root);
-    Qiniu_Log_Debug("upload.body:%s ", body);
+    // Qiniu_Log_Debug("upload.body:%s ", body);
     cJSON_Delete(root);
 
     //step2:send req
@@ -214,7 +214,7 @@ Qiniu_Error complete_upload(
         completeRet->hash = Qiniu_String_Dup(hash);
         completeRet->key = Qiniu_String_Dup(key);
     }
-    Qiniu_Log_Debug("Upload result: uploadid:%s, hash:%s, key:%s ", uploadId, completeRet->hash, completeRet->key);
+    // Qiniu_Log_Debug("Upload result: uploadid:%s, hash:%s, key:%s ", uploadId, completeRet->hash, completeRet->key);
     Qiniu_Free(body);
     Qiniu_Free(reqUrl);
     return err;
@@ -274,10 +274,6 @@ Qiniu_Error Qiniu_Multipart_Put(
     if (err.code != 200)
     {
         Qiniu_Log_Error("complete_upload %E", err);
-    }
-    else
-    {
-        Qiniu_Log_Debug("Upload ok for uploadId: %s", uploadId);
     }
 
     //step4: free memory
@@ -405,7 +401,7 @@ char *extractBucket(const char *uptoken)
     char *bucket = strndup(scope, hitIndex);
     cJSON_Delete(policy);
     Qiniu_Free(policyData);
-    Qiniu_Log_Debug("scope.bucket:%s ", bucket);
+    // Qiniu_Log_Debug("scope.bucket:%s ", bucket);
     return bucket;
 }
 

@@ -335,8 +335,6 @@ typedef struct stat Qiniu_FileInfo;
 
 	QINIU_DLLAPI extern void Qiniu_Null_Log(const char *fmt, ...);
 
-	// #ifndef Qiniu_Log_Info
-
 #ifdef QINIU_DISABLE_LOG
 
 #define Qiniu_Log_Debug Qiniu_Null_Log
@@ -352,8 +350,6 @@ typedef struct stat Qiniu_FileInfo;
 #define Qiniu_Log_Error Qiniu_Stderr_Error
 
 #endif
-
-	// #endif
 
 	/*============================================================================*/
 

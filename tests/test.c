@@ -63,16 +63,16 @@ int main()
 
 	/* add the tests to the suite */
 	CU_add_test(pSuite, "testFmt", testFmt);
-	// CU_add_test(pSuite, "testBaseIo", testBaseIo);
-	// CU_add_test(pSuite, "testFileIo", testFileIo);
-	// CU_add_test(pSuite, "testEqual", testEqual);
-	// CU_add_test(pSuite, "testResumableIoPut", testResumableIoPut);
+	CU_add_test(pSuite, "testBaseIo", testBaseIo);
+	CU_add_test(pSuite, "testFileIo", testFileIo);
+	CU_add_test(pSuite, "testEqual", testEqual);
+	CU_add_test(pSuite, "testResumableIoPut", testResumableIoPut);
 	CU_add_test(pSuite, "testMultipartUpload_smallfile", testMultipartUpload_smallfile);
 	CU_add_test(pSuite, "testMultipartUpload_largefile", testMultipartUpload_largefile);
 	CU_add_test(pSuite, "testMultipartUpload_emptyfile", testMultipartUpload_emptyfile);
 	CU_add_test(pSuite, "testMultipartUpload_inMemoryData", testMultipartUpload_inMemoryData);
-	// CU_add_test(pSuite, "testIoPut", testIoPut);
-	// CU_add_test(pSuite, "testRsBatchOps", testRsBatchOps);
+	CU_add_test(pSuite, "testIoPut", testIoPut);
+	CU_add_test(pSuite, "testRsBatchOps", testRsBatchOps);
 	// CU_add_test(pSuite, "testFop", testFop);
 
 	/* Run all tests using the CUnit Basic interface */

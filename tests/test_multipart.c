@@ -15,18 +15,17 @@
 #include "../qiniu/multipart_upload.h"
 #include "../qiniu/tm.h"
 
-static const char bucket[] = "testbucket";
-static const char domain[] = "pw8b601nr.bkt.clouddn.com";
+//first, set env variable "QINIU_ACCESS_KEY" and "QINIU_SECRET_KEY"
+static const char bucket[] = "east3"; //"testbucket";
 
-static void clientIoGet(const char *url, Qiniu_Int64 fsize);
-
-static void setLocalHost() //TODO:ci should set host to public cloud
+static void setLocalHost()
 {
+#ifdef LOCAL_DEBUG_MODE //dedicated for qiniu maintainer
     QINIU_RS_HOST = "http://127.0.0.1:9400";
-    QINIU_RSF_HOST = "http://127.0.0.1:10500";
-    QINIU_API_HOST = "http://127.0.0.1:12500";
     QINIU_UP_HOST = "http://127.0.0.1:11200";
-    QINIU_IOVIP_HOST = "http://127.0.0.1:9200";
+#else
+    Qiniu_Use_Zone_Huadong(false);
+#endif
 }
 
 static const char *putMemoryData_multipart(const char *bucket, const char *key, const char *mimeType, const char *memData, int dataLen, Qiniu_Mac *mac)
@@ -89,9 +88,9 @@ static const char *putFile_multipart(const char *bucket, const char *key, const 
     CU_ASSERT(err.code == 200);
 
     Qiniu_Log_Info("Qiniu_multipart_putFile: %E", err);
+    // printf("hash: %s , key:%s \n", putRet.hash, putRet.key);
 
     printf("\n%s\n", Qiniu_Buffer_CStr(&client.respHeader));
-    printf("hash: %s , key:%s \n", putRet.hash, putRet.key);
 
     Qiniu_Client_Cleanup(&client);
     Qiniu_Free(uptoken);
@@ -105,7 +104,7 @@ void testMultipartUpload_smallfile(void)
     Qiniu_Zero(client);
 
     Qiniu_Error err;
-    Qiniu_Mac mac = {QINIU_ACCESS_KEY, QINIU_SECRET_KEY};
+    Qiniu_Mac mac = {QINIU_ACCESS_KEY, QINIU_SECRET_KEY}; //set by env "source test-env.sh"
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
 
     const char *keys[] = {

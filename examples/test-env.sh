@@ -1,3 +1,3 @@
-export QINIU_ACCESS_KEY="4_odedBxmrAHiu4Y0Qp0HPG0NANCf6VAsAjWL_k9"
-export QINIU_SECRET_KEY="SrRuUVfDX6drVRvpyN8mv8Vcm9XnMZzlbDfvVfMe"
-export QINIU_TEST_BUCKET="sdk"
+export QINIU_ACCESS_KEY="<ak>"
+export QINIU_SECRET_KEY="<sk>"
+export QINIU_TEST_BUCKET="<bucketname>"
