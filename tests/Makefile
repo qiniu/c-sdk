@@ -39,6 +39,5 @@ clean:
 	rm -f test
 
 test: all
-	#cp ../CUnit/CUnit/Sources/.libs/libcunit.1.dylib /usr/local/lib/libcunit.1.dylib
 	LD_LIBRARY_PATH=$(CUNIT_LIB) ./qiniutest
 
