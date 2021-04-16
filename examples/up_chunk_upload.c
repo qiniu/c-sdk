@@ -18,8 +18,8 @@ int main(int argc, char **argv)
     char *accessKey = getenv("QINIU_ACCESS_KEY");
     char *secretKey = getenv("QINIU_SECRET_KEY");
     char *bucket = getenv("QINIU_TEST_BUCKET");
-    char *key = "test5m.mp3";
-    char *localFile = "/Users/liangzeng/qbox/sdk/c-sdk/test5m.mp3";
+    char *key = "qiniu.mp4";
+    char *localFile = "/Users/jemy/Documents/qiniu.mp4";
 
     Qiniu_Mac mac;
     mac.accessKey = accessKey;

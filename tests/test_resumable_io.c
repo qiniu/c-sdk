@@ -14,9 +14,9 @@
 #include <string.h>
 #include <curl/curl.h>
 
-static const char bucket[] = "east3";
-static const char key[] = "csdk-key";
-static const char domain[] = "pw8b601nr.bkt.clouddn.com";
+static const char bucket[] = "csdk";
+static const char key[] = "key2";
+static const char domain[] = "csdk.qiniudn.com";
 
 static void clientIoPutFile(const char *uptoken)
 {
