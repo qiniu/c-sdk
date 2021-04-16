@@ -126,6 +126,12 @@ Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const char *e
 
     Qiniu_Int64 partSize = extraParam->partSize;
     int totalPartNum = (fsize + partSize - 1) / partSize;
+    if (totalPartNum > 10000)
+    {
+        err.code = 400;
+        err.message = "total part num must less then 10000, suggest increase part size";
+        return err;
+    }
     if (totalPartNum == 0)
     {
         totalPartNum = 1; //even if fsize=0, at least one part
@@ -136,7 +142,7 @@ Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const char *e
     {
         int partNumInReq = partNum + 1; //partNum start from 1
         char partNumStr[10];            //valid partNum ={"1"~"10000"}
-        sprintf(partNumStr, "%d", partNumInReq);
+        snprintf(partNumStr, 10, "%d", partNumInReq);
         char *reqUrl = Qiniu_String_Concat(uphost, "/buckets/", bucket, "/objects/", encodedKey, "/uploads/", uploadId, "/", partNumStr, NULL);
 
         Qiniu_Int64 thisPartOffset = partNum * partSize;
