@@ -22,97 +22,97 @@ SOURCE_FILES=\
 	../qiniu/multipart_upload.c
 
 rs_stat: $(SOURCE_FILES) ./rs_stat.c
-	gcc -g $^ -o exec_rs_stat $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_stat $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_delete: $(SOURCE_FILES) ./rs_delete.c
-	gcc -g $^ -o exec_rs_delete $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_delete $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_copy: $(SOURCE_FILES) ./rs_copy.c
-	gcc -g $^ -o exec_rs_copy $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_copy $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_move: $(SOURCE_FILES) ./rs_move.c
-	gcc -g $^ -o exec_rs_move $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_move $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_change_type: $(SOURCE_FILES) ./rs_change_type.c
-	gcc -g $^ -o exec_rs_change_type $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_change_type $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_change_mime: $(SOURCE_FILES) ./rs_change_mime.c
-	gcc -g $^ -o exec_rs_change_mime $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_change_mime $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_delete_after_days: $(SOURCE_FILES) ./rs_delete_after_days.c
-	gcc -g $^ -o exec_rs_delete_after_days $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_delete_after_days $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_prefetch: $(SOURCE_FILES) ./rs_prefetch.c
-	gcc -g $^ -o exec_rs_prefetch $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_prefetch $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_fetch: $(SOURCE_FILES) ./rs_fetch.c
-	gcc -g $^ -o exec_rs_fetch $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_fetch $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_batch_stat: $(SOURCE_FILES) ./rs_batch_stat.c
-	gcc -g $^ -o exec_rs_batch_stat $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_batch_stat $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_batch_delete: $(SOURCE_FILES) ./rs_batch_delete.c
-	gcc -g $^ -o exec_rs_batch_delete $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_batch_delete $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_batch_copy: $(SOURCE_FILES) ./rs_batch_copy.c
-	gcc -g $^ -o exec_rs_batch_copy $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_batch_copy $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_batch_move: $(SOURCE_FILES) ./rs_batch_move.c
-	gcc -g $^ -o exec_rs_batch_move $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_batch_move $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_batch_change_type: $(SOURCE_FILES) ./rs_batch_change_type.c
-	gcc -g $^ -o exec_rs_batch_change_type $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_batch_change_type $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_batch_change_mime: $(SOURCE_FILES) ./rs_batch_change_mime.c
-	gcc -g $^ -o exec_rs_batch_change_mime $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_batch_change_mime $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rs_batch_delete_after_days: $(SOURCE_FILES) ./rs_batch_delete_after_days.c
-	gcc -g $^ -o exec_rs_batch_delete_after_days $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rs_batch_delete_after_days $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 fop_video_avthumb: $(SOURCE_FILES) ./fop_video_avthumb.c
-	gcc -g $^ -o exec_fop_video_avthumb $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_fop_video_avthumb $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rsf_list_files: $(SOURCE_FILES) ./rsf_list_files.c
-	gcc -g $^ -o exec_rsf_list_files $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rsf_list_files $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 rsf_list_bucket: $(SOURCE_FILES) ./rsf_list_bucket.c
-	gcc -g $^ -o exec_rsf_list_bucket $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_rsf_list_bucket $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 up_create_uptoken: $(SOURCE_FILES) ./up_create_uptoken.c
-	gcc -g $^ -o exec_up_create_uptoken $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_up_create_uptoken $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 up_form_upload: $(SOURCE_FILES) ./up_form_upload.c
-	gcc -g $^ -o exec_up_form_upload $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_up_form_upload $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 up_chunk_upload: $(SOURCE_FILES) ./up_chunk_upload.c
-	gcc -g $^ -o exec_up_chunk_upload $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_up_chunk_upload $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 cdn_refresh_urls: $(SOURCE_FILES) ./cdn_refresh_urls.c
-	gcc -g $^ -o exec_cdn_refresh_urls $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_cdn_refresh_urls $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 cdn_refresh_dirs: $(SOURCE_FILES) ./cdn_refresh_dirs.c
-	gcc -g $^ -o exec_cdn_refresh_dirs $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_cdn_refresh_dirs $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 cdn_prefetch_urls: $(SOURCE_FILES) ./cdn_prefetch_urls.c
-	gcc -g $^ -o exec_cdn_prefetch_urls $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_cdn_prefetch_urls $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 cdn_get_log_list: $(SOURCE_FILES) ./cdn_get_log_list.c
-	gcc -g $^ -o exec_cdn_get_log_list $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_cdn_get_log_list $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 cdn_get_flux_data: $(SOURCE_FILES) ./cdn_get_flux_data.c
-	gcc -g $^ -o exec_cdn_get_flux_data $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_cdn_get_flux_data $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 cdn_get_bandwidth_data: $(SOURCE_FILES) ./cdn_get_bandwidth_data.c
-	gcc -g $^ -o exec_cdn_get_bandwidth_data $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_cdn_get_bandwidth_data $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 cdn_create_timestamp_url: $(SOURCE_FILES) ./cdn_create_timestamp_url.c
-	gcc -g $^ -o exec_cdn_create_timestamp_url $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_cdn_create_timestamp_url $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 up_multipart_sample: $(SOURCE_FILES) ./up_multipart_sample.c
-	gcc -g $^ -o exec_up_multipart_sample $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_up_multipart_sample $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 test1: $(SOURCE_FILES) ./test.c
-	gcc -g $^ -o exec_test1 $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm
+	gcc -g $^ -o exec_test1 $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
 clean:
 	rm -rf *.dSYM exec*

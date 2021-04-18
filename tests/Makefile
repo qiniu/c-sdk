@@ -30,7 +30,7 @@ SOURCE_FILES=\
 CUNIT_LIB=../CUnit/CUnit/Sources/.libs
 
 all: $(SOURCE_FILES)
-	gcc -g $^ -o qiniutest -L$(CUNIT_LIB) $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lssl -lcrypto -lcunit -lm
+	gcc -g $^ -o qiniutest -L$(CUNIT_LIB) $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lssl -lcrypto -lcunit -lm -ldl
 
 install: all
 	@echo

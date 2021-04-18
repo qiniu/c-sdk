@@ -7,6 +7,8 @@
  ============================================================================
  */
 
+#ifdef _WIN32
+
 #include "emu_posix.h"
 #include <sys/stat.h>
 
@@ -87,3 +89,5 @@ unsigned _int64 Qiniu_Posix_GetTimeOfDay(void)
 	uint.u.HighPart = tv.dwHighDateTime;
 	return uint.QuadPart / 1000L;
 } // Qiniu_Posix_GetTimeOfDay
+
+#endif
