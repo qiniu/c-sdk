@@ -375,7 +375,7 @@ Qiniu_Error verifyParam(Qiniu_Multipart_PutExtra *param)
     }
     if (param->tryTimes == 0)
     {
-        param->tryTimes = 1;
+        param->tryTimes = 3;
     }
     if (param->upHost == NULL)
     {
