@@ -25,7 +25,8 @@ void testMultipartUpload_smallfile();
 void testMultipartUpload_largefile();
 void testMultipartUpload_emptyfile();
 void testMultipartUpload_inMemoryData();
-const char *test_bucket = NULL;
+const char *Test_bucket = NULL;
+const char *Test_Domain = NULL;
 
 static int
 setup()
@@ -46,7 +47,8 @@ int main()
 
 	QINIU_ACCESS_KEY = getenv("QINIU_ACCESS_KEY");
 	QINIU_SECRET_KEY = getenv("QINIU_SECRET_KEY");
-	test_bucket = getenv("QINIU_TEST_BUCKET");
+	Test_bucket = getenv("QINIU_TEST_BUCKET");
+	Test_Domain = getenv("QINIU_TEST_BUCKET_DOMAIN");
 
 	assert(QINIU_ACCESS_KEY != NULL);
 	assert(QINIU_SECRET_KEY != NULL);

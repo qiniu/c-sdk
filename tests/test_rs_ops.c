@@ -5,9 +5,7 @@
 
 static const char *copyNames[3] = {"testa.tmp", "testb.tmp", "testc.tmp"};
 static const char *moveNames[3] = {"testa.mov.tmp", "testb.mov.tmp", "testc.mov.tmp"};
-// static const char bucket[] = "csdk";
 static const char key[] = "key";
-static const char domain[] = "csdk.qiniudn.com";
 
 void debug(Qiniu_Client *client, Qiniu_Error err)
 {
@@ -152,8 +150,8 @@ void testRsBatchOps()
 
 	for (i = 0; i < 3; i++)
 	{
-		entryPairs[i].src.bucket = test_bucket;
-		entryPairs[i].dest.bucket = test_bucket;
+		entryPairs[i].src.bucket = Test_bucket;
+		entryPairs[i].dest.bucket = Test_bucket;
 		entryPairs[i].src.key = key;
 		entryPairs[i].dest.key = copyNames[i];
 	}
@@ -168,7 +166,7 @@ void testRsBatchOps()
 
 	for (i = 0; i < 3; i++)
 	{
-		entries[i].bucket = test_bucket;
+		entries[i].bucket = Test_bucket;
 		entries[i].key = moveNames[i];
 	}
 	batchStat(&client, entries, 3);

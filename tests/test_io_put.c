@@ -15,7 +15,6 @@
 #include <curl/curl.h>
 
 static const char key[] = "key";
-static const char domain[] = "csdk.qiniudn.com";
 
 static void clientIoPutFile(const char *uptoken)
 {
@@ -102,19 +101,19 @@ void testIoPut(void)
 	Qiniu_Client_InitMacAuth(&client, 1024, NULL);
 
 	Qiniu_Zero(putPolicy);
-	putPolicy.scope = test_bucket;
+	putPolicy.scope = Test_bucket;
 	uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, NULL);
 
-	Qiniu_RS_Delete(&client, test_bucket, key);
+	Qiniu_RS_Delete(&client, Test_bucket, key);
 	clientIoPutFile(uptoken);
 
-	Qiniu_RS_Delete(&client, test_bucket, key);
+	Qiniu_RS_Delete(&client, Test_bucket, key);
 	clientIoPutBuffer(uptoken);
 
 	Qiniu_Free(uptoken);
 
 	Qiniu_Zero(getPolicy);
-	dnBaseUrl = Qiniu_RS_MakeBaseUrl(domain, key);
+	dnBaseUrl = Qiniu_RS_MakeBaseUrl(Test_Domain, key);
 	dnRequest = Qiniu_RS_GetPolicy_MakeRequest(&getPolicy, dnBaseUrl, NULL);
 
 	clientIoGet(dnRequest);

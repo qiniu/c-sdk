@@ -15,8 +15,15 @@
 #include <curl/curl.h>
 
 static const char key[] = "key2";
-static const char domain[] = "csdk.qiniudn.com";
-
+static void setLocalHost()
+{
+#ifdef LOCAL_DEBUG_MODE //dedicated for qiniu maintainer
+	QINIU_RS_HOST = "http://127.0.0.1:9400";
+	QINIU_UP_HOST = "http://127.0.0.1:11200";
+#else
+	Qiniu_Use_Zone_Beimei(Qiniu_False);
+#endif
+}
 static void clientIoPutFile(const char *uptoken)
 {
 	Qiniu_Error err;
@@ -121,6 +128,7 @@ static void clientIoGet(const char *url)
 
 void testResumableIoPut(void)
 {
+	setLocalHost();
 	Qiniu_Client client;
 	Qiniu_RS_PutPolicy putPolicy;
 	Qiniu_RS_GetPolicy getPolicy;
@@ -131,19 +139,19 @@ void testResumableIoPut(void)
 	Qiniu_Client_InitMacAuth(&client, 1024, NULL);
 
 	Qiniu_Zero(putPolicy);
-	putPolicy.scope = test_bucket;
+	putPolicy.scope = Test_bucket;
 	uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, NULL);
 
-	Qiniu_RS_Delete(&client, test_bucket, key);
+	Qiniu_RS_Delete(&client, Test_bucket, key);
 	clientIoPutFile(uptoken);
 
-	Qiniu_RS_Delete(&client, test_bucket, key);
+	Qiniu_RS_Delete(&client, Test_bucket, key);
 	clientIoPutBuffer(uptoken);
 
 	Qiniu_Free(uptoken);
 
 	Qiniu_Zero(getPolicy);
-	dnBaseUrl = Qiniu_RS_MakeBaseUrl(domain, key);
+	dnBaseUrl = Qiniu_RS_MakeBaseUrl(Test_Domain, key);
 	dnRequest = Qiniu_RS_GetPolicy_MakeRequest(&getPolicy, dnBaseUrl, NULL);
 
 	clientIoGet(dnRequest);

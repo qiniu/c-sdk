@@ -69,4 +69,5 @@ Qiniu_ReaderAt Qiniu_SeqReaderAt(Qiniu_Seq *self, size_t limit, int radix, int b
 
 /*============================================================================*/
 
-extern const char *test_bucket;
+extern const char *Test_bucket;
+extern const char *Test_Domain;
