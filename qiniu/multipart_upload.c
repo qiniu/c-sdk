@@ -186,14 +186,17 @@ Qiniu_Error complete_upload(
         cJSON_AddItemToArray(parts, part);
     }
     cJSON_AddItemToObject(root, "parts", parts);
-    cJSON_AddStringToObject(root, "mimeType", extraParam->mimeType);
+    if (extraParam->mimeType != NULL)
+    {
+        cJSON_AddStringToObject(root, "mimeType", extraParam->mimeType);
+    }
     //add metaData,customVars
-    if (extraParam->xVarsCount > 0)
+    if ((extraParam->xVarsCount > 0) && (extraParam->xVarsList != NULL))
     {
         cJSON *xvarMap = buildJsonMap(extraParam->xVarsCount, extraParam->xVarsList);
         cJSON_AddItemToObject(root, "customVars", xvarMap);
     }
-    if (extraParam->metaCount > 0)
+    if ((extraParam->metaCount > 0) && (extraParam->metaList != NULL))
     {
         cJSON *metaMap = buildJsonMap(extraParam->metaCount, extraParam->metaList);
         cJSON_AddItemToObject(root, "metadata", metaMap);

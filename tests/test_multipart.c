@@ -37,10 +37,11 @@ static const char *putMemoryData_multipart(const char *bucket, const char *key, 
     Qiniu_RS_PutPolicy putPolicy;
     Qiniu_Zero(client);
     Qiniu_Zero(putPolicy);
+    Qiniu_Zero(putRet);
+    Qiniu_Zero(putExtra);
     putPolicy.scope = bucket;
     char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, mac);
 
-    Qiniu_Zero(putExtra);
     putExtra.mimeType = mimeType;
     putExtra.enableContentMd5 = 0;
     putExtra.partSize = (4 << 20);
@@ -72,11 +73,12 @@ static const char *putFile_multipart(const char *bucket, const char *key, const 
     Qiniu_RS_PutPolicy putPolicy;
     Qiniu_Zero(client);
     Qiniu_Zero(putPolicy);
+    Qiniu_Zero(putRet);
+    Qiniu_Zero(putExtra);
     putPolicy.scope = bucket;
     char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, mac);
     // printf("uptoken:%s \n", uptoken);
 
-    Qiniu_Zero(putExtra);
     putExtra.mimeType = mimeType;
     putExtra.enableContentMd5 = 1;
     putExtra.partSize = (4 << 20);
@@ -224,14 +226,13 @@ void testMultipartUpload_inMemoryData(void)
 
     //step2: upload memory data
     const char memData[] = "test multipart upload with memory data";
-    const char *returnKey = putMemoryData_multipart(bucket, inputKey, "txt", memData, sizeof(memData), &mac);
+    const char *returnKey = putMemoryData_multipart(bucket, inputKey, NULL, memData, sizeof(memData), &mac);
 
     //step3: stat file
     Qiniu_RS_StatRet statResult;
     err = Qiniu_RS_Stat(&client, &statResult, bucket, returnKey);
     CU_ASSERT(err.code == 200);
     CU_ASSERT(statResult.fsize == sizeof(memData));
-    CU_ASSERT(strcmp(statResult.mimeType, "txt") == 0);
 
     //step4: delete file
     err = Qiniu_RS_Delete(&client, bucket, returnKey);
