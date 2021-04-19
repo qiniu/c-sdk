@@ -64,15 +64,26 @@ Qiniu_Error init_upload(Qiniu_Client *client, const char *bucket, const char *en
 {
     Qiniu_Error err;
     const char *uphost = extraParam->upHost;
-    char *reqUrl = Qiniu_String_Concat(uphost, "/buckets/", bucket, "/objects/", encodedKey,
-                                       "/uploads", NULL);
+    char *reqUrl = Qiniu_String_Concat(uphost, "/buckets/", bucket, "/objects/", encodedKey, "/uploads", NULL);
 
-    Qiniu_Json *callRet = NULL; //don't cJSON_Delete(callRet), it will be automatically freed on next http request by Qiniu_Client_reset.
-    err = Qiniu_Client_Call(client, &callRet, reqUrl);
-    if (err.code == 200)
+    for (int i = 0; i < extraParam->tryTimes; i++)
     {
+        Qiniu_Json *callRet = NULL; //don't cJSON_Delete(callRet), it will be automatically freed on next http request by Qiniu_Client_Call.
+        err = Qiniu_Client_Call(client, &callRet, reqUrl);
+        if ((err.code / 100 == 5) || (callRet == NULL)) //5xx , net error will retry
+        {
+            Qiniu_Log_Error("init_upload retry:  %E", err);
+            continue;
+        }
+        else if (err.code != 200)
+        {
+            Qiniu_Log_Error("init_upload:  %E", err);
+            break;
+        }
+
         const char *uploadId = Qiniu_Json_GetString(callRet, "uploadId", NULL);
         initPartRet->uploadId = Qiniu_String_Dup(uploadId);
+        break;
     }
     Qiniu_Free(reqUrl);
     return err;
@@ -84,10 +95,11 @@ Qiniu_Error upload_one_part(Qiniu_Client *client, Qiniu_Multipart_PutExtra *extr
     for (int try = 0; try < extraParam->tryTimes; try ++)
     {
         Qiniu_Section section;
+        Qiniu_Zero(section);
         Qiniu_Reader thisPartBody = Qiniu_SectionReader(&section, reader, (Qiniu_Off_T)partOffset, partSize);
-        Qiniu_Json *result = NULL; //don't cJSON_Delete(result), it will be automatically freed on next http request by Qiniu_Client_reset.
-        err = Qiniu_Client_CallWithMethod(client, &result, reqUrl, thisPartBody, partSize, NULL, "PUT", md5str);
-        if (err.code / 100 == 5) //5xx will retry
+        Qiniu_Json *callRet = NULL; //don't cJSON_Delete(callRet), it will be automatically freed on next http request by Qiniu_Client_Call.
+        err = Qiniu_Client_CallWithMethod(client, &callRet, reqUrl, thisPartBody, partSize, NULL, "PUT", md5str);
+        if ((err.code / 100 == 5) || (callRet == NULL)) //5xx,net error will retry
         {
             Qiniu_Log_Error("upload_part retry: partNum:%d, %E", partNum, err);
             continue;
@@ -98,8 +110,8 @@ Qiniu_Error upload_one_part(Qiniu_Client *client, Qiniu_Multipart_PutExtra *extr
             break;
         }
 
-        const char *md5 = Qiniu_Json_GetString(result, "md5", NULL);
-        const char *etag = Qiniu_Json_GetString(result, "etag", NULL);
+        const char *md5 = Qiniu_Json_GetString(callRet, "md5", NULL);
+        const char *etag = Qiniu_Json_GetString(callRet, "etag", NULL);
         ret->etag = Qiniu_String_Dup(etag);
         ret->md5 = Qiniu_String_Dup(md5);
         ret->partNum = partNum;
@@ -209,20 +221,27 @@ Qiniu_Error complete_upload(
     //step2:send req
     Qiniu_Error err;
     char *reqUrl = Qiniu_String_Concat(extraParam->upHost, "/buckets/", bucket, "/objects/", encodedKey, "/uploads/", uploadId, NULL);
-    Qiniu_Json *result = NULL; //don't cJSON_Delete(result), it will be automatically freed on next http request by Qiniu_Client_reset.
-    err = Qiniu_Client_CallWithBuffer(client, &result, reqUrl, body, strlen(body), "application/json");
-    if (err.code != 200)
+
+    for (int try = 0; try < extraParam->tryTimes; try ++)
     {
-        Qiniu_Log_Error("cupload: uploadId:%s, %E", uploadId, err);
-        Qiniu_Multi_Free(2, (void *)reqUrl, (void *)body);
-        return err;
-    }
-    else
-    {
-        const char *hash = Qiniu_Json_GetString(result, "hash", NULL); //don't free(hash) since no malloc happen.
-        const char *key = Qiniu_Json_GetString(result, "key", NULL);
+        Qiniu_Json *callRet = NULL; //don't cJSON_Delete(callRet), it will be automatically freed on next http request by Qiniu_Client_Call.
+        err = Qiniu_Client_CallWithBuffer(client, &callRet, reqUrl, body, strlen(body), "application/json");
+        if ((err.code / 100 == 5) || (callRet == NULL)) //5xx,net error will retry
+        {
+            Qiniu_Log_Error("cupload: retry uploadId:%s, %E", uploadId, err);
+            continue;
+        }
+        else if (err.code != 200)
+        {
+            Qiniu_Log_Error("cupload: uploadId:%s, %E", uploadId, err);
+            break;
+        }
+
+        const char *hash = Qiniu_Json_GetString(callRet, "hash", NULL); //don't free(hash) since no malloc happen.
+        const char *key = Qiniu_Json_GetString(callRet, "key", NULL);
         completeRet->hash = Qiniu_String_Dup(hash);
         completeRet->key = Qiniu_String_Dup(key);
+        break;
     }
     // Qiniu_Log_Debug("Upload result: uploadid:%s, hash:%s, key:%s ", uploadId, completeRet->hash, completeRet->key);
     Qiniu_Multi_Free(2, (void *)reqUrl, (void *)body);

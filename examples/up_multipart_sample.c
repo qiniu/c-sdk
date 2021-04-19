@@ -73,6 +73,6 @@ void setLocalHost()
     QINIU_RS_HOST = "http://127.0.0.1:9400";
     QINIU_UP_HOST = "http://127.0.0.1:11200";
 #else
-    Qiniu_Use_Zone_Huadong(false);
+    Qiniu_Use_Zone_Beimei(false);
 #endif
 }

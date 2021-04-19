@@ -39,7 +39,7 @@ extern "C"
         const char *upHost;   //if not set explicitly ,will use global QINIU_UP_HOST;
         Qiniu_Int64 partSize; //size for each part
         const char *mimeType;
-        int tryTimes;
+        int tryTimes;                //at least 1
         Qiniu_Bool enableContentMd5; //calulate md5  and set to request.header["Content-MD5"]
         NotifyFunc notify;
         NotifyErrFunc notifyErr;
