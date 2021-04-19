@@ -17,7 +17,8 @@
 #include "../qiniu/http.h"
 #include "../qiniu/resumable_io.h"
 
-typedef struct _Qiniu_Rio_PutProgress_Recvr {
+typedef struct _Qiniu_Rio_PutProgress_Recvr
+{
 	const char *progressFilePath;
 	Qiniu_Int64 fsize;
 	int blkCnt;
@@ -25,7 +26,7 @@ typedef struct _Qiniu_Rio_PutProgress_Recvr {
 } Qiniu_Rio_PutProgress_Recvr;
 
 void resumableUploadWithKey(Qiniu_Mac *mac, const char *bucket, const char *key, const char *localFile);
-int resumableUploadNotify(void* recvr, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret);
+int resumableUploadNotify(void *recvr, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet *ret);
 #endif
 
 //七牛设计了自己的分片上传的机制并集成到sdk中，分片上传是实现断点续传的基础。
@@ -50,7 +51,8 @@ Qiniu_Int64 getFileSzie(const char *localFile)
 	else
 	{
 		error = Qiniu_File_Stat(f, &fi);
-		if (error.code == 200) {
+		if (error.code == 200)
+		{
 			fsize = Qiniu_FileInfo_Fsize(fi);
 		}
 	}
@@ -58,16 +60,16 @@ Qiniu_Int64 getFileSzie(const char *localFile)
 	return fsize;
 }
 
-char* getProgressFilePath(const char* bucket, const char* key,
-	const char * localFilePath)
+char *getProgressFilePath(const char *bucket, const char *key,
+						  const char *localFilePath)
 {
 	MD5_CTX ctx;
 	int dataLen = strlen(bucket) + strlen(key) + strlen(localFilePath) + 3;
-	char *tmpData = (char*)malloc(sizeof(char)*dataLen);
+	char *tmpData = (char *)malloc(sizeof(char) * dataLen);
 	unsigned char md[16];
-	char *buf = (char*)malloc(sizeof(char) * 42);
+	char *buf = (char *)malloc(sizeof(char) * 42);
 	memset(buf, 0, 33);
-	char tmp[3] = { '\0' };
+	char tmp[3] = {'\0'};
 	int i = 0;
 	sprintf(tmpData, "%s:%s:%s", bucket, key, localFilePath);
 	tmpData[dataLen - 1] = '\0';
@@ -92,12 +94,12 @@ static const int BLOCK_CONTEXT_LENGTH = 196;
 
 char *resumableProgressMarshal(Qiniu_Rio_BlkputRet *putRets, int blockCnt)
 {
-	char *progress ;
+	char *progress;
 	cJSON *root = cJSON_CreateArray();
 	for (int i = 0; i < blockCnt; i++)
 	{
 		cJSON *item = cJSON_CreateObject();
-		Qiniu_Rio_BlkputRet *blk = putRets+i;
+		Qiniu_Rio_BlkputRet *blk = putRets + i;
 		if (blk && blk->ctx)
 		{
 			cJSON_AddStringToObject(item, "host", blk->host);
@@ -123,17 +125,17 @@ char *resumableProgressMarshal(Qiniu_Rio_BlkputRet *putRets, int blockCnt)
 	return progress;
 }
 
-int resumableUploadNotify(void* recvr, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet* ret)
+int resumableUploadNotify(void *recvr, int blkIdx, int blkSize, Qiniu_Rio_BlkputRet *ret)
 {
-	Qiniu_Rio_PutProgress_Recvr *pRecvr = (Qiniu_Rio_PutProgress_Recvr*)recvr;
+	Qiniu_Rio_PutProgress_Recvr *pRecvr = (Qiniu_Rio_PutProgress_Recvr *)recvr;
 	printf("Fsize: %lld, BlkIndex: %d, Offset: %d\n", pRecvr->fsize, blkIdx, ret->offset);
-	
+
 	if (pRecvr->progressFilePath)
 	{
-		if (ret->offset % BLOCK_SIZE == 0 || blkIdx==pRecvr->blkCnt-1)
+		if (ret->offset % BLOCK_SIZE == 0 || blkIdx == pRecvr->blkCnt - 1)
 		{
 			printf("Write block %d progress\n", blkIdx);
-			Qiniu_Rio_BlkputRet *blk = pRecvr->blkputRets+blkIdx;
+			Qiniu_Rio_BlkputRet *blk = pRecvr->blkputRets + blkIdx;
 			blk->checksum = strdup(ret->checksum);
 			blk->crc32 = ret->crc32;
 			blk->ctx = strdup(ret->ctx);
@@ -150,11 +152,11 @@ int resumableUploadNotify(void* recvr, int blkIdx, int blkSize, Qiniu_Rio_Blkput
 			}
 		}
 	}
-	
+
 	return QINIU_RIO_NOTIFY_OK;
 }
 
-int resumableUploadNotifyErr(void* recvr, int blkIdx, int blkSize, Qiniu_Error err)
+int resumableUploadNotifyErr(void *recvr, int blkIdx, int blkSize, Qiniu_Error err)
 {
 	return QINIU_RIO_NOTIFY_OK;
 }
@@ -197,7 +199,7 @@ void resumableUploadWithKey(Qiniu_Mac *mac, const char *bucket, const char *key,
 	putProgressRecvr.fsize = getFileSzie(localFile);
 	blockCnt = Qiniu_Rio_BlockCount(putProgressRecvr.fsize);
 	putProgressRecvr.blkCnt = blockCnt;
-	putProgressRecvr.blkputRets = (Qiniu_Rio_BlkputRet*)malloc(sizeof(Qiniu_Rio_BlkputRet)*blockCnt);
+	putProgressRecvr.blkputRets = (Qiniu_Rio_BlkputRet *)malloc(sizeof(Qiniu_Rio_BlkputRet) * blockCnt);
 	for (int i = 0; i < blockCnt; i++)
 	{
 		Qiniu_Zero(*(putProgressRecvr.blkputRets + i));
@@ -213,7 +215,7 @@ void resumableUploadWithKey(Qiniu_Mac *mac, const char *bucket, const char *key,
 	{
 		fseek(progressRecordHandle, 0l, SEEK_END);
 		progressFileLen = ftell(progressRecordHandle);
-		char *progressBuffer = (char*)malloc(sizeof(char)*(progressFileLen + 1));
+		char *progressBuffer = (char *)malloc(sizeof(char) * (progressFileLen + 1));
 		//reset
 		fseek(progressRecordHandle, 0L, SEEK_SET);
 		while (!feof(progressRecordHandle))
@@ -275,7 +277,8 @@ void resumableUploadWithKey(Qiniu_Mac *mac, const char *bucket, const char *key,
 	free(putProgressRecvr.blkputRets);
 }
 
-int main() {
+int main()
+{
 	char *accessKey = "<ak>";
 	char *secretKey = "<sk>";
 	char *bucket = "<bucket>";

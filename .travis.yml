@@ -1,3 +1,6 @@
 language: c
-before_script:
-  - export IS_TRAVIS=true
+compiler:
+  - gcc
+script:
+  - cmake . 
+  - make  

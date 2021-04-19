@@ -17,9 +17,10 @@ extern "C"
 {
 #endif
 
-QINIU_DLLAPI extern Qiniu_Uint64 Qiniu_Tm_LocalTime(void);
+    QINIU_DLLAPI extern Qiniu_Uint64 Qiniu_Tm_LocalTime(void);
 
-QINIU_DLLAPI extern const char *Qiniu_MD5_HexStr(const char *src);
+    QINIU_DLLAPI extern const char *Qiniu_MD5_HexStr(const char *src);
+    QINIU_DLLAPI extern const char *Qiniu_MD5_HexStr_From_Reader(Qiniu_Reader r);
 
 #ifdef __cplusplus
 }

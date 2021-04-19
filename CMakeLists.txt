@@ -21,16 +21,21 @@ PROJECT(${PROJECT_NAME})
 #添加GNU99支持 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -g")
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+include_directories(/usr/local/opt/openssl/include)
+link_directories(/usr/local/opt/openssl/lib)
+endif()
+
 AUX_SOURCE_DIRECTORY(b64 DIR_SRCS_B64)
 AUX_SOURCE_DIRECTORY(cJSON DIR_SRCS_CJSON)
 AUX_SOURCE_DIRECTORY(qiniu DIR_SRCS_QINIU)
-MESSAGE(STATUS "Src file: ${DIR_SRCS}")
+MESSAGE(STATUS "Src file: ${DIR_SRCS_B64} ${DIR_SRCS_CJSON} ${DIR_SRCS_QINIU}")
 #编译可执行程序
 #ADD_EXECUTABLE(${PROJECT_NAME} ${DIR_SRCS})
-#如果要生成动态链接库
+#如果要生成静态链接库
 #ADD_LIBRARY(${PROJECT_NAME} STATIC ${DIR_SRCS_B64} ${DIR_SRCS_CJSON} ${DIR_SRCS_QINIU})
 #如果要生成动态链接库
 ADD_LIBRARY(${PROJECT_NAME} SHARED ${DIR_SRCS_B64} ${DIR_SRCS_CJSON} ${DIR_SRCS_QINIU})
 
 #添加链接库
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} -lcurl -lcrypto -lssl -lm)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}  -lcurl -lcrypto -lssl -lm)
