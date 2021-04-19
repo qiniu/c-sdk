@@ -15,8 +15,7 @@
 #include "../qiniu/multipart_upload.h"
 #include "../qiniu/tm.h"
 
-//first, set env variable "QINIU_ACCESS_KEY" and "QINIU_SECRET_KEY"
-static const char bucket[] = "east3"; //"testbucket";
+//first, set env variable "QINIU_ACCESS_KEY"  "QINIU_SECRET_KEY" "QINIU_TEST_BUCKET"
 
 static void setLocalHost()
 {
@@ -120,19 +119,19 @@ void testMultipartUpload_smallfile(void)
         //step1: delete  file if exist
         if (inputKey != NULL)
         {
-            Qiniu_RS_Delete(&client, bucket, inputKey);
+            Qiniu_RS_Delete(&client, test_bucket, inputKey);
         }
         //step2: upload file
-        const char *returnKey = putFile_multipart(bucket, inputKey, "txt", __FILE__, &mac); //upload current file
+        const char *returnKey = putFile_multipart(test_bucket, inputKey, "txt", __FILE__, &mac); //upload current file
 
         //step3: stat file
         Qiniu_RS_StatRet statResult;
-        err = Qiniu_RS_Stat(&client, &statResult, bucket, returnKey);
+        err = Qiniu_RS_Stat(&client, &statResult, test_bucket, returnKey);
         CU_ASSERT(err.code == 200);
         CU_ASSERT(strcmp(statResult.mimeType, "txt") == 0);
 
         //step4: delete file
-        err = Qiniu_RS_Delete(&client, bucket, returnKey);
+        err = Qiniu_RS_Delete(&client, test_bucket, returnKey);
         CU_ASSERT(err.code == 200);
     }
 
@@ -154,20 +153,20 @@ void testMultipartUpload_largefile(void)
     const char *inputKey = "largefile";
 
     //step1: delete  file if exist
-    Qiniu_RS_Delete(&client, bucket, inputKey);
+    Qiniu_RS_Delete(&client, test_bucket, inputKey);
 
     //step2: upload file
-    const char *returnKey = putFile_multipart(bucket, inputKey, "mp3", "./test5m.mp3", &mac);
+    const char *returnKey = putFile_multipart(test_bucket, inputKey, "mp3", "./test5m.mp3", &mac);
 
     //step3: stat file
     Qiniu_RS_StatRet statResult;
-    err = Qiniu_RS_Stat(&client, &statResult, bucket, returnKey);
+    err = Qiniu_RS_Stat(&client, &statResult, test_bucket, returnKey);
     CU_ASSERT(err.code == 200);
     CU_ASSERT(strcmp(statResult.mimeType, "mp3") == 0);
     CU_ASSERT(statResult.fsize == 5097014);
 
     //step4: delete file
-    err = Qiniu_RS_Delete(&client, bucket, returnKey);
+    err = Qiniu_RS_Delete(&client, test_bucket, returnKey);
     CU_ASSERT(err.code == 200);
 
     Qiniu_Client_Cleanup(&client);
@@ -188,20 +187,20 @@ void testMultipartUpload_emptyfile(void)
     const char *inputKey = "emptyfile";
 
     //step1: delete  file if exist
-    Qiniu_RS_Delete(&client, bucket, inputKey);
+    Qiniu_RS_Delete(&client, test_bucket, inputKey);
 
     //step2: upload file
-    const char *returnKey = putFile_multipart(bucket, inputKey, "txt", "./test_emptyfile.txt", &mac);
+    const char *returnKey = putFile_multipart(test_bucket, inputKey, "txt", "./test_emptyfile.txt", &mac);
 
     //step3: stat file
     Qiniu_RS_StatRet statResult;
-    err = Qiniu_RS_Stat(&client, &statResult, bucket, returnKey);
+    err = Qiniu_RS_Stat(&client, &statResult, test_bucket, returnKey);
     CU_ASSERT(err.code == 200);
     CU_ASSERT(statResult.fsize == 0);
     CU_ASSERT(strcmp(statResult.mimeType, "txt") == 0);
 
     //step4: delete file
-    err = Qiniu_RS_Delete(&client, bucket, returnKey);
+    err = Qiniu_RS_Delete(&client, test_bucket, returnKey);
     CU_ASSERT(err.code == 200);
 
     Qiniu_Client_Cleanup(&client);
@@ -222,20 +221,20 @@ void testMultipartUpload_inMemoryData(void)
     const char *inputKey = "memoryDataKey";
 
     //step1: delete  file if exist
-    Qiniu_RS_Delete(&client, bucket, inputKey);
+    Qiniu_RS_Delete(&client, test_bucket, inputKey);
 
     //step2: upload memory data
     const char memData[] = "test multipart upload with memory data";
-    const char *returnKey = putMemoryData_multipart(bucket, inputKey, NULL, memData, sizeof(memData), &mac);
+    const char *returnKey = putMemoryData_multipart(test_bucket, inputKey, NULL, memData, sizeof(memData), &mac);
 
     //step3: stat file
     Qiniu_RS_StatRet statResult;
-    err = Qiniu_RS_Stat(&client, &statResult, bucket, returnKey);
+    err = Qiniu_RS_Stat(&client, &statResult, test_bucket, returnKey);
     CU_ASSERT(err.code == 200);
     CU_ASSERT(statResult.fsize == sizeof(memData));
 
     //step4: delete file
-    err = Qiniu_RS_Delete(&client, bucket, returnKey);
+    err = Qiniu_RS_Delete(&client, test_bucket, returnKey);
     CU_ASSERT(err.code == 200);
 
     Qiniu_Client_Cleanup(&client);
