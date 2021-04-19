@@ -51,7 +51,8 @@ int main(int argc, char **argv)
     char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
 
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
-    Qiniu_RS_Delete(&client, bucket, key);
+    Qiniu_RS_Delete(&client, bucket, key); //to avoid "file exist" err
+
     Qiniu_Error error = Qiniu_Multipart_PutFile(&client, uptoken, key, __FILE__, &putExtra, &putRet);
     if (error.code != 200)
     {
@@ -62,8 +63,10 @@ int main(int argc, char **argv)
     {
         printf("upload file success dstbucket:%s, dstKey:%s, hash:%s \n\n", bucket, putRet.key, putRet.hash);
     }
-
+    Qiniu_Free(putExtra.metaList);
     Qiniu_Free(uptoken);
+    Qiniu_Free(putRet.key);
+    Qiniu_Free(putRet.hash);
     Qiniu_Client_Cleanup(&client);
 }
 
