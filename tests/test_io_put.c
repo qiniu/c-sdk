@@ -14,11 +14,9 @@
 #include <string.h>
 #include <curl/curl.h>
 
-static const char bucket[] = "csdk";
 static const char key[] = "key";
-static const char domain[] = "csdk.qiniudn.com";
 
-static void clientIoPutFile(const char* uptoken)
+static void clientIoPutFile(const char *uptoken)
 {
 	Qiniu_Error err;
 	Qiniu_Client client;
@@ -31,12 +29,12 @@ static void clientIoPutFile(const char* uptoken)
 	CU_ASSERT(err.code == 200);
 
 	printf("\n%s\n", Qiniu_Buffer_CStr(&client.respHeader));
-	printf("hash: %s\n", putRet.hash?putRet.hash:"");
+	printf("hash: %s\n", putRet.hash ? putRet.hash : "");
 
 	Qiniu_Client_Cleanup(&client);
 }
 
-static void clientIoPutBuffer(const char* uptoken)
+static void clientIoPutBuffer(const char *uptoken)
 {
 	const char text[] = "Hello, world!";
 
@@ -47,10 +45,10 @@ static void clientIoPutBuffer(const char* uptoken)
 	Qiniu_Zero(putRet);
 	Qiniu_Client_InitNoAuth(&client, 1024);
 
-	err = Qiniu_Io_PutBuffer(&client, &putRet, uptoken, key, text, sizeof(text)-1, NULL);
+	err = Qiniu_Io_PutBuffer(&client, &putRet, uptoken, key, text, sizeof(text) - 1, NULL);
 
 	printf("\n%s", Qiniu_Buffer_CStr(&client.respHeader));
-	printf("hash: %s\n", putRet.hash?putRet.hash:"");
+	printf("hash: %s\n", putRet.hash ? putRet.hash : "");
 
 	CU_ASSERT(err.code == 200);
 	CU_ASSERT_STRING_EQUAL(putRet.hash, "FpQ6cC0G80WZruH42o759ylgMdaZ");
@@ -58,12 +56,12 @@ static void clientIoPutBuffer(const char* uptoken)
 	Qiniu_Client_Cleanup(&client);
 }
 
-static void clientIoGet(const char* url)
+static void clientIoGet(const char *url)
 {
 	const char text[] = "Hello, world!";
 
 	long code, httpCode;
-	CURL* curl = curl_easy_init();
+	CURL *curl = curl_easy_init();
 	Qiniu_Buffer resp;
 	Qiniu_Buffer respHeader;
 
@@ -96,26 +94,26 @@ void testIoPut(void)
 	Qiniu_Client client;
 	Qiniu_RS_PutPolicy putPolicy;
 	Qiniu_RS_GetPolicy getPolicy;
-	char* uptoken;
-	char* dnBaseUrl;
-	char* dnRequest;
+	char *uptoken;
+	char *dnBaseUrl;
+	char *dnRequest;
 
 	Qiniu_Client_InitMacAuth(&client, 1024, NULL);
 
 	Qiniu_Zero(putPolicy);
-	putPolicy.scope = bucket;
+	putPolicy.scope = Test_bucket;
 	uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, NULL);
 
-	Qiniu_RS_Delete(&client, bucket, key);
+	Qiniu_RS_Delete(&client, Test_bucket, key);
 	clientIoPutFile(uptoken);
 
-	Qiniu_RS_Delete(&client, bucket, key);
+	Qiniu_RS_Delete(&client, Test_bucket, key);
 	clientIoPutBuffer(uptoken);
 
 	Qiniu_Free(uptoken);
 
 	Qiniu_Zero(getPolicy);
-	dnBaseUrl = Qiniu_RS_MakeBaseUrl(domain, key);
+	dnBaseUrl = Qiniu_RS_MakeBaseUrl(Test_Domain, key);
 	dnRequest = Qiniu_RS_GetPolicy_MakeRequest(&getPolicy, dnBaseUrl, NULL);
 
 	clientIoGet(dnRequest);
@@ -125,4 +123,3 @@ void testIoPut(void)
 
 	Qiniu_Client_Cleanup(&client);
 }
-

@@ -21,22 +21,34 @@ void testFmt();
 void testEqual();
 void testRsBatchOps();
 void testFop();
+void testMultipartUpload_smallfile();
+void testMultipartUpload_largefile();
+void testMultipartUpload_emptyfile();
+void testMultipartUpload_inMemoryData();
+const char *Test_bucket = NULL;
+const char *Test_Domain = NULL;
 
-static int setup(){
+static int
+setup()
+{
 	printf("setup\n");
 	return 0;
 }
 
-static int teardown(){
+static int teardown()
+{
 	printf("teardown\n");
 	return 0;
 }
 
-int main(){
+int main()
+{
 	Qiniu_Servend_Init(0);
 
-	QINIU_ACCESS_KEY    = getenv("QINIU_ACCESS_KEY");
-	QINIU_SECRET_KEY    = getenv("QINIU_SECRET_KEY");
+	QINIU_ACCESS_KEY = getenv("QINIU_ACCESS_KEY");
+	QINIU_SECRET_KEY = getenv("QINIU_SECRET_KEY");
+	Test_bucket = getenv("QINIU_TEST_BUCKET");
+	Test_Domain = getenv("QINIU_TEST_BUCKET_DOMAIN");
 
 	assert(QINIU_ACCESS_KEY != NULL);
 	assert(QINIU_SECRET_KEY != NULL);
@@ -44,11 +56,12 @@ int main(){
 
 	/* initialize the CUnit test registry */
 	if (CUE_SUCCESS != CU_initialize_registry())
-	  return CU_get_error();
+		return CU_get_error();
 
 	/* add a suite to the registry */
 	pSuite = CU_add_suite("qiniu", setup, teardown);
-	if (NULL == pSuite) {
+	if (NULL == pSuite)
+	{
 		CU_cleanup_registry();
 		return CU_get_error();
 	}
@@ -59,9 +72,12 @@ int main(){
 	CU_add_test(pSuite, "testFileIo", testFileIo);
 	CU_add_test(pSuite, "testEqual", testEqual);
 	CU_add_test(pSuite, "testResumableIoPut", testResumableIoPut);
+	CU_add_test(pSuite, "testMultipartUpload_smallfile", testMultipartUpload_smallfile);
+	CU_add_test(pSuite, "testMultipartUpload_largefile", testMultipartUpload_largefile);
+	CU_add_test(pSuite, "testMultipartUpload_emptyfile", testMultipartUpload_emptyfile);
+	CU_add_test(pSuite, "testMultipartUpload_inMemoryData", testMultipartUpload_inMemoryData);
 	CU_add_test(pSuite, "testIoPut", testIoPut);
 	CU_add_test(pSuite, "testRsBatchOps", testRsBatchOps);
-	CU_add_test(pSuite, "testFop", testFop);
 
 	/* Run all tests using the CUnit Basic interface */
 	CU_basic_set_mode(CU_BRM_VERBOSE);
