@@ -1,0 +1,33 @@
+name: C SDK CI
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+jobs:
+  run:
+    name: CI Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt install -yqq libcunit1-dev libcunit1 libcurl4 libcurl4-openssl-dev build-essential cmake
+      - name: Build
+        run: |
+          set -e
+          cmake .
+          make
+      - name: Test
+        env:
+          QINIU_ACCESS_KEY: ${{ secrets.QINIU_ACCESS_KEY }}
+          QINIU_SECRET_KEY: ${{ secrets.QINIU_SECRET_KEY }}
+          QINIU_TEST_BUCKET: ${{ secrets.QINIU_TEST_BUCKET }}
+          QINIU_TEST_BUCKET_DOMAIN: ${{ secrets.QINIU_TEST_BUCKET_DOMAIN }}
+        run: |
+          set -e
+          cd tests
+          make test
+      - name: Code Coverage
+        run: |
+          bash <(curl -s https://codecov.io/bash)
