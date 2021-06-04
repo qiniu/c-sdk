@@ -3,7 +3,7 @@
  Name        : base.h
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 
@@ -163,11 +163,13 @@ typedef unsigned long long Qiniu_Uint64;
 	/* type Qiniu_Writer */
 
 	typedef size_t (*Qiniu_FnWrite)(const void *buf, size_t, size_t n, void *self);
+	typedef int (*Qiniu_FnFlush)(void *self);
 
 	typedef struct _Qiniu_Writer
 	{
 		void *self;
 		Qiniu_FnWrite Write;
+		Qiniu_FnFlush Flush;
 	} Qiniu_Writer;
 
 	QINIU_DLLAPI extern Qiniu_Writer Qiniu_FILE_Writer(FILE *fp);
@@ -293,9 +295,9 @@ typedef unsigned long long Qiniu_Uint64;
 	typedef struct _Qiniu_FileInfo
 	{
 		Qiniu_Off_T st_size; /* total size, in bytes */
-		time_t st_atime;	 /* time of last access */
-		time_t st_mtime;	 /* time of last modification */
-		time_t st_ctime;	 /* time of last status change */
+		time_t st_atime;     /* time of last access */
+		time_t st_mtime;     /* time of last modification */
+		time_t st_ctime;     /* time of last status change */
 	} Qiniu_FileInfo;
 #else
 

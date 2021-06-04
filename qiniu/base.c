@@ -556,14 +556,14 @@ typedef struct _Qiniu_formatProc
 } Qiniu_formatProc;
 
 static Qiniu_formatProc qiniu_formatProcs[] = {
-	{Qiniu_Buffer_appendInt, 'd'},
-	{Qiniu_Buffer_appendUint, 'u'},
-	{Qiniu_Buffer_appendInt64, 'D'},
-	{Qiniu_Buffer_appendUint64, 'U'},
-	{Qiniu_Buffer_appendString, 's'},
-	{Qiniu_Buffer_appendEncodedString, 'S'},
-	{Qiniu_Buffer_appendError, 'E'},
-	{Qiniu_Buffer_appendPercent, '%'},
+    {Qiniu_Buffer_appendInt, 'd'},
+    {Qiniu_Buffer_appendUint, 'u'},
+    {Qiniu_Buffer_appendInt64, 'D'},
+    {Qiniu_Buffer_appendUint64, 'U'},
+    {Qiniu_Buffer_appendString, 's'},
+    {Qiniu_Buffer_appendEncodedString, 'S'},
+    {Qiniu_Buffer_appendError, 'E'},
+    {Qiniu_Buffer_appendPercent, '%'},
 };
 
 static Qiniu_FnAppender qiniu_Appenders[128] = {0};
@@ -661,7 +661,7 @@ Qiniu_Reader Qiniu_FILE_Reader(FILE *fp)
 
 Qiniu_Writer Qiniu_FILE_Writer(FILE *fp)
 {
-	Qiniu_Writer writer = {fp, (Qiniu_FnWrite)fwrite};
+	Qiniu_Writer writer = {fp, (Qiniu_FnWrite)fwrite, (Qiniu_FnFlush)fflush};
 	return writer;
 }
 
@@ -669,7 +669,7 @@ Qiniu_Writer Qiniu_FILE_Writer(FILE *fp)
 /* func Qiniu_Copy */
 
 Qiniu_Error Qiniu_OK = {
-	200, "OK"};
+    200, "OK"};
 
 Qiniu_Error Qiniu_Copy(Qiniu_Writer w, Qiniu_Reader r, void *buf, size_t n, Qiniu_Int64 *ret)
 {
@@ -717,7 +717,7 @@ size_t Qiniu_Null_Fwrite(const void *buf, size_t size, size_t nmemb, void *self)
 }
 
 Qiniu_Writer Qiniu_Discard = {
-	NULL, Qiniu_Null_Fwrite};
+    NULL, Qiniu_Null_Fwrite};
 
 /*============================================================================*/
 /* func Qiniu_Null_Log */
@@ -730,12 +730,12 @@ void Qiniu_Null_Log(const char *fmt, ...)
 /* func Qiniu_Stderr_Info/Warn */
 
 static const char *qiniu_Levels[] = {
-	"[DEBUG]",
-	"[INFO]",
-	"[WARN]",
-	"[ERROR]",
-	"[PANIC]",
-	"[FATAL]"};
+    "[DEBUG]",
+    "[INFO]",
+    "[WARN]",
+    "[ERROR]",
+    "[PANIC]",
+    "[FATAL]"};
 
 void Qiniu_Logv(Qiniu_Writer w, int ilvl, const char *fmt, Qiniu_Valist *args)
 {

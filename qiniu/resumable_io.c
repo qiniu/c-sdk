@@ -10,6 +10,12 @@
 #include "resumable_io.h"
 #include <curl/curl.h>
 #include <sys/stat.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <limits.h>
+#include "recorder_key.h"
+#include "recorder_utils.h"
+#include "../cJSON/cJSON.h"
 
 #define blockBits 22
 #define blockMask ((1 << blockBits) - 1)
@@ -168,6 +174,29 @@ void Qiniu_Rio_SetSettings(Qiniu_Rio_Settings *v)
 }
 
 /*============================================================================*/
+/* type Qiniu_Rio_Recorder */
+typedef struct _Qiniu_Rio_Recorder
+{
+    Qiniu_Record_Medium *recorderMedium;
+    const char *recorderKey;
+    Qiniu_Bool toLoadProgresses;
+} Qiniu_Rio_Recorder;
+
+static void Qiniu_Rio_Recorder_Cleanup(Qiniu_Rio_Recorder *recorder)
+{
+    if (recorder != NULL)
+    {
+        if (recorder->recorderMedium != NULL)
+        {
+            recorder->recorderMedium->close(recorder->recorderMedium);
+            recorder->recorderMedium = NULL;
+        }
+        if (recorder->recorderKey != NULL)
+        {
+            Qiniu_FreeV2((void **)&recorder->recorderKey);
+        }
+    }
+}
 
 /*============================================================================*/
 /* type Qiniu_Rio_BlkputRet */
@@ -337,7 +366,7 @@ static Qiniu_Error Qiniu_Rio_bput(
         if (retFromResp.ctx == NULL || retFromResp.host == NULL || retFromResp.offset == 0)
         {
             err.code = 9998;
-            err.message = "unexcepted response: invalid ctx, host or offset";
+            err.message = "unexpected response: invalid ctx, host or offset";
             return err;
         }
 
@@ -383,12 +412,12 @@ static Qiniu_Error ErrUnmatchedChecksum = {
 
 static int Qiniu_TemporaryError(int code)
 {
-    return code != 401;
+    return code / 100 != 4;
 }
 
 static Qiniu_Error Qiniu_Rio_ResumableBlockput(
     Qiniu_Client *c, Qiniu_Rio_BlkputRet *ret, Qiniu_ReaderAt f, int blkIdx, int blkSize,
-    Qiniu_Rio_PutExtra *extra)
+    Qiniu_Rio_PutExtra *extra, size_t *chunksUploaded)
 {
     Qiniu_Error err = {200, NULL};
     Qiniu_Tee tee;
@@ -403,6 +432,7 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
     int bodyLength;
     int tryTimes;
     int notifyRet = 0;
+    size_t httpCalled = 0;
 
     if (ret->ctx == NULL)
     {
@@ -424,6 +454,8 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
         {
             return err;
         }
+
+        httpCalled++;
         if (ret->crc32 != crc32.val || (int)(ret->offset) != bodyLength)
         {
             return ErrUnmatchedChecksum;
@@ -460,6 +492,7 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
         err = Qiniu_Rio_Blockput(c, ret, body, bodyLength);
         if (err.code == 200)
         {
+            httpCalled++;
             if (ret->crc32 == crc32.val)
             {
                 notifyRet = extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
@@ -494,6 +527,12 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
         }
         break;
     }
+
+    if (chunksUploaded != NULL)
+    {
+        *chunksUploaded = httpCalled;
+    }
+
     return err;
 }
 
@@ -567,6 +606,66 @@ int Qiniu_Rio_BlockCount(Qiniu_Int64 fsize)
 }
 
 /*============================================================================*/
+/* type Qiniu_Rio_Recorder_XXX */
+
+static Qiniu_Error Qiniu_Rio_Recorder_Read_Medium(struct Qiniu_Record_Medium *medium, int *blkIdx, Qiniu_Rio_BlkputRet *ret)
+{
+    Qiniu_Error err;
+    const size_t BUFFER_SIZE = 1 << 22;
+    size_t haveRead;
+    char buf[BUFFER_SIZE];
+    err = medium->readEntry(medium, buf, BUFFER_SIZE, &haveRead);
+    if (err.code != 200)
+    {
+        medium->close(medium);
+        return err;
+    }
+    if (haveRead >= BUFFER_SIZE)
+    {
+        medium->close(medium);
+        err.code = 500;
+        err.message = "recorder entry is too large";
+        return err;
+    }
+    cJSON *blockInfo = cJSON_Parse(buf);
+    *blkIdx = Qiniu_Json_GetInt(blockInfo, "blkIdx", -1);
+    ret->ctx = strdup(Qiniu_Json_GetString(blockInfo, "ctx", NULL));
+    ret->checksum = strdup(Qiniu_Json_GetString(blockInfo, "checksum", NULL));
+    ret->crc32 = Qiniu_Json_GetUInt32(blockInfo, "crc32", 0);
+    ret->offset = Qiniu_Json_GetUInt32(blockInfo, "offset", 0);
+    ret->host = strdup(Qiniu_Json_GetString(blockInfo, "host", NULL));
+    cJSON_Delete(blockInfo);
+    return Qiniu_OK;
+}
+
+static Qiniu_Error Qiniu_Rio_Recorder_Write_Medium(struct Qiniu_Record_Medium *medium, int blkIdx, Qiniu_Rio_BlkputRet *ret)
+{
+    Qiniu_Error err;
+    cJSON *blockInfo = cJSON_CreateObject();
+    cJSON_AddItemToObject(blockInfo, "blkIdx", cJSON_CreateNumber(blkIdx));
+    cJSON_AddItemToObject(blockInfo, "ctx", cJSON_CreateString(ret->ctx));
+    cJSON_AddItemToObject(blockInfo, "checksum", cJSON_CreateString(ret->checksum));
+    cJSON_AddItemToObject(blockInfo, "crc32", cJSON_CreateNumber(ret->crc32));
+    cJSON_AddItemToObject(blockInfo, "offset", cJSON_CreateNumber(ret->offset));
+    cJSON_AddItemToObject(blockInfo, "host", cJSON_CreateString(ret->host));
+    char *blockInfoJson = cJSON_PrintUnformatted(blockInfo);
+    cJSON_Delete(blockInfo);
+    if (blockInfoJson == NULL)
+    {
+        err.code = 400;
+        err.message = "cJSON_PrintUnformatted() error";
+    }
+    err = medium->writeEntry(medium, blockInfoJson, NULL);
+    free(blockInfoJson);
+    if (err.code != 200)
+    {
+        return err;
+    }
+
+    return Qiniu_OK;
+}
+
+/*============================================================================*/
 /* type Qiniu_Rio_task */
 
 typedef struct _Qiniu_Rio_task
@@ -575,6 +674,7 @@ typedef struct _Qiniu_Rio_task
     Qiniu_Client *mc;
     Qiniu_Rio_PutExtra *extra;
     Qiniu_Rio_WaitGroup wg;
+    Qiniu_Rio_Recorder *recorder;
     int *nfails;
     Qiniu_Count *ninterrupts;
     int blkIdx;
@@ -588,10 +688,12 @@ static void Qiniu_Rio_doTask(void *params)
     Qiniu_Rio_task *task = (Qiniu_Rio_task *)params;
     Qiniu_Rio_WaitGroup wg = task->wg;
     Qiniu_Rio_PutExtra *extra = task->extra;
+    Qiniu_Rio_Recorder *recorder = task->recorder;
     Qiniu_Rio_ThreadModel tm = extra->threadModel;
     Qiniu_Client *c = tm.itbl->ClientTls(tm.self, task->mc);
     int blkIdx = task->blkIdx;
     int tryTimes = extra->tryTimes;
+    size_t chunksUploaded = 0;
 
     if ((*task->ninterrupts) > 0)
     {
@@ -605,7 +707,7 @@ static void Qiniu_Rio_doTask(void *params)
 
 lzRetry:
     Qiniu_Rio_BlkputRet_Assign(&ret, &extra->progresses[blkIdx]);
-    err = Qiniu_Rio_ResumableBlockput(c, &ret, task->f, blkIdx, task->blkSize1, extra);
+    err = Qiniu_Rio_ResumableBlockput(c, &ret, task->f, blkIdx, task->blkSize1, extra, &chunksUploaded);
     if (err.code != 200)
     {
         if (err.code == Qiniu_Rio_PutInterrupted)
@@ -631,6 +733,10 @@ lzRetry:
     else
     {
         Qiniu_Rio_BlkputRet_Assign(&extra->progresses[blkIdx], &ret);
+        if (chunksUploaded > 0 && recorder != NULL && recorder->recorderMedium != NULL)
+        {
+            Qiniu_Rio_Recorder_Write_Medium(recorder->recorderMedium, blkIdx, &ret);
+        }
     }
     Qiniu_Rio_BlkputRet_Cleanup(&ret);
     free(task);
@@ -645,9 +751,51 @@ static Qiniu_Error ErrPutFailed = {
 static Qiniu_Error ErrPutInterrupted = {
     Qiniu_Rio_PutInterrupted, "resumable put interrupted"};
 
-Qiniu_Error Qiniu_Rio_Put(
+static Qiniu_Error Qiniu_Rio_loadProgresses(Qiniu_Rio_PutRet *ret, Qiniu_Rio_PutExtra *extra, Qiniu_Rio_Recorder *recorder)
+{
+    Qiniu_Error err;
+    Qiniu_Bool hasNext;
+    int blkIdx;
+    Qiniu_Rio_BlkputRet blkPutRet;
+    if (recorder != NULL && recorder->recorderMedium != NULL && recorder->toLoadProgresses)
+    {
+        for (;;)
+        {
+            err = recorder->recorderMedium->hasNextEntry(recorder->recorderMedium, &hasNext);
+            if (err.code != 200)
+            {
+                return err;
+            }
+            if (hasNext)
+            {
+                err = Qiniu_Rio_Recorder_Read_Medium(recorder->recorderMedium, &blkIdx, &blkPutRet);
+                if (err.code != 200)
+                {
+                    return err;
+                }
+                extra->progresses[blkIdx] = blkPutRet;
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+    return Qiniu_OK;
+}
+
+static Qiniu_Error Qiniu_Rio_clearProgresses(Qiniu_Rio_PutExtra *extra, Qiniu_Rio_Recorder *recorder)
+{
+    if (extra->recorder != NULL && recorder->recorderKey != NULL)
+    {
+        return extra->recorder->remove(extra->recorder, recorder->recorderKey);
+    }
+    return Qiniu_OK;
+}
+
+static Qiniu_Error _Qiniu_Rio_Put(
     Qiniu_Client *self, Qiniu_Rio_PutRet *ret,
-    const char *uptoken, const char *key, Qiniu_ReaderAt f, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra *extra1)
+    const char *uptoken, const char *key, Qiniu_ReaderAt f, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra *extra1, Qiniu_Rio_Recorder *recorder)
 {
     Qiniu_Int64 offbase;
     Qiniu_Rio_task *task;
@@ -675,11 +823,14 @@ Qiniu_Error Qiniu_Rio_Put(
 
     self->auth = auth = Qiniu_UptokenAuth(uptoken);
 
+    Qiniu_Rio_loadProgresses(ret, &extra, recorder);
+
     for (i = 0; i < (int)extra.blockCnt; i++)
     {
         task = (Qiniu_Rio_task *)malloc(sizeof(Qiniu_Rio_task));
         task->f = f;
         task->extra = &extra;
+        task->recorder = recorder;
         task->mc = self;
         task->wg = wg;
         task->nfails = &nfails;
@@ -719,6 +870,10 @@ Qiniu_Error Qiniu_Rio_Put(
     else
     {
         err = Qiniu_Rio_Mkfile(self, ret, key, fsize, &extra);
+        if (err.code / 100 == 2 || err.code == 701 || err.code / 100 == 4)
+        {
+            Qiniu_Rio_clearProgresses(&extra, recorder);
+        }
     }
 
     Qiniu_Rio_PutExtra_Cleanup(&extra);
@@ -729,6 +884,13 @@ Qiniu_Error Qiniu_Rio_Put(
     return err;
 }
 
+Qiniu_Error Qiniu_Rio_Put(
+    Qiniu_Client *self, Qiniu_Rio_PutRet *ret,
+    const char *uptoken, const char *key, Qiniu_ReaderAt f, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra *extra1)
+{
+    return _Qiniu_Rio_Put(self, ret, uptoken, key, f, fsize, extra1, NULL);
+}
+
 Qiniu_Error Qiniu_Rio_PutFile(
     Qiniu_Client *self, Qiniu_Rio_PutRet *ret,
     const char *uptoken, const char *key, const char *localFile, Qiniu_Rio_PutExtra *extra)
@@ -737,6 +899,9 @@ Qiniu_Error Qiniu_Rio_PutFile(
     Qiniu_Int64 fsize;
     Qiniu_FileInfo fi;
     Qiniu_File *f;
+    Qiniu_Bool ok;
+    Qiniu_Rio_Recorder recorder, *pRecorder = NULL;
+    Qiniu_Record_Medium medium;
     Qiniu_Error err = Qiniu_File_Open(&f, localFile);
     if (err.code != 200)
     {
@@ -755,7 +920,37 @@ Qiniu_Error Qiniu_Rio_PutFile(
 
             return Qiniu_Io_PutFile(self, ret, uptoken, key, localFile, &extra1);
         }
-        err = Qiniu_Rio_Put(self, ret, uptoken, key, Qiniu_FileReaderAt(f), fsize, extra);
+        if (extra->recorder != NULL)
+        {
+            err = Qiniu_Utils_Generate_RecorderKey(uptoken, "v1", key, localFile, &recorder.recorderKey);
+            if (err.code != 200)
+            {
+                return err;
+            }
+            err = Qiniu_Utils_Find_Medium(extra->recorder, recorder.recorderKey, 1, &medium, &fi, &ok);
+            if (err.code != 200)
+            {
+                return err;
+            }
+            if (ok)
+            {
+                recorder.recorderMedium = &medium;
+                recorder.toLoadProgresses = Qiniu_True;
+            }
+            else
+            {
+                err = Qiniu_Utils_New_Medium(extra->recorder, recorder.recorderKey, 1, &medium, &fi);
+                if (err.code != 200)
+                {
+                    return err;
+                }
+                recorder.recorderMedium = &medium;
+                recorder.toLoadProgresses = Qiniu_False;
+            }
+            pRecorder = &recorder;
+        }
+        err = _Qiniu_Rio_Put(self, ret, uptoken, key, Qiniu_FileReaderAt(f), fsize, extra, pRecorder);
+        Qiniu_Rio_Recorder_Cleanup(pRecorder);
     }
     Qiniu_File_Close(f);
     return err;

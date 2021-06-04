@@ -41,7 +41,7 @@ QINIU_DLLAPI extern Qiniu_Uint64 Qiniu_Tm_LocalTime(void)
 
 	const char *Qiniu_MD5_HexStr(const char *src)
 	{
-		unsigned char *sign = (unsigned char *)calloc(sizeof(unsigned char), MD5_DIGEST_LENGTH);
+		unsigned char sign[MD5_DIGEST_LENGTH];
 		int signLen = MD5_DIGEST_LENGTH * 2 + 1;
 		char *signHex = (char *)malloc(sizeof(char) * signLen);
 		char temp[3];
@@ -56,7 +56,6 @@ QINIU_DLLAPI extern Qiniu_Uint64 Qiniu_Tm_LocalTime(void)
 			memcpy(&(signHex[i * 2]), temp, 2);
 		}
 		signHex[signLen - 1] = '\0';
-		Qiniu_Free(sign);
 		return signHex;
 	} // Qiniu_MD5_HexStr
 
