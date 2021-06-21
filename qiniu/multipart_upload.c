@@ -358,6 +358,7 @@ static Qiniu_Error _Qiniu_Multipart_Put(
             Qiniu_Log_Error("initUpload %E ", err);
             Qiniu_Multi_Free(2, (void *)bucket, (void *)encodedKey);
             restoreAuth(&client->auth, authBackup);
+            Qiniu_UploadParts_Ret_Clear(&uploadPartsRet, totalPartNum);
             return err;
         }
         uploadId = initPartRet.uploadId;
