@@ -440,7 +440,7 @@ static Qiniu_Error Qiniu_Client_callWithBody(
     int retCode = 0;
     Qiniu_Error err;
     const char *ctxType;
-    char ctxLength[64];
+    char ctxLength[64], userAgent[64];
     Qiniu_Header *headers = NULL;
     CURL *curl = (CURL *)self->curl;
 
@@ -468,8 +468,10 @@ static Qiniu_Error Qiniu_Client_callWithBody(
     }
 
     Qiniu_snprintf(ctxLength, 64, "Content-Length: %lld", bodyLen);
+    Qiniu_snprintf(userAgent, 64, "UserAgent: QiniuC/%s", version);
     headers = curl_slist_append(NULL, ctxLength);
     headers = curl_slist_append(headers, ctxType);
+    headers = curl_slist_append(headers, userAgent);
     headers = curl_slist_append(headers, "Expect:");
     if (md5 != NULL)
     {
