@@ -5,7 +5,7 @@ LINK_PATH=-L/usr/local/opt/openssl/lib
 else ifeq ($(UNAME),Linux)
 INCLUDE_PATH=-I. -I../b64 -I../cJSON -I../qiniu -I/usr/local/ssl/include
 LINK_PATH=-L/usr/local/ssl/lib
-else 
+else
 INCLUDE_PATH=-I. -I../b64 -I../cJSON -I../qiniu
 endif
 
@@ -25,6 +25,9 @@ SOURCE_FILES=\
 	../qiniu/tm.c\
 	../qiniu/fop.c\
 	../qiniu/reader.c\
+	../qiniu/recorder.c\
+	../qiniu/recorder_key.c\
+	../qiniu/recorder_utils.c\
 	seq.c\
 	equal.c\
 	test_io_put.c\
@@ -33,7 +36,8 @@ SOURCE_FILES=\
 	test_fmt.c\
 	test.c\
 	test_rs_ops.c\
-	test_multipart.c
+	test_multipart.c\
+	test_recorder.c
 
 #To Gen CUnit-Libs:  cd c-sdk/CUnit;  ./configure; make
 CUNIT_LIB=../CUnit/CUnit/Sources/.libs

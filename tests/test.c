@@ -25,6 +25,7 @@ void testMultipartUpload_smallfile();
 void testMultipartUpload_largefile();
 void testMultipartUpload_emptyfile();
 void testMultipartUpload_inMemoryData();
+void testFileSystemRecorder_readWriteEntries();
 const char *Test_bucket = NULL;
 const char *Test_Domain = NULL;
 
@@ -76,6 +77,7 @@ int main()
 	CU_add_test(pSuite, "testMultipartUpload_largefile", testMultipartUpload_largefile);
 	CU_add_test(pSuite, "testMultipartUpload_emptyfile", testMultipartUpload_emptyfile);
 	CU_add_test(pSuite, "testMultipartUpload_inMemoryData", testMultipartUpload_inMemoryData);
+	CU_add_test(pSuite, "testFileSystemRecorder_readWriteEntries", testFileSystemRecorder_readWriteEntries);
 	CU_add_test(pSuite, "testIoPut", testIoPut);
 	CU_add_test(pSuite, "testRsBatchOps", testRsBatchOps);
 

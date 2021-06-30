@@ -15,6 +15,7 @@
 #include "stdbool.h"
 #include "stdlib.h"
 #include "stdio.h"
+#include "recorder.h"
 
 #pragma pack(1)
 
@@ -55,6 +56,8 @@ extern "C"
         const char *(*metaList)[2];
         int metaCount;
 
+        Qiniu_Recorder *recorder;
+
     } Qiniu_Multipart_PutExtra;
 
     typedef struct
@@ -67,7 +70,7 @@ extern "C"
     func: Qiniu_Multipart_PutFile
     input: it's allowed(but not recommend) to set key="" ,which means the keyname is empty string,
             if key=NULL means the keyname is determined by server;
-    note: the client not support concurrent usage , detail refer to: https://developer.qiniu.com/kodo/sdk/cpp             
+    note: the client not support concurrent usage , detail refer to: https://developer.qiniu.com/kodo/sdk/cpp
     */
     QINIU_DLLAPI extern Qiniu_Error Qiniu_Multipart_PutFile(
         Qiniu_Client *client, const char *uptoken, const char *key,

@@ -328,7 +328,7 @@ Qiniu_Uint32 Qiniu_Json_GetUInt32(Qiniu_Json *self, const char *key, Qiniu_Uint3
     sub = cJSON_GetObjectItem(self, key);
     if (sub != NULL && sub->type == cJSON_Number)
     {
-        return (Qiniu_Uint32)sub->valueint;
+        return (Qiniu_Uint32)sub->valuedouble;
     }
     else
     {

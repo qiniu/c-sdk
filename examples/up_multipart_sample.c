@@ -28,11 +28,21 @@ int main(int argc, char **argv)
     char *accessKey = getenv("QINIU_ACCESS_KEY");
     char *secretKey = getenv("QINIU_SECRET_KEY");
     char *bucket = getenv("QINIU_TEST_BUCKET");
-    char *key = "testkey";
+    char *key = "testKey";
+    char *localFile = __FILE__;
 
     Qiniu_Mac mac;
     mac.accessKey = accessKey;
     mac.secretKey = secretKey;
+
+    Qiniu_Error error;
+    Qiniu_Recorder recorder;
+    error = Qiniu_FileSystem_Recorder_New("/tmp", &recorder);
+    if (error.code != 200)
+    {
+        printf("create filesystem recorder %s:%s error.\n", bucket, key);
+        debug_log(&client, error);
+    }
 
     Qiniu_Zero(putPolicy);
     Qiniu_Zero(putExtra);
@@ -46,6 +56,7 @@ int main(int argc, char **argv)
     putExtra.metaList[0][1] = "metaval1";
     putExtra.metaList[1][0] = "metakey2";
     putExtra.metaList[1][1] = "metaval2";
+    putExtra.recorder = &recorder;
 
     putPolicy.scope = bucket;
     char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
@@ -53,7 +64,7 @@ int main(int argc, char **argv)
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
     Qiniu_RS_Delete(&client, bucket, key); //to avoid "file exist" err
 
-    Qiniu_Error error = Qiniu_Multipart_PutFile(&client, uptoken, key, __FILE__, &putExtra, &putRet);
+    error = Qiniu_Multipart_PutFile(&client, uptoken, key, localFile, &putExtra, &putRet);
     if (error.code != 200)
     {
         printf("upload file %s:%s error.\n", bucket, key);
@@ -63,6 +74,7 @@ int main(int argc, char **argv)
     {
         printf("upload file success dstbucket:%s, dstKey:%s, hash:%s \n\n", bucket, putRet.key, putRet.hash);
     }
+    recorder.free(&recorder);
     Qiniu_Free(putExtra.metaList);
     Qiniu_Free(uptoken);
     Qiniu_Free(putRet.key);
@@ -76,6 +88,6 @@ void setLocalHost()
     QINIU_RS_HOST = "http://127.0.0.1:9400";
     QINIU_UP_HOST = "http://127.0.0.1:11200";
 #else
-    Qiniu_Use_Zone_Beimei(false);
+    Qiniu_Use_Zone_Huadong(false);
 #endif
 }

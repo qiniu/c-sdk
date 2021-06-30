@@ -5,7 +5,7 @@ LINK_PATH=-L/usr/local/opt/openssl/lib
 else ifeq ($(UNAME),Linux)
 INCLUDE_PATH=-I. -I../b64 -I../cJSON -I../qiniu -I/usr/local/ssl/include
 LINK_PATH=-L/usr/local/ssl/lib
-else 
+else
 INCLUDE_PATH=-I. -I../b64 -I../cJSON -I../qiniu
 endif
 
@@ -23,11 +23,14 @@ SOURCE_FILES=\
     ../qiniu/io.c\
     ../qiniu/qetag.c\
     ../qiniu/reader.c\
+    ../qiniu/recorder.c\
+    ../qiniu/recorder_key.c\
+    ../qiniu/recorder_utils.c\
     ../qiniu/resumable_io.c\
     ../qiniu/rs.c\
     ../qiniu/rsf.c\
     ../qiniu/tm.c\
-	../qiniu/multipart_upload.c
+    ../qiniu/multipart_upload.c
 
 rs_stat: $(SOURCE_FILES) ./rs_stat.c
 	gcc -g $^ -o exec_rs_stat $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
@@ -95,6 +98,9 @@ up_form_upload: $(SOURCE_FILES) ./up_form_upload.c
 up_chunk_upload: $(SOURCE_FILES) ./up_chunk_upload.c
 	gcc -g $^ -o exec_up_chunk_upload $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
+up_resumeable_upload: $(SOURCE_FILES) ./up_resumeable_upload.c
+	gcc -g $^ -o exec_up_resumeable_upload $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
+
 cdn_refresh_urls: $(SOURCE_FILES) ./cdn_refresh_urls.c
 	gcc -g $^ -o exec_cdn_refresh_urls $(INCLUDE_PATH) $(LINK_PATH) -lcurl -lcrypto -lssl -lm -ldl
 
@@ -129,6 +135,6 @@ all: rs_stat rs_delete rs_copy rs_move rs_change_type rs_change_mime rs_delete_a
     rs_batch_stat rs_batch_delete rs_batch_copy rs_batch_move rs_batch_change_type rs_batch_change_mime \
     rs_batch_delete_after_days rsf_list_files rsf_list_bucket \
     fop_video_avthumb \
-    up_create_uptoken up_form_upload up_chunk_upload \
+    up_create_uptoken up_form_upload up_chunk_upload up_resumeable_upload \
     cdn_refresh_urls cdn_refresh_dirs cdn_prefetch_urls cdn_get_log_list \
     cdn_create_timestamp_url cdn_get_bandwidth_data cdn_get_flux_data
