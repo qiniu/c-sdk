@@ -1,6 +1,10 @@
 ## CHANGE LOG
 
-### v7.x?
+### v7.1.0
+- 新增 Qiniu_Multipart_PutFile API， 支持 [分片上传 V2](https://developer.qiniu.com/kodo/6364/multipartupload-interface)
+- 修复 openssl 已知兼容性问题 
+
+### v7.0.0
 
 >从[github/BluntBlade/20170111.timestamp_token](https://github.com/bluntblade/c-sdk/tree/20170111.timestamp_token)这个分支代码修改而来。
 
