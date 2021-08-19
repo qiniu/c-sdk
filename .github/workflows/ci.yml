@@ -85,11 +85,12 @@ jobs:
         shell: bash
       - name: Cmake
         uses: lukka/run-cmake@v3
+        env:
+          CURL_ROOT: '${{ github.workspace }}/vcpkg/packages/curl_x64-windows'
+          OPENSSL_ROOT: '${{ github.workspace }}/vcpkg/packages/openssl_x64-windows'
         with:
           cmakeListsOrSettingsJson: CMakeListsTxtBasic
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
           useVcpkgToolchainFile: true
           cmakeAppendedArgs: '-G "NMake Makefiles"'
           buildDirectory: ${{ env.buildDir }}
-      - name: nmake
-        run: nmake
