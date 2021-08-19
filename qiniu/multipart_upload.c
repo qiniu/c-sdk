@@ -557,7 +557,7 @@ void Qiniu_Multi_Free(int n, ...)
 Qiniu_Error readMedium(struct Qiniu_Record_Medium *medium, const char **uploadId, Qiniu_UploadPartResp *ret)
 {
     Qiniu_Error err;
-    const size_t BUFFER_SIZE = 1 << 22;
+#define BUFFER_SIZE (1 << 22)
     size_t haveRead;
     char buf[BUFFER_SIZE];
     err = medium->readEntry(medium, buf, BUFFER_SIZE, &haveRead);
@@ -583,6 +583,7 @@ Qiniu_Error readMedium(struct Qiniu_Record_Medium *medium, const char **uploadId
     }
     cJSON_Delete(blockInfo);
     return Qiniu_OK;
+#undef BUFFER_SIZE
 }
 
 Qiniu_Error writeMedium(struct Qiniu_Record_Medium *medium, const char *uploadId, Qiniu_UploadPartResp *ret)

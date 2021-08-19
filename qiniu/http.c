@@ -11,10 +11,6 @@
 #include "../cJSON/cJSON.h"
 #include <curl/curl.h>
 
-#if defined(_WIN32)
-#pragma comment(lib, "curllib.lib")
-#endif
-
 /*============================================================================*/
 /* type Qiniu_Mutex */
 

@@ -4,8 +4,8 @@ on:
     paths-ignore:
       - '**.md'
 jobs:
-  run:
-    name: CI Test
+  linux:
+    name: CI Test On Linux
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -31,3 +31,41 @@ jobs:
       - name: Code Coverage
         run: |
           bash <(curl -s https://codecov.io/bash)
+  windows:
+    name: CI Test On Windows
+    runs-on: windows-latest
+    env:
+      buildDir: '${{ github.workspace }}/build/'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install Visual Studio Dev cmds
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Install CMake
+        uses: lukka/get-cmake@latest
+      - name: Install vcpkg
+        uses: lukka/run-vcpkg@main
+        with:
+          setupOnly: true
+          vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+          vcpkgArguments: 'sqlite3'
+          vcpkgTriplet: 'x64-windows'
+          vcpkgGitCommitId: '30124253eecff36bc90f73341edbfb4f845e2a1e'
+      - name: Install curl
+        run: |
+          $VCPKG_ROOT/vcpkg install curl --triplet x64-windows
+        shell: bash
+      - name: Install openssl
+        run: |
+          $VCPKG_ROOT/vcpkg install openssl --triplet x64-windows
+        shell: bash
+      - name: Cmake
+        uses: lukka/run-cmake@v3
+        with:
+          cmakeListsOrSettingsJson: CMakeListsTxtBasic
+          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+          useVcpkgToolchainFile: true
+          cmakeAppendedArgs: '-G "NMake Makefiles"'
+          buildDirectory: ${{ env.buildDir }}
+      - name: nmake
+        run: nmake

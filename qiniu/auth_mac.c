@@ -13,7 +13,7 @@
 #include <openssl/engine.h>
 
 #if defined(_WIN32)
-#pragma comment(lib, "libeay32.lib")
+#pragma comment(lib, "libcrypto.lib")
 #endif
 
 /*============================================================================*/

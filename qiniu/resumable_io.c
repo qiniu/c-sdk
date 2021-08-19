@@ -611,7 +611,7 @@ int Qiniu_Rio_BlockCount(Qiniu_Int64 fsize)
 static Qiniu_Error Qiniu_Rio_Recorder_Read_Medium(struct Qiniu_Record_Medium *medium, int *blkIdx, Qiniu_Rio_BlkputRet *ret)
 {
     Qiniu_Error err;
-    const size_t BUFFER_SIZE = 1 << 22;
+ #define BUFFER_SIZE (1 << 22)
     size_t haveRead;
     char buf[BUFFER_SIZE];
     err = medium->readEntry(medium, buf, BUFFER_SIZE, &haveRead);
@@ -636,6 +636,7 @@ static Qiniu_Error Qiniu_Rio_Recorder_Read_Medium(struct Qiniu_Record_Medium *me
     ret->host = strdup(Qiniu_Json_GetString(blockInfo, "host", NULL));
     cJSON_Delete(blockInfo);
     return Qiniu_OK;
+#undef BUFFER_SIZE
 }
 
 static Qiniu_Error Qiniu_Rio_Recorder_Write_Medium(struct Qiniu_Record_Medium *medium, int blkIdx, Qiniu_Rio_BlkputRet *ret)
