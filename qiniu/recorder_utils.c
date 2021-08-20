@@ -82,7 +82,8 @@ Qiniu_Bool Qiniu_Utils_Extract_Bucket(const char *uptoken, const char **pAccessK
 	return Qiniu_True;
 }
 
-static char *_realpath(const char *path, char *resolved_path) {
+static char *_realpath(const char *path, char *resolved_path)
+{
 #ifdef _WIN32
 	return _fullpath(resolved_path, path, MAX_PATH);
 #else
@@ -92,10 +93,6 @@ static char *_realpath(const char *path, char *resolved_path) {
 
 Qiniu_Error Qiniu_Utils_Generate_RecorderKey(const char *uptoken, const char *version, const char *key, const char *localFile, const char **pRecorderKey)
 {
-#ifndef PATH_MAX
-#define PATH_MAX MAX_PATH
-#endif // PATH_MAX
-
 	char fullPath[PATH_MAX];
 	const char *bucket, *accessKey;
 	Qiniu_Error err;

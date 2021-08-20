@@ -12,25 +12,25 @@ jobs:
         uses: actions/checkout@v2
       - name: Install dependencies
         run: |
-          sudo apt install -yqq libcunit1-dev libcunit1 libcurl4 libcurl4-openssl-dev build-essential cmake
+          sudo apt install -yqq libcurl4 libcurl4-openssl-dev build-essential cmake
       - name: Build
         run: |
           set -e
-          cmake .
-          make
-      - name: Test
+          cmake -S . -B build
+          cmake --build build
+      - name: Unit test
+        working-directory: '${{ github.workspace }}/build/gtests'
+        run: |
+          ./qiniu_test --gtest_filter="UnitTest.*"
+      - name: Integration Test
         env:
           QINIU_ACCESS_KEY: ${{ secrets.QINIU_ACCESS_KEY }}
           QINIU_SECRET_KEY: ${{ secrets.QINIU_SECRET_KEY }}
           QINIU_TEST_BUCKET: ${{ secrets.QINIU_TEST_BUCKET }}
           QINIU_TEST_BUCKET_DOMAIN: ${{ secrets.QINIU_TEST_BUCKET_DOMAIN }}
+        working-directory: '${{ github.workspace }}/build/gtests'
         run: |
-          set -e
-          cd tests
-          make test
-      - name: Code Coverage
-        run: |
-          bash <(curl -s https://codecov.io/bash)
+          ./qiniu_test
   macos:
     name: CI Test On macOS
     runs-on: macos-latest
@@ -39,22 +39,25 @@ jobs:
         uses: actions/checkout@v2
       - name: Install dependencies
         run: |
-          brew install curl cmake make cunit
+          brew install curl cmake make
       - name: Build
         run: |
           set -e
-          OPENSSL_ROOT_DIR="$(brew --prefix)/opt/openssl/" cmake .
-          make
-      - name: Test
+          cmake -DOPENSSL_ROOT_DIR="$(brew --prefix)/opt/openssl/" -S . -B build
+          cmake --build build
+      - name: Unit test
+        working-directory: '${{ github.workspace }}/build/gtests'
+        run: |
+          ./qiniu_test --gtest_filter="UnitTest.*"
+      - name: Integration Test
         env:
           QINIU_ACCESS_KEY: ${{ secrets.QINIU_ACCESS_KEY }}
           QINIU_SECRET_KEY: ${{ secrets.QINIU_SECRET_KEY }}
           QINIU_TEST_BUCKET: ${{ secrets.QINIU_TEST_BUCKET }}
           QINIU_TEST_BUCKET_DOMAIN: ${{ secrets.QINIU_TEST_BUCKET_DOMAIN }}
+        working-directory: '${{ github.workspace }}/build/gtests'
         run: |
-          set -e
-          cd tests
-          make test
+          ./qiniu_test
   windows:
     name: CI Test On Windows
     runs-on: windows-latest
@@ -85,12 +88,23 @@ jobs:
         shell: bash
       - name: Cmake
         uses: lukka/run-cmake@v3
-        env:
-          CURL_ROOT: '${{ github.workspace }}/vcpkg/packages/curl_x64-windows'
-          OPENSSL_ROOT: '${{ github.workspace }}/vcpkg/packages/openssl_x64-windows'
         with:
           cmakeListsOrSettingsJson: CMakeListsTxtBasic
-          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+          cmakeListsTxtPath: '${{ github.workspace }}\CMakeLists.txt'
           useVcpkgToolchainFile: true
-          cmakeAppendedArgs: '-G "NMake Makefiles"'
           buildDirectory: ${{ env.buildDir }}
+      - name: Unit Test
+        run: |
+          ./gtests/qiniu_test.exe --gtest_filter="UnitTest.*"
+        shell: bash
+        working-directory: ${{ env.buildDir }}
+      - name: Integration Test
+        run: |
+          ./gtests/qiniu_test.exe
+        env:
+          QINIU_ACCESS_KEY: ${{ secrets.QINIU_ACCESS_KEY }}
+          QINIU_SECRET_KEY: ${{ secrets.QINIU_SECRET_KEY }}
+          QINIU_TEST_BUCKET: ${{ secrets.QINIU_TEST_BUCKET }}
+          QINIU_TEST_BUCKET_DOMAIN: ${{ secrets.QINIU_TEST_BUCKET_DOMAIN }}
+        shell: bash
+        working-directory: ${{ env.buildDir }}

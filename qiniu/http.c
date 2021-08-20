@@ -11,6 +11,8 @@
 #include "../cJSON/cJSON.h"
 #include <curl/curl.h>
 
+Qiniu_Error Qiniu_Client_config(Qiniu_Client *self);
+
 /*============================================================================*/
 /* type Qiniu_Mutex */
 
@@ -352,6 +354,8 @@ void Qiniu_Client_InitEx(Qiniu_Client *self, Qiniu_Auth auth, size_t bufSize)
 
     self->lowSpeedLimit = 0;
     self->lowSpeedTime = 0;
+    self->timeoutMs = 0;
+    self->connectTimeoutMs = 0;
 }
 
 void Qiniu_Client_InitNoAuth(Qiniu_Client *self, size_t bufSize)
@@ -390,6 +394,16 @@ void Qiniu_Client_SetLowSpeedLimit(Qiniu_Client *self, long lowSpeedLimit, long 
     self->lowSpeedLimit = lowSpeedLimit;
     self->lowSpeedTime = lowSpeedTime;
 } // Qiniu_Client_SetLowSpeedLimit
+
+void Qiniu_Client_SetTimeout(Qiniu_Client *self, long timeoutMs)
+{
+    self->timeoutMs = timeoutMs;
+} // Qiniu_Client_SetTimeout
+
+void Qiniu_Client_SetConnectTimeout(Qiniu_Client *self, long connectTimeoutMs)
+{
+    self->connectTimeoutMs = connectTimeoutMs;
+} // Qiniu_Client_SetConnectTimeout
 
 CURL *Qiniu_Client_reset(Qiniu_Client *self)
 {
@@ -439,17 +453,10 @@ static Qiniu_Error Qiniu_Client_callWithBody(
     char ctxLength[64], userAgent[64];
     Qiniu_Header *headers = NULL;
     CURL *curl = (CURL *)self->curl;
-
-    // Bind the NIC for sending packets.
-    if (self->boundNic != NULL)
+    err = Qiniu_Client_config(self);
+    if (err.code != 200)
     {
-        retCode = curl_easy_setopt(curl, CURLOPT_INTERFACE, self->boundNic);
-        if (retCode == CURLE_INTERFACE_FAILED)
-        {
-            err.code = 9994;
-            err.message = "Can not bind the given NIC";
-            return err;
-        }
+        return err;
     }
 
     curl_easy_setopt(curl, CURLOPT_POST, 1);
@@ -561,6 +568,11 @@ Qiniu_Error Qiniu_Client_Call(Qiniu_Client *self, Qiniu_Json **ret, const char *
     Qiniu_Error err;
     Qiniu_Header *headers = NULL;
     CURL *curl = Qiniu_Client_initcall(self, url);
+    err = Qiniu_Client_config(self);
+    if (err.code != 200)
+    {
+        return err;
+    }
 
     if (self->auth.itbl != NULL)
     {
@@ -584,6 +596,11 @@ Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client *self, const char *url)
     Qiniu_Error err;
     Qiniu_Header *headers = NULL;
     CURL *curl = Qiniu_Client_initcall(self, url);
+    err = Qiniu_Client_config(self);
+    if (err.code != 200)
+    {
+        return err;
+    }
 
     if (self->auth.itbl != NULL)
     {
