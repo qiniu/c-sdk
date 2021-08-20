@@ -36,7 +36,7 @@ Qiniu_Bool Qiniu_Utils_Extract_Bucket(const char *uptoken, const char **pAccessK
 			if (hitCount == 0)
 			{
 				accessKey = strdup(uptoken);
-				*(accessKey + i - 1) = '\0';
+				*(accessKey + i) = '\0';
 			}
 			hitCount++;
 			hitIndex = i;
