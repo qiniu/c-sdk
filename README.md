@@ -1,6 +1,6 @@
 # Qiniu Resource Storage SDK for C/C++
 
-[![Build Status](https://api.travis-ci.org/qiniu/c-sdk.png?branch=master)](https://travis-ci.org/qiniu/c-sdk)
+[![Build Status](https://github.com/qiniu/c-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/qiniu/c-sdk/actions/)
 
 [![Qiniu Logo](http://devtools.qiniu.com/qiniu-logo.jpg)](http://qiniu.com/)
 
@@ -12,15 +12,7 @@
 
 参考代码：[C SDK Examples](https://github.com/qiniu/c-sdk/tree/master/examples)
 
-编译库文件：[Linux & Mac 编译静态或动态库](https://github.com/qiniu/c-sdk/wiki)
-
-## Windows 程序员
-
-预编译SDK： https://github.com/qiniu/c-sdk-for-windows
-
-已测试代码：https://github.com/qiniudemo/c-sdk-demo
-
-编译方法：[Windows下c-sdk编译方法](https://github.com/qiniu/c-sdk/wiki/Windows%E4%B8%8B-C-SDK%E7%9A%84%E7%BC%96%E8%AF%91)
+编译库文件：[Linux / Mac / Windows 编译静态或动态库](https://github.com/qiniu/c-sdk/wiki)
 
 ## 贡献代码
 
