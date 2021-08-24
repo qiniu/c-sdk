@@ -20,7 +20,7 @@ const char *QINIU_RS_HOST = "http://rs.qiniu.com";
 const char *QINIU_RSF_HOST = "http://rsf.qiniu.com";
 const char *QINIU_API_HOST = "http://api.qiniu.com";
 const char *QINIU_FUSION_HOST = "http://fusion.qiniuapi.com";
-const char *QINIU_UC_HOST = "https://uc.qbox.me";
+const char *QINIU_UC_HOST = "http://uc.qbox.me";
 
 //默认华东机房
 const char *QINIU_UP_HOST = "http://upload.qiniup.com";
@@ -79,7 +79,7 @@ void Qiniu_Use_Zone_Huanan(Qiniu_Bool useHttps) {
 }
 
 //设置北美机房域名
-QINIU_DLLAPI extern void Qiniu_Use_Zone_Beimei(Qiniu_Bool useHttps) {
+void Qiniu_Use_Zone_Beimei(Qiniu_Bool useHttps) {
     if (useHttps == Qiniu_True) {
         QINIU_RS_HOST = "https://rs-na0.qbox.me";
         QINIU_RSF_HOST = "https://rsf-na0.qbox.me";
@@ -96,7 +96,7 @@ QINIU_DLLAPI extern void Qiniu_Use_Zone_Beimei(Qiniu_Bool useHttps) {
 }
 
 //设置新加坡机房
-QINIU_DLLAPI extern void Qiniu_Use_Zone_Dongnanya(Qiniu_Bool useHttps) {
+void Qiniu_Use_Zone_Dongnanya(Qiniu_Bool useHttps) {
     if (useHttps == Qiniu_True) {
         QINIU_RS_HOST = "https://rs-as0.qbox.me";
         QINIU_RSF_HOST = "https://rsf-as0.qbox.me";

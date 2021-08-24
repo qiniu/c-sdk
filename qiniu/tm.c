@@ -70,7 +70,7 @@ QINIU_DLLAPI extern Qiniu_Uint64 Qiniu_Tm_LocalTime(void)
 		MD5_Init(&md5Ctx);
 
 		{
-			size_t unused;
+			size_t unused = 1;
 			size_t buffLen = (4 << 20); //read 4M each time
 			char *buff = (char *)malloc(sizeof(char) * buffLen);
 			size_t n = 0;

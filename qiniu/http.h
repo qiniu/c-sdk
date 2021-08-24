@@ -3,7 +3,7 @@
  Name        : http.h
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 
@@ -117,29 +117,37 @@ extern "C"
 		// the transfer speed should be below the logSpeedLimit for this SDK to consider it
 		// too slow and abort.
 		long lowSpeedTime;
+
+		// Millisecond timeout for the entire request.
+		long timeoutMs;
+
+		// Millisecond timeout for the connection phase.
+		long connectTimeoutMs;
 	} Qiniu_Client;
 
 	QINIU_DLLAPI extern void Qiniu_Client_InitEx(Qiniu_Client *self, Qiniu_Auth auth, size_t bufSize);
 	QINIU_DLLAPI extern void Qiniu_Client_Cleanup(Qiniu_Client *self);
 	QINIU_DLLAPI extern void Qiniu_Client_BindNic(Qiniu_Client *self, const char *nic);
 	QINIU_DLLAPI extern void Qiniu_Client_SetLowSpeedLimit(Qiniu_Client *self, long lowSpeedLimit, long lowSpeedTime);
+	QINIU_DLLAPI extern void Qiniu_Client_SetTimeout(Qiniu_Client *self, long timeoutMs);
+	QINIU_DLLAPI extern void Qiniu_Client_SetConnectTimeout(Qiniu_Client *self, long connectTimeoutMs);
 
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_Call(Qiniu_Client *self, Qiniu_Json **ret, const char *url);
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client *self, const char *url);
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithBinary(
-		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
-		Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType);
+	    Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+	    Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType);
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithBuffer(
-		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
-		const char *body, size_t bodyLen, const char *mimeType);
+	    Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+	    const char *body, size_t bodyLen, const char *mimeType);
 
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithBuffer2(
-		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
-		const char *body, size_t bodyLen, const char *mimeType);
+	    Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+	    const char *body, size_t bodyLen, const char *mimeType);
 
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithMethod(
-		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
-		Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5);
+	    Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+	    Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5);
 	/*============================================================================*/
 	/* func Qiniu_Client_InitNoAuth/InitMacAuth  */
 

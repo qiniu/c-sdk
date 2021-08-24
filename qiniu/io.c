@@ -71,22 +71,17 @@ const char *Get_Qiniu_UpHost(Qiniu_Io_PutExtra *extra)
     return upHost;
 }
 
-static Qiniu_Error Qiniu_Io_call(
-    Qiniu_Client *self, Qiniu_Io_PutRet *ret, struct curl_httppost *formpost,
-    Qiniu_Io_PutExtra *extra)
+Qiniu_Error Qiniu_Client_config(Qiniu_Client *self)
 {
     int retCode = 0;
-    Qiniu_Error err;
-    struct curl_slist *headers = NULL;
-    const char *upHost = NULL;
-
-    CURL *curl = Qiniu_Client_reset(self);
+    Qiniu_Error err = Qiniu_OK;
+    CURL *curl = (CURL *)self->curl;
 
     // Bind the NIC for sending packets.
     if (self->boundNic != NULL)
     {
         retCode = curl_easy_setopt(curl, CURLOPT_INTERFACE, self->boundNic);
-        if (retCode == CURLE_INTERFACE_FAILED)
+        if (retCode != CURLE_OK)
         {
             err.code = 9994;
             err.message = "Can not bind the given NIC";
@@ -98,19 +93,62 @@ static Qiniu_Error Qiniu_Io_call(
     if (self->lowSpeedLimit > 0 && self->lowSpeedTime > 0)
     {
         retCode = curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, self->lowSpeedLimit);
-        if (retCode == CURLE_INTERFACE_FAILED)
+        if (retCode != CURLE_OK)
         {
             err.code = 9994;
             err.message = "Can not specify the low speed limit";
             return err;
         }
         retCode = curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, self->lowSpeedTime);
-        if (retCode == CURLE_INTERFACE_FAILED)
+        if (retCode != CURLE_OK)
         {
             err.code = 9994;
             err.message = "Can not specify the low speed time";
             return err;
         }
+    }
+
+    // Specify the timeout
+    if (self->timeoutMs > 0)
+    {
+        retCode = curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, self->timeoutMs);
+        if (retCode != CURLE_OK)
+        {
+            err.code = 9994;
+            err.message = "Can not specify the timeout";
+            return err;
+        }
+    }
+
+    // Specify the connect timeout
+    if (self->connectTimeoutMs > 0)
+    {
+        retCode = curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, self->connectTimeoutMs);
+        if (retCode != CURLE_OK)
+        {
+            err.code = 9994;
+            err.message = "Can not specify the connect timeout";
+            return err;
+        }
+    }
+
+    return err;
+}
+
+static Qiniu_Error Qiniu_Io_call(
+    Qiniu_Client *self, Qiniu_Io_PutRet *ret, struct curl_httppost *formpost,
+    Qiniu_Io_PutExtra *extra)
+{
+    int retCode = 0;
+    Qiniu_Error err;
+    struct curl_slist *headers = NULL;
+    const char *upHost = NULL;
+
+    CURL *curl = Qiniu_Client_reset(self);
+    err = Qiniu_Client_config(self);
+    if (err.code != 200)
+    {
+        return err;
     }
 
     headers = curl_slist_append(NULL, "Expect:");
@@ -258,17 +296,10 @@ static Qiniu_Error Qiniu_Io_call_with_callback(
     struct curl_slist *headers = NULL;
 
     CURL *curl = Qiniu_Client_reset(self);
-
-    // Bind the NIC for sending packets.
-    if (self->boundNic != NULL)
+    err = Qiniu_Client_config(self);
+    if (err.code != 200)
     {
-        retCode = curl_easy_setopt(curl, CURLOPT_INTERFACE, self->boundNic);
-        if (retCode == CURLE_INTERFACE_FAILED)
-        {
-            err.code = 9994;
-            err.message = "Can not bind the given NIC";
-            return err;
-        }
+        return err;
     }
 
     headers = curl_slist_append(NULL, "Expect:");
@@ -277,25 +308,6 @@ static Qiniu_Error Qiniu_Io_call_with_callback(
     curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_READFUNCTION, rdr);
-
-    // Specify the low speed limit and time
-    if (self->lowSpeedLimit > 0 && self->lowSpeedTime > 0)
-    {
-        retCode = curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, self->lowSpeedLimit);
-        if (retCode == CURLE_INTERFACE_FAILED)
-        {
-            err.code = 9994;
-            err.message = "Can not specify the low speed limit";
-            return err;
-        }
-        retCode = curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, self->lowSpeedTime);
-        if (retCode == CURLE_INTERFACE_FAILED)
-        {
-            err.code = 9994;
-            err.message = "Can not specify the low speed time";
-            return err;
-        }
-    }
 
     err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
     if (err.code == 200 && ret != NULL)

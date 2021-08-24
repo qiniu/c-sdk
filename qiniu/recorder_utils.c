@@ -24,7 +24,7 @@ Qiniu_Bool Qiniu_Utils_Extract_Bucket(const char *uptoken, const char **pAccessK
 	//uptoken=<ak>:<signedData>:<policyDataBase64>
 	//extract put policy str from uptoken
 	//step1 decode base64
-	const char *accessKey, *bucket;
+	char *accessKey, *bucket;
 	int hitCount = 0;
 	int hitIndex = -1;
 	int len = strlen(uptoken);
@@ -35,7 +35,8 @@ Qiniu_Bool Qiniu_Utils_Extract_Bucket(const char *uptoken, const char **pAccessK
 		{
 			if (hitCount == 0)
 			{
-				accessKey = strndup(uptoken, i - 1);
+				accessKey = strdup(uptoken);
+				*(accessKey + i) = '\0';
 			}
 			hitCount++;
 			hitIndex = i;
@@ -65,7 +66,8 @@ Qiniu_Bool Qiniu_Utils_Extract_Bucket(const char *uptoken, const char **pAccessK
 		}
 	}
 
-	bucket = strndup(scope, hitIndex);
+	bucket = strdup(scope);
+	*(bucket + hitIndex) = '\0';
 	cJSON_Delete(policy);
 	Qiniu_Free(policyData);
 
@@ -80,6 +82,15 @@ Qiniu_Bool Qiniu_Utils_Extract_Bucket(const char *uptoken, const char **pAccessK
 	return Qiniu_True;
 }
 
+static char *_realpath(const char *path, char *resolved_path)
+{
+#ifdef _WIN32
+	return _fullpath(resolved_path, path, MAX_PATH);
+#else
+	return realpath(path, resolved_path);
+#endif
+}
+
 Qiniu_Error Qiniu_Utils_Generate_RecorderKey(const char *uptoken, const char *version, const char *key, const char *localFile, const char **pRecorderKey)
 {
 	char fullPath[PATH_MAX];
@@ -91,7 +102,7 @@ Qiniu_Error Qiniu_Utils_Generate_RecorderKey(const char *uptoken, const char *ve
 		err.message = "parse uptoken failed";
 		return err;
 	}
-	if (realpath(localFile, fullPath) == NULL)
+	if (_realpath(localFile, fullPath) == NULL)
 	{
 		err.code = -errno;
 		err.message = "realpath() error";
@@ -121,13 +132,13 @@ Qiniu_Error Qiniu_Utils_Generate_RecorderKey(const char *uptoken, const char *ve
 Qiniu_Error Qiniu_Utils_Find_Medium(Qiniu_Recorder *recorder, const char *recorderKey, Qiniu_Int64 expectedVersion, struct Qiniu_Record_Medium *medium, Qiniu_FileInfo *fileInfo, Qiniu_Bool *ok)
 {
 	Qiniu_Error err;
-	const size_t BUFFER_SIZE = 1 << 22;
+#define BUFFER_SIZE (1 << 22)
 	size_t haveRead;
 	char buf[BUFFER_SIZE];
 	err = recorder->open(recorder, recorderKey, "rb+", medium);
 	if (err.code != 200)
 	{
-		if (err.code = -ENOENT)
+		if (err.code == -ENOENT)
 		{
 			if (ok != NULL)
 			{
@@ -172,6 +183,7 @@ Qiniu_Error Qiniu_Utils_Find_Medium(Qiniu_Recorder *recorder, const char *record
 	}
 
 	return Qiniu_OK;
+#undef BUFFER_SIZE
 }
 
 Qiniu_Error Qiniu_Utils_New_Medium(Qiniu_Recorder *recorder, const char *recorderKey, Qiniu_Int64 version, struct Qiniu_Record_Medium *medium, Qiniu_FileInfo *fileInfo)

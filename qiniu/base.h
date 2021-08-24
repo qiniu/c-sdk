@@ -29,6 +29,7 @@
 #endif
 
 typedef _W64 int ssize_t;
+#define PATH_MAX MAX_PATH
 
 #endif
 
