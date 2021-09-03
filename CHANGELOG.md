@@ -1,8 +1,12 @@
 ## CHANGE LOG
 
+### v7.1.1
+
+- 修复对于 Windows 的支持
+
 ### v7.1.0
 - 新增 Qiniu_Multipart_PutFile API， 支持 [分片上传 V2](https://developer.qiniu.com/kodo/6364/multipartupload-interface)
-- 分片上传 新增 断点续传 能力，可以在 Qiniu_Multipart_PutExtra 或 Qiniu_Rio_PutExtra 指定  record 
+- 分片上传 新增 断点续传 能力，可以在 Qiniu_Multipart_PutExtra 或 Qiniu_Rio_PutExtra 指定  record
 - 修复 openssl 已知兼容性问题
 
 ### v7.0.0
@@ -14,17 +18,17 @@
 - **CDN**新增功能：
 
   - `RefreshUrls`
-  
+
   - `RefreshDirs`
-  
+
   - `PrefetchUrls`
-  
+
   - `GetFluxData`
-  
+
   - `GetBandwidthData`
-  
+
   - `GetLogList`
-  
+
 - **io**新增PutStream
 
 - 新增put_strem和cdn示例代码
@@ -35,7 +39,7 @@
 
 ### v6.2.3
 
-- 调整上传host 
+- 调整上传host
 
 ### v6.2.2
 
