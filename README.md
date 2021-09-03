@@ -32,4 +32,6 @@ Copyright (c) 2012-2014 qiniu.com
 
 * [www.opensource.org/licenses/MIT](http://www.opensource.org/licenses/MIT)
 
-* -
+* 
+
+debug-
