@@ -131,11 +131,10 @@ Qiniu_Error Qiniu_Utils_Generate_RecorderKey(const char *uptoken, const char *ve
 
 Qiniu_Error Qiniu_Utils_Find_Medium(Qiniu_Recorder *recorder, const char *recorderKey, Qiniu_Int64 expectedVersion, struct Qiniu_Record_Medium *medium, Qiniu_FileInfo *fileInfo, Qiniu_Bool *ok)
 {
-	Qiniu_Error err;
-#define BUFFER_SIZE (1 << 22)
+#define BUFFER_SIZE (1 << 12)
 	size_t haveRead;
 	char buf[BUFFER_SIZE];
-	err = recorder->open(recorder, recorderKey, "rb+", medium);
+	Qiniu_Error err = recorder->open(recorder, recorderKey, "rb+", medium);
 	if (err.code != 200)
 	{
 		if (err.code == -ENOENT)
@@ -188,8 +187,7 @@ Qiniu_Error Qiniu_Utils_Find_Medium(Qiniu_Recorder *recorder, const char *record
 
 Qiniu_Error Qiniu_Utils_New_Medium(Qiniu_Recorder *recorder, const char *recorderKey, Qiniu_Int64 version, struct Qiniu_Record_Medium *medium, Qiniu_FileInfo *fileInfo)
 {
-	Qiniu_Error err;
-	err = recorder->open(recorder, recorderKey, "wb", medium);
+	Qiniu_Error err = recorder->open(recorder, recorderKey, "wb", medium);
 	if (err.code != 200)
 	{
 		return err;

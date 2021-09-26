@@ -105,14 +105,13 @@ const char *_Qiniu_FileSystem_Recorder_Make_Path(Qiniu_Recorder *recorder, const
 
 Qiniu_Error _Qiniu_FileSystem_RecordMedium_Read_Entry(const struct Qiniu_Record_Medium *medium, char *dest, size_t toRead, size_t *haveRead)
 {
-    Qiniu_Error err;
     struct _FileSystem_Recorder_Data *data = (struct _FileSystem_Recorder_Data *)medium->data;
     size_t destOffset = 0, haveReadTotal = 0, i;
     for (;;)
     {
         if (data->buf == NULL || data->bufOffset >= data->bufSize)
         {
-            err = _Qiniu_FileSystem_RecordMedium_fulfill(medium);
+            Qiniu_Error err = _Qiniu_FileSystem_RecordMedium_fulfill(medium);
             if (err.code != 200)
             {
                 return err;
@@ -157,14 +156,13 @@ DONE:
 
 Qiniu_Error _Qiniu_FileSystem_RecordMedium_Has_Next_Entry(const struct Qiniu_Record_Medium *medium, Qiniu_Bool *has)
 {
-    Qiniu_Error err;
     struct _FileSystem_Recorder_Data *data = (struct _FileSystem_Recorder_Data *)medium->data;
     size_t i;
     Qiniu_Bool hasEntry = Qiniu_True;
 
     if (data->buf == NULL || data->bufOffset >= data->bufSize)
     {
-        err = _Qiniu_FileSystem_RecordMedium_fulfill(medium);
+        Qiniu_Error err = _Qiniu_FileSystem_RecordMedium_fulfill(medium);
         if (err.code != 200)
         {
             return err;
