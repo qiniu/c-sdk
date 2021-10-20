@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "test.h"
+#include "qiniu/base.h"
 #include "qiniu/multipart_upload.h"
 #include "qiniu/tm.h"
 #include "qiniu/rs.h"
@@ -7,6 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <curl/curl.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 static const char *putMemoryData_multipart(const char *bucket, const char *key, const char *mimeType, const char *memData, int dataLen, Qiniu_Mac *mac)
 {
@@ -52,13 +57,30 @@ static const char *putFile_multipart(const char *bucket, const char *key, const 
 	Qiniu_Multipart_PutExtra putExtra;
 	Qiniu_MultipartUpload_Result putRet;
 	Qiniu_RS_PutPolicy putPolicy;
+	Qiniu_Recorder recorder;
 	Qiniu_Zero(client);
 	Qiniu_Zero(putPolicy);
 	Qiniu_Zero(putRet);
 	Qiniu_Zero(putExtra);
+	Qiniu_Zero(recorder);
 	putPolicy.scope = bucket;
 	char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, mac);
 
+#ifdef _WIN32
+	char tempDirPath[MAX_PATH], dirPathSuffix[20];
+	GetTempPath(MAX_PATH, tempDirPath);
+	snprintf(dirPathSuffix, 20, "%d\\", rand());
+	strncat(tempDirPath, dirPathSuffix, MAX_PATH);
+	EXPECT_TRUE(CreateDirectoryA(tempDirPath, NULL));
+#else
+	char tempDirPath[PATH_MAX];
+	snprintf(tempDirPath, PATH_MAX, "/tmp/%d/", rand());
+	EXPECT_EQ(mkdir(tempDirPath, 0700), 0);
+#endif
+
+	err = Qiniu_FileSystem_Recorder_New(tempDirPath, &recorder);
+	EXPECT_EQ(err.code, 200);
+	putExtra.recorder = &recorder;
 	putExtra.mimeType = mimeType;
 	putExtra.enableContentMd5 = 1;
 	putExtra.partSize = partSize;
@@ -74,6 +96,7 @@ static const char *putFile_multipart(const char *bucket, const char *key, const 
 	Qiniu_Log_Debug("%s", Qiniu_Buffer_CStr(&client.respHeader));
 	Qiniu_Log_Debug("hash: %s , key:%s", putRet.hash, putRet.key);
 
+	recorder.free(&recorder);
 	Qiniu_Client_Cleanup(&client);
 	Qiniu_Free(uptoken);
 	return putRet.key;

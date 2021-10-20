@@ -1,5 +1,12 @@
 ## CHANGE LOG
 
+## v7.1.2（2021-09-27）
+- 修改申请栈缓冲区大小为 4 KB，解决 Windows 系统下申请缓冲区大小超过编译器默认限制问题
+- 做了些代码规范性修改
+
+### v7.1.1
+- 修复 Windows 系统下编译问题，同时使用 cmake 替代 make 作为编译工具，实现同一条命令跨平台编译，详细编译流程见 [Wiki](https://github.com/qiniu/c-sdk/wiki)
+
 ### v7.1.0
 - 新增 Qiniu_Multipart_PutFile API， 支持 [分片上传 V2](https://developer.qiniu.com/kodo/6364/multipartupload-interface)
 - 分片上传 新增 断点续传 能力，可以在 Qiniu_Multipart_PutExtra 或 Qiniu_Rio_PutExtra 指定  record 
