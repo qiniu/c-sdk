@@ -67,11 +67,15 @@ static const char *putFile_multipart(const char *bucket, const char *key, const 
 	char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, mac);
 
 #ifdef _WIN32
-	char tempDirPath[MAX_PATH];
+	char tempDirPath[MAX_PATH], dirPathSuffix[20];
 	GetTempPath(MAX_PATH, tempDirPath);
+	snprintf(dirPathSuffix, 20, "%d\\", rand());
+	strncat(tempDirPath, dirPathSuffix, MAX_PATH);
+	EXPECT_TRUE(CreateDirectoryA(tempDirPath, NULL));
 #else
 	char tempDirPath[PATH_MAX];
-	strncpy(tempDirPath, "/tmp", PATH_MAX);
+	snprintf(tempDirPath, PATH_MAX, "/tmp/%d/", rand());
+	EXPECT_EQ(mkdir(tempDirPath, 0700), 0);
 #endif
 
 	err = Qiniu_FileSystem_Recorder_New(tempDirPath, &recorder);
