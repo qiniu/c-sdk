@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
     char *secretKey = getenv("QINIU_SECRET_KEY");
     char *bucket = getenv("QINIU_TEST_BUCKET");
     char *key = "qiniu.mp4";
-    char *localFile = "/Users/jemy/Documents/qiniu.mp4";
+    char *localFile = "/tmp/qiniu.mp4";
 
     Qiniu_Mac mac;
     mac.accessKey = accessKey;
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
     //设置机房域名
     //Qiniu_Use_Zone_Beimei(Qiniu_False);
     //Qiniu_Use_Zone_Huabei(Qiniu_True);
-    Qiniu_Use_Zone_Huadong(Qiniu_True);
+    Qiniu_Use_Zone_Huadong(Qiniu_False);
     //Qiniu_Use_Zone_Huanan(Qiniu_True);
 
     //put extra
@@ -44,6 +44,19 @@ int main(int argc, char **argv) {
     // const char* ips[1] = {"124.160.115.130"};
     // putExtra.upIps = ips;
     // putExtra.ipCount = 1;
+
+    Qiniu_Io_PutExtraParam metaParam_1;
+    Qiniu_Zero(metaParam_1);
+    Qiniu_Io_PutExtraParam metaParam_2;
+    Qiniu_Zero(metaParam_2);
+
+    putExtra.params = &metaParam_1;
+    metaParam_1.key = "x-qn-meta-Meta-Key-1";
+    metaParam_1.value = "x-qn-meta-Meta-Value-1";
+    metaParam_1.next = &metaParam_2;
+    metaParam_2.key = "x-qn-meta-Meta-Key-2";
+    metaParam_2.value = "x-qn-meta-Meta-Value-2";
+    metaParam_2.next = NULL;
 
     //init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
