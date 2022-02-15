@@ -52,21 +52,11 @@ jobs:
       - name: Install CMake
         uses: lukka/get-cmake@latest
       - name: Install vcpkg
-        uses: lukka/run-vcpkg@main
+        uses: lukka/run-vcpkg@v10.1
         with:
-          setupOnly: true
           vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-          vcpkgArguments: 'sqlite3'
-          vcpkgTriplet: 'x64-windows'
-          vcpkgGitCommitId: '30124253eecff36bc90f73341edbfb4f845e2a1e'
-      - name: Install curl
-        run: |
-          $VCPKG_ROOT/vcpkg install curl --triplet x64-windows
-        shell: bash
-      - name: Install openssl
-        run: |
-          $VCPKG_ROOT/vcpkg install openssl --triplet x64-windows
-        shell: bash
+          vcpkgGitCommitId: '5568f110b509a9fd90711978a7cb76bae75bb092'
+          vcpkgJsonGlob: 'vcpkg.json'
       - name: Cmake
         uses: lukka/run-cmake@v3
         with:

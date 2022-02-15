@@ -1,0 +1,8 @@
+{
+    "name": "qiniu-c-sdk",
+    "version-string": "7.1.3",
+    "dependencies": [
+        "curl",
+        "openssl"
+    ]
+}
