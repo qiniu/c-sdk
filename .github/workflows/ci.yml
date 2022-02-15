@@ -1,8 +1,7 @@
 name: C SDK CI
 on:
   push:
-    paths-ignore:
-      - '**.md'
+  pull_request:
 jobs:
   linux:
     name: CI Test On Linux
