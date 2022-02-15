@@ -22,15 +22,6 @@ jobs:
         working-directory: '${{ github.workspace }}/build/gtests'
         run: |
           ./qiniu_test --gtest_filter="UnitTest.*"
-      - name: Integration Test
-        env:
-          QINIU_ACCESS_KEY: ${{ secrets.QINIU_ACCESS_KEY }}
-          QINIU_SECRET_KEY: ${{ secrets.QINIU_SECRET_KEY }}
-          QINIU_TEST_BUCKET: ${{ secrets.QINIU_TEST_BUCKET }}
-          QINIU_TEST_BUCKET_DOMAIN: ${{ secrets.QINIU_TEST_BUCKET_DOMAIN }}
-        working-directory: '${{ github.workspace }}/build/gtests'
-        run: |
-          ./qiniu_test
   macos:
     name: CI Test On macOS
     runs-on: macos-latest
@@ -49,15 +40,6 @@ jobs:
         working-directory: '${{ github.workspace }}/build/gtests'
         run: |
           ./qiniu_test --gtest_filter="UnitTest.*"
-      - name: Integration Test
-        env:
-          QINIU_ACCESS_KEY: ${{ secrets.QINIU_ACCESS_KEY }}
-          QINIU_SECRET_KEY: ${{ secrets.QINIU_SECRET_KEY }}
-          QINIU_TEST_BUCKET: ${{ secrets.QINIU_TEST_BUCKET }}
-          QINIU_TEST_BUCKET_DOMAIN: ${{ secrets.QINIU_TEST_BUCKET_DOMAIN }}
-        working-directory: '${{ github.workspace }}/build/gtests'
-        run: |
-          ./qiniu_test
   windows:
     name: CI Test On Windows
     runs-on: windows-latest
@@ -96,15 +78,5 @@ jobs:
       - name: Unit Test
         run: |
           ./gtests/qiniu_test.exe --gtest_filter="UnitTest.*"
-        shell: bash
-        working-directory: ${{ env.buildDir }}
-      - name: Integration Test
-        run: |
-          ./gtests/qiniu_test.exe
-        env:
-          QINIU_ACCESS_KEY: ${{ secrets.QINIU_ACCESS_KEY }}
-          QINIU_SECRET_KEY: ${{ secrets.QINIU_SECRET_KEY }}
-          QINIU_TEST_BUCKET: ${{ secrets.QINIU_TEST_BUCKET }}
-          QINIU_TEST_BUCKET_DOMAIN: ${{ secrets.QINIU_TEST_BUCKET_DOMAIN }}
         shell: bash
         working-directory: ${{ env.buildDir }}
