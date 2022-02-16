@@ -3,7 +3,7 @@
  Name        : mac_auth.c
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 
@@ -75,7 +75,8 @@ static Qiniu_Error Qiniu_Mac_Auth(
 	HMAC_Init_ex(&ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
 	HMAC_Update(&ctx, path, strlen(path));
 	HMAC_Update(&ctx, "\n", 1);
-	if (addlen > 0) {
+	if (addlen > 0)
+	{
 		HMAC_Update(&ctx, addition, addlen);
 	}
 	HMAC_Final(&ctx, digest, &digest_len);
@@ -84,15 +85,16 @@ static Qiniu_Error Qiniu_Mac_Auth(
 #endif
 
 #if OPENSSL_VERSION_NUMBER > 0x10100000
-	HMAC_CTX *ctx=HMAC_CTX_new();
-    HMAC_Init_ex(ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
-    HMAC_Update(ctx, path, strlen(path));
+	HMAC_CTX *ctx = HMAC_CTX_new();
+	HMAC_Init_ex(ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
+	HMAC_Update(ctx, path, strlen(path));
 	HMAC_Update(ctx, "\n", 1);
-	if (addlen > 0) {
+	if (addlen > 0)
+	{
 		HMAC_Update(ctx, addition, addlen);
 	}
-    HMAC_Final(ctx, digest, &digest_len);
-    HMAC_CTX_free(ctx);
+       HMAC_Final(ctx, digest, &digest_len);
+	HMAC_CTX_free(ctx);
 #endif
 	
 
@@ -107,23 +109,25 @@ static Qiniu_Error Qiniu_Mac_Auth(
 	return Qiniu_OK;
 }
 
-static void Qiniu_Mac_Release(void* self)
+static void Qiniu_Mac_Release(void *self)
 {
-	if (self) {
+	if (self)
+	{
 		free(self);
 	}
 }
 
-static Qiniu_Mac* Qiniu_Mac_Clone(Qiniu_Mac* mac)
+static Qiniu_Mac *Qiniu_Mac_Clone(Qiniu_Mac *mac)
 {
-	Qiniu_Mac* p;
-	char* accessKey;
+	Qiniu_Mac *p;
+	char *accessKey;
 	size_t n1, n2;
-	if (mac) {
+	if (mac)
+	{
 		n1 = strlen(mac->accessKey) + 1;
 		n2 = strlen(mac->secretKey) + 1;
-		p = (Qiniu_Mac*)malloc(sizeof(Qiniu_Mac) + n1 + n2);
-		accessKey = (char*)(p + 1);
+		p = (Qiniu_Mac *)malloc(sizeof(Qiniu_Mac) + n1 + n2);
+		accessKey = (char *)(p + 1);
 		memcpy(accessKey, mac->accessKey, n1);
 		memcpy(accessKey + n1, mac->secretKey, n2);
 		p->accessKey = accessKey;
@@ -135,16 +139,15 @@ static Qiniu_Mac* Qiniu_Mac_Clone(Qiniu_Mac* mac)
 
 static Qiniu_Auth_Itbl Qiniu_MacAuth_Itbl = {
 	Qiniu_Mac_Auth,
-	Qiniu_Mac_Release
-};
+	Qiniu_Mac_Release};
 
-Qiniu_Auth Qiniu_MacAuth(Qiniu_Mac* mac)
+Qiniu_Auth Qiniu_MacAuth(Qiniu_Mac *mac)
 {
 	Qiniu_Auth auth = {Qiniu_Mac_Clone(mac), &Qiniu_MacAuth_Itbl};
 	return auth;
 };
 
-void Qiniu_Client_InitMacAuth(Qiniu_Client* self, size_t bufSize, Qiniu_Mac* mac)
+void Qiniu_Client_InitMacAuth(Qiniu_Client *self, size_t bufSize, Qiniu_Mac *mac)
 {
 	Qiniu_Auth auth = {Qiniu_Mac_Clone(mac), &Qiniu_MacAuth_Itbl};
 	Qiniu_Client_InitEx(self, auth, bufSize);
@@ -153,18 +156,21 @@ void Qiniu_Client_InitMacAuth(Qiniu_Client* self, size_t bufSize, Qiniu_Mac* mac
 /*============================================================================*/
 /* func Qiniu_Mac_Sign*/
 
-char* Qiniu_Mac_Sign(Qiniu_Mac* self, char* data)
+char *Qiniu_Mac_Sign(Qiniu_Mac *self, char *data)
 {
-	char* sign;
-	char* encoded_digest;
+	char *sign;
+	char *encoded_digest;
 	char digest[EVP_MAX_MD_SIZE + 1];
 	unsigned int digest_len = sizeof(digest);
-	
+
 	Qiniu_Mac mac;
 
-	if (self) {
+	if (self)
+	{
 		mac = *self;
-	} else {
+	}
+	else
+	{
 		mac.accessKey = QINIU_ACCESS_KEY;
 		mac.secretKey = QINIU_SECRET_KEY;
 	}
@@ -178,11 +184,11 @@ char* Qiniu_Mac_Sign(Qiniu_Mac* self, char* data)
 	HMAC_CTX_cleanup(&ctx);
 #endif
 #if OPENSSL_VERSION_NUMBER > 0x10100000
-	HMAC_CTX *ctx=HMAC_CTX_new();
-    HMAC_Init_ex(ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
-    HMAC_Update(ctx, data, strlen(data));
-    HMAC_Final(ctx, digest, &digest_len);
-    HMAC_CTX_free(ctx);
+	HMAC_CTX *ctx = HMAC_CTX_new();
+	HMAC_Init_ex(ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
+	HMAC_Update(ctx, data, strlen(data));
+	HMAC_Final(ctx, digest, &digest_len);
+	HMAC_CTX_free(ctx);
 #endif
 	encoded_digest = Qiniu_Memory_Encode(digest, digest_len);
 	sign = Qiniu_String_Concat3(mac.accessKey, ":", encoded_digest);
@@ -194,11 +200,11 @@ char* Qiniu_Mac_Sign(Qiniu_Mac* self, char* data)
 /*============================================================================*/
 /* func Qiniu_Mac_SignToken */
 
-char* Qiniu_Mac_SignToken(Qiniu_Mac* self, char* policy_str)
+char *Qiniu_Mac_SignToken(Qiniu_Mac *self, char *policy_str)
 {
-	char* data;
-	char* sign;
-	char* token;
+	char *data;
+	char *sign;
+	char *token;
 
 	data = Qiniu_String_Encode(policy_str);
 	sign = Qiniu_Mac_Sign(self, data);
@@ -211,5 +217,3 @@ char* Qiniu_Mac_SignToken(Qiniu_Mac* self, char* policy_str)
 }
 
 /*============================================================================*/
-
-
