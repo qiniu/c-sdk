@@ -84,6 +84,7 @@ extern "C"
 	{
 		Qiniu_Error (*Auth)(void *self, Qiniu_Header **header, const char *url, const char *addition, size_t addlen);
 		void (*Release)(void *self);
+		Qiniu_Error (*AuthV2)(void *self, const char *method, Qiniu_Header **header, const char *contentType, const char *url, const char *addition, size_t addlen);
 	} Qiniu_Auth_Itbl;
 
 	typedef struct _Qiniu_Auth

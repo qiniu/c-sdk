@@ -43,66 +43,186 @@ void Qiniu_Servend_Cleanup()
 /*============================================================================*/
 /* type Qiniu_Mac */
 
-static Qiniu_Error Qiniu_Mac_Auth(
-	void* self, Qiniu_Header** header, const char* url, const char* addition, size_t addlen)
+static void Qiniu_Mac_Hmac_inner(Qiniu_Mac *mac, const char *items[], size_t items_len, const char *addition, size_t addlen, char *digest, unsigned int *digest_len)
 {
-	Qiniu_Error err;
-	char* auth;
-	char* enc_digest;
-	char digest[EVP_MAX_MD_SIZE + 1];
-	unsigned int digest_len = sizeof(digest);
-	Qiniu_Mac mac;
-
-	char const* path = strstr(url, "://");
-	if (path != NULL) {
-		path = strchr(path + 3, '/');
-	}
-	if (path == NULL) {
-		err.code = 400;
-		err.message = "invalid url";
-		return err;
-	}
-
-	if (self) {
-		mac = *(Qiniu_Mac*)self;
-	} else {
-		mac.accessKey = QINIU_ACCESS_KEY;
-		mac.secretKey = QINIU_SECRET_KEY;
-	}
 #if OPENSSL_VERSION_NUMBER < 0x10100000
 	HMAC_CTX ctx;
 	HMAC_CTX_init(&ctx);
-	HMAC_Init_ex(&ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
-	HMAC_Update(&ctx, path, strlen(path));
+	HMAC_Init_ex(&ctx, mac->secretKey, strlen(mac->secretKey), EVP_sha1(), NULL);
+	for (size_t i = 0; i < items_len; i++)
+	{
+		HMAC_Update(&ctx, items[i], strlen(items[i]));
+	}
 	HMAC_Update(&ctx, "\n", 1);
 	if (addlen > 0)
 	{
 		HMAC_Update(&ctx, addition, addlen);
 	}
-	HMAC_Final(&ctx, digest, &digest_len);
+	HMAC_Final(&ctx, digest, digest_len);
 	HMAC_cleanup(&ctx);
 
 #endif
 
 #if OPENSSL_VERSION_NUMBER > 0x10100000
 	HMAC_CTX *ctx = HMAC_CTX_new();
-	HMAC_Init_ex(ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
-	HMAC_Update(ctx, path, strlen(path));
+	HMAC_Init_ex(ctx, mac->secretKey, strlen(mac->secretKey), EVP_sha1(), NULL);
+	for (size_t i = 0; i < items_len; i++)
+	{
+		HMAC_Update(ctx, items[i], strlen(items[i]));
+	}
 	HMAC_Update(ctx, "\n", 1);
 	if (addlen > 0)
 	{
 		HMAC_Update(ctx, addition, addlen);
 	}
-       HMAC_Final(ctx, digest, &digest_len);
+	HMAC_Final(ctx, digest, digest_len);
 	HMAC_CTX_free(ctx);
 #endif
-	
+}
 
+static void Qiniu_Mac_Hmac(Qiniu_Mac *mac, const char *path, const char *addition, size_t addlen, char *digest, unsigned int *digest_len)
+{
+	const char *items[] = {path};
+	Qiniu_Mac_Hmac_inner(mac, items, sizeof(items) / sizeof(const char *), addition, addlen, digest, digest_len);
+}
+
+static void Qiniu_Mac_HmacV2(Qiniu_Mac *mac, const char *method, const char *host, const char *path, const char *contentType, const char *addition, size_t addlen, char *digest, unsigned int *digest_len)
+{
+	const char *items[] = {method, " ", path, "\nHost: ", host, "\nContent-Type: ", contentType, "\n"};
+	Qiniu_Mac_Hmac_inner(mac, items, sizeof(items) / sizeof(const char *), addition, addlen, digest, digest_len);
+}
+
+static Qiniu_Error Qiniu_Mac_Parse_Url(const char *url, char const **pHost, size_t *pHostLen, char const **pPath, size_t *pPathLen)
+{
+	Qiniu_Error err;
+	char const *path = strstr(url, "://");
+	char const *host = NULL;
+	size_t hostLen = 0;
+
+	if (path != NULL)
+	{
+		host = path + 3;
+		path = strchr(path + 3, '/');
+	}
+	if (path == NULL)
+	{
+		err.code = 400;
+		err.message = "invalid url";
+		return err;
+	}
+	hostLen = path - host;
+
+	if (pHost != NULL)
+	{
+		*pHost = host;
+	}
+	if (pHostLen != NULL)
+	{
+		*pHostLen = hostLen;
+	}
+	if (pPath != NULL)
+	{
+		*pPath = path;
+	}
+	if (pPathLen != NULL)
+	{
+		*pPathLen = strlen(path);
+	}
+
+	return Qiniu_OK;
+}
+
+static Qiniu_Error Qiniu_Mac_Auth(
+	void *self, Qiniu_Header **header, const char *url, const char *addition, size_t addlen)
+{
+	Qiniu_Error err;
+	char *auth;
+	char *enc_digest;
+	char digest[EVP_MAX_MD_SIZE + 1];
+	unsigned int digest_len = sizeof(digest);
+	Qiniu_Mac mac;
+
+	char const *path;
+	err = Qiniu_Mac_Parse_Url(url, NULL, NULL, &path, NULL);
+	if (err.code != 200)
+	{
+		return err;
+	}
+
+	if (self)
+	{
+		mac = *(Qiniu_Mac *)self;
+	}
+	else
+	{
+		mac.accessKey = QINIU_ACCESS_KEY;
+		mac.secretKey = QINIU_SECRET_KEY;
+	}
+	Qiniu_Mac_Hmac(&mac, path, addition, addlen, digest, &digest_len);
 	enc_digest = Qiniu_Memory_Encode(digest, digest_len);
 
 	auth = Qiniu_String_Concat("Authorization: QBox ", mac.accessKey, ":", enc_digest, NULL);
 	Qiniu_Free(enc_digest);
 
+	*header = curl_slist_append(*header, auth);
+	Qiniu_Free(auth);
+
+	return Qiniu_OK;
+}
+
+static const char *APPLICATION_OCTET_STREAM = "application/octet-stream";
+
+static Qiniu_Error Qiniu_Mac_AuthV2(
+	void *self, const char *method, Qiniu_Header **header, const char *contentType, const char *url, const char *addition, size_t addlen)
+{
+	Qiniu_Error err;
+	char *auth;
+	char *enc_digest;
+	char digest[EVP_MAX_MD_SIZE + 1];
+	unsigned int digest_len = sizeof(digest);
+	Qiniu_Mac mac;
+
+	char const *host = NULL;
+	size_t hostLen = 0;
+	char const *path = NULL;
+	err = Qiniu_Mac_Parse_Url(url, &host, &hostLen, &path, NULL);
+	if (err.code != 200)
+	{
+		return err;
+	}
+
+	char *normalizedHost = (char *)malloc(hostLen + 1);
+	memcpy((void *)normalizedHost, host, hostLen);
+	*(normalizedHost + hostLen) = '\0';
+
+	if (self)
+	{
+		mac = *(Qiniu_Mac *)self;
+	}
+	else
+	{
+		mac.accessKey = QINIU_ACCESS_KEY;
+		mac.secretKey = QINIU_SECRET_KEY;
+	}
+
+	if (strcmp(contentType, APPLICATION_OCTET_STREAM) == 0)
+	{
+		addlen = 0;
+	}
+
+	Qiniu_Mac_HmacV2(&mac, method, normalizedHost, path, contentType, addition, addlen, digest, &digest_len);
+	Qiniu_Free(normalizedHost);
+	enc_digest = Qiniu_Memory_Encode(digest, digest_len);
+
+	auth = Qiniu_String_Concat("Authorization: Qiniu ", mac.accessKey, ":", enc_digest, NULL);
+	Qiniu_Free(enc_digest);
+
+	if (*header == NULL)
+	{
+		const char *contentTypeHeader = Qiniu_String_Concat("Content-Type: ", contentType, NULL);
+		*header = curl_slist_append(*header, contentTypeHeader);
+		Qiniu_Free((void *)contentTypeHeader);
+	}
 	*header = curl_slist_append(*header, auth);
 	Qiniu_Free(auth);
 
@@ -139,7 +259,8 @@ static Qiniu_Mac *Qiniu_Mac_Clone(Qiniu_Mac *mac)
 
 static Qiniu_Auth_Itbl Qiniu_MacAuth_Itbl = {
 	Qiniu_Mac_Auth,
-	Qiniu_Mac_Release};
+	Qiniu_Mac_Release,
+	Qiniu_Mac_AuthV2};
 
 Qiniu_Auth Qiniu_MacAuth(Qiniu_Mac *mac)
 {
