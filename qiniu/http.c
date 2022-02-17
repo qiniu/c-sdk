@@ -443,6 +443,18 @@ static CURL *Qiniu_Client_initcall(Qiniu_Client *self, const char *url)
     return Qiniu_Client_initcall_withMethod(self, url, "POST");
 }
 
+static Qiniu_Error Qiniu_Do_Auth(Qiniu_Client *self, const char *method, Qiniu_Header **headers, const char *contentType, const char *url, const char *addition, size_t addlen)
+{
+    if (self->auth.itbl->AuthV2)
+    {
+        return self->auth.itbl->AuthV2(self->auth.self, method, headers, contentType, url, addition, addlen);
+    }
+    else
+    {
+        return self->auth.itbl->Auth(self->auth.self, headers, url, addition, addlen);
+    }
+}
+
 static Qiniu_Error Qiniu_Client_callWithBody(
     Qiniu_Client *self, Qiniu_Json **ret, const char *url,
     const char *body, Qiniu_Int64 bodyLen, const char *mimeType, const char *md5)
@@ -492,7 +504,7 @@ static Qiniu_Error Qiniu_Client_callWithBody(
         {
             bodyLen = 0;
         }
-        err = self->auth.itbl->AuthV2(self->auth.self, "POST", &headers, mimeType, url, body, (size_t)bodyLen);
+        err = Qiniu_Do_Auth(self, "POST", &headers, mimeType, url, body, (size_t)bodyLen);
         if (err.code != 200)
         {
             return err;
@@ -578,7 +590,7 @@ Qiniu_Error Qiniu_Client_Call(Qiniu_Client *self, Qiniu_Json **ret, const char *
 
     if (self->auth.itbl != NULL)
     {
-        err = self->auth.itbl->AuthV2(self->auth.self, "POST", &headers, APPLICATION_WWW_FORM_URLENCODED, url, NULL, 0);
+        err = Qiniu_Do_Auth(self, "POST", &headers, APPLICATION_WWW_FORM_URLENCODED, url, NULL, 0);
         if (err.code != 200)
         {
             return err;
@@ -606,7 +618,7 @@ Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client *self, const char *url)
 
     if (self->auth.itbl != NULL)
     {
-        err = self->auth.itbl->AuthV2(self->auth.self, "POST", &headers, APPLICATION_WWW_FORM_URLENCODED, url, NULL, 0);
+        err = Qiniu_Do_Auth(self, "POST", &headers, APPLICATION_WWW_FORM_URLENCODED, url, NULL, 0);
         if (err.code != 200)
         {
             return err;
