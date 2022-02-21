@@ -14,6 +14,8 @@
 
 #if defined(_WIN32)
 #pragma comment(lib, "libcrypto.lib")
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
 #endif
 
 /*============================================================================*/
@@ -189,10 +191,10 @@ typedef struct Qiniu_Find_Content_Type_Callback_Data {
 
 static Qiniu_Error Qiniu_Find_Content_Type_Callback(Qiniu_Header *header, void *data) {
 	Qiniu_Find_Content_Type_Callback_Data *callback_data = (Qiniu_Find_Content_Type_Callback_Data *)data;
-	const char *colonPos = index(header->data, ':');
+	const char *colonPos = strchr(header->data, ':');
 	if (colonPos != NULL) {
 		if (strncasecmp(header->data, "Content-Type", colonPos - header->data) == 0) {
-			const char *last_space_in_header_value = rindex(colonPos + 1, ' ');
+			const char *last_space_in_header_value = strrchr(colonPos + 1, ' ');
 			if (last_space_in_header_value == NULL) {
 				callback_data->found_content_type = colonPos + 1;
 			} else {
