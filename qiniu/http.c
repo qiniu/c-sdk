@@ -443,11 +443,11 @@ static CURL *Qiniu_Client_initcall(Qiniu_Client *self, const char *url)
     return Qiniu_Client_initcall_withMethod(self, url, "POST");
 }
 
-static Qiniu_Error Qiniu_Do_Auth(Qiniu_Client *self, const char *method, Qiniu_Header **headers, const char *contentType, const char *url, const char *addition, size_t addlen)
+static Qiniu_Error Qiniu_Do_Auth(Qiniu_Client *self, const char *method, Qiniu_Header **headers, const char *url, const char *addition, size_t addlen)
 {
     if (self->auth.itbl->AuthV2)
     {
-        return self->auth.itbl->AuthV2(self->auth.self, method, headers, contentType, url, addition, addlen);
+        return self->auth.itbl->AuthV2(self->auth.self, method, headers, url, addition, addlen);
     }
     else
     {
@@ -462,7 +462,6 @@ static Qiniu_Error Qiniu_Client_callWithBody(
     int retCode = 0;
     Qiniu_Error err;
     const char *ctxType;
-    Qiniu_Bool needToFreeCtxType;
     char ctxLength[64], userAgent[64];
     Qiniu_Header *headers = NULL;
     CURL *curl = (CURL *)self->curl;
@@ -477,13 +476,10 @@ static Qiniu_Error Qiniu_Client_callWithBody(
     if (mimeType == NULL)
     {
         ctxType = "Content-Type: application/octet-stream";
-        mimeType = "application/octet-stream";
-        needToFreeCtxType = Qiniu_False;
     }
     else
     {
         ctxType = Qiniu_String_Concat2("Content-Type: ", mimeType);
-        needToFreeCtxType = Qiniu_True;
     }
 
     Qiniu_snprintf(ctxLength, 64, "Content-Length: %lld", bodyLen);
@@ -504,7 +500,7 @@ static Qiniu_Error Qiniu_Client_callWithBody(
         {
             bodyLen = 0;
         }
-        err = Qiniu_Do_Auth(self, "POST", &headers, mimeType, url, body, (size_t)bodyLen);
+        err = Qiniu_Do_Auth(self, "POST", &headers, url, body, (size_t)bodyLen);
         if (err.code != 200)
         {
             return err;
@@ -516,7 +512,7 @@ static Qiniu_Error Qiniu_Client_callWithBody(
     err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
 
     curl_slist_free_all(headers);
-    if (needToFreeCtxType == Qiniu_True)
+    if (mimeType != NULL)
     {
         free((void *)ctxType);
     }
@@ -590,7 +586,7 @@ Qiniu_Error Qiniu_Client_Call(Qiniu_Client *self, Qiniu_Json **ret, const char *
 
     if (self->auth.itbl != NULL)
     {
-        err = Qiniu_Do_Auth(self, "POST", &headers, APPLICATION_WWW_FORM_URLENCODED, url, NULL, 0);
+        err = Qiniu_Do_Auth(self, "POST", &headers, url, NULL, 0);
         if (err.code != 200)
         {
             return err;
@@ -618,7 +614,7 @@ Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client *self, const char *url)
 
     if (self->auth.itbl != NULL)
     {
-        err = Qiniu_Do_Auth(self, "POST", &headers, APPLICATION_WWW_FORM_URLENCODED, url, NULL, 0);
+        err = Qiniu_Do_Auth(self, "POST", &headers, url, NULL, 0);
         if (err.code != 200)
         {
             return err;

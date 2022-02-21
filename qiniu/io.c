@@ -373,7 +373,7 @@ Qiniu_Error Qiniu_UptokenAuth_ToHeader(
 }
 
 static Qiniu_Error Qiniu_UptokenAuth_ToHeader_v2(
-    void *self, const char *method, Qiniu_Header **header, const char *contentType, const char *url, const char *addition, size_t addlen)
+    void *self, const char *method, Qiniu_Header **header, const char *url, const char *addition, size_t addlen)
 {
     return Qiniu_UptokenAuth_ToHeader(self, header, url, addition, addlen);
 }

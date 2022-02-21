@@ -170,10 +170,44 @@ static Qiniu_Error Qiniu_Mac_Auth(
 	return Qiniu_OK;
 }
 
-static const char *APPLICATION_OCTET_STREAM = "application/octet-stream";
+#define APPLICATION_OCTET_STREAM "application/octet-stream"
+#define APPLICATION_WWW_FORM_URLENCODED "application/x-www-form-urlencoded"
+
+static Qiniu_Error Qiniu_For_Each_Header(Qiniu_Header *header, Qiniu_Error (*for_each)(Qiniu_Header *header, void *data), void *data) {
+	for (Qiniu_Header *cur_header = header; cur_header != NULL; cur_header = cur_header->next) {
+		Qiniu_Error err = for_each(cur_header, data);
+		if (err.code != 200) {
+			return err;
+		}
+	}
+	return Qiniu_OK;
+}
+
+typedef struct Qiniu_Find_Content_Type_Callback_Data {
+	const char *found_content_type;
+} Qiniu_Find_Content_Type_Callback_Data;
+
+static Qiniu_Error Qiniu_Find_Content_Type_Callback(Qiniu_Header *header, void *data) {
+	Qiniu_Find_Content_Type_Callback_Data *callback_data = (Qiniu_Find_Content_Type_Callback_Data *)data;
+	const char *colonPos = index(header->data, ':');
+	if (colonPos != NULL) {
+		if (strncasecmp(header->data, "Content-Type", colonPos - header->data) == 0) {
+			const char *last_space_in_header_value = rindex(colonPos + 1, ' ');
+			if (last_space_in_header_value == NULL) {
+				callback_data->found_content_type = colonPos + 1;
+			} else {
+				callback_data->found_content_type = last_space_in_header_value + 1;
+			}
+			Qiniu_Error found = { 201, "Found" };
+			return found;
+		}
+	}
+
+	return Qiniu_OK;
+}
 
 static Qiniu_Error Qiniu_Mac_AuthV2(
-	void *self, const char *method, Qiniu_Header **header, const char *contentType, const char *url, const char *addition, size_t addlen)
+	void *self, const char *method, Qiniu_Header **header, const char *url, const char *addition, size_t addlen)
 {
 	Qiniu_Error err;
 	char *auth;
@@ -205,24 +239,24 @@ static Qiniu_Error Qiniu_Mac_AuthV2(
 		mac.secretKey = QINIU_SECRET_KEY;
 	}
 
-	if (strcmp(contentType, APPLICATION_OCTET_STREAM) == 0)
+	Qiniu_Find_Content_Type_Callback_Data callback_data = {NULL};
+	if (Qiniu_For_Each_Header(*header, Qiniu_Find_Content_Type_Callback, &callback_data).code == 201 &&
+		strcasecmp(callback_data.found_content_type, APPLICATION_OCTET_STREAM) == 0)
 	{
 		addlen = 0;
 	}
+	if (callback_data.found_content_type == NULL) {
+		*header = curl_slist_append(*header, "Content-Type: " APPLICATION_WWW_FORM_URLENCODED);
+		callback_data.found_content_type = APPLICATION_WWW_FORM_URLENCODED;
+	}
 
-	Qiniu_Mac_HmacV2(&mac, method, normalizedHost, path, contentType, addition, addlen, digest, &digest_len);
+	Qiniu_Mac_HmacV2(&mac, method, normalizedHost, path, callback_data.found_content_type, addition, addlen, digest, &digest_len);
 	Qiniu_Free(normalizedHost);
 	enc_digest = Qiniu_Memory_Encode(digest, digest_len);
 
 	auth = Qiniu_String_Concat("Authorization: Qiniu ", mac.accessKey, ":", enc_digest, NULL);
 	Qiniu_Free(enc_digest);
 
-	if (*header == NULL)
-	{
-		const char *contentTypeHeader = Qiniu_String_Concat("Content-Type: ", contentType, NULL);
-		*header = curl_slist_append(*header, contentTypeHeader);
-		Qiniu_Free((void *)contentTypeHeader);
-	}
 	*header = curl_slist_append(*header, auth);
 	Qiniu_Free(auth);
 
