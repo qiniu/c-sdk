@@ -372,12 +372,18 @@ Qiniu_Error Qiniu_UptokenAuth_ToHeader(
     return err;
 }
 
+static Qiniu_Error Qiniu_UptokenAuth_ToHeader_v2(
+    void *self, const char *method, Qiniu_Header **header, const char *url, const char *addition, size_t addlen)
+{
+    return Qiniu_UptokenAuth_ToHeader(self, header, url, addition, addlen);
+}
+
 void Qiniu_UptokenAuth_Release(void *p)
 {
     free(p);
 }
 
-Qiniu_Auth_Itbl Qiniu_UptokenAuth_Itbl = {Qiniu_UptokenAuth_ToHeader, Qiniu_UptokenAuth_Release};
+Qiniu_Auth_Itbl Qiniu_UptokenAuth_Itbl = {Qiniu_UptokenAuth_ToHeader, Qiniu_UptokenAuth_Release, Qiniu_UptokenAuth_ToHeader_v2};
 
 Qiniu_Auth Qiniu_UptokenAuth(const char *uptoken)
 {

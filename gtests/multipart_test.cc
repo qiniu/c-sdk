@@ -87,7 +87,7 @@ static const char *putFile_multipart(const char *bucket, const char *key, const 
 	putExtra.tryTimes = 2;
 
 	Qiniu_Client_InitMacAuth(&client, 1024, mac);
-	Qiniu_Client_SetTimeout(&client, 5000);
+	Qiniu_Client_SetTimeout(&client, 120000);
 	Qiniu_Client_SetConnectTimeout(&client, 3000);
 
 	err = Qiniu_Multipart_PutFile(&client, uptoken, key, filePath, &putExtra, &putRet);
