@@ -1,5 +1,10 @@
 ## CHANGE LOG
 
+## v7.1.3（2022-03-07）
+- 设置了合理的 CMake 最小版本号，删除所有自带的 CMake 脚本
+- 更新各个区域的域名，与文档描述相符
+- 支持 Qiniu 签名，并替换 QBox 签名
+
 ## v7.1.2（2021-09-27）
 - 修改申请栈缓冲区大小为 4 KB，解决 Windows 系统下申请缓冲区大小超过编译器默认限制问题
 - 做了些代码规范性修改
@@ -9,7 +14,7 @@
 
 ### v7.1.0
 - 新增 Qiniu_Multipart_PutFile API， 支持 [分片上传 V2](https://developer.qiniu.com/kodo/6364/multipartupload-interface)
-- 分片上传 新增 断点续传 能力，可以在 Qiniu_Multipart_PutExtra 或 Qiniu_Rio_PutExtra 指定  record 
+- 分片上传 新增 断点续传 能力，可以在 Qiniu_Multipart_PutExtra 或 Qiniu_Rio_PutExtra 指定  record
 - 修复 openssl 已知兼容性问题
 
 ### v7.0.0
@@ -21,17 +26,17 @@
 - **CDN**新增功能：
 
   - `RefreshUrls`
-  
+
   - `RefreshDirs`
-  
+
   - `PrefetchUrls`
-  
+
   - `GetFluxData`
-  
+
   - `GetBandwidthData`
-  
+
   - `GetLogList`
-  
+
 - **io**新增PutStream
 
 - 新增put_strem和cdn示例代码
@@ -42,7 +47,7 @@
 
 ### v6.2.3
 
-- 调整上传host 
+- 调整上传host
 
 ### v6.2.2
 
