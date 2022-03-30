@@ -3,7 +3,7 @@
  Name        : rs.c
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 #include "rs.h"
@@ -289,14 +289,51 @@ Qiniu_Error Qiniu_RS_ChangeMime(Qiniu_Client *self, const char *bucket, const ch
 Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const char *bucket, const char *key, const int fileType) {
     Qiniu_Error err;
 
-    char *fileTypeStr = "0";
-    if (fileType == 1) {
+    char *fileTypeStr = NULL, buf[4] = {0};
+    switch (fileType)
+    {
+    case 0:
+        fileTypeStr = "0";
+        break;
+    case 1:
         fileTypeStr = "1";
+        break;
+    case 2:
+        fileTypeStr = "2";
+        break;
+    case 3:
+        fileTypeStr = "3";
+        break;
+    default:
+        snprintf(buf, sizeof(buf), "%d", fileType);
+        fileTypeStr = &buf[0];
+        break;
     }
 
     char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
     char *entryURIEncoded = Qiniu_String_Encode(entryURI);
     char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/chtype/", entryURIEncoded, "/type/", fileTypeStr, NULL);
+
+    Qiniu_Free(entryURI);
+    Qiniu_Free(entryURIEncoded);
+
+    err = Qiniu_Client_CallNoRet(self, url);
+    Qiniu_Free(url);
+    return err;
+}
+
+/*============================================================================*/
+/* func Qiniu_RS_RestoreArchive */
+
+Qiniu_Error Qiniu_RS_RestoreArchive(Qiniu_Client *self, const char *bucket, const char *key, const int freezeAfterDays) {
+    Qiniu_Error err;
+    char buf[4] = {0};
+    snprintf(buf, sizeof(buf), "%d", freezeAfterDays);
+    char *freezeAfterDaysStr = &buf[0];
+
+    char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
+    char *entryURIEncoded = Qiniu_String_Encode(entryURI);
+    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/restoreAr/", entryURIEncoded, "/freezeAfterDays/", freezeAfterDaysStr, NULL);
 
     Qiniu_Free(entryURI);
     Qiniu_Free(entryURIEncoded);
@@ -671,13 +708,93 @@ Qiniu_Error Qiniu_RS_BatchChangeType(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
         entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
         entryURIEncoded = Qiniu_String_Encode(entryURI);
 
-        char *entryType = "0";
-        if (entry->fileType == 1) {
+        char *entryType = NULL, buf[4] = {0};
+        switch (entry->fileType)
+        {
+        case 0:
+            entryType = "0";
+            break;
+        case 1:
             entryType = "1";
+            break;
+        case 2:
+            entryType = "2";
+            break;
+        case 3:
+            entryType = "3";
+            break;
+        default:
+            snprintf(buf, sizeof(buf), "%d", entry->fileType);
+            entryType = &buf[0];
+            break;
         }
 
         bodyPart = Qiniu_String_Concat(entryURIEncoded, "/type/", entryType, NULL);
         opBody = Qiniu_String_Concat2("op=/chtype/", bodyPart);
+        Qiniu_Free(entryURI);
+        Qiniu_Free(entryURIEncoded);
+        Qiniu_Free(bodyPart);
+
+        if (!body) {
+            bodyTmp = opBody;
+        } else {
+            bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
+            free(opBody);
+        }
+        free(body);
+        body = bodyTmp;
+        curr++;
+        entry = &entries[curr];
+    }
+
+    err = Qiniu_Client_CallWithBuffer(self, &root,
+                                      url, body, strlen(body), "application/x-www-form-urlencoded");
+    free(url);
+    free(body);
+
+    retSize = cJSON_GetArraySize(root);
+
+    curr = 0;
+    while (curr < retSize) {
+        arrayItem = cJSON_GetArrayItem(root, curr);
+        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        dataItem = cJSON_GetObjectItem(arrayItem, "data");
+
+        rets[curr].code = code;
+
+        if (code != 200) {
+            rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
+        }
+        curr++;
+    }
+
+    return err;
+}
+
+Qiniu_Error Qiniu_RS_BatchRestoreArchive(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+                                         Qiniu_RS_EntryRestoreArchive *entries, Qiniu_ItemCount entryCount) {
+    int code;
+    Qiniu_Error err;
+    cJSON *root, *arrayItem, *dataItem;
+    char *body = NULL, *bodyTmp = NULL;
+    char *entryURI, *entryURIEncoded, *opBody, *bodyPart;
+
+    Qiniu_ItemCount curr = 0;
+    Qiniu_ItemCount retSize = 0;
+    Qiniu_RS_EntryRestoreArchive *entry = entries;
+    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+
+    curr = 0;
+    while (curr < entryCount) {
+        entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
+        entryURIEncoded = Qiniu_String_Encode(entryURI);
+
+        char buf[4] = {0};
+        snprintf(buf, sizeof(buf), "%d", entry->deleteAfterDays);
+        char *deleteAfterDaysStr = &buf[0];
+
+        bodyPart = Qiniu_String_Concat(entryURIEncoded, "/freezeAfterDays/", deleteAfterDaysStr, NULL);
+        opBody = Qiniu_String_Concat2("op=/restoreAr/", bodyPart);
         Qiniu_Free(entryURI);
         Qiniu_Free(entryURIEncoded);
         Qiniu_Free(bodyPart);
