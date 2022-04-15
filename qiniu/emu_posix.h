@@ -3,7 +3,7 @@
  Name        : emu_posix.h
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 #ifndef QINIU_EMU_POSIX_H
@@ -47,6 +47,7 @@ QINIU_DLLAPI extern ssize_t Qiniu_Posix_Pread2(Qiniu_Posix_Handle fd, void* buf,
 QINIU_DLLAPI extern int Qiniu_Posix_Fstat2(Qiniu_Posix_Handle fd, Emu_FileInfo* buf);
 QINIU_DLLAPI extern int Qiniu_Posix_Close(Qiniu_Posix_Handle fd);
 QINIU_DLLAPI extern unsigned _int64 Qiniu_Posix_GetTimeOfDay(void);
+QINIU_DLLAPI extern char* Qiniu_Posix_strndup(const char *, size_t n);
 
 /*============================================================================*/
 

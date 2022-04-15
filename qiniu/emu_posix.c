@@ -3,7 +3,7 @@
  Name        : emu_posix.c
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 
@@ -89,5 +89,22 @@ unsigned _int64 Qiniu_Posix_GetTimeOfDay(void)
 	uint.u.HighPart = tv.dwHighDateTime;
 	return uint.QuadPart / 1000L;
 } // Qiniu_Posix_GetTimeOfDay
+
+char* Qiniu_Posix_strndup(const char *str, size_t n) {
+	char *buf;
+	size_t i, str_len = strlen(str);
+
+	if (n > str_len) {
+		n = str_len;
+	}
+	buf = (char *) malloc(n + 1);
+	if (buf != NULL) {
+		for (i = 0; ((i < n) && (str[i] != '\0')) ; i++) {
+			buf[i] = str[i];
+		}
+		buf[i] = '\0';
+	}
+	return buf;
+}
 
 #endif
