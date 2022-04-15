@@ -3,7 +3,7 @@
  Name        : rs.h
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 
@@ -108,6 +108,11 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const ch
                                                     const int fileType);
 
 /*============================================================================*/
+/*  func Qiniu_RS_ChangeType */
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_RestoreArchive(Qiniu_Client *self, const char *bucket, const char *key,
+                                                        const int deleteAfterDays);
+
+/*============================================================================*/
 /* func Qiniu_RS_DeleteAfterDays */
 QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_DeleteAfterDays(Qiniu_Client *self, const char *bucket, const char *key,
                                                          const int days);
@@ -201,6 +206,12 @@ typedef struct _Qiniu_RS_EntryChangeType {
     int fileType;
 } Qiniu_RS_EntryChangeType;
 
+typedef struct _Qiniu_RS_EntryRestoreArchive {
+    const char *bucket;
+    const char *key;
+    int deleteAfterDays;
+} Qiniu_RS_EntryRestoreArchive;
+
 typedef struct _Qiniu_RS_EntryChangeMime {
     const char *bucket;
     const char *key;
@@ -222,6 +233,9 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchChangeMime(Qiniu_Client *self, Qin
 QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchDeleteAfterDays(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
                                                               Qiniu_RS_EntryDeleteAfterDays *entry,
                                                               Qiniu_ItemCount entryCount);
+QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchRestoreArchive(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+                                                             Qiniu_RS_EntryRestoreArchive *entries,
+                                                             Qiniu_ItemCount entryCount);
 
 #pragma pack()
 
