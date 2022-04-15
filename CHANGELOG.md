@@ -1,5 +1,9 @@
 ## CHANGE LOG
 
+## v7.2.0 （2022-04-15）
+- 对象存储，新增支持 [深度归档存储类型](https://developer.qiniu.com/kodo/3956/kodo-category#deep_archive)
+
+
 ## v7.1.3（2022-03-07）
 - 设置了合理的 CMake 最小版本号，删除所有自带的 CMake 脚本
 - 更新内置区域的域名
