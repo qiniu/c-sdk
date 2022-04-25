@@ -80,7 +80,6 @@ static void Qiniu_Mac_Hmac_inner(Qiniu_Mac *mac, const char *items[], size_t ite
 	if (addlen > 0)
 	{
 		HMAC_Update(ctx, addition, addlen);
-		fwrite(addition, 1, addlen, stderr);
 	}
 	HMAC_Final(ctx, digest, digest_len);
 	HMAC_CTX_free(ctx);
