@@ -30,6 +30,9 @@ extern "C"
 	QINIU_DLLAPI extern void Qiniu_Servend_Init(long flags);
 	QINIU_DLLAPI extern void Qiniu_Servend_Cleanup();
 
+	QINIU_DLLAPI extern void Qiniu_MacAuth_Enable_Qiniu_Timestamp_Signature();
+	QINIU_DLLAPI extern void Qiniu_MacAuth_Disable_Qiniu_Timestamp_Signature();
+
 #ifdef __cplusplus
 }
 #endif
@@ -89,7 +92,7 @@ extern "C"
 
 	typedef struct _Qiniu_Auth
 	{
-		void *self; //eg: "Authorization: UpToken <uptoken>"
+		void *self; // eg: "Authorization: UpToken <uptoken>"
 		Qiniu_Auth_Itbl *itbl;
 	} Qiniu_Auth;
 
@@ -102,7 +105,7 @@ extern "C"
 	{
 		void *curl;
 		Qiniu_Auth auth;
-		Qiniu_Json *root; //store resp until next req begin
+		Qiniu_Json *root; // store resp until next req begin
 		Qiniu_Buffer b;
 		Qiniu_Buffer respHeader;
 
@@ -136,19 +139,19 @@ extern "C"
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_Call(Qiniu_Client *self, Qiniu_Json **ret, const char *url);
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client *self, const char *url);
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithBinary(
-	    Qiniu_Client *self, Qiniu_Json **ret, const char *url,
-	    Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType);
+		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+		Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType);
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithBuffer(
-	    Qiniu_Client *self, Qiniu_Json **ret, const char *url,
-	    const char *body, size_t bodyLen, const char *mimeType);
+		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+		const char *body, size_t bodyLen, const char *mimeType);
 
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithBuffer2(
-	    Qiniu_Client *self, Qiniu_Json **ret, const char *url,
-	    const char *body, size_t bodyLen, const char *mimeType);
+		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+		const char *body, size_t bodyLen, const char *mimeType);
 
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithMethod(
-	    Qiniu_Client *self, Qiniu_Json **ret, const char *url,
-	    Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5);
+		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+		Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5);
 	/*============================================================================*/
 	/* func Qiniu_Client_InitNoAuth/InitMacAuth  */
 

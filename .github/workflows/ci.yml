@@ -9,9 +9,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.12
+        with:
+          cmake-version: '3.13.0'
       - name: Install dependencies
         run: |
-          sudo apt install -yqq libcurl4 libcurl4-openssl-dev build-essential cmake
+          sudo apt install -yqq libcurl4 libcurl4-openssl-dev build-essential
       - name: Build
         run: |
           set -e
@@ -55,7 +59,7 @@ jobs:
         uses: lukka/run-vcpkg@v10.1
         with:
           vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-          vcpkgGitCommitId: 'af2287382b1991dbdcb7e5112d236f3323b9dd7a'
+          vcpkgGitCommitId: 'e809a42f87565e803b2178a0c11263f462d1800a'
           vcpkgJsonGlob: 'vcpkg.json'
       - name: Cmake
         uses: lukka/run-cmake@v3
