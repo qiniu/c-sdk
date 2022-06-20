@@ -111,5 +111,39 @@ void Qiniu_Use_Zone_Dongnanya(Qiniu_Bool useHttps) {
         QINIU_IOVIP_HOST = "http://iovip-as0.qbox.me";
     }
 }
+
+//设置华东二区机房
+void Qiniu_Use_Zone_Cn_East_2(Qiniu_Bool useHttps) {
+    if (useHttps == Qiniu_True) {
+        QINIU_RS_HOST = "https://rs-cn-east-2.qiniuapi.com";
+        QINIU_RSF_HOST = "https://rsf-cn-east-2.qiniuapi.com";
+        QINIU_API_HOST = "https://api-cn-east-2.qiniuapi.com";
+        QINIU_UP_HOST = "https://upload-cn-east-2.qiniup.com";
+        QINIU_IOVIP_HOST = "https://iovip-cn-east-2.qiniuio.com";
+    } else {
+        QINIU_RS_HOST = "http://rs-cn-east-2.qiniuapi.com";
+        QINIU_RSF_HOST = "http://rsf-cn-east-2.qiniuapi.com";
+        QINIU_API_HOST = "http://api-cn-east-2.qiniuapi.com";
+        QINIU_UP_HOST = "http://upload-cn-east-2.qiniup.com";
+        QINIU_IOVIP_HOST = "http://iovip-cn-east-2.qiniuio.com";
+    }
+}
+
+//设置首尔机房
+void Qiniu_Use_Zone_North_East_1(Qiniu_Bool useHttps) {
+    if (useHttps == Qiniu_True) {
+        QINIU_RS_HOST = "https://rs-ap-northeast-1.qiniuapi.com";
+        QINIU_RSF_HOST = "https://rsf-ap-northeast-1.qiniuapi.com";
+        QINIU_API_HOST = "https://api-ap-northeast-1.qiniuapi.com";
+        QINIU_UP_HOST = "https://upload-ap-northeast-1.qiniup.com";
+        QINIU_IOVIP_HOST = "https://iovip-ap-northeast-1.qiniuio.com";
+    } else {
+        QINIU_RS_HOST = "http://rs-ap-northeast-1.qiniuapi.com";
+        QINIU_RSF_HOST = "http://rsf-ap-northeast-1.qiniuapi.com";
+        QINIU_API_HOST = "http://api-ap-northeast-1.qiniuapi.com";
+        QINIU_UP_HOST = "http://upload-ap-northeast-1.qiniup.com";
+        QINIU_IOVIP_HOST = "http://iovip-ap-northeast-1.qiniuio.com";
+    }
+}
 /*============================================================================*/
 
