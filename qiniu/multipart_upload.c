@@ -26,10 +26,8 @@ static char *encodeKey(const char *key, bool hasKey);
 static void restoreAuth(Qiniu_Auth *a, Qiniu_Auth backup);
 static cJSON *buildJsonMap(int kvNum, const char *(*kvpairs)[2]);
 static Qiniu_Error verifyParam(Qiniu_Multipart_PutExtra *param);
-static Qiniu_Error openFileReader(const char *fileName, Qiniu_File **f, Qiniu_Int64 *fsize);
+static Qiniu_Error openFileReader(const char *fileName, Qiniu_File **f);
 static const char *caculatePartMd5(Qiniu_ReaderAt reader, Qiniu_Int64 offset, Qiniu_Int64 partSize);
-static Qiniu_Error readMedium(struct Qiniu_Record_Medium *medium, const char **uploadId, Qiniu_UploadPartResp *ret);
-static Qiniu_Error writeMedium(struct Qiniu_Record_Medium *medium, const char *uploadId, Qiniu_UploadPartResp *ret);
 
 typedef struct _Qiniu_Multipart_Recorder
 {
@@ -41,17 +39,27 @@ typedef struct _Qiniu_Multipart_Recorder
 typedef struct
 {
     char *uploadId;
+    Qiniu_Uint64 expireAt;
 } Qiniu_InitPart_Ret;
-static void Qiniu_InitPart_Ret_Clean(Qiniu_InitPart_Ret *p)
-{
-    free(p->uploadId);
-}
 
 typedef struct
 {
     Qiniu_UploadPartResp *PartsRet;
     int totalPartNum;
 } Qiniu_UploadParts_Ret;
+
+static Qiniu_Error readMedium(struct Qiniu_Record_Medium *medium, char **uploadId, Qiniu_Uint64 *expireAt, Qiniu_UploadPartResp *ret);
+static Qiniu_Error writeMedium(struct Qiniu_Record_Medium *medium, const Qiniu_InitPart_Ret*, const Qiniu_UploadPartResp*);
+static Qiniu_Error initializeRecorder(Qiniu_Multipart_PutExtra *param, const char *uptoken, const char *key, const char *fileName, Qiniu_FileInfo *fi, Qiniu_Record_Medium *medium, Qiniu_Multipart_Recorder *recorder);
+static Qiniu_Error reinitializeRecorder(Qiniu_Multipart_PutExtra *param, Qiniu_FileInfo *fi, Qiniu_Multipart_Recorder *recorder);
+static Qiniu_Error loadProgresses(Qiniu_Multipart_Recorder *recorder, Qiniu_InitPart_Ret *initPartRet, Qiniu_UploadParts_Ret *parts, Qiniu_Multipart_PutExtra *param, Qiniu_FileInfo *fi);
+
+static void Qiniu_InitPart_Ret_Clean(Qiniu_InitPart_Ret *p)
+{
+    free(p->uploadId);
+    p->uploadId = NULL;
+    p->expireAt = 0;
+}
 static void Qiniu_UploadParts_Ret_Initial(Qiniu_UploadParts_Ret *p, int totalPartNum)
 {
     p->totalPartNum = totalPartNum;
@@ -74,8 +82,6 @@ static void Qiniu_UploadParts_Ret_Clean(Qiniu_UploadParts_Ret *p)
     }
     p->totalPartNum = 0;
 }
-
-static const char *loadProgresses(Qiniu_Multipart_Recorder *recorder, Qiniu_UploadParts_Ret *parts);
 
 static void Qiniu_Multipart_Recorder_Cleanup(Qiniu_Multipart_Recorder *recorder)
 {
@@ -136,8 +142,8 @@ static Qiniu_Error init_upload(Qiniu_Client *client, const char *bucket, const c
             break;
         }
 
-        const char *uploadId = Qiniu_Json_GetString(callRet, "uploadId", NULL);
-        initPartRet->uploadId = Qiniu_String_Dup(uploadId);
+        initPartRet->uploadId = Qiniu_String_Dup(Qiniu_Json_GetString(callRet, "uploadId", NULL));
+        initPartRet->expireAt = Qiniu_Json_GetUInt64(callRet, "expireAt", 0);
         break;
     }
     Qiniu_Free(reqUrl);
@@ -186,7 +192,7 @@ Qiniu_Error upload_one_part(Qiniu_Client *client, Qiniu_Multipart_PutExtra *extr
     return err;
 }
 
-static Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const char *encodedKey, const char *uploadId, Qiniu_ReaderAt *reader, Qiniu_Int64 fsize, int totalPartNum, Qiniu_Multipart_PutExtra *extraParam, Qiniu_Multipart_Recorder *recorder, Qiniu_UploadParts_Ret *uploadPartsRet)
+static Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const char *encodedKey, const Qiniu_InitPart_Ret *initParts, Qiniu_ReaderAt *reader, Qiniu_Int64 fsize, int totalPartNum, Qiniu_Multipart_PutExtra *extraParam, Qiniu_Multipart_Recorder *recorder, Qiniu_UploadParts_Ret *uploadPartsRet)
 {
     Qiniu_Error err = Qiniu_OK;
     const char *uphost = extraParam->upHost;
@@ -203,7 +209,7 @@ static Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const 
         int partNumInReq = partNum + 1; //partNum start from 1
         char partNumStr[10];            //valid partNum ={"1"~"10000"}
         snprintf(partNumStr, 10, "%d", partNumInReq);
-        char *reqUrl = Qiniu_String_Concat(uphost, "/buckets/", bucket, "/objects/", encodedKey, "/uploads/", uploadId, "/", partNumStr, NULL);
+        char *reqUrl = Qiniu_String_Concat(uphost, "/buckets/", bucket, "/objects/", encodedKey, "/uploads/", initParts->uploadId, "/", partNumStr, NULL);
 
         Qiniu_Int64 thisPartOffset = partNum * partSize;
         Qiniu_Int64 thisPartSize = partSize;
@@ -224,16 +230,14 @@ static Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const 
 
         if (err.code != 200)
         {
-            Qiniu_UploadParts_Ret_Clean(uploadPartsRet);
             return err;
         }
 
         if (recorder != NULL && recorder->recorderMedium != NULL)
         {
-            err = writeMedium(recorder->recorderMedium, uploadId, &uploadPartsRet->PartsRet[partNum]);
+            err = writeMedium(recorder->recorderMedium, initParts, &uploadPartsRet->PartsRet[partNum]);
             if (err.code != 200)
             {
-                Qiniu_UploadParts_Ret_Clean(uploadPartsRet);
                 return err;
             }
         }
@@ -243,7 +247,7 @@ static Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const 
 
 static Qiniu_Error complete_upload(
     Qiniu_Client *client, const char *bucket, const char *encodedKey,
-    const char *uploadId, Qiniu_Multipart_PutExtra *extraParam, Qiniu_Multipart_Recorder *recorder,
+    Qiniu_InitPart_Ret *initPartsRet, Qiniu_Multipart_PutExtra *extraParam, Qiniu_Multipart_Recorder *recorder,
     Qiniu_UploadParts_Ret *uploadPartsRet, Qiniu_MultipartUpload_Result *completeRet)
 {
     //step1: build body
@@ -279,7 +283,7 @@ static Qiniu_Error complete_upload(
 
     //step2:send req
     Qiniu_Error err = Qiniu_OK;
-    char *reqUrl = Qiniu_String_Concat(extraParam->upHost, "/buckets/", bucket, "/objects/", encodedKey, "/uploads/", uploadId, NULL);
+    char *reqUrl = Qiniu_String_Concat(extraParam->upHost, "/buckets/", bucket, "/objects/", encodedKey, "/uploads/", initPartsRet->uploadId, NULL);
 
     for (int try = 0; try < extraParam->tryTimes; try++)
     {
@@ -287,7 +291,7 @@ static Qiniu_Error complete_upload(
         err = Qiniu_Client_CallWithBuffer(client, &callRet, reqUrl, body, strlen(body), "application/json");
         if ((err.code / 100 == 5) || (callRet == NULL)) //5xx,net error will retry
         {
-            Qiniu_Log_Error("cupload: retry uploadId:%s, %E", uploadId, err);
+            Qiniu_Log_Error("cupload: retry uploadId:%s, %E", initPartsRet->uploadId, err);
             continue;
         }
         if (err.code / 100 != 4 && extraParam->recorder != NULL && recorder != NULL && recorder->recorderKey != NULL)
@@ -296,7 +300,7 @@ static Qiniu_Error complete_upload(
         }
         if (err.code != 200)
         {
-            Qiniu_Log_Error("cupload: uploadId:%s, %E", uploadId, err);
+            Qiniu_Log_Error("cupload: uploadId:%s, %E", initPartsRet->uploadId, err);
             break;
         }
 
@@ -313,7 +317,7 @@ static Qiniu_Error complete_upload(
 
 static Qiniu_Error _Qiniu_Multipart_Put(
     Qiniu_Client *client, const char *uptoken, const char *key,
-    Qiniu_ReaderAt reader, Qiniu_Int64 fsize, Qiniu_Multipart_PutExtra *extraParam, Qiniu_Multipart_Recorder *recorder, Qiniu_MultipartUpload_Result *uploadResult)
+    Qiniu_ReaderAt reader, Qiniu_Int64 fsize, Qiniu_FileInfo *fi, Qiniu_Multipart_PutExtra *extraParam, Qiniu_Multipart_Recorder *recorder, Qiniu_MultipartUpload_Result *uploadResult)
 {
     Qiniu_Error err = verifyParam(extraParam);
     if (err.code != 200)
@@ -342,15 +346,18 @@ static Qiniu_Error _Qiniu_Multipart_Put(
         return err;
     }
 
-    const char *uploadId;
-    Qiniu_UploadParts_Ret uploadPartsRet;
+    Qiniu_InitPart_Ret initPartRet = {NULL, 0};
+    Qiniu_UploadParts_Ret uploadPartsRet = {NULL, 0};
     Qiniu_UploadParts_Ret_Initial(&uploadPartsRet, totalPartNum);
-    uploadId = loadProgresses(recorder, &uploadPartsRet);
+    if (fi != NULL) {
+        loadProgresses(recorder, &initPartRet, &uploadPartsRet, extraParam, fi);
+    }
 
-    if (uploadId == NULL)
+    Qiniu_Bool mustInitialize = initPartRet.uploadId == NULL;
+    if (mustInitialize == Qiniu_True)
     {
+reinit:
         //step1: init part
-        Qiniu_InitPart_Ret initPartRet;
         err = init_upload(client, bucket, encodedKey, extraParam, &initPartRet);
         if (err.code != 200)
         {
@@ -360,22 +367,37 @@ static Qiniu_Error _Qiniu_Multipart_Put(
             Qiniu_UploadParts_Ret_Clear(&uploadPartsRet, totalPartNum);
             return err;
         }
-        uploadId = initPartRet.uploadId;
         Qiniu_UploadParts_Ret_Clear(&uploadPartsRet, totalPartNum);
     }
 
     //step2: upload part
-    err = upload_parts(client, bucket, encodedKey, uploadId, &reader, fsize, totalPartNum, extraParam, recorder, &uploadPartsRet);
+    err = upload_parts(client, bucket, encodedKey, &initPartRet, &reader, fsize, totalPartNum, extraParam, recorder, &uploadPartsRet);
+    if (err.code == 612 && mustInitialize == Qiniu_False) {
+        Qiniu_Log_Error("reinitUpload %E ", err);
+        Qiniu_InitPart_Ret_Clean(&initPartRet);
+        Qiniu_UploadParts_Ret_Clear(&uploadPartsRet, totalPartNum);
+        mustInitialize = Qiniu_True;
+        goto reinit;
+    }
     if (err.code != 200)
     {
         Qiniu_Log_Error("upload_part %E", err);
-        Qiniu_Multi_Free(3, (void *)uploadId, (void *)bucket, (void *)encodedKey);
+        Qiniu_Multi_Free(2, (void *)bucket, (void *)encodedKey);
+        Qiniu_InitPart_Ret_Clean(&initPartRet);
+        Qiniu_UploadParts_Ret_Clean(&uploadPartsRet);
         restoreAuth(&client->auth, authBackup);
         return err;
     }
 
     //step3: complete part
-    err = complete_upload(client, bucket, encodedKey, uploadId, extraParam, recorder, &uploadPartsRet, uploadResult);
+    err = complete_upload(client, bucket, encodedKey, &initPartRet, extraParam, recorder, &uploadPartsRet, uploadResult);
+    if (err.code == 612 && mustInitialize == Qiniu_False) {
+        Qiniu_Log_Error("reinitUpload %E ", err);
+        Qiniu_InitPart_Ret_Clean(&initPartRet);
+        Qiniu_UploadParts_Ret_Clear(&uploadPartsRet, totalPartNum);
+        mustInitialize = Qiniu_True;
+        goto reinit;
+    }
     if (err.code != 200)
     {
         Qiniu_Log_Error("complete_upload %E", err);
@@ -383,7 +405,8 @@ static Qiniu_Error _Qiniu_Multipart_Put(
 
     //step4: free memory
     restoreAuth(&client->auth, authBackup);
-    Qiniu_Multi_Free(3, (void *)uploadId, (void *)bucket, (void *)encodedKey);
+    Qiniu_Multi_Free(2, (void *)bucket, (void *)encodedKey);
+    Qiniu_InitPart_Ret_Clean(&initPartRet);
     Qiniu_UploadParts_Ret_Clean(&uploadPartsRet);
     return err;
 }
@@ -392,7 +415,7 @@ Qiniu_Error Qiniu_Multipart_Put(
     Qiniu_Client *client, const char *uptoken, const char *key,
     Qiniu_ReaderAt reader, Qiniu_Int64 fsize, Qiniu_Multipart_PutExtra *extraParam, Qiniu_MultipartUpload_Result *uploadResult)
 {
-    return _Qiniu_Multipart_Put(client, uptoken, key, reader, fsize, extraParam, NULL, uploadResult);
+    return _Qiniu_Multipart_Put(client, uptoken, key, reader, fsize, NULL, extraParam, NULL, uploadResult);
 }
 
 Qiniu_Error Qiniu_Multipart_PutFile(
@@ -400,13 +423,11 @@ Qiniu_Error Qiniu_Multipart_PutFile(
     const char *fileName, Qiniu_Multipart_PutExtra *extraParam, Qiniu_MultipartUpload_Result *uploadResult)
 {
     Qiniu_File *f = NULL;
-    Qiniu_Int64 fsize;
     Qiniu_FileInfo fi;
     Qiniu_Record_Medium medium;
-    Qiniu_Multipart_Recorder recorder, *pRecorder = NULL;
-    Qiniu_Bool ok;
+    Qiniu_Multipart_Recorder recorder = {NULL, NULL, Qiniu_False}, *pRecorder = NULL;
 
-    Qiniu_Error err = openFileReader(fileName, &f, &fsize);
+    Qiniu_Error err = openFileReader(fileName, &f);
     if (err.code != 200)
     {
         Qiniu_Log_Error("openFileReader failed %E", err);
@@ -420,36 +441,16 @@ Qiniu_Error Qiniu_Multipart_PutFile(
     }
     Qiniu_ReaderAt reader = Qiniu_FileReaderAt(f);
 
-    if (extraParam->recorder != NULL)
+    err = initializeRecorder(extraParam, uptoken, key, fileName, &fi, &medium, &recorder);
+    if (err.code != 200)
     {
-        err = Qiniu_Utils_Generate_RecorderKey(uptoken, "v2", key, fileName, &recorder.recorderKey);
-        if (err.code != 200)
-        {
-            return err;
-        }
-        err = Qiniu_Utils_Find_Medium(extraParam->recorder, recorder.recorderKey, 1, &medium, &fi, &ok);
-        if (err.code != 200)
-        {
-            return err;
-        }
-        if (ok)
-        {
-            recorder.recorderMedium = &medium;
-            recorder.toLoadProgresses = Qiniu_True;
-        }
-        else
-        {
-            err = Qiniu_Utils_New_Medium(extraParam->recorder, recorder.recorderKey, 1, &medium, &fi);
-            if (err.code != 200)
-            {
-                return err;
-            }
-            recorder.recorderMedium = &medium;
-            recorder.toLoadProgresses = Qiniu_False;
-        }
+        Qiniu_Log_Error("initializeRecorder failed %E", err);
+        return err;
+    }
+    if (recorder.recorderMedium != NULL) {
         pRecorder = &recorder;
     }
-    err = _Qiniu_Multipart_Put(client, uptoken, key, reader, fsize, extraParam, pRecorder, uploadResult);
+    err = _Qiniu_Multipart_Put(client, uptoken, key, reader, Qiniu_FileInfo_Fsize(fi), &fi, extraParam, pRecorder, uploadResult);
 
     Qiniu_Multipart_Recorder_Cleanup(pRecorder);
 
@@ -465,7 +466,7 @@ void restoreAuth(Qiniu_Auth *a, Qiniu_Auth backup)
     *a = backup;
 }
 
-Qiniu_Error openFileReader(const char *fileName, Qiniu_File **f, Qiniu_Int64 *fsize)
+Qiniu_Error openFileReader(const char *fileName, Qiniu_File **f)
 {
 
     Qiniu_FileInfo fi;
@@ -474,12 +475,7 @@ Qiniu_Error openFileReader(const char *fileName, Qiniu_File **f, Qiniu_Int64 *fs
     {
         return err;
     }
-    err = Qiniu_File_Stat(*f, &fi);
-    if (err.code == 200)
-    {
-        *fsize = Qiniu_FileInfo_Fsize(fi);
-    }
-    return err;
+    return Qiniu_File_Stat(*f, &fi);
 }
 
 static const Qiniu_Int64 Min_Part_Size = (1 << 20); //1MB
@@ -553,7 +549,7 @@ void Qiniu_Multi_Free(int n, ...)
     va_end(v1);
 }
 
-Qiniu_Error readMedium(struct Qiniu_Record_Medium *medium, const char **uploadId, Qiniu_UploadPartResp *ret)
+Qiniu_Error readMedium(struct Qiniu_Record_Medium *medium, char **uploadId, Qiniu_Uint64 *expireAt, Qiniu_UploadPartResp *ret)
 {
     Qiniu_Error err = Qiniu_OK;
 #define BUFFER_SIZE (1 << 12)
@@ -574,25 +570,32 @@ Qiniu_Error readMedium(struct Qiniu_Record_Medium *medium, const char **uploadId
     }
     cJSON *blockInfo = cJSON_Parse(buf);
     ret->partNum = (int)Qiniu_Json_GetInt64(blockInfo, "partNum", -1);
-    ret->md5 = strdup(Qiniu_Json_GetString(blockInfo, "md5", NULL));
-    ret->etag = strdup(Qiniu_Json_GetString(blockInfo, "etag", NULL));
+    ret->md5 = Qiniu_String_Dup(Qiniu_Json_GetString(blockInfo, "md5", NULL));
+    ret->etag = Qiniu_String_Dup(Qiniu_Json_GetString(blockInfo, "etag", NULL));
     if (uploadId != NULL)
     {
-        *uploadId = strdup(Qiniu_Json_GetString(blockInfo, "uploadId", NULL));
+        *uploadId = Qiniu_String_Dup(Qiniu_Json_GetString(blockInfo, "uploadId", NULL));
+    }
+    if (expireAt != NULL)
+    {
+        *expireAt = Qiniu_Json_GetUInt64(blockInfo, "expireAt", 0);
     }
     cJSON_Delete(blockInfo);
-    return Qiniu_OK;
+    return err;
 #undef BUFFER_SIZE
 }
 
-Qiniu_Error writeMedium(struct Qiniu_Record_Medium *medium, const char *uploadId, Qiniu_UploadPartResp *ret)
+Qiniu_Error writeMedium(struct Qiniu_Record_Medium *medium, const Qiniu_InitPart_Ret *initPartsRet, const Qiniu_UploadPartResp *uploadPartRet)
 {
     Qiniu_Error err;
     cJSON *blockInfo = cJSON_CreateObject();
-    cJSON_AddItemToObject(blockInfo, "partNum", cJSON_CreateNumber(ret->partNum));
-    cJSON_AddItemToObject(blockInfo, "md5", cJSON_CreateString(ret->md5));
-    cJSON_AddItemToObject(blockInfo, "etag", cJSON_CreateString(ret->etag));
-    cJSON_AddItemToObject(blockInfo, "uploadId", cJSON_CreateString(uploadId));
+    cJSON_AddItemToObject(blockInfo, "partNum", cJSON_CreateNumber(uploadPartRet->partNum));
+    cJSON_AddItemToObject(blockInfo, "md5", cJSON_CreateString(uploadPartRet->md5));
+    cJSON_AddItemToObject(blockInfo, "etag", cJSON_CreateString(uploadPartRet->etag));
+    cJSON_AddItemToObject(blockInfo, "uploadId", cJSON_CreateString(initPartsRet->uploadId));
+    if (initPartsRet->expireAt > 0) {
+        cJSON_AddItemToObject(blockInfo, "expireAt", cJSON_CreateNumber(initPartsRet->expireAt));
+    }
     char *blockInfoJson = cJSON_PrintUnformatted(blockInfo);
     cJSON_Delete(blockInfo);
     if (blockInfoJson == NULL)
@@ -611,12 +614,63 @@ Qiniu_Error writeMedium(struct Qiniu_Record_Medium *medium, const char *uploadId
     return Qiniu_OK;
 }
 
-const char *loadProgresses(Qiniu_Multipart_Recorder *recorder, Qiniu_UploadParts_Ret *parts)
+Qiniu_Error initializeRecorder(Qiniu_Multipart_PutExtra *param,
+    const char *uptoken, const char *key, const char *fileName, Qiniu_FileInfo *fi,
+    Qiniu_Record_Medium *medium, Qiniu_Multipart_Recorder *recorder) {
+
+    Qiniu_Bool ok = Qiniu_False;
+    Qiniu_Error err = Qiniu_OK;
+    if (param->recorder != NULL)
+    {
+        err = Qiniu_Utils_Generate_RecorderKey(uptoken, "v2", key, fileName, &recorder->recorderKey);
+        if (err.code != 200)
+        {
+            return err;
+        }
+        err = Qiniu_Utils_Find_Medium(param->recorder, recorder->recorderKey, 1, medium, fi, &ok);
+        if (err.code != 200)
+        {
+            return err;
+        }
+        if (ok)
+        {
+            recorder->recorderMedium = medium;
+            recorder->toLoadProgresses = Qiniu_True;
+        }
+        else
+        {
+            err = Qiniu_Utils_New_Medium(param->recorder, recorder->recorderKey, 1, medium, fi);
+            if (err.code != 200)
+            {
+                return err;
+            }
+            recorder->recorderMedium = medium;
+            recorder->toLoadProgresses = Qiniu_False;
+        }
+    }
+    return Qiniu_OK;
+}
+
+Qiniu_Error reinitializeRecorder(Qiniu_Multipart_PutExtra *param, Qiniu_FileInfo *fi, Qiniu_Multipart_Recorder *recorder) {
+    Qiniu_Error err;
+    recorder->recorderMedium->close(recorder->recorderMedium);
+    err = Qiniu_Utils_New_Medium(param->recorder, recorder->recorderKey, 1, recorder->recorderMedium, fi);
+    if (err.code != 200)
+    {
+        return err;
+    }
+    recorder->toLoadProgresses = Qiniu_False;
+    return Qiniu_OK;
+}
+
+Qiniu_Error loadProgresses(Qiniu_Multipart_Recorder *recorder, Qiniu_InitPart_Ret *initPartRet, Qiniu_UploadParts_Ret *parts, Qiniu_Multipart_PutExtra *param, Qiniu_FileInfo *fi)
 {
     Qiniu_Bool hasNext;
     int blkIdx;
-    Qiniu_UploadPartResp ret;
-    const char *uploadId = NULL;
+    char *uploadId = NULL;
+    Qiniu_Uint64 expireAt = 0;
+    const Qiniu_Uint64 now = time(NULL);
+    Qiniu_UploadPartResp uploadPartRet;
     if (recorder != NULL && recorder->recorderMedium != NULL && recorder->toLoadProgresses)
     {
         for (;;)
@@ -624,24 +678,24 @@ const char *loadProgresses(Qiniu_Multipart_Recorder *recorder, Qiniu_UploadParts
             Qiniu_Error err = recorder->recorderMedium->hasNextEntry(recorder->recorderMedium, &hasNext);
             if (err.code != 200)
             {
-                return NULL;
+                return err;
             }
             if (hasNext)
             {
-                if (uploadId == NULL)
-                {
-                    err = readMedium(recorder->recorderMedium, &uploadId, &ret);
+                if (uploadId != NULL) {
+                    err = readMedium(recorder->recorderMedium, NULL, NULL, &uploadPartRet);
+                } else {
+                    err = readMedium(recorder->recorderMedium, &uploadId, &expireAt, &uploadPartRet);
                 }
-                else
-                {
-                    err = readMedium(recorder->recorderMedium, NULL, &ret);
-                }
-
                 if (err.code != 200)
                 {
-                    return NULL;
+                    return err;
                 }
-                *(parts->PartsRet + ret.partNum - 1) = ret;
+                if (expireAt >= now) {
+                    *(parts->PartsRet + uploadPartRet.partNum - 1) = uploadPartRet;
+                } else if (fi != NULL) {
+                    return reinitializeRecorder(param, fi, recorder);
+                }
             }
             else
             {
@@ -650,5 +704,10 @@ const char *loadProgresses(Qiniu_Multipart_Recorder *recorder, Qiniu_UploadParts
         }
     }
 
-    return uploadId;
+    if (initPartRet != NULL && expireAt >= now) {
+        initPartRet->uploadId = uploadId;
+        initPartRet->expireAt = expireAt;
+    }
+
+    return Qiniu_OK;
 }

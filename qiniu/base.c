@@ -311,7 +311,11 @@ char *Qiniu_String_Join(const char *deli, char *strs[], int strCount)
 
 char *Qiniu_String_Dup(const char *src)
 {
-	return strdup(src);
+	if (src != NULL) {
+		return strdup(src);
+	} else {
+		return NULL;
+	}
 } // Qiniu_String_Dup
 
 /*============================================================================*/

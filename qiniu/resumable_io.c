@@ -206,8 +206,18 @@ static void Qiniu_Rio_BlkputRet_Cleanup(Qiniu_Rio_BlkputRet *self)
     if (self->ctx != NULL)
     {
         free((void *)self->ctx);
-        memset(self, 0, sizeof(*self));
     }
+    if (self->economical == Qiniu_False) {
+        if (self->checksum != NULL)
+        {
+            free((void *)self->checksum);
+        }
+        if (self->host != NULL)
+        {
+            free((void *)self->host);
+        }
+    }
+    memset(self, 0, sizeof(*self));
 }
 
 static void Qiniu_Rio_BlkputRet_Assign(Qiniu_Rio_BlkputRet *self, Qiniu_Rio_BlkputRet *ret)
@@ -243,6 +253,7 @@ static void Qiniu_Rio_BlkputRet_Assign(Qiniu_Rio_BlkputRet *self, Qiniu_Rio_Blkp
         memcpy(p + n1 + n3, ret->checksum, n2);
         self->checksum = p + n1 + n3;
     }
+    self->economical = Qiniu_True;
 }
 
 /*============================================================================*/
@@ -312,13 +323,17 @@ static Qiniu_Error Qiniu_Rio_PutExtra_Init(
     return Qiniu_OK;
 }
 
-static void Qiniu_Rio_PutExtra_Cleanup(Qiniu_Rio_PutExtra *self)
+static void Qiniu_Rio_PutExtra_Clear(Qiniu_Rio_PutExtra *self)
 {
-    size_t i;
-    for (i = 0; i < self->blockCnt; i++)
+    for (size_t i = 0; i < self->blockCnt; i++)
     {
         Qiniu_Rio_BlkputRet_Cleanup(&self->progresses[i]);
     }
+}
+
+static void Qiniu_Rio_PutExtra_Cleanup(Qiniu_Rio_PutExtra *self)
+{
+    Qiniu_Rio_PutExtra_Clear(self);
     free(self->progresses);
     self->progresses = NULL;
     self->blockCnt = 0;
@@ -360,8 +375,9 @@ static Qiniu_Error Qiniu_Rio_bput(
         retFromResp.ctx = Qiniu_Json_GetString(root, "ctx", NULL);
         retFromResp.checksum = Qiniu_Json_GetString(root, "checksum", NULL);
         retFromResp.host = Qiniu_Json_GetString(root, "host", NULL);
-        retFromResp.crc32 = (Qiniu_Uint32)Qiniu_Json_GetInt64(root, "crc32", 0);
-        retFromResp.offset = (Qiniu_Uint32)Qiniu_Json_GetInt64(root, "offset", 0);
+        retFromResp.crc32 = Qiniu_Json_GetUInt32(root, "crc32", 0);
+        retFromResp.offset = Qiniu_Json_GetUInt32(root, "offset", 0);
+        retFromResp.expiredAt = Qiniu_Json_GetUInt64(root, "expired_at", 0);
 
         if (retFromResp.ctx == NULL || retFromResp.host == NULL || retFromResp.offset == 0)
         {
@@ -626,11 +642,13 @@ static Qiniu_Error Qiniu_Rio_Recorder_Read_Medium(struct Qiniu_Record_Medium *me
     }
     cJSON *blockInfo = cJSON_Parse(buf);
     *blkIdx = Qiniu_Json_GetInt(blockInfo, "blkIdx", -1);
-    ret->ctx = strdup(Qiniu_Json_GetString(blockInfo, "ctx", NULL));
-    ret->checksum = strdup(Qiniu_Json_GetString(blockInfo, "checksum", NULL));
+    ret->ctx = Qiniu_String_Dup(Qiniu_Json_GetString(blockInfo, "ctx", NULL));
+    ret->checksum = Qiniu_String_Dup(Qiniu_Json_GetString(blockInfo, "checksum", NULL));
     ret->crc32 = Qiniu_Json_GetUInt32(blockInfo, "crc32", 0);
     ret->offset = Qiniu_Json_GetUInt32(blockInfo, "offset", 0);
-    ret->host = strdup(Qiniu_Json_GetString(blockInfo, "host", NULL));
+    ret->expiredAt = Qiniu_Json_GetUInt64(blockInfo, "expiredAt", 0);
+    ret->host = Qiniu_String_Dup(Qiniu_Json_GetString(blockInfo, "host", NULL));
+    ret->economical = Qiniu_False;
     cJSON_Delete(blockInfo);
     return Qiniu_OK;
 #undef BUFFER_SIZE
@@ -645,6 +663,7 @@ static Qiniu_Error Qiniu_Rio_Recorder_Write_Medium(struct Qiniu_Record_Medium *m
     cJSON_AddItemToObject(blockInfo, "checksum", cJSON_CreateString(ret->checksum));
     cJSON_AddItemToObject(blockInfo, "crc32", cJSON_CreateNumber(ret->crc32));
     cJSON_AddItemToObject(blockInfo, "offset", cJSON_CreateNumber(ret->offset));
+    cJSON_AddItemToObject(blockInfo, "expiredAt", cJSON_CreateNumber(ret->expiredAt));
     cJSON_AddItemToObject(blockInfo, "host", cJSON_CreateString(ret->host));
     char *blockInfoJson = cJSON_PrintUnformatted(blockInfo);
     cJSON_Delete(blockInfo);
@@ -770,6 +789,10 @@ static Qiniu_Error Qiniu_Rio_loadProgresses(Qiniu_Rio_PutRet *ret, Qiniu_Rio_Put
                 {
                     return err;
                 }
+                if (blkPutRet.expiredAt != 0 && blkPutRet.expiredAt < (Qiniu_Uint64)time(NULL))
+                {
+                    continue;
+                }
                 extra->progresses[blkIdx] = blkPutRet;
             }
             else
@@ -790,9 +813,11 @@ static Qiniu_Error Qiniu_Rio_clearProgresses(Qiniu_Rio_PutExtra *extra, Qiniu_Ri
     return Qiniu_OK;
 }
 
+static Qiniu_Error reinitializeRecorder(Qiniu_Rio_PutExtra *extra, Qiniu_FileInfo *fi, Qiniu_Rio_Recorder *recorder);
+
 static Qiniu_Error _Qiniu_Rio_Put(
     Qiniu_Client *self, Qiniu_Rio_PutRet *ret,
-    const char *uptoken, const char *key, Qiniu_ReaderAt f, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra *extra1, Qiniu_Rio_Recorder *recorder)
+    const char *uptoken, const char *key, Qiniu_ReaderAt f, Qiniu_Int64 fsize, Qiniu_FileInfo *fi, Qiniu_Rio_PutExtra *extra1, Qiniu_Rio_Recorder *recorder)
 {
     Qiniu_Int64 offbase;
     Qiniu_Rio_task *task;
@@ -821,7 +846,7 @@ static Qiniu_Error _Qiniu_Rio_Put(
     self->auth = auth = Qiniu_UptokenAuth(uptoken);
 
     Qiniu_Rio_loadProgresses(ret, &extra, recorder);
-
+reinit:
     for (i = 0; i < (int)extra.blockCnt; i++)
     {
         task = (Qiniu_Rio_task *)malloc(sizeof(Qiniu_Rio_task));
@@ -867,7 +892,12 @@ static Qiniu_Error _Qiniu_Rio_Put(
     else
     {
         err = Qiniu_Rio_Mkfile(self, ret, key, fsize, &extra);
-        if (err.code / 100 == 2 || err.code == 701 || err.code / 100 == 4)
+        if (err.code == Qiniu_Rio_InvalidCtx && recorder != NULL && recorder->toLoadProgresses == Qiniu_True && fi != NULL) {
+            Qiniu_Rio_PutExtra_Clear(&extra);
+            reinitializeRecorder(&extra, fi, recorder);
+            goto reinit;
+        }
+        if (err.code / 100 == 2 || err.code / 100 == 4 || err.code == Qiniu_Rio_InvalidCtx)
         {
             Qiniu_Rio_clearProgresses(&extra, recorder);
         }
@@ -885,8 +915,11 @@ Qiniu_Error Qiniu_Rio_Put(
     Qiniu_Client *self, Qiniu_Rio_PutRet *ret,
     const char *uptoken, const char *key, Qiniu_ReaderAt f, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra *extra1)
 {
-    return _Qiniu_Rio_Put(self, ret, uptoken, key, f, fsize, extra1, NULL);
+    return _Qiniu_Rio_Put(self, ret, uptoken, key, f, fsize, NULL, extra1, NULL);
 }
+
+static Qiniu_Error initializeRecorder(const char *uptoken, const char *key, const char *localFile, Qiniu_FileInfo *fi,
+    Qiniu_Rio_PutExtra *extra, Qiniu_Record_Medium *medium, Qiniu_Rio_Recorder *recorder);
 
 Qiniu_Error Qiniu_Rio_PutFile(
     Qiniu_Client *self, Qiniu_Rio_PutRet *ret,
@@ -897,7 +930,7 @@ Qiniu_Error Qiniu_Rio_PutFile(
     Qiniu_FileInfo fi;
     Qiniu_File *f;
     Qiniu_Bool ok;
-    Qiniu_Rio_Recorder recorder, *pRecorder = NULL;
+    Qiniu_Rio_Recorder recorder = {NULL, NULL, Qiniu_False}, *pRecorder = NULL;
     Qiniu_Record_Medium medium;
     Qiniu_Error err = Qiniu_File_Open(&f, localFile);
     if (err.code != 200)
@@ -917,38 +950,64 @@ Qiniu_Error Qiniu_Rio_PutFile(
 
             return Qiniu_Io_PutFile(self, ret, uptoken, key, localFile, &extra1);
         }
-        if (extra->recorder != NULL)
-        {
-            err = Qiniu_Utils_Generate_RecorderKey(uptoken, "v1", key, localFile, &recorder.recorderKey);
-            if (err.code != 200)
-            {
-                return err;
-            }
-            err = Qiniu_Utils_Find_Medium(extra->recorder, recorder.recorderKey, 1, &medium, &fi, &ok);
-            if (err.code != 200)
-            {
-                return err;
-            }
-            if (ok)
-            {
-                recorder.recorderMedium = &medium;
-                recorder.toLoadProgresses = Qiniu_True;
-            }
-            else
-            {
-                err = Qiniu_Utils_New_Medium(extra->recorder, recorder.recorderKey, 1, &medium, &fi);
-                if (err.code != 200)
-                {
-                    return err;
-                }
-                recorder.recorderMedium = &medium;
-                recorder.toLoadProgresses = Qiniu_False;
-            }
+        err = initializeRecorder(uptoken, key, localFile, &fi, extra, &medium, &recorder);
+        if (err.code != 200) {
+            return err;
+        }
+        if (recorder.recorderMedium != NULL) {
             pRecorder = &recorder;
         }
-        err = _Qiniu_Rio_Put(self, ret, uptoken, key, Qiniu_FileReaderAt(f), fsize, extra, pRecorder);
+        err = _Qiniu_Rio_Put(self, ret, uptoken, key, Qiniu_FileReaderAt(f), fsize, &fi, extra, pRecorder);
         Qiniu_Rio_Recorder_Cleanup(pRecorder);
     }
     Qiniu_File_Close(f);
     return err;
+}
+
+Qiniu_Error initializeRecorder(const char *uptoken, const char *key, const char *localFile, Qiniu_FileInfo *fi,
+    Qiniu_Rio_PutExtra *extra, Qiniu_Record_Medium *medium, Qiniu_Rio_Recorder *recorder) {
+
+    Qiniu_Bool ok;
+    Qiniu_Error err = Qiniu_OK;
+    if (extra->recorder != NULL)
+    {
+        err = Qiniu_Utils_Generate_RecorderKey(uptoken, "v1", key, localFile, &recorder->recorderKey);
+        if (err.code != 200)
+        {
+            return err;
+        }
+        err = Qiniu_Utils_Find_Medium(extra->recorder, recorder->recorderKey, 1, medium, fi, &ok);
+        if (err.code != 200)
+        {
+            return err;
+        }
+        if (ok)
+        {
+            recorder->recorderMedium = medium;
+            recorder->toLoadProgresses = Qiniu_True;
+        }
+        else
+        {
+            err = Qiniu_Utils_New_Medium(extra->recorder, recorder->recorderKey, 1, medium, fi);
+            if (err.code != 200)
+            {
+                return err;
+            }
+            recorder->recorderMedium = medium;
+            recorder->toLoadProgresses = Qiniu_False;
+        }
+    }
+    return err;
+}
+
+Qiniu_Error reinitializeRecorder(Qiniu_Rio_PutExtra *extra, Qiniu_FileInfo *fi, Qiniu_Rio_Recorder *recorder) {
+    Qiniu_Error err;
+    recorder->recorderMedium->close(recorder->recorderMedium);
+    err = Qiniu_Utils_New_Medium(extra->recorder, recorder->recorderKey, 1, recorder->recorderMedium, fi);
+    if (err.code != 200)
+    {
+        return err;
+    }
+    recorder->toLoadProgresses = Qiniu_False;
+    return Qiniu_OK;
 }
