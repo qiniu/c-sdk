@@ -97,7 +97,23 @@ Qiniu_Mac_Hmac_inner(Qiniu_Mac *mac, const char *items[], size_t items_len, cons
 
 #endif
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x30000000
+	char allitems[1024 ]="";
+	int allitemslen=0;
+	for (size_t i = 0; i <items_len; i++)
+	{
+		strcat(allitems , items[i]);
+		allitemslen+=strlen(items[i]);
+	}
+	strcat(allitems,"\n");
+	allitemslen++; 
+	if (addlen > 0)
+	{
+		strcat(allitems ,addition);
+		allitemslen+=addlen; 
+	}
+	HMAC(EVP_sha1(), mac->secretKey, strlen(mac->secretKey),allitems,  allitemslen, digest, digest_len);
+#elif OPENSSL_VERSION_NUMBER > 0x10100000
 	HMAC_CTX *ctx = HMAC_CTX_new();
 	HMAC_Init_ex(ctx, mac->secretKey, strlen(mac->secretKey), EVP_sha1(), NULL);
 	for (size_t i = 0; i < items_len; i++)
