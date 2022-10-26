@@ -93,7 +93,9 @@ extern "C"
 		const char *checksum;
 		Qiniu_Uint32 crc32;
 		Qiniu_Uint32 offset;
+		Qiniu_Uint64 expiredAt;
 		const char *host;
+		Qiniu_Bool economical;
 	} Qiniu_Rio_BlkputRet;
 
 #define QINIU_RIO_NOTIFY_OK 0
