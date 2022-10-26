@@ -1,5 +1,10 @@
 ## CHANGE LOG
 
+## v7.4.0 (2022-10-08)
+
+- 新增首尔和华东浙江 2 区 Region
+- 对象存储，优化分片上传 ctx 超时检测
+
 ## v7.3.0 (2022-06-08)
 - 对象存储，管理类 API 发送请求时增加 [X-Qiniu-Date](https://developer.qiniu.com/kodo/3924/common-request-headers) （生成请求的时间） header
 
