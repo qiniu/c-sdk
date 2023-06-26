@@ -57,3 +57,6 @@ CUnit/doc/headers/Makefile
 CUnit/libtool
 CUnit/stamp-h1
 
+.idea/
+.vscode/
+build/
