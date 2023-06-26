@@ -126,6 +126,7 @@ Qiniu_Error Qiniu_Utils_Generate_RecorderKey(const char *uptoken, const char *ve
 	{
 		*pRecorderKey = Qiniu_Recorder_Key_Generator_Generate(&recorderKeyGenerator);
 	}
+	Qiniu_Recorder_Key_Generator_Free(recorderKeyGenerator);
 	return Qiniu_OK;
 }
 

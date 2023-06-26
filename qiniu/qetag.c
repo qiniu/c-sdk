@@ -1,7 +1,7 @@
-#include <openssl/sha.h>
 
 #include "qetag.h"
 
+#include "private/crypto.h"
 #define NO 0
 #define YES 1
 
@@ -22,7 +22,7 @@ typedef struct _Qiniu_Qetag_Block {
         unsigned int reserved:8;
     };
 
-    SHA_CTX sha1Ctx;
+    Qiniu_Digest *sha1Digest;
 } Qiniu_Qetag_Block;
 
 typedef struct _Qiniu_Qetag_Context
@@ -35,7 +35,7 @@ typedef struct _Qiniu_Qetag_Context
     unsigned int blkCount;
     Qiniu_Qetag_Block * blk;
 
-    SHA_CTX sha1Ctx;
+	Qiniu_Digest *sha1Digest;
     Qiniu_Qetag_Block blkArray[1];
 } Qiniu_Qetag_Context;
 
@@ -47,16 +47,17 @@ static Qiniu_Error Qiniu_Qetag_mergeBlocks(struct _Qiniu_Qetag_Context * ctx) {
     while (ctx->blkUnused < ctx->blkElementCount && ctx->blkArray[ctx->blkBegin].done == YES) {
         blk = &ctx->blkArray[ctx->blkBegin];
 
-        if (SHA1_Final(digest, &blk->sha1Ctx) == 0) {
-            err.code = 9999;
-            err.message = "openssl internal error";
-            return err;
-        } // if
-        if (SHA1_Update(&ctx->sha1Ctx, digest, sizeof(digest)) == 0) {
-            err.code = 9999;
-            err.message = "openssl internal error";
-            return err;
-        } // if
+		if (Qiniu_Digest_Final(blk->sha1Digest, digest, NULL) != QINIU_CRYPTO_RESULT_OK) {
+			err.code = 9999;
+			err.message = "openssl internal error";
+			return err;
+		}
+
+		if (Qiniu_Digest_Update(ctx->sha1Digest, digest, sizeof(digest)) != QINIU_CRYPTO_RESULT_OK) {
+			err.code = 9999;
+			err.message = "openssl internal error";
+			return err;
+		}
 
         blk->done = NO;
         
@@ -92,11 +93,12 @@ static Qiniu_Error Qiniu_Qetag_allocateBlock(struct _Qiniu_Qetag_Context * ctx, 
     } // if
 
     newBlk = &ctx->blkArray[ctx->blkEnd];
-    if (SHA1_Init(&newBlk->sha1Ctx) == 0) {
-        err.code = 9999;
-        err.message = "openssl internal error";
-        return err;
-    }
+	newBlk->sha1Digest = Qiniu_Digest_New(QINIU_DIGEST_TYPE_SHA1);
+	if (newBlk->sha1Digest == NULL) {
+		err.code = 9999;
+		err.message = "openssl internal error";
+		return err;
+	}
 
     newBlk->done = NO;
     newBlk->capacity = BLOCK_MAX_SIZE;
@@ -149,11 +151,12 @@ Qiniu_Error Qiniu_Qetag_Reset(struct _Qiniu_Qetag_Context * ctx)
 {
     Qiniu_Error err;
 
-    if (SHA1_Init(&ctx->sha1Ctx) == 0) {
-        err.code = 9999;
-        err.message = "openssl internal error";
-        return err;
-    }
+	ctx->sha1Digest = Qiniu_Digest_New(QINIU_DIGEST_TYPE_SHA1);
+	if (ctx->sha1Digest == NULL) {
+		err.code = 9999;
+		err.message = "openssl internal error";
+		return err;
+	}
 
     ctx->blkCount   = 0;
     ctx->blkUnused  = ctx->blkElementCount;
@@ -228,12 +231,11 @@ Qiniu_Error Qiniu_Qetag_Final(struct _Qiniu_Qetag_Context * ctx, char ** digest)
 
     if (ctx->blkCount <= 1) {
         digestSummary[0] = 0x16;
-
-        if (SHA1_Final(&digestSummary[1], &ctx->blkArray[0].sha1Ctx) == 0) {
-            err.code = 9999;
-            err.message = "openssl internal error";
-            return err;
-        } // if
+		if (Qiniu_Digest_Final(ctx->sha1Digest, &digestSummary[1], NULL) != QINIU_CRYPTO_RESULT_OK) {
+			err.code = 9999;
+			err.message = "openssl internal error";
+			return err;
+		}
     } else {
         err = Qiniu_Qetag_mergeBlocks(ctx);
         if (err.code != 200) {
@@ -241,11 +243,11 @@ Qiniu_Error Qiniu_Qetag_Final(struct _Qiniu_Qetag_Context * ctx, char ** digest)
         }
 
         digestSummary[0] = 0x96;
-        if (SHA1_Final(&digestSummary[1], &ctx->sha1Ctx) == 0) {
-            err.code = 9999;
-            err.message = "openssl internal error";
-            return err;
-        }
+		if (Qiniu_Digest_Final(ctx->sha1Digest, &digestSummary[1], NULL) != QINIU_CRYPTO_RESULT_OK) {
+			err.code = 9999;
+			err.message = "openssl internal error";
+			return err;
+		}
     } // if
 
     newDigest = Qiniu_Memory_Encode((const char *)digestSummary, 1 + SHA_DIGEST_LENGTH);
@@ -288,11 +290,11 @@ Qiniu_Error Qiniu_Qetag_UpdateBlock(struct _Qiniu_Qetag_Block * blk, const char 
     Qiniu_Error err;
 
     if (bufSize > 0) {
-        if (SHA1_Update(&blk->sha1Ctx, buf, bufSize) == 0) {
-            err.code = 9999;
-            err.message = "openssl internal error";
-            return err;
-        }
+		if (Qiniu_Digest_Update(blk->sha1Digest, buf, (int) bufSize) != QINIU_CRYPTO_RESULT_OK) {
+			err.code = 9999;
+			err.message = "openssl internal error";
+			return err;
+		}
         blk->capacity -= bufSize;
     } // if
 

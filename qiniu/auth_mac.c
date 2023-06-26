@@ -11,8 +11,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <curl/curl.h>
-#include <openssl/hmac.h>
-#include <openssl/engine.h>
+#include "private/crypto.h"
 
 #if defined(_WIN32)
 #include "emu_posix.h" // for function Qiniu_Posix_strndup
@@ -42,8 +41,7 @@ static int _setenv(const char *name, const char *value)
 
 void Qiniu_MacAuth_Init()
 {
-	ENGINE_load_builtin_engines();
-	ENGINE_register_all_complete();
+	Qiniu_Crypto_Init();
 }
 
 void Qiniu_MacAuth_Cleanup()
@@ -79,39 +77,20 @@ void Qiniu_MacAuth_Disable_Qiniu_Timestamp_Signature()
 static void
 Qiniu_Mac_Hmac_inner(Qiniu_Mac *mac, const char *items[], size_t items_len, const char *addition, size_t addlen, char *digest, unsigned int *digest_len)
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000
-	HMAC_CTX ctx;
-	HMAC_CTX_init(&ctx);
-	HMAC_Init_ex(&ctx, mac->secretKey, strlen(mac->secretKey), EVP_sha1(), NULL);
+	Qiniu_HMAC *hmac = Qiniu_HMAC_New(QINIU_DIGEST_TYPE_SHA1, (const unsigned char*)mac->secretKey, (int) strlen(mac->secretKey));
 	for (size_t i = 0; i < items_len; i++)
 	{
-		HMAC_Update(&ctx, items[i], strlen(items[i]));
+		Qiniu_HMAC_Update(hmac, (const unsigned char*)items[i], (int) strlen(items[i]));
 	}
-	HMAC_Update(&ctx, "\n", 1);
+	Qiniu_HMAC_Update(hmac, (const unsigned char*)"\n", 1);
 	if (addlen > 0)
 	{
-		HMAC_Update(&ctx, addition, addlen);
+		Qiniu_HMAC_Update(hmac, (const unsigned char*)addition, (int) addlen);
 	}
-	HMAC_Final(&ctx, digest, digest_len);
-	HMAC_cleanup(&ctx);
-
-#endif
-
-#if OPENSSL_VERSION_NUMBER > 0x10100000
-	HMAC_CTX *ctx = HMAC_CTX_new();
-	HMAC_Init_ex(ctx, mac->secretKey, strlen(mac->secretKey), EVP_sha1(), NULL);
-	for (size_t i = 0; i < items_len; i++)
-	{
-		HMAC_Update(ctx, items[i], strlen(items[i]));
-	}
-	HMAC_Update(ctx, "\n", 1);
-	if (addlen > 0)
-	{
-		HMAC_Update(ctx, addition, addlen);
-	}
-	HMAC_Final(ctx, digest, digest_len);
-	HMAC_CTX_free(ctx);
-#endif
+	size_t digest_len_tmp;
+	Qiniu_HMAC_Final(hmac, (unsigned char*)digest, &digest_len_tmp);
+	Qiniu_HMAC_Free(hmac);
+	*digest_len = (unsigned int)digest_len_tmp;
 }
 
 static void Qiniu_Mac_Hmac(Qiniu_Mac *mac, const char *path, const char *addition, size_t addlen, char *digest, unsigned int *digest_len)
@@ -578,7 +557,7 @@ char *Qiniu_Mac_Sign(Qiniu_Mac *self, char *data)
 	char *sign;
 	char *encoded_digest;
 	char digest[EVP_MAX_MD_SIZE + 1];
-	unsigned int digest_len = sizeof(digest);
+	size_t digest_len = sizeof(digest);
 
 	Qiniu_Mac mac;
 
@@ -592,21 +571,11 @@ char *Qiniu_Mac_Sign(Qiniu_Mac *self, char *data)
 		mac.secretKey = QINIU_SECRET_KEY;
 	}
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000
-	HMAC_CTX ctx;
-	HMAC_CTX_init(&ctx);
-	HMAC_Init_ex(&ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
-	HMAC_Update(&ctx, data, strlen(data));
-	HMAC_Final(&ctx, digest, &digest_len);
-	HMAC_CTX_cleanup(&ctx);
-#endif
-#if OPENSSL_VERSION_NUMBER > 0x10100000
-	HMAC_CTX *ctx = HMAC_CTX_new();
-	HMAC_Init_ex(ctx, mac.secretKey, strlen(mac.secretKey), EVP_sha1(), NULL);
-	HMAC_Update(ctx, data, strlen(data));
-	HMAC_Final(ctx, digest, &digest_len);
-	HMAC_CTX_free(ctx);
-#endif
+	Qiniu_HMAC *hmac = Qiniu_HMAC_New(QINIU_DIGEST_TYPE_SHA1, (const unsigned char *) mac.secretKey, (int) strlen(mac.secretKey));
+	Qiniu_HMAC_Update(hmac, (const unsigned char *) data, (int) strlen(data));
+	Qiniu_HMAC_Final(hmac, (unsigned char *) digest, &digest_len);
+	Qiniu_HMAC_Free(hmac);
+
 	encoded_digest = Qiniu_Memory_Encode(digest, digest_len);
 	sign = Qiniu_String_Concat3(mac.accessKey, ":", encoded_digest);
 	Qiniu_Free(encoded_digest);
