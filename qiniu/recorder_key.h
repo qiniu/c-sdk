@@ -11,7 +11,7 @@
 #define QINIU_RECORDER_KEY_H
 
 #include "base.h"
-#include <openssl/md5.h>
+#include "private/crypto.h"
 
 #pragma pack(1)
 
@@ -20,20 +20,21 @@ extern "C"
 {
 #endif
 
-    /*============================================================================*/
+/*============================================================================*/
 
-    struct Qiniu_Recorder_Key_Generator;
+struct Qiniu_Recorder_Key_Generator;
 
-    typedef struct Qiniu_Recorder_Key_Generator
-    {
-        MD5_CTX md5Ctx;
-    } Qiniu_Recorder_Key_Generator;
+typedef struct Qiniu_Recorder_Key_Generator
+{
+	Qiniu_Digest *digest;
+} Qiniu_Recorder_Key_Generator;
 
-    QINIU_DLLAPI extern Qiniu_Recorder_Key_Generator Qiniu_Recorder_Key_Generator_New();
-    QINIU_DLLAPI extern void Qiniu_Recorder_Key_Generator_Append(Qiniu_Recorder_Key_Generator *key, const char *data);
-    QINIU_DLLAPI extern const char *Qiniu_Recorder_Key_Generator_Generate(Qiniu_Recorder_Key_Generator *key);
+QINIU_DLLAPI extern Qiniu_Recorder_Key_Generator Qiniu_Recorder_Key_Generator_New();
+QINIU_DLLAPI extern void Qiniu_Recorder_Key_Generator_Append(Qiniu_Recorder_Key_Generator *key, const char *data);
+QINIU_DLLAPI extern const char *Qiniu_Recorder_Key_Generator_Generate(Qiniu_Recorder_Key_Generator *key);
+QINIU_DLLAPI extern void Qiniu_Recorder_Key_Generator_Free(Qiniu_Recorder_Key_Generator key);
 
-    /*============================================================================*/
+/*============================================================================*/
 
 #pragma pack()
 

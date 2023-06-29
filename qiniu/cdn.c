@@ -1,5 +1,3 @@
-#include <openssl/md5.h>
-#include <ctype.h>
 #include "base.h"
 #include "cdn.h"
 #include "tm.h"
