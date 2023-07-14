@@ -40,6 +40,8 @@ extern "C"
 
 	QINIU_DLLAPI extern void Qiniu_Use_Zone_Dongnanya(Qiniu_Bool useHttps);
 
+	QINIU_DLLAPI extern void Qiniu_Use_Zone_Cn_East_2(Qiniu_Bool useHttps);
+
 #ifdef __cplusplus
 }
 #endif
