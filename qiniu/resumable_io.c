@@ -16,6 +16,7 @@
 #include "recorder_key.h"
 #include "recorder_utils.h"
 #include "../cJSON/cJSON.h"
+#include "private/region.h"
 
 #define blockBits 22
 #define blockMask ((1 << blockBits) - 1)
@@ -203,21 +204,13 @@ static void Qiniu_Rio_Recorder_Cleanup(Qiniu_Rio_Recorder *recorder)
 
 static void Qiniu_Rio_BlkputRet_Cleanup(Qiniu_Rio_BlkputRet *self)
 {
-    if (self->ctx != NULL)
+    Qiniu_Free((void *)self->ctx);
+    if (self->economical == Qiniu_False)
     {
-        free((void *)self->ctx);
+        Qiniu_Free((void *)self->checksum);
+        Qiniu_Free((void *)self->host);
     }
-    if (self->economical == Qiniu_False) {
-        if (self->checksum != NULL)
-        {
-            free((void *)self->checksum);
-        }
-        if (self->host != NULL)
-        {
-            free((void *)self->host);
-        }
-    }
-    memset(self, 0, sizeof(*self));
+    Qiniu_Zero_Ptr(self);
 }
 
 static void Qiniu_Rio_BlkputRet_Assign(Qiniu_Rio_BlkputRet *self, Qiniu_Rio_BlkputRet *ret)
@@ -334,8 +327,7 @@ static void Qiniu_Rio_PutExtra_Clear(Qiniu_Rio_PutExtra *self)
 static void Qiniu_Rio_PutExtra_Cleanup(Qiniu_Rio_PutExtra *self)
 {
     Qiniu_Rio_PutExtra_Clear(self);
-    free(self->progresses);
-    self->progresses = NULL;
+    Qiniu_FreeV2((void **)&self->progresses);
     self->blockCnt = 0;
 }
 
@@ -396,15 +388,7 @@ static Qiniu_Error Qiniu_Rio_Mkblock(
     Qiniu_Client *self, Qiniu_Rio_BlkputRet *ret, int blkSize, Qiniu_Reader body, int bodyLength,
     Qiniu_Rio_PutExtra *extra)
 {
-    const char *upHost = NULL;
-    char *url = NULL;
-
-    if (extra && (upHost = extra->upHost) == NULL)
-    {
-        upHost = QINIU_UP_HOST;
-    } // if
-
-    url = Qiniu_String_Format(128, "%s/mkblk/%d", upHost, blkSize);
+    char *url = Qiniu_String_Format(128, "%s/mkblk/%d", extra->upHost, blkSize);
     Qiniu_Error err = Qiniu_Rio_bput(self, ret, body, bodyLength, url);
     Qiniu_Free(url);
 
@@ -558,19 +542,12 @@ static Qiniu_Error Qiniu_Rio_Mkfile(
 {
     size_t i, blkCount = extra->blockCnt;
     Qiniu_Json *root;
-    const char *upHost = NULL;
     Qiniu_Rio_BlkputRet *prog;
     Qiniu_Buffer url, body;
     int j = 0;
 
     Qiniu_Buffer_Init(&url, 2048);
-
-    if ((upHost = extra->upHost) == NULL)
-    {
-        upHost = QINIU_UP_HOST;
-    } // if
-
-    Qiniu_Buffer_AppendFormat(&url, "%s/mkfile/%D", upHost, fsize);
+    Qiniu_Buffer_AppendFormat(&url, "%s/mkfile/%D", extra->upHost, fsize);
 
     if (key != NULL)
     {
@@ -825,6 +802,7 @@ static Qiniu_Error _Qiniu_Rio_Put(
     Qiniu_Rio_PutExtra extra;
     Qiniu_Rio_ThreadModel tm;
     Qiniu_Auth auth, auth1 = self->auth;
+    const char *accessKey = NULL, *bucketName = NULL;
     int i, last, blkSize;
     int nfails;
     int retCode;
@@ -833,6 +811,22 @@ static Qiniu_Error _Qiniu_Rio_Put(
     if (err.code != 200)
     {
         return err;
+    }
+    if (extra.upHost == NULL)
+    {
+        if (!Qiniu_Utils_Extract_Bucket(uptoken, &accessKey, &bucketName))
+        {
+            err.code = 400;
+            err.message = "parse uptoken failed";
+            return err;
+        }
+        err = _Qiniu_Region_Get_Up_Host(self, accessKey, bucketName, &extra.upHost);
+        if (err.code != 200)
+        {
+            Qiniu_Free((void *)accessKey);
+            Qiniu_Free((void *)bucketName);
+            return err;
+        }
     }
 
     tm = extra.threadModel;
@@ -892,7 +886,8 @@ reinit:
     else
     {
         err = Qiniu_Rio_Mkfile(self, ret, key, fsize, &extra);
-        if (err.code == Qiniu_Rio_InvalidCtx && recorder != NULL && recorder->toLoadProgresses == Qiniu_True && fi != NULL) {
+        if (err.code == Qiniu_Rio_InvalidCtx && recorder != NULL && recorder->toLoadProgresses == Qiniu_True && fi != NULL)
+        {
             Qiniu_Rio_PutExtra_Clear(&extra);
             reinitializeRecorder(&extra, fi, recorder);
             goto reinit;
@@ -904,7 +899,8 @@ reinit:
     }
 
     Qiniu_Rio_PutExtra_Cleanup(&extra);
-
+    Qiniu_Free((void *)accessKey);
+    Qiniu_Free((void *)bucketName);
     wg.itbl->Release(wg.self);
     auth.itbl->Release(auth.self);
     self->auth = auth1;
@@ -919,7 +915,7 @@ Qiniu_Error Qiniu_Rio_Put(
 }
 
 static Qiniu_Error initializeRecorder(const char *uptoken, const char *key, const char *localFile, Qiniu_FileInfo *fi,
-    Qiniu_Rio_PutExtra *extra, Qiniu_Record_Medium *medium, Qiniu_Rio_Recorder *recorder);
+                                      Qiniu_Rio_PutExtra *extra, Qiniu_Record_Medium *medium, Qiniu_Rio_Recorder *recorder);
 
 Qiniu_Error Qiniu_Rio_PutFile(
     Qiniu_Client *self, Qiniu_Rio_PutRet *ret,
@@ -951,10 +947,12 @@ Qiniu_Error Qiniu_Rio_PutFile(
             return Qiniu_Io_PutFile(self, ret, uptoken, key, localFile, &extra1);
         }
         err = initializeRecorder(uptoken, key, localFile, &fi, extra, &medium, &recorder);
-        if (err.code != 200) {
+        if (err.code != 200)
+        {
             return err;
         }
-        if (recorder.recorderMedium != NULL) {
+        if (recorder.recorderMedium != NULL)
+        {
             pRecorder = &recorder;
         }
         err = _Qiniu_Rio_Put(self, ret, uptoken, key, Qiniu_FileReaderAt(f), fsize, &fi, extra, pRecorder);
@@ -965,7 +963,8 @@ Qiniu_Error Qiniu_Rio_PutFile(
 }
 
 Qiniu_Error initializeRecorder(const char *uptoken, const char *key, const char *localFile, Qiniu_FileInfo *fi,
-    Qiniu_Rio_PutExtra *extra, Qiniu_Record_Medium *medium, Qiniu_Rio_Recorder *recorder) {
+                               Qiniu_Rio_PutExtra *extra, Qiniu_Record_Medium *medium, Qiniu_Rio_Recorder *recorder)
+{
 
     Qiniu_Bool ok;
     Qiniu_Error err = Qiniu_OK;
@@ -1000,7 +999,8 @@ Qiniu_Error initializeRecorder(const char *uptoken, const char *key, const char 
     return err;
 }
 
-Qiniu_Error reinitializeRecorder(Qiniu_Rio_PutExtra *extra, Qiniu_FileInfo *fi, Qiniu_Rio_Recorder *recorder) {
+Qiniu_Error reinitializeRecorder(Qiniu_Rio_PutExtra *extra, Qiniu_FileInfo *fi, Qiniu_Rio_Recorder *recorder)
+{
     Qiniu_Error err;
     recorder->recorderMedium->close(recorder->recorderMedium);
     err = Qiniu_Utils_New_Medium(extra->recorder, recorder->recorderKey, 1, recorder->recorderMedium, fi);

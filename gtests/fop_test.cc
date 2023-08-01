@@ -22,11 +22,11 @@ static void pfop(Qiniu_Client *client)
 TEST(IntegrationTest, TestFop)
 {
 	Qiniu_Client client;
-	Qiniu_Mac mac = {QINIU_ACCESS_KEY, QINIU_SECRET_KEY};
 
-	Qiniu_Client_InitMacAuth(&client, 1024, &mac);
+	Qiniu_Client_InitMacAuth(&client, 1024, NULL);
 	Qiniu_Client_SetTimeout(&client, 5000);
 	Qiniu_Client_SetConnectTimeout(&client, 3000);
+	Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
 
 	pfop(&client);
 

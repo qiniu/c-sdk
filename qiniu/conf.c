@@ -16,17 +16,24 @@ const char *QINIU_ACCESS_KEY = "<Please apply your access key>";
 const char *QINIU_SECRET_KEY = "<Dont send your secret key to anyone>";
 
 // 公共服务http域名
+//
+// 不再推荐使用，建议使用 Qiniu_Region 结构体替代
 const char *QINIU_RS_HOST = "http://rs.qbox.me";
 const char *QINIU_RSF_HOST = "http://rsf.qbox.me";
 const char *QINIU_API_HOST = "http://api.qiniu.com";
 const char *QINIU_FUSION_HOST = "http://fusion.qiniuapi.com";
-const char *QINIU_UC_HOST = "http://uc.qbox.me";
+const char *QINIU_UC_HOST = "http://kodo-config.qiniuapi.com";
+const char *QINIU_UC_HOST_BACKUP = "http://uc.qbox.me";
 
 // 默认华东机房
+//
+// 不再推荐使用，建议使用 Qiniu_Region 结构体替代
 const char *QINIU_UP_HOST = "http://upload.qiniup.com";
 const char *QINIU_IOVIP_HOST = "http://iovip.qbox.me";
 
 // 设置华东机房域名
+//
+// 不再推荐使用，建议使用 Qiniu_Use_Region("z0") 方法替代
 void Qiniu_Use_Zone_Huadong(Qiniu_Bool useHttps)
 {
     if (useHttps == Qiniu_True)
@@ -48,6 +55,8 @@ void Qiniu_Use_Zone_Huadong(Qiniu_Bool useHttps)
 }
 
 // 设置华北机房域名
+//
+// 不再推荐使用，建议使用 Qiniu_Use_Region("z1") 方法替代
 void Qiniu_Use_Zone_Huabei(Qiniu_Bool useHttps)
 {
     if (useHttps == Qiniu_True)
@@ -69,6 +78,8 @@ void Qiniu_Use_Zone_Huabei(Qiniu_Bool useHttps)
 }
 
 // 设置华南机房域名
+//
+// 不再推荐使用，建议使用 Qiniu_Use_Region("z2") 方法替代
 void Qiniu_Use_Zone_Huanan(Qiniu_Bool useHttps)
 {
     if (useHttps == Qiniu_True)
@@ -90,6 +101,8 @@ void Qiniu_Use_Zone_Huanan(Qiniu_Bool useHttps)
 }
 
 // 设置北美机房域名
+//
+// 不再推荐使用，建议使用 Qiniu_Use_Region("na0") 方法替代
 void Qiniu_Use_Zone_Beimei(Qiniu_Bool useHttps)
 {
     if (useHttps == Qiniu_True)
@@ -111,6 +124,8 @@ void Qiniu_Use_Zone_Beimei(Qiniu_Bool useHttps)
 }
 
 // 设置新加坡机房
+//
+// 不再推荐使用，建议使用 Qiniu_Use_Region("as0") 方法替代
 void Qiniu_Use_Zone_Dongnanya(Qiniu_Bool useHttps)
 {
     if (useHttps == Qiniu_True)
@@ -132,6 +147,8 @@ void Qiniu_Use_Zone_Dongnanya(Qiniu_Bool useHttps)
 }
 
 // 设置华东二区机房
+//
+// 不再推荐使用，建议使用 Qiniu_Use_Region("cn-east-2") 方法替代
 void Qiniu_Use_Zone_Cn_East_2(Qiniu_Bool useHttps)
 {
     if (useHttps == Qiniu_True)

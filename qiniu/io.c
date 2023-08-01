@@ -9,6 +9,8 @@
 
 #include "io.h"
 #include "reader.h"
+#include "recorder_utils.h"
+#include "private/region.h"
 #include <curl/curl.h>
 
 /*============================================================================*/
@@ -56,19 +58,26 @@ CURL *Qiniu_Client_reset(Qiniu_Client *self);
 
 Qiniu_Error Qiniu_callex(CURL *curl, Qiniu_Buffer *resp, Qiniu_Json **ret, Qiniu_Bool simpleError, Qiniu_Buffer *resph);
 
-const char *Get_Qiniu_UpHost(Qiniu_Io_PutExtra *extra)
+static Qiniu_Error Get_Qiniu_UpHost(Qiniu_Client *client, const char *accessKey, const char *bucketName, Qiniu_Io_PutExtra *extra, const char **upHost)
 {
-    const char *upHost = QINIU_UP_HOST;
     if (extra && extra->ipCount != 0)
     {
         Qiniu_Count oldIndex = Qiniu_Count_Inc(&extra->ipIndex);
-        upHost = extra->upIps[abs(oldIndex % extra->ipCount)];
+        *upHost = extra->upIps[abs(oldIndex % extra->ipCount)];
     }
     else if (extra && extra->upHost != NULL)
     {
-        upHost = extra->upHost;
+        *upHost = extra->upHost;
     }
-    return upHost;
+    else
+    {
+        Qiniu_Error err = _Qiniu_Region_Get_Up_Host(client, accessKey, bucketName, upHost);
+        if (err.code != 200)
+        {
+            return err;
+        }
+    }
+    return Qiniu_OK;
 }
 
 Qiniu_Error Qiniu_Client_config(Qiniu_Client *self)
@@ -136,16 +145,20 @@ Qiniu_Error Qiniu_Client_config(Qiniu_Client *self)
 }
 
 static Qiniu_Error Qiniu_Io_call(
-    Qiniu_Client *self, Qiniu_Io_PutRet *ret, struct curl_httppost *formpost,
-    Qiniu_Io_PutExtra *extra)
+    Qiniu_Client *self, const char *accessKey, const char *bucketName,
+    Qiniu_Io_PutRet *ret, struct curl_httppost *formpost, Qiniu_Io_PutExtra *extra)
 {
     int retCode = 0;
     Qiniu_Error err;
     struct curl_slist *headers = NULL;
     const char *upHost = NULL;
 
-    CURL *curl = Qiniu_Client_reset(self);
     err = Qiniu_Client_config(self);
+    if (err.code != 200)
+    {
+        return err;
+    }
+    err = Get_Qiniu_UpHost(self, accessKey, bucketName, extra, &upHost);
     if (err.code != 200)
     {
         return err;
@@ -153,9 +166,7 @@ static Qiniu_Error Qiniu_Io_call(
 
     headers = curl_slist_append(NULL, "Expect:");
 
-    //// For using multi-region storage.
-    upHost = Get_Qiniu_UpHost(extra);
-
+    CURL *curl = Qiniu_Client_reset(self);
     curl_easy_setopt(curl, CURLOPT_URL, upHost);
     curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -190,12 +201,20 @@ Qiniu_Error Qiniu_Io_PutFile(
     Qiniu_Client *self, Qiniu_Io_PutRet *ret,
     const char *uptoken, const char *key, const char *localFile, Qiniu_Io_PutExtra *extra)
 {
-    Qiniu_Error err;
+    Qiniu_Error err = Qiniu_OK;
     Qiniu_FileInfo fi;
     Qiniu_Rd_Reader rdr;
     Qiniu_Io_form form;
     size_t fileSize;
-    const char *localFileName;
+    const char *localFileName = NULL, *accessKey = NULL, *bucketName = NULL;
+
+    if (!Qiniu_Utils_Extract_Bucket(uptoken, &accessKey, &bucketName))
+    {
+        err.code = 400;
+        err.message = "parse uptoken failed";
+        return err;
+    }
+
     Qiniu_Io_form_init(&form, uptoken, key, &extra);
 
     // BugFix : If the filename attribute of the file form-data section is not assigned or holds an empty string,
@@ -216,14 +235,14 @@ Qiniu_Error Qiniu_Io_PutFile(
         err = Qiniu_Rd_Reader_Open(&rdr, localFile);
         if (err.code != 200)
         {
-            return err;
+            goto error;
         } // if
 
         Qiniu_Zero(fi);
         err = Qiniu_File_Stat(rdr.file, &fi);
         if (err.code != 200)
         {
-            return err;
+            goto error;
         } // if
 
         fileSize = fi.st_size;
@@ -237,7 +256,7 @@ Qiniu_Error Qiniu_Io_PutFile(
                      CURLFORM_FILENAME, localFileName, CURLFORM_END);
     } // if
 
-    err = Qiniu_Io_call(self, ret, form.formpost, extra);
+    err = Qiniu_Io_call(self, accessKey, bucketName, ret, form.formpost, extra);
 
     //// For aborting uploading file.
     if (extra->upAbortCallback)
@@ -258,6 +277,9 @@ Qiniu_Error Qiniu_Io_PutFile(
         }     // if
     }         // if
 
+error:
+    Qiniu_Free((void *)accessKey);
+    Qiniu_Free((void *)bucketName);
     return err;
 }
 
@@ -265,7 +287,17 @@ Qiniu_Error Qiniu_Io_PutBuffer(
     Qiniu_Client *self, Qiniu_Io_PutRet *ret,
     const char *uptoken, const char *key, const char *buf, size_t fsize, Qiniu_Io_PutExtra *extra)
 {
+    Qiniu_Error err = Qiniu_OK;
+    const char *accessKey = NULL, *bucketName = NULL;
     Qiniu_Io_form form;
+
+    if (!Qiniu_Utils_Extract_Bucket(uptoken, &accessKey, &bucketName))
+    {
+        err.code = 400;
+        err.message = "parse uptoken failed";
+        return err;
+    }
+
     Qiniu_Io_form_init(&form, uptoken, key, &extra);
 
     if (key == NULL)
@@ -279,21 +311,24 @@ Qiniu_Error Qiniu_Io_PutBuffer(
     curl_formadd(
         &form.formpost, &form.lastptr, CURLFORM_COPYNAME, "file",
         CURLFORM_BUFFER, key, CURLFORM_BUFFERPTR, buf, CURLFORM_BUFFERLENGTH, fsize, CURLFORM_END);
+    err = Qiniu_Io_call(self, accessKey, bucketName, ret, form.formpost, extra);
 
-    return Qiniu_Io_call(self, ret, form.formpost, extra);
+error:
+    Qiniu_Free((void *)accessKey);
+    Qiniu_Free((void *)bucketName);
+    return err;
 }
 
 // This function  will be called by 'Qiniu_Io_PutStream'
 // In this function, readFunc(read-stream-data) will be set
 static Qiniu_Error Qiniu_Io_call_with_callback(
-    Qiniu_Client *self, Qiniu_Io_PutRet *ret,
-    struct curl_httppost *formpost,
-    rdFunc rdr,
-    Qiniu_Io_PutExtra *extra)
+    Qiniu_Client *self, const char *accessKey, const char *bucketName,
+    Qiniu_Io_PutRet *ret, struct curl_httppost *formpost, rdFunc rdr, Qiniu_Io_PutExtra *extra)
 {
     int retCode = 0;
     Qiniu_Error err;
     struct curl_slist *headers = NULL;
+    const char *upHost;
 
     CURL *curl = Qiniu_Client_reset(self);
     err = Qiniu_Client_config(self);
@@ -301,10 +336,15 @@ static Qiniu_Error Qiniu_Io_call_with_callback(
     {
         return err;
     }
+    err = Get_Qiniu_UpHost(self, accessKey, bucketName, extra, &upHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
 
     headers = curl_slist_append(NULL, "Expect:");
 
-    curl_easy_setopt(curl, CURLOPT_URL, QINIU_UP_HOST);
+    curl_easy_setopt(curl, CURLOPT_URL, upHost);
     curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_READFUNCTION, rdr);
@@ -334,6 +374,16 @@ Qiniu_Error Qiniu_Io_PutStream(
     void *ctx, size_t fsize, rdFunc rdr,
     Qiniu_Io_PutExtra *extra)
 {
+    Qiniu_Error err = Qiniu_OK;
+    const char *accessKey = NULL, *bucketName = NULL;
+
+    if (!Qiniu_Utils_Extract_Bucket(uptoken, &accessKey, &bucketName))
+    {
+        err.code = 400;
+        err.message = "parse uptoken failed";
+        return err;
+    }
+
     Qiniu_Io_form form;
     Qiniu_Io_form_init(&form, uptoken, key, &extra);
 
@@ -357,7 +407,11 @@ Qiniu_Error Qiniu_Io_PutStream(
         CURLFORM_CONTENTSLENGTH, fsize,
         CURLFORM_END);
 
-    return Qiniu_Io_call_with_callback(self, ret, form.formpost, rdr, extra);
+    err = Qiniu_Io_call_with_callback(self, accessKey, bucketName, ret, form.formpost, rdr, extra);
+error:
+    Qiniu_Free((void *)accessKey);
+    Qiniu_Free((void *)bucketName);
+    return err;
 }
 
 Qiniu_Error Qiniu_UptokenAuth_ToHeader(
@@ -380,7 +434,7 @@ static Qiniu_Error Qiniu_UptokenAuth_ToHeader_v2(
 
 void Qiniu_UptokenAuth_Release(void *p)
 {
-    free(p);
+    Qiniu_Free(p);
 }
 
 Qiniu_Auth_Itbl Qiniu_UptokenAuth_Itbl = {Qiniu_UptokenAuth_ToHeader, Qiniu_UptokenAuth_Release, Qiniu_UptokenAuth_ToHeader_v2};

@@ -339,23 +339,17 @@ Qiniu_Uint32 Qiniu_Json_GetUInt32(Qiniu_Json *self, const char *key, Qiniu_Uint3
 
 Qiniu_Auth Qiniu_NoAuth = {
     NULL,
-    NULL};
+    NULL,
+};
 
 void Qiniu_Client_InitEx(Qiniu_Client *self, Qiniu_Auth auth, size_t bufSize)
 {
+    Qiniu_Zero_Ptr(self);
     self->curl = curl_easy_init();
-    self->root = NULL;
     self->auth = auth;
 
     Qiniu_Buffer_Init(&self->b, bufSize);
     Qiniu_Buffer_Init(&self->respHeader, bufSize);
-
-    self->boundNic = NULL;
-
-    self->lowSpeedLimit = 0;
-    self->lowSpeedTime = 0;
-    self->timeoutMs = 0;
-    self->connectTimeoutMs = 0;
 }
 
 void Qiniu_Client_InitNoAuth(Qiniu_Client *self, size_t bufSize)
@@ -382,6 +376,9 @@ void Qiniu_Client_Cleanup(Qiniu_Client *self)
     }
     Qiniu_Buffer_Cleanup(&self->b);
     Qiniu_Buffer_Cleanup(&self->respHeader);
+
+    Qiniu_FreeV2((void **)&self->cachedRegion);
+    Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
 }
 
 void Qiniu_Client_BindNic(Qiniu_Client *self, const char *nic)
@@ -404,6 +401,17 @@ void Qiniu_Client_SetConnectTimeout(Qiniu_Client *self, long connectTimeoutMs)
 {
     self->connectTimeoutMs = connectTimeoutMs;
 } // Qiniu_Client_SetConnectTimeout
+
+void Qiniu_Client_EnableAutoQuery(Qiniu_Client *self, Qiniu_Bool useHttps)
+{
+    self->autoQueryRegion = Qiniu_True;
+    self->autoQueryHttpsRegion = useHttps;
+}
+
+void Qiniu_Client_SpecifyRegion(Qiniu_Client *self, Qiniu_Region *region)
+{
+    self->specifiedRegion = region;
+}
 
 CURL *Qiniu_Client_reset(Qiniu_Client *self)
 {
