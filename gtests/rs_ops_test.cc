@@ -16,7 +16,7 @@ static void debug(Qiniu_Client *client, Qiniu_Error err)
 }
 
 static void batchCopy(Qiniu_Client *client,
-		      Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount)
+					  Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount)
 {
 	Qiniu_RS_BatchItemRet *rets = (Qiniu_RS_BatchItemRet *)calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
 	Qiniu_Error err = Qiniu_RS_BatchCopy(client, rets, entryPairs, entryCount);
@@ -45,7 +45,7 @@ static void batchCopy(Qiniu_Client *client,
 }
 
 static void batchMove(Qiniu_Client *client,
-		      Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount)
+					  Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount)
 {
 	Qiniu_RS_BatchItemRet *rets = (Qiniu_RS_BatchItemRet *)calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
 	Qiniu_Error err = Qiniu_RS_BatchMove(client, rets, entryPairs, entryCount);
@@ -74,7 +74,7 @@ static void batchMove(Qiniu_Client *client,
 }
 
 static void batchStat(Qiniu_Client *client,
-		      Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount)
+					  Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount)
 {
 	Qiniu_RS_BatchStatRet *rets = (Qiniu_RS_BatchStatRet *)calloc(entryCount, sizeof(Qiniu_RS_BatchStatRet));
 	Qiniu_Error err = Qiniu_RS_BatchStat(client, rets, entries, entryCount);
@@ -111,7 +111,7 @@ static void batchStat(Qiniu_Client *client,
 }
 
 static void batchChangeType(Qiniu_Client *client,
-		      Qiniu_RS_EntryChangeType *entries, Qiniu_ItemCount entryCount)
+							Qiniu_RS_EntryChangeType *entries, Qiniu_ItemCount entryCount)
 {
 	Qiniu_RS_BatchItemRet *rets = (Qiniu_RS_BatchItemRet *)calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
 	Qiniu_Error err = Qiniu_RS_BatchChangeType(client, rets, entries, entryCount);
@@ -140,7 +140,7 @@ static void batchChangeType(Qiniu_Client *client,
 }
 
 static void batchRestoreArchive(Qiniu_Client *client,
-		      Qiniu_RS_EntryRestoreArchive *entries, Qiniu_ItemCount entryCount)
+								Qiniu_RS_EntryRestoreArchive *entries, Qiniu_ItemCount entryCount)
 {
 	Qiniu_RS_BatchItemRet *rets = (Qiniu_RS_BatchItemRet *)calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
 	Qiniu_Error err = Qiniu_RS_BatchRestoreArchive(client, rets, entries, entryCount);
@@ -169,7 +169,7 @@ static void batchRestoreArchive(Qiniu_Client *client,
 }
 
 static void batchDelete(Qiniu_Client *client,
-			Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount)
+						Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount)
 {
 	Qiniu_RS_BatchItemRet *rets = (Qiniu_RS_BatchItemRet *)calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
 	Qiniu_Error err = Qiniu_RS_BatchDelete(client, rets, entries, entryCount);
@@ -210,6 +210,7 @@ TEST(IntegrationTest, TestRsBatchOps)
 	Qiniu_Client_InitMacAuth(&client, 1024, NULL);
 	Qiniu_Client_SetTimeout(&client, 5000);
 	Qiniu_Client_SetConnectTimeout(&client, 3000);
+	Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
 
 	for (i = 0; i < 3; i++)
 	{
@@ -234,20 +235,23 @@ TEST(IntegrationTest, TestRsBatchOps)
 	}
 	batchStat(&client, entries, 3);
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 3; i++)
+	{
 		entriesToChangeType[i].bucket = Test_bucket;
 		entriesToChangeType[i].key = moveNames[i];
 		entriesToChangeType[i].fileType = 0;
 	}
 	batchChangeType(&client, entriesToChangeType, 3);
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 3; i++)
+	{
 		entriesToChangeType[i].bucket = Test_bucket;
 		entriesToChangeType[i].key = moveNames[i];
 		entriesToChangeType[i].fileType = 2;
 	}
 	batchChangeType(&client, entriesToChangeType, 3);
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 3; i++)
+	{
 		entriesToRestore[i].bucket = Test_bucket;
 		entriesToRestore[i].key = moveNames[i];
 		entriesToRestore[i].deleteAfterDays = 1;

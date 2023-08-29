@@ -8,13 +8,15 @@
  */
 #include "rs.h"
 #include "../cJSON/cJSON.h"
+#include "private/region.h"
 #include <time.h>
 #include <stdio.h>
 
 /*============================================================================*/
 /* type Qiniu_RS_PutPolicy/GetPolicy */
 
-char *Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy *auth, Qiniu_Mac *mac) {
+char *Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy *auth, Qiniu_Mac *mac)
+{
     int expires;
     time_t deadline;
     char *authstr;
@@ -22,73 +24,97 @@ char *Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy *auth, Qiniu_Mac *mac) {
 
     cJSON *root = cJSON_CreateObject();
 
-    if (auth->scope) {
+    if (auth->scope)
+    {
         cJSON_AddStringToObject(root, "scope", auth->scope);
     }
-    if (auth->isPrefixalScope) {
+    if (auth->isPrefixalScope)
+    {
         cJSON_AddNumberToObject(root, "isPrefixalScope", auth->isPrefixalScope);
     }
-    if (auth->saveKey) {
+    if (auth->saveKey)
+    {
         cJSON_AddStringToObject(root, "saveKey", auth->saveKey);
     }
-    if (auth->callbackUrl) {
+    if (auth->callbackUrl)
+    {
         cJSON_AddStringToObject(root, "callbackUrl", auth->callbackUrl);
     }
-    if (auth->callbackHost) {
+    if (auth->callbackHost)
+    {
         cJSON_AddStringToObject(root, "callbackHost", auth->callbackHost);
     }
-    if (auth->callbackBody) {
+    if (auth->callbackBody)
+    {
         cJSON_AddStringToObject(root, "callbackBody", auth->callbackBody);
     }
-    if (auth->callbackBodyType) {
+    if (auth->callbackBodyType)
+    {
         cJSON_AddStringToObject(root, "callbackBodyType", auth->callbackBodyType);
     }
-    if (auth->callbackFetchKey) {
+    if (auth->callbackFetchKey)
+    {
         cJSON_AddStringToObject(root, "callbackFetchKey", auth->callbackFetchKey);
     }
-    if (auth->returnUrl) {
+    if (auth->returnUrl)
+    {
         cJSON_AddStringToObject(root, "returnUrl", auth->returnUrl);
     }
-    if (auth->returnBody) {
+    if (auth->returnBody)
+    {
         cJSON_AddStringToObject(root, "returnBody", auth->returnBody);
     }
-    if (auth->endUser) {
+    if (auth->endUser)
+    {
         cJSON_AddStringToObject(root, "endUser", auth->endUser);
     }
-    if (auth->persistentOps) {
+    if (auth->persistentOps)
+    {
         cJSON_AddStringToObject(root, "persistentOps", auth->persistentOps);
     }
-    if (auth->persistentNotifyUrl) {
+    if (auth->persistentNotifyUrl)
+    {
         cJSON_AddStringToObject(root, "persistentNotifyUrl", auth->persistentNotifyUrl);
     }
-    if (auth->persistentPipeline) {
+    if (auth->persistentPipeline)
+    {
         cJSON_AddStringToObject(root, "persistentPipeline", auth->persistentPipeline);
     }
-    if (auth->mimeLimit) {
+    if (auth->mimeLimit)
+    {
         cJSON_AddStringToObject(root, "mimeLimit", auth->mimeLimit);
     }
-    if (auth->fsizeMin) {
+    if (auth->fsizeMin)
+    {
         cJSON_AddNumberToObject(root, "fsizeMin", auth->fsizeLimit);
     }
-    if (auth->fsizeLimit) {
+    if (auth->fsizeLimit)
+    {
         cJSON_AddNumberToObject(root, "fsizeLimit", auth->fsizeLimit);
     }
-    if (auth->detectMime) {
+    if (auth->detectMime)
+    {
         cJSON_AddNumberToObject(root, "detectMime", auth->detectMime);
     }
-    if (auth->insertOnly) {
+    if (auth->insertOnly)
+    {
         cJSON_AddNumberToObject(root, "insertOnly", auth->insertOnly);
     }
-    if (auth->deleteAfterDays) {
+    if (auth->deleteAfterDays)
+    {
         cJSON_AddNumberToObject(root, "deleteAfterDays", auth->deleteAfterDays);
     }
-    if (auth->fileType) {
+    if (auth->fileType)
+    {
         cJSON_AddNumberToObject(root, "fileType", auth->fileType);
     }
 
-    if (auth->expires) {
+    if (auth->expires)
+    {
         expires = auth->expires;
-    } else {
+    }
+    else
+    {
         expires = 3600; // 1小时
     }
     time(&deadline);
@@ -104,7 +130,8 @@ char *Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy *auth, Qiniu_Mac *mac) {
     return token;
 }
 
-char *Qiniu_RS_GetPolicy_MakeRequest(Qiniu_RS_GetPolicy *auth, const char *baseUrl, Qiniu_Mac *mac) {
+char *Qiniu_RS_GetPolicy_MakeRequest(Qiniu_RS_GetPolicy *auth, const char *baseUrl, Qiniu_Mac *mac)
+{
     int expires;
     time_t deadline;
     char e[11];
@@ -112,18 +139,24 @@ char *Qiniu_RS_GetPolicy_MakeRequest(Qiniu_RS_GetPolicy *auth, const char *baseU
     char *token;
     char *request;
 
-    if (auth->expires) {
+    if (auth->expires)
+    {
         expires = auth->expires;
-    } else {
+    }
+    else
+    {
         expires = 3600; // 1小时
     }
     time(&deadline);
     deadline += expires;
-    sprintf(e, "%u", (unsigned int) deadline);
+    sprintf(e, "%u", (unsigned int)deadline);
 
-    if (strchr(baseUrl, '?') != NULL) {
+    if (strchr(baseUrl, '?') != NULL)
+    {
         authstr = Qiniu_String_Concat3(baseUrl, "&e=", e);
-    } else {
+    }
+    else
+    {
         authstr = Qiniu_String_Concat3(baseUrl, "?e=", e);
     }
 
@@ -137,14 +170,16 @@ char *Qiniu_RS_GetPolicy_MakeRequest(Qiniu_RS_GetPolicy *auth, const char *baseU
     return request;
 }
 
-char *Qiniu_RS_MakeBaseUrl(const char *domain, const char *key) {
+char *Qiniu_RS_MakeBaseUrl(const char *domain, const char *key)
+{
     Qiniu_Bool fesc;
     char *baseUrl;
     char *escapedKey = Qiniu_PathEscape(key, &fesc);
 
     baseUrl = Qiniu_String_Concat(domain, "/", escapedKey, NULL);
 
-    if (fesc) {
+    if (fesc)
+    {
         Qiniu_Free(escapedKey);
     }
 
@@ -155,13 +190,21 @@ char *Qiniu_RS_MakeBaseUrl(const char *domain, const char *key) {
 /* func Qiniu_RS_Stat */
 
 Qiniu_Error Qiniu_RS_Stat(
-        Qiniu_Client *self, Qiniu_RS_StatRet *ret, const char *bucket, const char *key) {
+    Qiniu_Client *self, Qiniu_RS_StatRet *ret, const char *bucket, const char *key)
+{
     Qiniu_Error err;
     cJSON *root;
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
 
     char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
     char *entryURIEncoded = Qiniu_String_Encode(entryURI);
-    char *url = Qiniu_String_Concat3(QINIU_RS_HOST, "/stat/", entryURIEncoded);
+    char *url = Qiniu_String_Concat3(rsHost, "/stat/", entryURIEncoded);
 
     Qiniu_Free(entryURI);
     Qiniu_Free(entryURIEncoded);
@@ -169,7 +212,8 @@ Qiniu_Error Qiniu_RS_Stat(
     err = Qiniu_Client_Call(self, &root, url);
     Qiniu_Free(url);
 
-    if (err.code == 200) {
+    if (err.code == 200)
+    {
         ret->hash = Qiniu_Json_GetString(root, "hash", 0);
         ret->mimeType = Qiniu_Json_GetString(root, "mimeType", 0);
         ret->fsize = Qiniu_Json_GetInt64(root, "fsize", 0);
@@ -183,12 +227,20 @@ Qiniu_Error Qiniu_RS_Stat(
 /*============================================================================*/
 /* func Qiniu_RS_Delete */
 
-Qiniu_Error Qiniu_RS_Delete(Qiniu_Client *self, const char *bucket, const char *key) {
+Qiniu_Error Qiniu_RS_Delete(Qiniu_Client *self, const char *bucket, const char *key)
+{
     Qiniu_Error err;
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
 
     char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
     char *entryURIEncoded = Qiniu_String_Encode(entryURI);
-    char *url = Qiniu_String_Concat3(QINIU_RS_HOST, "/delete/", entryURIEncoded);
+    char *url = Qiniu_String_Concat3(rsHost, "/delete/", entryURIEncoded);
 
     Qiniu_Free(entryURI);
     Qiniu_Free(entryURIEncoded);
@@ -203,8 +255,16 @@ Qiniu_Error Qiniu_RS_Delete(Qiniu_Client *self, const char *bucket, const char *
 /* func Qiniu_RS_Copy */
 
 Qiniu_Error Qiniu_RS_Copy(Qiniu_Client *self, const char *srcBucket, const char *srcKey,
-                          const char *destBucket, const char *destKey, Qiniu_Bool force) {
+                          const char *destBucket, const char *destKey, Qiniu_Bool force)
+{
     Qiniu_Error err;
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, srcBucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
 
     char *entryURISrc = Qiniu_String_Concat3(srcBucket, ":", srcKey);
     char *entryURISrcEncoded = Qiniu_String_Encode(entryURISrc);
@@ -212,12 +272,15 @@ Qiniu_Error Qiniu_RS_Copy(Qiniu_Client *self, const char *srcBucket, const char 
     char *entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
     char *urlPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
     char *forcePart = NULL;
-    if (force == Qiniu_True) {
+    if (force == Qiniu_True)
+    {
         forcePart = "/force/1";
-    } else {
+    }
+    else
+    {
         forcePart = "/force/0";
     }
-    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/copy/", urlPart, forcePart, NULL);
+    char *url = Qiniu_String_Concat(rsHost, "/copy/", urlPart, forcePart, NULL);
 
     free(entryURISrc);
     free(entryURISrcEncoded);
@@ -235,8 +298,16 @@ Qiniu_Error Qiniu_RS_Copy(Qiniu_Client *self, const char *srcBucket, const char 
 /* func Qiniu_RS_Move */
 
 Qiniu_Error Qiniu_RS_Move(Qiniu_Client *self, const char *srcBucket, const char *srcKey,
-                          const char *destBucket, const char *destKey, Qiniu_Bool force) {
+                          const char *destBucket, const char *destKey, Qiniu_Bool force)
+{
     Qiniu_Error err;
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, srcBucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
 
     char *entryURISrc = Qiniu_String_Concat3(srcBucket, ":", srcKey);
     char *entryURISrcEncoded = Qiniu_String_Encode(entryURISrc);
@@ -244,12 +315,15 @@ Qiniu_Error Qiniu_RS_Move(Qiniu_Client *self, const char *srcBucket, const char 
     char *entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
     char *urlPart = Qiniu_String_Concat3(entryURISrcEncoded, "/", entryURIDestEncoded);
     char *forcePart = NULL;
-    if (force == Qiniu_True) {
+    if (force == Qiniu_True)
+    {
         forcePart = "/force/1";
-    } else {
+    }
+    else
+    {
         forcePart = "/force/0";
     }
-    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/move/", urlPart, forcePart, NULL);
+    char *url = Qiniu_String_Concat(rsHost, "/move/", urlPart, forcePart, NULL);
 
     free(entryURISrc);
     free(entryURISrcEncoded);
@@ -266,13 +340,21 @@ Qiniu_Error Qiniu_RS_Move(Qiniu_Client *self, const char *srcBucket, const char 
 /*============================================================================*/
 /* func Qiniu_RS_ChangeMime */
 
-Qiniu_Error Qiniu_RS_ChangeMime(Qiniu_Client *self, const char *bucket, const char *key, const char *newMime) {
+Qiniu_Error Qiniu_RS_ChangeMime(Qiniu_Client *self, const char *bucket, const char *key, const char *newMime)
+{
     Qiniu_Error err;
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
 
     char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
     char *entryURIEncoded = Qiniu_String_Encode(entryURI);
     char *encodedMime = Qiniu_String_Encode(newMime);
-    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/chgm/", entryURIEncoded, "/mime/", encodedMime, NULL);
+    char *url = Qiniu_String_Concat(rsHost, "/chgm/", entryURIEncoded, "/mime/", encodedMime, NULL);
 
     Qiniu_Free(entryURI);
     Qiniu_Free(entryURIEncoded);
@@ -286,8 +368,16 @@ Qiniu_Error Qiniu_RS_ChangeMime(Qiniu_Client *self, const char *bucket, const ch
 /*============================================================================*/
 /* func Qiniu_RS_ChangeType */
 
-Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const char *bucket, const char *key, const int fileType) {
+Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const char *bucket, const char *key, const int fileType)
+{
     Qiniu_Error err;
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
 
     char *fileTypeStr = NULL, buf[4] = {0};
     switch (fileType)
@@ -312,7 +402,7 @@ Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const char *bucket, const ch
 
     char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
     char *entryURIEncoded = Qiniu_String_Encode(entryURI);
-    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/chtype/", entryURIEncoded, "/type/", fileTypeStr, NULL);
+    char *url = Qiniu_String_Concat(rsHost, "/chtype/", entryURIEncoded, "/type/", fileTypeStr, NULL);
 
     Qiniu_Free(entryURI);
     Qiniu_Free(entryURIEncoded);
@@ -325,15 +415,24 @@ Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const char *bucket, const ch
 /*============================================================================*/
 /* func Qiniu_RS_RestoreArchive */
 
-Qiniu_Error Qiniu_RS_RestoreArchive(Qiniu_Client *self, const char *bucket, const char *key, const int freezeAfterDays) {
+Qiniu_Error Qiniu_RS_RestoreArchive(Qiniu_Client *self, const char *bucket, const char *key, const int freezeAfterDays)
+{
     Qiniu_Error err;
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
+
     char buf[4] = {0};
     snprintf(buf, sizeof(buf), "%d", freezeAfterDays);
     char *freezeAfterDaysStr = &buf[0];
 
     char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
     char *entryURIEncoded = Qiniu_String_Encode(entryURI);
-    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/restoreAr/", entryURIEncoded, "/freezeAfterDays/", freezeAfterDaysStr, NULL);
+    char *url = Qiniu_String_Concat(rsHost, "/restoreAr/", entryURIEncoded, "/freezeAfterDays/", freezeAfterDaysStr, NULL);
 
     Qiniu_Free(entryURI);
     Qiniu_Free(entryURIEncoded);
@@ -346,15 +445,23 @@ Qiniu_Error Qiniu_RS_RestoreArchive(Qiniu_Client *self, const char *bucket, cons
 /*============================================================================*/
 /* func Qiniu_RS_DeleteAfterDays */
 
-Qiniu_Error Qiniu_RS_DeleteAfterDays(Qiniu_Client *self, const char *bucket, const char *key, const int days) {
+Qiniu_Error Qiniu_RS_DeleteAfterDays(Qiniu_Client *self, const char *bucket, const char *key, const int days)
+{
     Qiniu_Error err;
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
 
     char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
     char *entryURIEncoded = Qiniu_String_Encode(entryURI);
 
-    char *daysStr = (char *) malloc(sizeof(int) + 1);
+    char *daysStr = (char *)malloc(sizeof(int) + 1);
     sprintf(daysStr, "%d", days);
-    char *url = Qiniu_String_Concat(QINIU_RS_HOST, "/deleteAfterDays/", entryURIEncoded, "/", daysStr, NULL);
+    char *url = Qiniu_String_Concat(rsHost, "/deleteAfterDays/", entryURIEncoded, "/", daysStr, NULL);
 
     Qiniu_Free(daysStr);
     Qiniu_Free(entryURI);
@@ -368,21 +475,32 @@ Qiniu_Error Qiniu_RS_DeleteAfterDays(Qiniu_Client *self, const char *bucket, con
 /*============================================================================*/
 /* func Qiniu_RS_Fetch */
 Qiniu_Error Qiniu_RS_Fetch(Qiniu_Client *self, Qiniu_RS_FetchRet *ret, const char *resURL, const char *bucket,
-                           const char *key) {
+                           const char *key)
+{
     Qiniu_Error err;
     cJSON *root;
+    const char *ioHost;
+
+    err = _Qiniu_Region_Get_Io_Host(self, NULL, bucket, &ioHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
 
     char *entryURI = 0;
-    if (key) {
+    if (key)
+    {
         entryURI = Qiniu_String_Concat3(bucket, ":", key);
-    } else {
+    }
+    else
+    {
         entryURI = strdup(bucket);
     }
 
     char *entryURIEncoded = Qiniu_String_Encode(entryURI);
     char *encodedResURL = Qiniu_String_Encode(resURL);
 
-    char *url = Qiniu_String_Concat(QINIU_IOVIP_HOST, "/fetch/", encodedResURL, "/to/", entryURIEncoded, NULL);
+    char *url = Qiniu_String_Concat(ioHost, "/fetch/", encodedResURL, "/to/", entryURIEncoded, NULL);
     Qiniu_Free(encodedResURL);
 
     Qiniu_Free(entryURI);
@@ -391,7 +509,8 @@ Qiniu_Error Qiniu_RS_Fetch(Qiniu_Client *self, Qiniu_RS_FetchRet *ret, const cha
     err = Qiniu_Client_Call(self, &root, url);
     Qiniu_Free(url);
 
-    if (err.code == 200) {
+    if (err.code == 200)
+    {
         ret->key = Qiniu_Json_GetString(root, "key", 0);
         ret->hash = Qiniu_Json_GetString(root, "hash", 0);
         ret->mimeType = Qiniu_Json_GetString(root, "mimeType", 0);
@@ -403,12 +522,20 @@ Qiniu_Error Qiniu_RS_Fetch(Qiniu_Client *self, Qiniu_RS_FetchRet *ret, const cha
 
 /*============================================================================*/
 /* func Qiniu_RS_Prefetch */
-Qiniu_Error Qiniu_RS_Prefetch(Qiniu_Client *self, const char *bucket, const char *key) {
+Qiniu_Error Qiniu_RS_Prefetch(Qiniu_Client *self, const char *bucket, const char *key)
+{
     Qiniu_Error err;
+    const char *ioHost;
+
+    err = _Qiniu_Region_Get_Io_Host(self, NULL, bucket, &ioHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
 
     char *entryURI = Qiniu_String_Concat3(bucket, ":", key);
     char *entryURIEncoded = Qiniu_String_Encode(entryURI);
-    char *url = Qiniu_String_Concat3(QINIU_IOVIP_HOST, "/prefetch/", entryURIEncoded);
+    char *url = Qiniu_String_Concat3(ioHost, "/prefetch/", entryURIEncoded);
 
     Qiniu_Free(entryURI);
     Qiniu_Free(entryURIEncoded);
@@ -423,8 +550,9 @@ Qiniu_Error Qiniu_RS_Prefetch(Qiniu_Client *self, const char *bucket, const char
 /* func Qiniu_RS_BatchStat */
 
 Qiniu_Error Qiniu_RS_BatchStat(
-        Qiniu_Client *self, Qiniu_RS_BatchStatRet *rets,
-        Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount) {
+    Qiniu_Client *self, Qiniu_RS_BatchStatRet *rets,
+    Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount)
+{
     int code;
     Qiniu_Error err;
     cJSON *root, *arrayItem, *dataItem;
@@ -433,18 +561,30 @@ Qiniu_Error Qiniu_RS_BatchStat(
     Qiniu_RS_EntryPath *entry = entries;
     Qiniu_ItemCount curr = 0;
     Qiniu_ItemCount retSize = 0;
-    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+    const char *rsHost;
 
-    while (curr < entryCount) {
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, entry->bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
+
+    char *url = Qiniu_String_Concat2(rsHost, "/batch");
+
+    while (curr < entryCount)
+    {
         entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
         entryURIEncoded = Qiniu_String_Encode(entryURI);
         opBody = Qiniu_String_Concat2("op=/stat/", entryURIEncoded);
         free(entryURI);
         free(entryURIEncoded);
 
-        if (!body) {
+        if (!body)
+        {
             bodyTmp = opBody;
-        } else {
+        }
+        else
+        {
             bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
             free(opBody);
         }
@@ -462,16 +602,20 @@ Qiniu_Error Qiniu_RS_BatchStat(
     retSize = cJSON_GetArraySize(root);
 
     curr = 0;
-    while (curr < retSize) {
+    while (curr < retSize)
+    {
         arrayItem = cJSON_GetArrayItem(root, curr);
-        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
         dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
         rets[curr].code = code;
 
-        if (code != 200) {
+        if (code != 200)
+        {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
-        } else {
+        }
+        else
+        {
             rets[curr].data.hash = Qiniu_Json_GetString(dataItem, "hash", 0);
             rets[curr].data.mimeType = Qiniu_Json_GetString(dataItem, "mimeType", 0);
             rets[curr].data.fsize = Qiniu_Json_GetInt64(dataItem, "fsize", 0);
@@ -488,8 +632,9 @@ Qiniu_Error Qiniu_RS_BatchStat(
 /* func Qiniu_RS_BatchDelete */
 
 Qiniu_Error Qiniu_RS_BatchDelete(
-        Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
-        Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount) {
+    Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+    Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount)
+{
     int code;
     Qiniu_Error err;
     cJSON *root, *arrayItem, *dataItem;
@@ -498,19 +643,31 @@ Qiniu_Error Qiniu_RS_BatchDelete(
     Qiniu_ItemCount curr = 0;
     Qiniu_ItemCount retSize = 0;
     Qiniu_RS_EntryPath *entry = entries;
-    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, entry->bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
+
+    char *url = Qiniu_String_Concat2(rsHost, "/batch");
 
     curr = 0;
-    while (curr < entryCount) {
+    while (curr < entryCount)
+    {
         entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
         entryURIEncoded = Qiniu_String_Encode(entryURI);
         opBody = Qiniu_String_Concat2("op=/delete/", entryURIEncoded);
         free(entryURI);
         free(entryURIEncoded);
 
-        if (!body) {
+        if (!body)
+        {
             bodyTmp = opBody;
-        } else {
+        }
+        else
+        {
             bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
             free(opBody);
         }
@@ -528,14 +685,16 @@ Qiniu_Error Qiniu_RS_BatchDelete(
     retSize = cJSON_GetArraySize(root);
 
     curr = 0;
-    while (curr < retSize) {
+    while (curr < retSize)
+    {
         arrayItem = cJSON_GetArrayItem(root, curr);
-        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
         dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
         rets[curr].code = code;
 
-        if (code != 200) {
+        if (code != 200)
+        {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
         curr++;
@@ -548,8 +707,9 @@ Qiniu_Error Qiniu_RS_BatchDelete(
 /* func Qiniu_RS_BatchMove */
 
 Qiniu_Error Qiniu_RS_BatchMove(
-        Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
-        Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount) {
+    Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+    Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount)
+{
     int code;
     Qiniu_Error err;
     cJSON *root, *arrayItem, *dataItem;
@@ -559,17 +719,27 @@ Qiniu_Error Qiniu_RS_BatchMove(
     Qiniu_ItemCount curr = 0;
     Qiniu_ItemCount retSize = 0;
     Qiniu_RS_EntryPathPair *entryPair = entryPairs;
-    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, entryPair->src.bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
+
+    char *url = Qiniu_String_Concat2(rsHost, "/batch");
 
     curr = 0;
-    while (curr < entryCount) {
+    while (curr < entryCount)
+    {
         entryURISrc = Qiniu_String_Concat3(entryPair->src.bucket, ":", entryPair->src.key);
         entryURISrcEncoded = Qiniu_String_Encode(entryURISrc);
         entryURIDest = Qiniu_String_Concat3(entryPair->dest.bucket, ":", entryPair->dest.key);
         entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
 
         char *forceStr = "0";
-        if (entryPair->force == Qiniu_True) {
+        if (entryPair->force == Qiniu_True)
+        {
             forceStr = "1";
         }
 
@@ -581,9 +751,12 @@ Qiniu_Error Qiniu_RS_BatchMove(
         free(entryURIDestEncoded);
         free(bodyPart);
 
-        if (!body) {
+        if (!body)
+        {
             bodyTmp = opBody;
-        } else {
+        }
+        else
+        {
             bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
             free(opBody);
         }
@@ -601,14 +774,16 @@ Qiniu_Error Qiniu_RS_BatchMove(
     retSize = cJSON_GetArraySize(root);
 
     curr = 0;
-    while (curr < retSize) {
+    while (curr < retSize)
+    {
         arrayItem = cJSON_GetArrayItem(root, curr);
-        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
         dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
         rets[curr].code = code;
 
-        if (code != 200) {
+        if (code != 200)
+        {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
         curr++;
@@ -621,8 +796,9 @@ Qiniu_Error Qiniu_RS_BatchMove(
 /* func Qiniu_RS_BatchCopy */
 
 Qiniu_Error Qiniu_RS_BatchCopy(
-        Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
-        Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount) {
+    Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
+    Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount)
+{
     int code;
     Qiniu_Error err;
     cJSON *root, *arrayItem, *dataItem;
@@ -632,17 +808,27 @@ Qiniu_Error Qiniu_RS_BatchCopy(
     Qiniu_ItemCount curr = 0;
     Qiniu_ItemCount retSize = 0;
     Qiniu_RS_EntryPathPair *entryPair = entryPairs;
-    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, entryPair->src.bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
+
+    char *url = Qiniu_String_Concat2(rsHost, "/batch");
 
     curr = 0;
-    while (curr < entryCount) {
+    while (curr < entryCount)
+    {
         entryURISrc = Qiniu_String_Concat3(entryPair->src.bucket, ":", entryPair->src.key);
         entryURISrcEncoded = Qiniu_String_Encode(entryURISrc);
         entryURIDest = Qiniu_String_Concat3(entryPair->dest.bucket, ":", entryPair->dest.key);
         entryURIDestEncoded = Qiniu_String_Encode(entryURIDest);
 
         char *forceStr = "0";
-        if (entryPair->force == Qiniu_True) {
+        if (entryPair->force == Qiniu_True)
+        {
             forceStr = "1";
         }
 
@@ -654,9 +840,12 @@ Qiniu_Error Qiniu_RS_BatchCopy(
         free(entryURIDestEncoded);
         free(bodyPart);
 
-        if (!body) {
+        if (!body)
+        {
             bodyTmp = opBody;
-        } else {
+        }
+        else
+        {
             bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
             free(opBody);
         }
@@ -674,14 +863,16 @@ Qiniu_Error Qiniu_RS_BatchCopy(
     retSize = cJSON_GetArraySize(root);
 
     curr = 0;
-    while (curr < retSize) {
+    while (curr < retSize)
+    {
         arrayItem = cJSON_GetArrayItem(root, curr);
-        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
         dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
         rets[curr].code = code;
 
-        if (code != 200) {
+        if (code != 200)
+        {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
         curr++;
@@ -691,7 +882,8 @@ Qiniu_Error Qiniu_RS_BatchCopy(
 }
 
 Qiniu_Error Qiniu_RS_BatchChangeType(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
-                                     Qiniu_RS_EntryChangeType *entries, Qiniu_ItemCount entryCount) {
+                                     Qiniu_RS_EntryChangeType *entries, Qiniu_ItemCount entryCount)
+{
     int code;
     Qiniu_Error err;
     cJSON *root, *arrayItem, *dataItem;
@@ -701,10 +893,19 @@ Qiniu_Error Qiniu_RS_BatchChangeType(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
     Qiniu_ItemCount curr = 0;
     Qiniu_ItemCount retSize = 0;
     Qiniu_RS_EntryChangeType *entry = entries;
-    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, entry->bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
+
+    char *url = Qiniu_String_Concat2(rsHost, "/batch");
 
     curr = 0;
-    while (curr < entryCount) {
+    while (curr < entryCount)
+    {
         entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
         entryURIEncoded = Qiniu_String_Encode(entryURI);
 
@@ -735,9 +936,12 @@ Qiniu_Error Qiniu_RS_BatchChangeType(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
         Qiniu_Free(entryURIEncoded);
         Qiniu_Free(bodyPart);
 
-        if (!body) {
+        if (!body)
+        {
             bodyTmp = opBody;
-        } else {
+        }
+        else
+        {
             bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
             free(opBody);
         }
@@ -755,14 +959,16 @@ Qiniu_Error Qiniu_RS_BatchChangeType(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
     retSize = cJSON_GetArraySize(root);
 
     curr = 0;
-    while (curr < retSize) {
+    while (curr < retSize)
+    {
         arrayItem = cJSON_GetArrayItem(root, curr);
-        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
         dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
         rets[curr].code = code;
 
-        if (code != 200) {
+        if (code != 200)
+        {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
         curr++;
@@ -772,7 +978,8 @@ Qiniu_Error Qiniu_RS_BatchChangeType(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
 }
 
 Qiniu_Error Qiniu_RS_BatchRestoreArchive(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
-                                         Qiniu_RS_EntryRestoreArchive *entries, Qiniu_ItemCount entryCount) {
+                                         Qiniu_RS_EntryRestoreArchive *entries, Qiniu_ItemCount entryCount)
+{
     int code;
     Qiniu_Error err;
     cJSON *root, *arrayItem, *dataItem;
@@ -782,10 +989,19 @@ Qiniu_Error Qiniu_RS_BatchRestoreArchive(Qiniu_Client *self, Qiniu_RS_BatchItemR
     Qiniu_ItemCount curr = 0;
     Qiniu_ItemCount retSize = 0;
     Qiniu_RS_EntryRestoreArchive *entry = entries;
-    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, entry->bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
+
+    char *url = Qiniu_String_Concat2(rsHost, "/batch");
 
     curr = 0;
-    while (curr < entryCount) {
+    while (curr < entryCount)
+    {
         entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
         entryURIEncoded = Qiniu_String_Encode(entryURI);
 
@@ -799,9 +1015,12 @@ Qiniu_Error Qiniu_RS_BatchRestoreArchive(Qiniu_Client *self, Qiniu_RS_BatchItemR
         Qiniu_Free(entryURIEncoded);
         Qiniu_Free(bodyPart);
 
-        if (!body) {
+        if (!body)
+        {
             bodyTmp = opBody;
-        } else {
+        }
+        else
+        {
             bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
             free(opBody);
         }
@@ -819,14 +1038,16 @@ Qiniu_Error Qiniu_RS_BatchRestoreArchive(Qiniu_Client *self, Qiniu_RS_BatchItemR
     retSize = cJSON_GetArraySize(root);
 
     curr = 0;
-    while (curr < retSize) {
+    while (curr < retSize)
+    {
         arrayItem = cJSON_GetArrayItem(root, curr);
-        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
         dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
         rets[curr].code = code;
 
-        if (code != 200) {
+        if (code != 200)
+        {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
         curr++;
@@ -836,7 +1057,8 @@ Qiniu_Error Qiniu_RS_BatchRestoreArchive(Qiniu_Client *self, Qiniu_RS_BatchItemR
 }
 
 Qiniu_Error Qiniu_RS_BatchChangeMime(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
-                                     Qiniu_RS_EntryChangeMime *entries, Qiniu_ItemCount entryCount) {
+                                     Qiniu_RS_EntryChangeMime *entries, Qiniu_ItemCount entryCount)
+{
     int code;
     Qiniu_Error err;
     cJSON *root, *arrayItem, *dataItem;
@@ -846,10 +1068,19 @@ Qiniu_Error Qiniu_RS_BatchChangeMime(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
     Qiniu_ItemCount curr = 0;
     Qiniu_ItemCount retSize = 0;
     Qiniu_RS_EntryChangeMime *entry = entries;
-    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, entry->bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
+
+    char *url = Qiniu_String_Concat2(rsHost, "/batch");
 
     curr = 0;
-    while (curr < entryCount) {
+    while (curr < entryCount)
+    {
         entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
         entryURIEncoded = Qiniu_String_Encode(entryURI);
         mimeEncoded = Qiniu_String_Encode(entry->mime);
@@ -861,9 +1092,12 @@ Qiniu_Error Qiniu_RS_BatchChangeMime(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
         Qiniu_Free(mimeEncoded);
         Qiniu_Free(bodyPart);
 
-        if (!body) {
+        if (!body)
+        {
             bodyTmp = opBody;
-        } else {
+        }
+        else
+        {
             bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
             free(opBody);
         }
@@ -881,14 +1115,16 @@ Qiniu_Error Qiniu_RS_BatchChangeMime(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
     retSize = cJSON_GetArraySize(root);
 
     curr = 0;
-    while (curr < retSize) {
+    while (curr < retSize)
+    {
         arrayItem = cJSON_GetArrayItem(root, curr);
-        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
         dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
         rets[curr].code = code;
 
-        if (code != 200) {
+        if (code != 200)
+        {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
         curr++;
@@ -898,7 +1134,8 @@ Qiniu_Error Qiniu_RS_BatchChangeMime(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
 }
 
 Qiniu_Error Qiniu_RS_BatchDeleteAfterDays(Qiniu_Client *self, Qiniu_RS_BatchItemRet *rets,
-                                          Qiniu_RS_EntryDeleteAfterDays *entries, Qiniu_ItemCount entryCount) {
+                                          Qiniu_RS_EntryDeleteAfterDays *entries, Qiniu_ItemCount entryCount)
+{
     int code;
     Qiniu_Error err;
     cJSON *root, *arrayItem, *dataItem;
@@ -908,15 +1145,24 @@ Qiniu_Error Qiniu_RS_BatchDeleteAfterDays(Qiniu_Client *self, Qiniu_RS_BatchItem
     Qiniu_ItemCount curr = 0;
     Qiniu_ItemCount retSize = 0;
     Qiniu_RS_EntryDeleteAfterDays *entry = entries;
-    char *url = Qiniu_String_Concat2(QINIU_RS_HOST, "/batch");
+    const char *rsHost;
+
+    err = _Qiniu_Region_Get_Rs_Host(self, NULL, entry->bucket, &rsHost);
+    if (err.code != 200)
+    {
+        return err;
+    }
+
+    char *url = Qiniu_String_Concat2(rsHost, "/batch");
 
     curr = 0;
-    while (curr < entryCount) {
+    while (curr < entryCount)
+    {
         entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
         entryURIEncoded = Qiniu_String_Encode(entryURI);
 
         size_t daysLen = snprintf(NULL, 0, "%d", entry->days) + 1;
-        daysStr = (char *) malloc(sizeof(char) * daysLen);
+        daysStr = (char *)malloc(sizeof(char) * daysLen);
         snprintf(daysStr, daysLen, "%d", entry->days);
 
         bodyPart = Qiniu_String_Concat(entryURIEncoded, "/", daysStr, NULL);
@@ -926,9 +1172,12 @@ Qiniu_Error Qiniu_RS_BatchDeleteAfterDays(Qiniu_Client *self, Qiniu_RS_BatchItem
         Qiniu_Free(daysStr);
         Qiniu_Free(bodyPart);
 
-        if (!body) {
+        if (!body)
+        {
             bodyTmp = opBody;
-        } else {
+        }
+        else
+        {
             bodyTmp = Qiniu_String_Concat3(body, "&", opBody);
             free(opBody);
         }
@@ -946,14 +1195,16 @@ Qiniu_Error Qiniu_RS_BatchDeleteAfterDays(Qiniu_Client *self, Qiniu_RS_BatchItem
     retSize = cJSON_GetArraySize(root);
 
     curr = 0;
-    while (curr < retSize) {
+    while (curr < retSize)
+    {
         arrayItem = cJSON_GetArrayItem(root, curr);
-        code = (int) Qiniu_Json_GetInt64(arrayItem, "code", 0);
+        code = (int)Qiniu_Json_GetInt64(arrayItem, "code", 0);
         dataItem = cJSON_GetObjectItem(arrayItem, "data");
 
         rets[curr].code = code;
 
-        if (code != 200) {
+        if (code != 200)
+        {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
         curr++;

@@ -88,6 +88,7 @@ extern "C"
 		Qiniu_Error (*Auth)(void *self, Qiniu_Header **header, const char *url, const char *addition, size_t addlen);
 		void (*Release)(void *self);
 		Qiniu_Error (*AuthV2)(void *self, const char *method, Qiniu_Header **header, const char *url, const char *addition, size_t addlen);
+		const char *(*GetAccessKey)(void *self);
 	} Qiniu_Auth_Itbl;
 
 	typedef struct _Qiniu_Auth
@@ -101,13 +102,23 @@ extern "C"
 	/*============================================================================*/
 	/* type Qiniu_Client */
 
-	typedef struct _Qiniu_Client
+	struct _Qiniu_Region;
+	typedef struct _Qiniu_Region Qiniu_Region;
+	QINIU_DLLAPI extern void Qiniu_Region_Free(Qiniu_Region *region);
+
+	struct _Qiniu_Client
 	{
 		void *curl;
 		Qiniu_Auth auth;
 		Qiniu_Json *root; // store resp until next req begin
 		Qiniu_Buffer b;
 		Qiniu_Buffer respHeader;
+
+		Qiniu_Bool autoQueryRegion;
+		Qiniu_Bool autoQueryHttpsRegion;
+		const char *cachedRegionBucketName;
+		Qiniu_Region *cachedRegion;
+		Qiniu_Region *specifiedRegion;
 
 		// Use the following field to specify which NIC to use for sending packets.
 		const char *boundNic;
@@ -127,7 +138,8 @@ extern "C"
 
 		// Millisecond timeout for the connection phase.
 		long connectTimeoutMs;
-	} Qiniu_Client;
+	};
+	typedef struct _Qiniu_Client Qiniu_Client;
 
 	QINIU_DLLAPI extern void Qiniu_Client_InitEx(Qiniu_Client *self, Qiniu_Auth auth, size_t bufSize);
 	QINIU_DLLAPI extern void Qiniu_Client_Cleanup(Qiniu_Client *self);
@@ -135,6 +147,8 @@ extern "C"
 	QINIU_DLLAPI extern void Qiniu_Client_SetLowSpeedLimit(Qiniu_Client *self, long lowSpeedLimit, long lowSpeedTime);
 	QINIU_DLLAPI extern void Qiniu_Client_SetTimeout(Qiniu_Client *self, long timeoutMs);
 	QINIU_DLLAPI extern void Qiniu_Client_SetConnectTimeout(Qiniu_Client *self, long connectTimeoutMs);
+	QINIU_DLLAPI extern void Qiniu_Client_EnableAutoQuery(Qiniu_Client *self, Qiniu_Bool useHttps);
+	QINIU_DLLAPI extern void Qiniu_Client_SpecifyRegion(Qiniu_Client *self, Qiniu_Region *region);
 
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_Call(Qiniu_Client *self, Qiniu_Json **ret, const char *url);
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client *self, const char *url);

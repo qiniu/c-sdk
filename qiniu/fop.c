@@ -3,17 +3,19 @@
  Name        : fop.c
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 
 #include <curl/curl.h>
 
 #include "fop.h"
+#include "private/region.h"
 #include "../cJSON/cJSON.h"
 
 Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, const char *bucket, const char *key,
-                           char *fops[], int fopCount, const char *pipeline, const char *notifyURL, int force) {
+                           char *fops[], int fopCount, const char *pipeline, const char *notifyURL, int force)
+{
     Qiniu_Error err;
     cJSON *root;
     char *fopsStr = NULL;
@@ -38,58 +40,80 @@ Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, const cha
     encodedFops = Qiniu_QueryEscape(fopsStr, &escapeFopsOk);
     Qiniu_Free(fopsStr);
 
-    if (pipeline) {
+    if (pipeline)
+    {
         encodedPipeline = Qiniu_QueryEscape(pipeline, &escapePipelineOk);
-    } else {
+    }
+    else
+    {
         encodedPipeline = "";
     }
-    if (notifyURL) {
+    if (notifyURL)
+    {
         encodedNotifyURL = Qiniu_QueryEscape(notifyURL, &escapeNotifyURLOk);
-    } else {
+    }
+    else
+    {
         encodedNotifyURL = "";
     }
-    if (force == 1) {
+    if (force == 1)
+    {
         forceStr = "1";
-    } else {
+    }
+    else
+    {
         forceStr = "0";
     }
 
     body = Qiniu_String_Concat("bucket=", encodedBucket, "&key=", encodedKey, "&fops=", encodedFops,
                                "&pipeline=", encodedPipeline, "&notifyURL=", encodedNotifyURL, "&force=", forceStr, NULL);
-    if (escapeBucketOk) {
+    if (escapeBucketOk)
+    {
         Qiniu_Free(encodedBucket);
     }
 
-    if (escapeKeyOk) {
+    if (escapeKeyOk)
+    {
         Qiniu_Free(encodedKey);
     }
 
-    if (escapeFopsOk) {
+    if (escapeFopsOk)
+    {
         Qiniu_Free(encodedFops);
     }
 
-    if (pipeline && escapePipelineOk) {
+    if (pipeline && escapePipelineOk)
+    {
         Qiniu_Free(encodedPipeline);
     }
 
-    if (notifyURL && escapeNotifyURLOk) {
+    if (notifyURL && escapeNotifyURLOk)
+    {
         Qiniu_Free(encodedNotifyURL);
     }
 
-    url = Qiniu_String_Concat2(QINIU_API_HOST, "/pfop/");
+    const char *apiHost;
+    err = _Qiniu_Region_Get_Api_Host(self, NULL, bucket, &apiHost);
+    if (err.code != 200)
+    {
+        goto error;
+    }
+
+    url = Qiniu_String_Concat2(apiHost, "/pfop/");
     err = Qiniu_Client_CallWithBuffer(
-            self,
-            &root,
-            url,
-            body,
-            strlen(body),
-            "application/x-www-form-urlencoded"
-    );
-    Qiniu_Free(url);
-    Qiniu_Free(body);
-    if (err.code == 200) {
+        self,
+        &root,
+        url,
+        body,
+        strlen(body),
+        "application/x-www-form-urlencoded");
+    if (err.code == 200)
+    {
         ret->persistentId = Qiniu_Json_GetString(root, "persistentId", 0);
     }
 
+error:
+    Qiniu_Free(body);
+    Qiniu_Free(url);
     return err;
 } // Qiniu_FOP_Pfop

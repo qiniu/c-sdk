@@ -35,8 +35,9 @@ static const char *putMemoryData_multipart(const char *bucket, const char *key, 
 	Qiniu_Client_InitMacAuth(&client, 1024, mac);
 	Qiniu_Client_SetTimeout(&client, 5000);
 	Qiniu_Client_SetConnectTimeout(&client, 3000);
+	Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
 
-	//construct reader by memory data
+	// construct reader by memory data
 	Qiniu_ReadBuf rbuff;
 	Qiniu_ReaderAt reader = Qiniu_BufReaderAt(&rbuff, memData, (size_t)dataLen);
 	err = Qiniu_Multipart_Put(&client, uptoken, key, reader, dataLen, &putExtra, &putRet);
@@ -89,6 +90,7 @@ static const char *putFile_multipart(const char *bucket, const char *key, const 
 	Qiniu_Client_InitMacAuth(&client, 1024, mac);
 	Qiniu_Client_SetTimeout(&client, 120000);
 	Qiniu_Client_SetConnectTimeout(&client, 3000);
+	Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
 
 	err = Qiniu_Multipart_PutFile(&client, uptoken, key, filePath, &putExtra, &putRet);
 
@@ -108,37 +110,38 @@ TEST(IntegrationTest, TestMultipartUpload_smallfile)
 	Qiniu_Zero(client);
 
 	Qiniu_Error err;
-	Qiniu_Mac mac = {QINIU_ACCESS_KEY, QINIU_SECRET_KEY}; //set by env "source test-env.sh"
+	Qiniu_Mac mac = {QINIU_ACCESS_KEY, QINIU_SECRET_KEY}; // set by env "source test-env.sh"
 	Qiniu_Client_InitMacAuth(&client, 1024, &mac);
 	Qiniu_Client_SetTimeout(&client, 5000);
 	Qiniu_Client_SetConnectTimeout(&client, 3000);
+	Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
 
 	char smallFileKey[100];
 	Qiniu_snprintf(smallFileKey, 100, "smallkey_%d", rand());
 
 	const char *keys[] = {
-	    smallFileKey, // normal keyname
-	    "",		  // empty string keyname
-	    NULL};	  // no keyname, determined by server(eg:hash as keyname)
+		smallFileKey, // normal keyname
+		"",			  // empty string keyname
+		NULL};		  // no keyname, determined by server(eg:hash as keyname)
 	for (int i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
 	{
 		const char *inputKey = keys[i];
 
-		//step1: delete  file if exist
+		// step1: delete  file if exist
 		if (inputKey != NULL)
 		{
 			Qiniu_RS_Delete(&client, Test_bucket, inputKey);
 		}
-		//step2: upload file
-		const char *returnKey = putFile_multipart(Test_bucket, inputKey, "txt", __FILE__, (4 << 20), &mac); //upload current file
+		// step2: upload file
+		const char *returnKey = putFile_multipart(Test_bucket, inputKey, "txt", __FILE__, (4 << 20), &mac); // upload current file
 
-		//step3: stat file
+		// step3: stat file
 		Qiniu_RS_StatRet statResult;
 		err = Qiniu_RS_Stat(&client, &statResult, Test_bucket, returnKey);
 		EXPECT_EQ(err.code, 200);
 		EXPECT_STREQ(statResult.mimeType, "txt");
 
-		//step4: delete file
+		// step4: delete file
 		err = Qiniu_RS_Delete(&client, Test_bucket, returnKey);
 		EXPECT_EQ(err.code, 200);
 	}
@@ -159,27 +162,28 @@ TEST(IntegrationTest, TestMultipartUpload_largefile)
 		Qiniu_Client_InitMacAuth(&client, 1024, &mac);
 		Qiniu_Client_SetTimeout(&client, 5000);
 		Qiniu_Client_SetConnectTimeout(&client, 3000);
+		Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
 
 		char inputKey[100];
 		Qiniu_snprintf(inputKey, 100, "largefile_%d", rand());
 
-		//step1: delete  file if exist
+		// step1: delete  file if exist
 		Qiniu_RS_Delete(&client, Test_bucket, inputKey);
 
-		//step2: upload file
+		// step2: upload file
 		char filePath[PATH_MAX] = {0};
 		strcpy(filePath, __SOURCE_DIR__);
 		strcat(filePath, "/gtests/resources/test5m.mp3");
 		const char *returnKey = putFile_multipart(Test_bucket, inputKey, "mp3", (const char *)filePath, partSize[i], &mac);
 
-		//step3: stat file
+		// step3: stat file
 		Qiniu_RS_StatRet statResult;
 		err = Qiniu_RS_Stat(&client, &statResult, Test_bucket, returnKey);
 		EXPECT_EQ(err.code, 200);
 		EXPECT_STREQ(statResult.mimeType, "mp3");
 		EXPECT_EQ(statResult.fsize, 5097014);
 
-		//step4: delete file
+		// step4: delete file
 		err = Qiniu_RS_Delete(&client, Test_bucket, returnKey);
 		EXPECT_EQ(err.code, 200);
 
@@ -197,27 +201,28 @@ TEST(IntegrationTest, TestMultipartUpload_emptyfile)
 	Qiniu_Client_InitMacAuth(&client, 1024, &mac);
 	Qiniu_Client_SetTimeout(&client, 5000);
 	Qiniu_Client_SetConnectTimeout(&client, 3000);
+	Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
 
 	char inputKey[100];
 	Qiniu_snprintf(inputKey, 100, "emptyfile_%d", rand());
 
-	//step1: delete  file if exist
+	// step1: delete  file if exist
 	Qiniu_RS_Delete(&client, Test_bucket, inputKey);
 
-	//step2: upload file
+	// step2: upload file
 	char filePath[PATH_MAX] = {0};
 	strcpy(filePath, __SOURCE_DIR__);
 	strcat(filePath, "/gtests/resources/test_emptyfile.txt");
 	const char *returnKey = putFile_multipart(Test_bucket, inputKey, "txt", filePath, (4 << 20), &mac);
 
-	//step3: stat file
+	// step3: stat file
 	Qiniu_RS_StatRet statResult;
 	err = Qiniu_RS_Stat(&client, &statResult, Test_bucket, returnKey);
 	EXPECT_EQ(err.code, 200);
 	EXPECT_EQ(statResult.fsize, 0);
 	EXPECT_STREQ(statResult.mimeType, "txt");
 
-	//step4: delete file
+	// step4: delete file
 	err = Qiniu_RS_Delete(&client, Test_bucket, returnKey);
 	EXPECT_EQ(err.code, 200);
 
@@ -234,24 +239,25 @@ TEST(IntegrationTest, TestMultipartUpload_inMemoryData)
 	Qiniu_Client_InitMacAuth(&client, 1024, &mac);
 	Qiniu_Client_SetTimeout(&client, 5000);
 	Qiniu_Client_SetConnectTimeout(&client, 3000);
+	Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
 
 	char inputKey[100];
 	Qiniu_snprintf(inputKey, 100, "memoryDataKey_%d", rand());
 
-	//step1: delete  file if exist
+	// step1: delete  file if exist
 	Qiniu_RS_Delete(&client, Test_bucket, inputKey);
 
-	//step2: upload memory data
+	// step2: upload memory data
 	const char memData[] = "test multipart upload with memory data";
 	const char *returnKey = putMemoryData_multipart(Test_bucket, inputKey, NULL, memData, sizeof(memData), &mac);
 
-	//step3: stat file
+	// step3: stat file
 	Qiniu_RS_StatRet statResult;
 	err = Qiniu_RS_Stat(&client, &statResult, Test_bucket, returnKey);
 	EXPECT_EQ(err.code, 200);
 	EXPECT_EQ(statResult.fsize, sizeof(memData));
 
-	//step4: delete file
+	// step4: delete file
 	err = Qiniu_RS_Delete(&client, Test_bucket, returnKey);
 	EXPECT_EQ(err.code, 200);
 

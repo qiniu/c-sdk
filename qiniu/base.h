@@ -54,6 +54,7 @@ extern "C"
 	/* func Qiniu_Zero */
 
 #define Qiniu_Zero(v) memset(&v, 0, sizeof(v))
+#define Qiniu_Zero_Ptr(v) memset(v, 0, sizeof(*v))
 
 	/*============================================================================*/
 	/* func Qiniu_snprintf */
@@ -296,9 +297,9 @@ typedef unsigned long long Qiniu_Uint64;
 	typedef struct _Qiniu_FileInfo
 	{
 		Qiniu_Off_T st_size; /* total size, in bytes */
-		time_t st_atime;     /* time of last access */
-		time_t st_mtime;     /* time of last modification */
-		time_t st_ctime;     /* time of last status change */
+		time_t st_atime;	 /* time of last access */
+		time_t st_mtime;	 /* time of last modification */
+		time_t st_ctime;	 /* time of last status change */
 	} Qiniu_FileInfo;
 #else
 

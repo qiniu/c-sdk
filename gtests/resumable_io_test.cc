@@ -17,6 +17,7 @@ static void clientIoPutFile(const char *uptoken, const char *key)
 	Qiniu_Client_InitNoAuth(&client, 1024);
 	Qiniu_Client_SetTimeout(&client, 5000);
 	Qiniu_Client_SetConnectTimeout(&client, 3000);
+	Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
 
 	Qiniu_Zero(extra);
 
@@ -56,6 +57,7 @@ static void clientIoPutBuffer(const char *uptoken, const char *key)
 	Qiniu_Client_InitNoAuth(&client, 1024);
 	Qiniu_Client_SetTimeout(&client, 5000);
 	Qiniu_Client_SetConnectTimeout(&client, 3000);
+	Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
 
 	Qiniu_Zero(extra);
 
@@ -125,6 +127,7 @@ TEST(IntegrationTest, TestResumableIoPut)
 	Qiniu_Client_InitMacAuth(&client, 1024, NULL);
 	Qiniu_Client_SetTimeout(&client, 5000);
 	Qiniu_Client_SetConnectTimeout(&client, 3000);
+	Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
 
 	Qiniu_Zero(putPolicy);
 	putPolicy.scope = Test_bucket;

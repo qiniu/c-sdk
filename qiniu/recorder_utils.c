@@ -21,9 +21,9 @@
 
 Qiniu_Bool Qiniu_Utils_Extract_Bucket(const char *uptoken, const char **pAccessKey, const char **pBucket)
 {
-	//uptoken=<ak>:<signedData>:<policyDataBase64>
-	//extract put policy str from uptoken
-	//step1 decode base64
+	// uptoken=<ak>:<signedData>:<policyDataBase64>
+	// extract put policy str from uptoken
+	// step1 decode base64
 	char *accessKey, *bucket;
 	int hitCount = 0;
 	int hitIndex = -1;
@@ -35,7 +35,7 @@ Qiniu_Bool Qiniu_Utils_Extract_Bucket(const char *uptoken, const char **pAccessK
 		{
 			if (hitCount == 0)
 			{
-				accessKey = strdup(uptoken);
+				accessKey = Qiniu_String_Dup(uptoken);
 				*(accessKey + i) = '\0';
 			}
 			hitCount++;
@@ -50,11 +50,11 @@ Qiniu_Bool Qiniu_Utils_Extract_Bucket(const char *uptoken, const char **pAccessK
 	const char *policyB64Data = uptoken + hitIndex + 1;
 	char *policyData = Qiniu_String_Decode(policyB64Data);
 
-	//step2 parse json
+	// step2 parse json
 	cJSON *policy = cJSON_Parse(policyData);
 	const char *scope = Qiniu_Json_GetString(policy, "scope", NULL);
 
-	//step3 split bucketname from scope=<bucket>:<xx>
+	// step3 split bucketname from scope=<bucket>:<xx>
 	len = strlen(scope);
 	hitIndex = len;
 	for (int i = 0; i < len; i++)
@@ -66,7 +66,7 @@ Qiniu_Bool Qiniu_Utils_Extract_Bucket(const char *uptoken, const char **pAccessK
 		}
 	}
 
-	bucket = strdup(scope);
+	bucket = Qiniu_String_Dup(scope);
 	*(bucket + hitIndex) = '\0';
 	cJSON_Delete(policy);
 	Qiniu_Free(policyData);

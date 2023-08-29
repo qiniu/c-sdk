@@ -77,18 +77,18 @@ void Qiniu_MacAuth_Disable_Qiniu_Timestamp_Signature()
 static void
 Qiniu_Mac_Hmac_inner(Qiniu_Mac *mac, const char *items[], size_t items_len, const char *addition, size_t addlen, char *digest, unsigned int *digest_len)
 {
-	Qiniu_HMAC *hmac = Qiniu_HMAC_New(QINIU_DIGEST_TYPE_SHA1, (const unsigned char*)mac->secretKey, (int) strlen(mac->secretKey));
+	Qiniu_HMAC *hmac = Qiniu_HMAC_New(QINIU_DIGEST_TYPE_SHA1, (const unsigned char *)mac->secretKey, (int)strlen(mac->secretKey));
 	for (size_t i = 0; i < items_len; i++)
 	{
-		Qiniu_HMAC_Update(hmac, (const unsigned char*)items[i], (int) strlen(items[i]));
+		Qiniu_HMAC_Update(hmac, (const unsigned char *)items[i], (int)strlen(items[i]));
 	}
-	Qiniu_HMAC_Update(hmac, (const unsigned char*)"\n", 1);
+	Qiniu_HMAC_Update(hmac, (const unsigned char *)"\n", 1);
 	if (addlen > 0)
 	{
-		Qiniu_HMAC_Update(hmac, (const unsigned char*)addition, (int) addlen);
+		Qiniu_HMAC_Update(hmac, (const unsigned char *)addition, (int)addlen);
 	}
 	size_t digest_len_tmp;
-	Qiniu_HMAC_Final(hmac, (unsigned char*)digest, &digest_len_tmp);
+	Qiniu_HMAC_Final(hmac, (unsigned char *)digest, &digest_len_tmp);
 	Qiniu_HMAC_Free(hmac);
 	*digest_len = (unsigned int)digest_len_tmp;
 }
@@ -506,10 +506,16 @@ Qiniu_Mac_AuthV2(
 
 static void Qiniu_Mac_Release(void *self)
 {
+	Qiniu_Free(self);
+}
+
+static const char *Qiniu_Mac_Get_AccessKey(void *self)
+{
 	if (self)
 	{
-		free(self);
+		return ((Qiniu_Mac *)self)->accessKey;
 	}
+	return QINIU_ACCESS_KEY;
 }
 
 static Qiniu_Mac *Qiniu_Mac_Clone(Qiniu_Mac *mac)
@@ -535,7 +541,9 @@ static Qiniu_Mac *Qiniu_Mac_Clone(Qiniu_Mac *mac)
 static Qiniu_Auth_Itbl Qiniu_MacAuth_Itbl = {
 	Qiniu_Mac_Auth,
 	Qiniu_Mac_Release,
-	Qiniu_Mac_AuthV2};
+	Qiniu_Mac_AuthV2,
+	Qiniu_Mac_Get_AccessKey,
+};
 
 Qiniu_Auth Qiniu_MacAuth(Qiniu_Mac *mac)
 {
@@ -545,7 +553,7 @@ Qiniu_Auth Qiniu_MacAuth(Qiniu_Mac *mac)
 
 void Qiniu_Client_InitMacAuth(Qiniu_Client *self, size_t bufSize, Qiniu_Mac *mac)
 {
-	Qiniu_Auth auth = {Qiniu_Mac_Clone(mac), &Qiniu_MacAuth_Itbl};
+	Qiniu_Auth auth = Qiniu_MacAuth(mac);
 	Qiniu_Client_InitEx(self, auth, bufSize);
 }
 
@@ -571,9 +579,9 @@ char *Qiniu_Mac_Sign(Qiniu_Mac *self, char *data)
 		mac.secretKey = QINIU_SECRET_KEY;
 	}
 
-	Qiniu_HMAC *hmac = Qiniu_HMAC_New(QINIU_DIGEST_TYPE_SHA1, (const unsigned char *) mac.secretKey, (int) strlen(mac.secretKey));
-	Qiniu_HMAC_Update(hmac, (const unsigned char *) data, (int) strlen(data));
-	Qiniu_HMAC_Final(hmac, (unsigned char *) digest, &digest_len);
+	Qiniu_HMAC *hmac = Qiniu_HMAC_New(QINIU_DIGEST_TYPE_SHA1, (const unsigned char *)mac.secretKey, (int)strlen(mac.secretKey));
+	Qiniu_HMAC_Update(hmac, (const unsigned char *)data, (int)strlen(data));
+	Qiniu_HMAC_Final(hmac, (unsigned char *)digest, &digest_len);
 	Qiniu_HMAC_Free(hmac);
 
 	encoded_digest = Qiniu_Memory_Encode(digest, digest_len);
