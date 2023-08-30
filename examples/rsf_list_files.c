@@ -56,12 +56,7 @@ int main(int argc, char **argv) {
         }
 
         //free
-        if (listRet.commonPrefixes != NULL) {
-            Qiniu_Free(listRet.commonPrefixes);
-        }
-        if (listRet.items != NULL) {
-            Qiniu_Free(listRet.items);
-        }
+        Qiniu_RSF_ListRet_Cleanup(&listRet);
     }
 
     Qiniu_Client_Cleanup(&client);

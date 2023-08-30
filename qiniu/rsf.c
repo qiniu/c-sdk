@@ -174,3 +174,17 @@ Qiniu_Error Qiniu_RSF_ListFiles(Qiniu_Client *self, Qiniu_RSF_ListRet *ret, cons
 
     return err;
 }
+
+void Qiniu_RSF_ListRet_Cleanup(Qiniu_RSF_ListRet *self)
+{
+    if (self->items != NULL)
+    {
+        Qiniu_FreeV2((void **)&self->items);
+        self->itemsCount = 0;
+    }
+    if (self->commonPrefixes != NULL)
+    {
+        Qiniu_FreeV2((void **)&self->commonPrefixes);
+        self->commonPrefixesCount = 0;
+    }
+}

@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
     char **commonPrefixes = NULL;
     Qiniu_RSF_ListItem *items = NULL;
-    
+
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
 
     do {
@@ -75,17 +75,10 @@ int main(int argc, char **argv) {
             }
 
             //free
-            if (listRet.commonPrefixes != NULL) {
-                Qiniu_Free(listRet.commonPrefixes);
-            }
-            if (listRet.items != NULL) {
-                Qiniu_Free(listRet.items);
-            }
-
-            Qiniu_Zero(listRet);
+            Qiniu_RSF_ListRet_Cleanup(&listRet);
         }
 
     } while (!str_empty(nextMarker));
-    
+
     Qiniu_Client_Cleanup(&client);
 }
