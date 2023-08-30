@@ -36,6 +36,7 @@ extern "C"
     QINIU_DLLAPI extern Qiniu_Error Qiniu_RSF_ListFiles(Qiniu_Client *self, Qiniu_RSF_ListRet *ret, const char *bucket,
                                                         const char *prefix, const char *delimiter, const char *marker,
                                                         int limit);
+    QINIU_DLLAPI extern void Qiniu_RSF_ListRet_Cleanup(Qiniu_RSF_ListRet *self);
 #pragma pack()
 
 #ifdef __cplusplus

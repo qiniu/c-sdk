@@ -24,6 +24,7 @@ TEST(IntegrationTest, TestRsfListFiles)
             printf("%s\n", listRet.items[i].key);
         }
         totalCount += listRet.itemsCount;
+        Qiniu_RSF_ListRet_Cleanup(&listRet);
     } while (listRet.marker != NULL);
     EXPECT_GT(totalCount, 0);
 
