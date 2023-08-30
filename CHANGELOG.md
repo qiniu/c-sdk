@@ -1,5 +1,13 @@
 ## CHANGE LOG
 
+## v7.6.0 (2023-08-31)
+
+- 移除内置的亚太-首尔区域
+- 提供快速生成公有云的区域实例的方法 `Qiniu_Use_Region()`
+- 支持通过调用 `Qiniu_Client_EnableAutoQuery()` 方法自动查询域名
+- 修复 `Qiniu_RSF_ListFiles` 无法在 C++ 中被调用的问题
+- 增加 `Qiniu_RSF_ListRet_Cleanup()` 方法用于回收 `Qiniu_RSF_ListRet`
+
 ## v7.5.0 (2023-06-30)
 
 - 修复了 OpenSSL 3.x 编译告警
