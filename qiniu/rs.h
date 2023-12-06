@@ -20,6 +20,14 @@ extern "C"
 #endif
 
 /*============================================================================*/
+
+#define QINIU_FILE_TYPE_STANDARD 0
+#define QINIU_FILE_TYPE_IA 1
+#define QINIU_FILE_TYPE_ARCHIVE 2
+#define QINIU_FILE_TYPE_DEEP_ARCHIVE 3
+#define QINIU_FILE_TYPE_ARCHIVE_IR 4
+
+/*============================================================================*/
 /* type PutPolicy, GetPolicy */
 
 /* @gist put-policy */

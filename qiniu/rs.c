@@ -382,17 +382,20 @@ Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const char *bucket, const ch
     char *fileTypeStr = NULL, buf[4] = {0};
     switch (fileType)
     {
-    case 0:
+    case QINIU_FILE_TYPE_STANDARD:
         fileTypeStr = "0";
         break;
-    case 1:
+    case QINIU_FILE_TYPE_IA:
         fileTypeStr = "1";
         break;
-    case 2:
+    case QINIU_FILE_TYPE_ARCHIVE:
         fileTypeStr = "2";
         break;
-    case 3:
+    case QINIU_FILE_TYPE_DEEP_ARCHIVE:
         fileTypeStr = "3";
+        break;
+    case QINIU_FILE_TYPE_ARCHIVE_IR:
+        fileTypeStr = "4";
         break;
     default:
         snprintf(buf, sizeof(buf), "%d", fileType);
@@ -909,28 +912,31 @@ Qiniu_Error Qiniu_RS_BatchChangeType(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
         entryURI = Qiniu_String_Concat3(entry->bucket, ":", entry->key);
         entryURIEncoded = Qiniu_String_Encode(entryURI);
 
-        char *entryType = NULL, buf[4] = {0};
+        char *fileType = NULL, buf[4] = {0};
         switch (entry->fileType)
         {
-        case 0:
-            entryType = "0";
+        case QINIU_FILE_TYPE_STANDARD:
+            fileType = "0";
             break;
-        case 1:
-            entryType = "1";
+        case QINIU_FILE_TYPE_IA:
+            fileType = "1";
             break;
-        case 2:
-            entryType = "2";
+        case QINIU_FILE_TYPE_ARCHIVE:
+            fileType = "2";
             break;
-        case 3:
-            entryType = "3";
+        case QINIU_FILE_TYPE_DEEP_ARCHIVE:
+            fileType = "3";
+            break;
+        case QINIU_FILE_TYPE_ARCHIVE_IR:
+            fileType = "4";
             break;
         default:
             snprintf(buf, sizeof(buf), "%d", entry->fileType);
-            entryType = &buf[0];
+            fileType = &buf[0];
             break;
         }
 
-        bodyPart = Qiniu_String_Concat(entryURIEncoded, "/type/", entryType, NULL);
+        bodyPart = Qiniu_String_Concat(entryURIEncoded, "/type/", fileType, NULL);
         opBody = Qiniu_String_Concat2("op=/chtype/", bodyPart);
         Qiniu_Free(entryURI);
         Qiniu_Free(entryURIEncoded);
