@@ -6,7 +6,8 @@
 #include <stdlib.h>
 #include "debug.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     Qiniu_Global_Init(-1);
 
     Qiniu_FOP_PfopRet pfopRet;
@@ -24,7 +25,7 @@ int main(int argc, char **argv) {
     mac.accessKey = accessKey;
     mac.secretKey = secretKey;
 
-    //init
+    // init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
 
     char *saveMp4Entry = Qiniu_String_Concat3(bucket, ":", "avthumb_test_target.mp4");
@@ -44,11 +45,14 @@ int main(int argc, char **argv) {
     char *fops[] = {avthumbMp4Fop, vframeJpgFop};
 
     Qiniu_Error error = Qiniu_FOP_Pfop(&client, &pfopRet, bucket, key, fops, 2, pipeline, notifyURL, force);
-    if (error.code != 200) {
+    if (error.code != Qiniu_OK.code)
+    {
         printf("video file pfop %s:%s error.\n", bucket, key);
         debug_log(&client, error);
-    } else {
-        /*200, 正确返回了, 你可以通过pfopRet变量查询任务ID*/
+    }
+    else
+    {
+        /*Qiniu_OK.code, 正确返回了, 你可以通过pfopRet变量查询任务ID*/
         printf("video file pfop %s:%s success, persistentId: %s .\n\n", bucket, key, pfopRet.persistentId);
     }
 

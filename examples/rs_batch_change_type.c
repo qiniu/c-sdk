@@ -6,7 +6,8 @@
 #include <stdlib.h>
 #include "debug.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     Qiniu_Global_Init(-1);
 
     Qiniu_RS_BatchItemRet *itemRets;
@@ -23,46 +24,55 @@ int main(int argc, char **argv) {
     mac.secretKey = secretKey;
 
     Qiniu_ItemCount entryCount = 10;
-    Qiniu_RS_EntryChangeType *entries = (Qiniu_RS_EntryChangeType *) malloc(
-            sizeof(Qiniu_RS_EntryChangeType) * entryCount);
-    for (i = 0; i < entryCount; i++) {
+    Qiniu_RS_EntryChangeType *entries = (Qiniu_RS_EntryChangeType *)malloc(
+        sizeof(Qiniu_RS_EntryChangeType) * entryCount);
+    for (i = 0; i < entryCount; i++)
+    {
         Qiniu_RS_EntryChangeType entry;
         entry.bucket = bucket;
 
         size_t indexLen = snprintf(NULL, 0, "%d", i) + 1;
-        char *indexStr = (char *) calloc(sizeof(char), indexLen);
+        char *indexStr = (char *)calloc(sizeof(char), indexLen);
         snprintf(indexStr, indexLen, "%d", i);
         entry.key = Qiniu_String_Concat2(key, indexStr);
         Qiniu_Free(indexStr);
-        entry.fileType = 1;//改为低频存储
+        entry.fileType = 1; // 改为低频存储
         entries[i] = entry;
     }
 
-    itemRets = (Qiniu_RS_BatchItemRet *) malloc(sizeof(Qiniu_RS_BatchItemRet) * entryCount);
+    itemRets = (Qiniu_RS_BatchItemRet *)malloc(sizeof(Qiniu_RS_BatchItemRet) * entryCount);
 
-    //init
+    // init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
     Qiniu_Error error = Qiniu_RS_BatchChangeType(&client, itemRets, entries, entryCount);
-    if (error.code / 100 != 2) {
+    if (error.code / 100 != 2)
+    {
         printf("batch change file type error.\n");
         debug_log(&client, error);
-    } else {
-        /*200, 正确返回了, 你可以通过itemRets变量查询一些关于这个文件的信息*/
+    }
+    else
+    {
+        /*Qiniu_OK.code, 正确返回了, 你可以通过itemRets变量查询一些关于这个文件的信息*/
         printf("batch change file type success.\n\n");
 
-        for (i = 0; i < entryCount; i++) {
+        for (i = 0; i < entryCount; i++)
+        {
             int code = itemRets[i].code;
-            if (code == 200) {
+            if (code == Qiniu_OK.code)
+            {
                 printf("success: %d\n", code);
-            } else {
+            }
+            else
+            {
                 printf("code: %d, error: %s\n", code, itemRets[i].error);
             }
         }
     }
 
-    for (i = 0; i < entryCount; i++) {
+    for (i = 0; i < entryCount; i++)
+    {
         Qiniu_RS_EntryChangeType entry = entries[i];
-        Qiniu_Free((void *) entry.key);
+        Qiniu_Free((void *)entry.key);
     }
 
     Qiniu_Free(entries);

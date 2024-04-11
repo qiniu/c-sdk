@@ -9,6 +9,7 @@
 
 #include "http.h"
 #include "../cJSON/cJSON.h"
+#include "../hashmap/hashmap.h"
 #include <curl/curl.h>
 
 Qiniu_Error Qiniu_Client_config(Qiniu_Client *self);
@@ -377,8 +378,11 @@ void Qiniu_Client_Cleanup(Qiniu_Client *self)
     Qiniu_Buffer_Cleanup(&self->b);
     Qiniu_Buffer_Cleanup(&self->respHeader);
 
-    Qiniu_FreeV2((void **)&self->cachedRegion);
-    Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
+    if (self->cachedRegions != NULL)
+    {
+        hashmap_free(self->cachedRegions);
+        self->cachedRegions = NULL;
+    }
 }
 
 void Qiniu_Client_BindNic(Qiniu_Client *self, const char *nic)
@@ -474,7 +478,7 @@ static Qiniu_Error Qiniu_Client_callWithBody(
     Qiniu_Header *headers = NULL;
     CURL *curl = (CURL *)self->curl;
     err = Qiniu_Client_config(self);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -509,7 +513,7 @@ static Qiniu_Error Qiniu_Client_callWithBody(
             bodyLen = 0;
         }
         err = Qiniu_Do_Auth(self, "POST", &headers, url, body, (size_t)bodyLen);
-        if (err.code != 200)
+        if (err.code != Qiniu_OK.code)
         {
             return err;
         }
@@ -587,7 +591,7 @@ Qiniu_Error Qiniu_Client_Call(Qiniu_Client *self, Qiniu_Json **ret, const char *
     Qiniu_Header *headers = NULL;
     CURL *curl = Qiniu_Client_initcall(self, url);
     err = Qiniu_Client_config(self);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -595,7 +599,7 @@ Qiniu_Error Qiniu_Client_Call(Qiniu_Client *self, Qiniu_Json **ret, const char *
     if (self->auth.itbl != NULL)
     {
         err = Qiniu_Do_Auth(self, "POST", &headers, url, NULL, 0);
-        if (err.code != 200)
+        if (err.code != Qiniu_OK.code)
         {
             return err;
         }
@@ -615,7 +619,7 @@ Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client *self, const char *url)
     Qiniu_Header *headers = NULL;
     CURL *curl = Qiniu_Client_initcall(self, url);
     err = Qiniu_Client_config(self);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -623,7 +627,7 @@ Qiniu_Error Qiniu_Client_CallNoRet(Qiniu_Client *self, const char *url)
     if (self->auth.itbl != NULL)
     {
         err = Qiniu_Do_Auth(self, "POST", &headers, url, NULL, 0);
-        if (err.code != 200)
+        if (err.code != Qiniu_OK.code)
         {
             return err;
         }

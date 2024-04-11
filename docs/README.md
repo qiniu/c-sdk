@@ -68,6 +68,26 @@ C-SDK 使用 [cURL](http://curl.haxx.se/) 进行网络相关操作。无论是�
 
 如果在项目构建过程中出现环境相关的编译错误和链接错误，请确认这些选项是否都已经正确配置，以及所依赖的库是否都已经正确的安装。
 
+#### 通过 CMake 编译
+
+如果想在 CMake 项目里使用 C-SDK，可以直接在 CMake 里导入 C-SDK：
+
+```cmake
+INCLUDE(FetchContent)
+FetchContent_Declare(
+  qiniu
+  GIT_REPOSITORY https://github.com/qiniu/c-sdk.git
+  GIT_TAG v7.7.0
+)
+FetchContent_MakeAvailable(qiniu)
+
+FIND_PACKAGE(CURL REQUIRED)
+FIND_PACKAGE(OpenSSL REQUIRED)
+
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PRIVATE qiniu m)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PRIVATE ${CURL_LIBRARIES})
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PRIVATE ${OPENSSL_LIBRARIES})
+```
 
 <a name="appkey"></a>
 
@@ -146,7 +166,7 @@ void stat(Qiniu_Client* client, const char* bucket, const char* key)
 {
 	Qiniu_RS_StatRet ret;
 	Qiniu_Error err = Qiniu_RS_Stat(client, &ret, bucket, key);
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code) {
 		debug(client, err);
 		return;
 	}
@@ -169,7 +189,7 @@ typedef struct _Qiniu_Error {
 typedef struct _Qiniu_RS_StatRet {
 	const char* hash;
 	const char* mimeType;
-	Qiniu_Int64 fsize;	
+	Qiniu_Int64 fsize;
 	Qiniu_Int64 putTime;
 } Qiniu_RS_StatRet;
 ```
@@ -259,7 +279,7 @@ char* upload(Qiniu_Client* client, char* uptoken, const char* key, const char* l
 	Qiniu_Error err;
 	Qiniu_Io_PutRet putRet;
 	err = Qiniu_Io_PutFile(client, &putRet, uptoken, key, localFile, NULL);
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code) {
 		debug(client, err);
 		return NULL;
 	}
@@ -413,7 +433,7 @@ void stat(Qiniu_Client* client, const char* bucket, const char* key)
 {
 	Qiniu_RS_StatRet ret;
 	Qiniu_Error err = Qiniu_RS_Stat(client, &ret, bucket, key);
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code) {
 		debug(client, err);
 		return;
 	}
@@ -427,7 +447,7 @@ void stat(Qiniu_Client* client, const char* bucket, const char* key)
 typedef struct _Qiniu_RS_StatRet {
 	const char* hash;
 	const char* mimeType;
-	Qiniu_Int64 fsize;	
+	Qiniu_Int64 fsize;
 	Qiniu_Int64 putTime;
 } Qiniu_RS_StatRet;
 ```
@@ -442,7 +462,7 @@ typedef struct _Qiniu_RS_StatRet {
 void delete(Qiniu_Client* client, const char* bucket, const char* key)
 {
 	Qiniu_Error err = Qiniu_RS_Delete(client, bucket, key);
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code) {
 		debug(client, err);
 		return;
 	}
@@ -456,12 +476,12 @@ void delete(Qiniu_Client* client, const char* bucket, const char* key)
 复制和移动操作，需要指定源路径和目标路径。
 
 ```{c}
-void copy(Qiniu_Client* client, 
-	const char* bucketSrc, const char* keySrc, 
+void copy(Qiniu_Client* client,
+	const char* bucketSrc, const char* keySrc,
 	const char* bucketDest, const char* keyDest)
 {
 	Qiniu_Error err = Qiniu_RS_Copy(client, bucketSrc, keySrc, bucketDest, keyDest);
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code) {
 		debug(client, err);
 		return;
 	}
@@ -470,12 +490,12 @@ void copy(Qiniu_Client* client,
 ```
 
 ```{c}
-void move(Qiniu_Client* client, 
-	const char* bucketSrc, const char* keySrc, 
+void move(Qiniu_Client* client,
+	const char* bucketSrc, const char* keySrc,
 	const char* bucketDest, const char* keyDest)
 {
 	Qiniu_Error err = Qiniu_RS_Move(client, bucketSrc, keySrc, bucketDest, keyDest);
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code) {
 		debug(client, err);
 		return;
 	}
@@ -494,7 +514,7 @@ void move(Qiniu_Client* client,
 调用`Qiniu_RS_BatchStat`可以批量查看多个文件的属性信息。
 
 ```{c}
-void batchStat(Qiniu_Client* client, 
+void batchStat(Qiniu_Client* client,
 	Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
 {
 	Qiniu_RS_BatchStatRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchStatRet));
@@ -504,7 +524,7 @@ void batchStat(Qiniu_Client* client,
 	while (curr < entryCount) {
 		printf("\ncode: %d\n", rets[curr].code);
 
-		if (rets[curr].code != 200) {
+		if (rets[curr].code != Qiniu_OK.code) {
 			printf("error: %s\n", rets[curr].error);
 		} else {
 			printf("hash: %s\n", rets[curr].data.hash);
@@ -517,7 +537,7 @@ void batchStat(Qiniu_Client* client,
 
 	free(rets);
 
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code) {
 		debug(client, err);
 		return;
 	}
@@ -551,7 +571,7 @@ typedef struct _Qiniu_RS_BatchStatRet {
 typedef struct _Qiniu_RS_StatRet {
 	const char* hash;
 	const char* mimeType;
-	Qiniu_Int64 fsize;	
+	Qiniu_Int64 fsize;
 	Qiniu_Int64 putTime;
 } Qiniu_RS_StatRet;
 ```
@@ -563,7 +583,7 @@ typedef struct _Qiniu_RS_StatRet {
 调用`Qiniu_RS_BatchDelete`可以批量删除多个文件。
 
 ```{c}
-void batchDelete(Qiniu_Client* client, 
+void batchDelete(Qiniu_Client* client,
 	Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
 {
 	Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
@@ -573,7 +593,7 @@ void batchDelete(Qiniu_Client* client,
 	while (curr < entryCount) {
 		printf("\ncode: %d\n", rets[curr].code);
 
-		if (rets[curr].code != 200) {
+		if (rets[curr].code != Qiniu_OK.code) {
 			printf("error: %s\n", rets[curr].error);
 		}
 		curr++;
@@ -581,7 +601,7 @@ void batchDelete(Qiniu_Client* client,
 
 	free(rets);
 
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code) {
 		debug(client, err);
 		return;
 	}
@@ -604,7 +624,7 @@ typedef struct _Qiniu_RS_BatchItemRet {
 调用`Qiniu_RS_BatchCopy`可以批量复制多个文件。
 
 ```{c}
-void batchCopy(Qiniu_Client* client, 
+void batchCopy(Qiniu_Client* client,
 	Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
 {
 	Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
@@ -614,14 +634,14 @@ void batchCopy(Qiniu_Client* client,
 	while (curr < entryCount) {
 		printf("\ncode: %d\n", rets[curr].code);
 
-		if (rets[curr].code != 200) {
+		if (rets[curr].code != Qiniu_OK.code) {
 			printf("error: %s\n", rets[curr].error);
 		}
 		curr++;
 	}
 	free(rets);
 
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code) {
 		debug(client, err);
 		return;
 	}
@@ -644,7 +664,7 @@ typedef struct _Qiniu_RS_EntryPathPair {
 批量移动和批量复制很类似，唯一的区别就是调用`Qiniu_RS_BatchMove`。
 
 ```{c}
-void batchMove(Qiniu_Client* client, 
+void batchMove(Qiniu_Client* client,
 	Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
 {
 	Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
@@ -654,7 +674,7 @@ void batchMove(Qiniu_Client* client,
 	while (curr < entryCount) {
 		printf("\ncode: %d\n", rets[curr].code);
 
-		if (rets[curr].code != 200) {
+		if (rets[curr].code != Qiniu_OK.code) {
 			printf("error: %s\n", rets[curr].error);
 		}
 		curr++;
@@ -662,7 +682,7 @@ void batchMove(Qiniu_Client* client,
 
 	free(rets);
 
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code) {
 		debug(client, err);
 		return;
 	}

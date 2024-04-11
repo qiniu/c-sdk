@@ -7,7 +7,8 @@
 #include <string.h>
 #include "debug.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     Qiniu_Global_Init(-1);
 
     Qiniu_RSF_ListRet listRet;
@@ -33,48 +34,56 @@ int main(int argc, char **argv) {
 
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
 
-    do {
+    do
+    {
         Qiniu_Error error = Qiniu_RSF_ListFiles(&client, &listRet, bucket, prefix, delimiter, nextMarker, limit);
 
-        if (error.code != 200) {
+        if (error.code != Qiniu_OK.code)
+        {
             printf("list files of bucket %s error.\n", bucket);
             debug_log(&client, error);
             nextMarker = "";
         }
-        else {
-            /*200, 正确返回了, 你可以通过listRet变量查询文件列表信息*/
+        else
+        {
+            /*Qiniu_OK.code, 正确返回了, 你可以通过listRet变量查询文件列表信息*/
             printf("list files of bucket %s success.\n\n", bucket);
 
-            //check next marker
-            if (isNewMarker == Qiniu_True) {
+            // check next marker
+            if (isNewMarker == Qiniu_True)
+            {
                 free(nextMarker);
             }
 
-            if (!str_empty(listRet.marker)) {
+            if (!str_empty(listRet.marker))
+            {
                 nextMarker = strdup(listRet.marker);
                 isNewMarker = Qiniu_True;
             }
-            else {
+            else
+            {
                 nextMarker = NULL;
             }
             printf("next marker: %s\n", nextMarker);
 
-            //common prefixes
+            // common prefixes
             commonPrefixes = listRet.commonPrefixes;
-            for (i = 0; i < listRet.commonPrefixesCount; i++) {
+            for (i = 0; i < listRet.commonPrefixesCount; i++)
+            {
                 printf("commonPrefix: %s\n", *commonPrefixes);
                 ++commonPrefixes;
             }
 
-            //items
+            // items
             items = listRet.items;
-            for (i = 0; i < listRet.itemsCount; i++) {
+            for (i = 0; i < listRet.itemsCount; i++)
+            {
                 Qiniu_RSF_ListItem item = listRet.items[i];
                 printf("key: %s, hash: %s, fsize: %lld, mime: %s, putTime: %lld, endUser: %s, type: %lld\n",
                        item.key, item.hash, item.fsize, item.mimeType, item.putTime, item.endUser, item.type);
             }
 
-            //free
+            // free
             Qiniu_RSF_ListRet_Cleanup(&listRet);
         }
 

@@ -16,13 +16,13 @@ void testNotifyErr(int partNum, Qiniu_Error err)
 
 int main(int argc, char **argv)
 {
-    setLocalHost(); //using localhost for debug
+    setLocalHost(); // using localhost for debug
     Qiniu_Global_Init(-1);
     Qiniu_MultipartUpload_Result putRet;
-    Qiniu_Client client; //client不支持并发
+    Qiniu_Client client; // client不支持并发
     Qiniu_RS_PutPolicy putPolicy;
     Qiniu_Multipart_PutExtra putExtra;
-    Qiniu_Zero(client); //must initial memory,otherwise will use random ptr;
+    Qiniu_Zero(client); // must initial memory,otherwise will use random ptr;
     Qiniu_Zero(putRet);
 
     char *accessKey = getenv("QINIU_ACCESS_KEY");
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     Qiniu_Error error;
     Qiniu_Recorder recorder;
     error = Qiniu_FileSystem_Recorder_New("/tmp", &recorder);
-    if (error.code != 200)
+    if (error.code != Qiniu_OK.code)
     {
         printf("create filesystem recorder %s:%s error.\n", bucket, key);
         debug_log(&client, error);
@@ -62,10 +62,10 @@ int main(int argc, char **argv)
     char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
 
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
-    Qiniu_RS_Delete(&client, bucket, key); //to avoid "file exist" err
+    Qiniu_RS_Delete(&client, bucket, key); // to avoid "file exist" err
 
     error = Qiniu_Multipart_PutFile(&client, uptoken, key, localFile, &putExtra, &putRet);
-    if (error.code != 200)
+    if (error.code != Qiniu_OK.code)
     {
         printf("upload file %s:%s error.\n", bucket, key);
         debug_log(&client, error);
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 
 void setLocalHost()
 {
-#ifdef LOCAL_DEBUG_MODE //dedicated for qiniu maintainer
+#ifdef LOCAL_DEBUG_MODE // dedicated for qiniu maintainer
     QINIU_RS_HOST = "http://127.0.0.1:9400";
     QINIU_UP_HOST = "http://127.0.0.1:11200";
 #else

@@ -32,7 +32,7 @@ static void resumableUploadWithKey(Qiniu_Mac *mac, const char *bucket, const cha
 	Qiniu_Recorder recorder;
 	Qiniu_Zero(recorder);
 	error = Qiniu_FileSystem_Recorder_New("/tmp", &recorder);
-	if (error.code != 200)
+	if (error.code != Qiniu_OK.code)
 	{
 		fprintf(stderr, "code: %d\n", error.code);
 		fprintf(stderr, "message: %s\n", error.message);
@@ -43,7 +43,7 @@ static void resumableUploadWithKey(Qiniu_Mac *mac, const char *bucket, const cha
 	putExtra.recorder = &recorder;
 	error = Qiniu_Rio_PutFile(&client, &putRet, upToken, key, localFile, &putExtra);
 
-	if (error.code != 200)
+	if (error.code != Qiniu_OK.code)
 	{
 		fprintf(stderr, "code: %d\n", error.code);
 		fprintf(stderr, "message: %s\n", error.message);

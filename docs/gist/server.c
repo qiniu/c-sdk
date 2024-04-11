@@ -1,7 +1,7 @@
 #include "../../qiniu/rs.h"
 
 /* @gist debug */
-void debug(Qiniu_Client* client, Qiniu_Error err)
+void debug(Qiniu_Client *client, Qiniu_Error err)
 {
 	printf("\nerror code: %d, message: %s\n", err.code, err.message);
 	printf("respose header:\n%s", Qiniu_Buffer_CStr(&client->respHeader));
@@ -10,11 +10,12 @@ void debug(Qiniu_Client* client, Qiniu_Error err)
 /* @endgist */
 
 /* @gist stat */
-void stat(Qiniu_Client* client, const char* bucket, const char* key)
+void stat(Qiniu_Client *client, const char *bucket, const char *key)
 {
 	Qiniu_RS_StatRet ret;
 	Qiniu_Error err = Qiniu_RS_Stat(client, &ret, bucket, key);
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code)
+	{
 		debug(client, err);
 		return;
 	}
@@ -23,10 +24,11 @@ void stat(Qiniu_Client* client, const char* bucket, const char* key)
 /* @endgist */
 
 /* @gist delete */
-void delete(Qiniu_Client* client, const char* bucket, const char* key)
+void delete(Qiniu_Client *client, const char *bucket, const char *key)
 {
 	Qiniu_Error err = Qiniu_RS_Delete(client, bucket, key);
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code)
+	{
 		debug(client, err);
 		return;
 	}
@@ -35,12 +37,13 @@ void delete(Qiniu_Client* client, const char* bucket, const char* key)
 /* @endgist */
 
 /* @gist copy */
-void copy(Qiniu_Client* client, 
-	const char* bucketSrc, const char* keySrc, 
-	const char* bucketDest, const char* keyDest)
+void copy(Qiniu_Client *client,
+		  const char *bucketSrc, const char *keySrc,
+		  const char *bucketDest, const char *keyDest)
 {
 	Qiniu_Error err = Qiniu_RS_Copy(client, bucketSrc, keySrc, bucketDest, keyDest);
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code)
+	{
 		debug(client, err);
 		return;
 	}
@@ -49,12 +52,13 @@ void copy(Qiniu_Client* client,
 /* @endgist */
 
 /* @gist move */
-void move(Qiniu_Client* client, 
-	const char* bucketSrc, const char* keySrc, 
-	const char* bucketDest, const char* keyDest)
+void move(Qiniu_Client *client,
+		  const char *bucketSrc, const char *keySrc,
+		  const char *bucketDest, const char *keyDest)
 {
 	Qiniu_Error err = Qiniu_RS_Move(client, bucketSrc, keySrc, bucketDest, keyDest);
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code)
+	{
 		debug(client, err);
 		return;
 	}
@@ -63,19 +67,23 @@ void move(Qiniu_Client* client,
 /* @endgist */
 
 /* @gist batchStat */
-void batchStat(Qiniu_Client* client, 
-	Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
+void batchStat(Qiniu_Client *client,
+			   Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount)
 {
-	Qiniu_RS_BatchStatRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchStatRet));
+	Qiniu_RS_BatchStatRet *rets = calloc(entryCount, sizeof(Qiniu_RS_BatchStatRet));
 	Qiniu_Error err = Qiniu_RS_BatchStat(client, rets, entries, entryCount);
 
 	int curr = 0;
-	while (curr < entryCount) {
+	while (curr < entryCount)
+	{
 		printf("\ncode: %d\n", rets[curr].code);
 
-		if (rets[curr].code != 200) {
+		if (rets[curr].code != Qiniu_OK.code)
+		{
 			printf("error: %s\n", rets[curr].error);
-		} else {
+		}
+		else
+		{
 			printf("hash: %s\n", rets[curr].data.hash);
 			printf("mimeType: %s\n", rets[curr].data.mimeType);
 			printf("fsize: %lld\n", rets[curr].data.fsize);
@@ -86,7 +94,8 @@ void batchStat(Qiniu_Client* client,
 
 	free(rets);
 
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code)
+	{
 		debug(client, err);
 		return;
 	}
@@ -94,17 +103,19 @@ void batchStat(Qiniu_Client* client,
 /* @endgist */
 
 /* @gist batchDelete */
-void batchDelete(Qiniu_Client* client, 
-	Qiniu_RS_EntryPath* entries, Qiniu_ItemCount entryCount)
+void batchDelete(Qiniu_Client *client,
+				 Qiniu_RS_EntryPath *entries, Qiniu_ItemCount entryCount)
 {
-	Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
+	Qiniu_RS_BatchItemRet *rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
 	Qiniu_Error err = Qiniu_RS_BatchDelete(client, rets, entries, entryCount);
 
 	int curr = 0;
-	while (curr < entryCount) {
+	while (curr < entryCount)
+	{
 		printf("\ncode: %d\n", rets[curr].code);
 
-		if (rets[curr].code != 200) {
+		if (rets[curr].code != Qiniu_OK.code)
+		{
 			printf("error: %s\n", rets[curr].error);
 		}
 		curr++;
@@ -112,7 +123,8 @@ void batchDelete(Qiniu_Client* client,
 
 	free(rets);
 
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code)
+	{
 		debug(client, err);
 		return;
 	}
@@ -120,17 +132,19 @@ void batchDelete(Qiniu_Client* client,
 /* @endgist */
 
 /* @gist batchMove */
-void batchMove(Qiniu_Client* client, 
-	Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
+void batchMove(Qiniu_Client *client,
+			   Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount)
 {
-	Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
+	Qiniu_RS_BatchItemRet *rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
 	Qiniu_Error err = Qiniu_RS_BatchMove(client, rets, entryPairs, entryCount);
 
 	int curr = 0;
-	while (curr < entryCount) {
+	while (curr < entryCount)
+	{
 		printf("\ncode: %d\n", rets[curr].code);
 
-		if (rets[curr].code != 200) {
+		if (rets[curr].code != Qiniu_OK.code)
+		{
 			printf("error: %s\n", rets[curr].error);
 		}
 		curr++;
@@ -138,7 +152,8 @@ void batchMove(Qiniu_Client* client,
 
 	free(rets);
 
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code)
+	{
 		debug(client, err);
 		return;
 	}
@@ -146,24 +161,27 @@ void batchMove(Qiniu_Client* client,
 /* @endgist */
 
 /* @gist batchCopy */
-void batchCopy(Qiniu_Client* client, 
-	Qiniu_RS_EntryPathPair* entryPairs, Qiniu_ItemCount entryCount)
+void batchCopy(Qiniu_Client *client,
+			   Qiniu_RS_EntryPathPair *entryPairs, Qiniu_ItemCount entryCount)
 {
-	Qiniu_RS_BatchItemRet* rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
+	Qiniu_RS_BatchItemRet *rets = calloc(entryCount, sizeof(Qiniu_RS_BatchItemRet));
 	Qiniu_Error err = Qiniu_RS_BatchCopy(client, rets, entryPairs, entryCount);
 	int curr = 0;
 
-	while (curr < entryCount) {
+	while (curr < entryCount)
+	{
 		printf("\ncode: %d\n", rets[curr].code);
 
-		if (rets[curr].code != 200) {
+		if (rets[curr].code != Qiniu_OK.code)
+		{
 			printf("error: %s\n", rets[curr].error);
 		}
 		curr++;
 	}
 	free(rets);
 
-	if (err.code != 200) {
+	if (err.code != Qiniu_OK.code)
+	{
 		debug(client, err);
 		return;
 	}
@@ -171,7 +189,7 @@ void batchCopy(Qiniu_Client* client,
 /* @endgist */
 
 /* @gist uptoken */
-char* uptoken(Qiniu_Client* client, const char* bucket)
+char *uptoken(Qiniu_Client *client, const char *bucket)
 {
 	Qiniu_RS_PutPolicy putPolicy;
 	Qiniu_Zero(putPolicy);
@@ -181,10 +199,10 @@ char* uptoken(Qiniu_Client* client, const char* bucket)
 /* @endgist */
 
 /* @gist downloadUrl */
-char* downloadUrl(Qiniu_Client* client, const char* domain, const char* key)
+char *downloadUrl(Qiniu_Client *client, const char *domain, const char *key)
 {
-	char* url;
-	char* baseUrl;
+	char *url;
+	char *baseUrl;
 	Qiniu_RS_GetPolicy getPolicy;
 
 	Qiniu_Zero(getPolicy);
@@ -192,7 +210,7 @@ char* downloadUrl(Qiniu_Client* client, const char* domain, const char* key)
 	url = Qiniu_RS_GetPolicy_MakeRequest(&getPolicy, baseUrl, NULL);
 
 	Qiniu_Free(baseUrl);
-	return url;                                  // When url is no longer being used, free it by Qiniu_Free.
+	return url; // When url is no longer being used, free it by Qiniu_Free.
 }
 /* @endgist */
 
@@ -204,12 +222,12 @@ int main()
 	QINIU_ACCESS_KEY = "<Please apply your access key>";
 	QINIU_SECRET_KEY = "<Dont send your secret key to anyone>";
 
-	Qiniu_Servend_Init(-1);                        /* 全局初始化函数，整个进程只需要调用一次 */
+	Qiniu_Servend_Init(-1);						   /* 全局初始化函数，整个进程只需要调用一次 */
 	Qiniu_Client_InitMacAuth(&client, 1024, NULL); /* HTTP客户端初始化。HTTP客户端是线程不安全的，不要在多个线程间共用 */
 	/* @endgist */
 
 	stat(&client, "bucket", "key");
-	delete(&client, "bucket", "key");
+	delete (&client, "bucket", "key");
 	copy(&client, "bucket1", "key1", "bucket2", "key2");
 	move(&client, "bucket1", "key1", "bucket2", "key2");
 
@@ -239,7 +257,9 @@ int main()
 	batchMove(&client, entryPairs, 2);
 
 	/* @gist init */
-	Qiniu_Client_Cleanup(&client);                 /* 每个HTTP客户端使用完后释放 */
-	Qiniu_Servend_Cleanup();                       /* 全局清理函数，只需要在进程退出时调用一次 */
+
+	Qiniu_Client_Cleanup(&client); /* 每个HTTP客户端使用完后释放 */
+	Qiniu_Servend_Cleanup();	   /* 全局清理函数，只需要在进程退出时调用一次 */
+
 	/* @endgist */
 }

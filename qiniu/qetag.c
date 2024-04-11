@@ -15,384 +15,439 @@ extern "C"
 #define BLOCK_ELEMENT_MAX_COUNT 16
 #define BLOCK_MAX_SIZE (1 << 22)
 
-typedef struct _Qiniu_Qetag_Block {
-    struct {
-        unsigned int capacity:23;
-        unsigned int done:1;
-        unsigned int reserved:8;
-    };
+    typedef struct _Qiniu_Qetag_Block
+    {
+        struct
+        {
+            unsigned int capacity : 23;
+            unsigned int done : 1;
+            unsigned int reserved : 8;
+        };
 
-    Qiniu_Digest *sha1Digest;
-} Qiniu_Qetag_Block;
+        Qiniu_Digest *sha1Digest;
+    } Qiniu_Qetag_Block;
 
-typedef struct _Qiniu_Qetag_Context
-{
-    unsigned short int blkElementCount;
-    unsigned short int blkUnused;
-    unsigned short int blkBegin;
-    unsigned short int blkEnd;
+    typedef struct _Qiniu_Qetag_Context
+    {
+        unsigned short int blkElementCount;
+        unsigned short int blkUnused;
+        unsigned short int blkBegin;
+        unsigned short int blkEnd;
 
-    unsigned int blkCount;
-    Qiniu_Qetag_Block * blk;
+        unsigned int blkCount;
+        Qiniu_Qetag_Block *blk;
 
-	Qiniu_Digest *sha1Digest;
-    Qiniu_Qetag_Block blkArray[1];
-} Qiniu_Qetag_Context;
+        Qiniu_Digest *sha1Digest;
+        Qiniu_Qetag_Block blkArray[1];
+    } Qiniu_Qetag_Context;
 
-static Qiniu_Error Qiniu_Qetag_mergeBlocks(struct _Qiniu_Qetag_Context * ctx) {
-    Qiniu_Error err;
-    unsigned char digest[SHA_DIGEST_LENGTH];
-    struct _Qiniu_Qetag_Block * blk = NULL;
+    static Qiniu_Error Qiniu_Qetag_mergeBlocks(struct _Qiniu_Qetag_Context *ctx)
+    {
+        Qiniu_Error err;
+        unsigned char digest[SHA_DIGEST_LENGTH];
+        struct _Qiniu_Qetag_Block *blk = NULL;
 
-    while (ctx->blkUnused < ctx->blkElementCount && ctx->blkArray[ctx->blkBegin].done == YES) {
-        blk = &ctx->blkArray[ctx->blkBegin];
+        while (ctx->blkUnused < ctx->blkElementCount && ctx->blkArray[ctx->blkBegin].done == YES)
+        {
+            blk = &ctx->blkArray[ctx->blkBegin];
 
-		if (Qiniu_Digest_Final(blk->sha1Digest, digest, NULL) != QINIU_CRYPTO_RESULT_OK) {
-			err.code = 9999;
-			err.message = "openssl internal error";
-			return err;
-		}
+            if (Qiniu_Digest_Final(blk->sha1Digest, digest, NULL) != QINIU_CRYPTO_RESULT_OK)
+            {
+                err.code = 9999;
+                err.message = "openssl internal error";
+                return err;
+            }
 
-		if (Qiniu_Digest_Update(ctx->sha1Digest, digest, sizeof(digest)) != QINIU_CRYPTO_RESULT_OK) {
-			err.code = 9999;
-			err.message = "openssl internal error";
-			return err;
-		}
+            if (Qiniu_Digest_Update(ctx->sha1Digest, digest, sizeof(digest)) != QINIU_CRYPTO_RESULT_OK)
+            {
+                err.code = 9999;
+                err.message = "openssl internal error";
+                return err;
+            }
 
-        blk->done = NO;
-        
-        ctx->blkBegin += 1;
-        if (ctx->blkBegin >= ctx->blkElementCount) {
-            ctx->blkBegin = 0;
-        }
-        ctx->blkUnused += 1;
-    } // while
+            blk->done = NO;
 
-    err.code = 200;
-    err.message = "ok";
-    return err;
-} // Qiniu_Qetag_mergeBlocks
+            ctx->blkBegin += 1;
+            if (ctx->blkBegin >= ctx->blkElementCount)
+            {
+                ctx->blkBegin = 0;
+            }
+            ctx->blkUnused += 1;
+        } // while
 
-static Qiniu_Error Qiniu_Qetag_allocateBlock(struct _Qiniu_Qetag_Context * ctx, struct _Qiniu_Qetag_Block ** blk)
-{
-    Qiniu_Error err;
-    struct _Qiniu_Qetag_Block * newBlk = NULL;
+        err.code = Qiniu_OK.code;
+        err.message = "ok";
+        return err;
+    } // Qiniu_Qetag_mergeBlocks
 
-    if (ctx->blkUnused == 0) {
-        err = Qiniu_Qetag_mergeBlocks(ctx);
-        if (err.code != 200) {
+    static Qiniu_Error Qiniu_Qetag_allocateBlock(struct _Qiniu_Qetag_Context *ctx, struct _Qiniu_Qetag_Block **blk)
+    {
+        Qiniu_Error err;
+        struct _Qiniu_Qetag_Block *newBlk = NULL;
+
+        if (ctx->blkUnused == 0)
+        {
+            err = Qiniu_Qetag_mergeBlocks(ctx);
+            if (err.code != Qiniu_OK.code)
+            {
+                return err;
+            }
+
+            if (ctx->blkUnused == 0)
+            {
+                *blk = NULL;
+                err.code = 9991;
+                err.message = "no enough blocks";
+                return err;
+            } // if
+        }     // if
+
+        newBlk = &ctx->blkArray[ctx->blkEnd];
+        newBlk->sha1Digest = Qiniu_Digest_New(QINIU_DIGEST_TYPE_SHA1);
+        if (newBlk->sha1Digest == NULL)
+        {
+            err.code = 9999;
+            err.message = "openssl internal error";
             return err;
         }
 
-        if (ctx->blkUnused == 0) {
-            *blk = NULL;
-            err.code = 9991;
-            err.message = "no enough blocks";
-            return err;
+        newBlk->done = NO;
+        newBlk->capacity = BLOCK_MAX_SIZE;
+
+        ctx->blkUnused -= 1;
+        ctx->blkEnd += 1;
+        if (ctx->blkEnd >= ctx->blkElementCount)
+        {
+            ctx->blkEnd = 0;
+        }
+
+        *blk = newBlk;
+        err.code = Qiniu_OK.code;
+        err.message = "ok";
+        return err;
+    } // Qiniu_Qetag_allocateBlock
+
+    Qiniu_Error Qiniu_Qetag_New(struct _Qiniu_Qetag_Context **ctx, unsigned int concurrency)
+    {
+        Qiniu_Error err;
+        Qiniu_Qetag_Context *newCtx = NULL;
+
+        // 分配主结构体
+        if (concurrency < 1)
+        {
+            concurrency = 1;
+        }
+        else if (concurrency > BLOCK_ELEMENT_MAX_COUNT)
+        {
+            concurrency = BLOCK_ELEMENT_MAX_COUNT;
         } // if
-    } // if
 
-    newBlk = &ctx->blkArray[ctx->blkEnd];
-	newBlk->sha1Digest = Qiniu_Digest_New(QINIU_DIGEST_TYPE_SHA1);
-	if (newBlk->sha1Digest == NULL) {
-		err.code = 9999;
-		err.message = "openssl internal error";
-		return err;
-	}
+        newCtx = calloc(1, sizeof(*newCtx) + sizeof(newCtx->blkArray[0]) * (concurrency - 1));
+        if (newCtx == NULL)
+        {
+            err.code = 9999;
+            err.message = "not enough memory";
+            return err;
+        }
+        newCtx->blkElementCount = concurrency;
 
-    newBlk->done = NO;
-    newBlk->capacity = BLOCK_MAX_SIZE;
+        err = Qiniu_Qetag_Reset(newCtx);
+        if (err.code != Qiniu_OK.code)
+        {
+            Qiniu_Qetag_Destroy(newCtx);
+            return err;
+        }
 
-    ctx->blkUnused -= 1;
-    ctx->blkEnd += 1;
-    if (ctx->blkEnd >= ctx->blkElementCount) {
+        *ctx = newCtx;
+        err.code = Qiniu_OK.code;
+        err.message = "ok";
+        return err;
+    } // Qiniu_Qetag_New
+
+    Qiniu_Error Qiniu_Qetag_Reset(struct _Qiniu_Qetag_Context *ctx)
+    {
+        Qiniu_Error err;
+
+        ctx->sha1Digest = Qiniu_Digest_New(QINIU_DIGEST_TYPE_SHA1);
+        if (ctx->sha1Digest == NULL)
+        {
+            err.code = 9999;
+            err.message = "openssl internal error";
+            return err;
+        }
+
+        ctx->blkCount = 0;
+        ctx->blkUnused = ctx->blkElementCount;
+        ctx->blkBegin = 0;
         ctx->blkEnd = 0;
-    }
+        ctx->blk = NULL;
 
-    *blk = newBlk;
-    err.code = 200;
-    err.message = "ok";
-    return err;
-} // Qiniu_Qetag_allocateBlock
+        err = Qiniu_Qetag_allocateBlock(ctx, &ctx->blk);
+        if (err.code != Qiniu_OK.code)
+        {
+            return err;
+        }
 
-Qiniu_Error Qiniu_Qetag_New(struct _Qiniu_Qetag_Context ** ctx, unsigned int concurrency)
-{
-    Qiniu_Error err;
-    Qiniu_Qetag_Context * newCtx = NULL;
-
-    // 分配主结构体
-    if (concurrency < 1) {
-        concurrency = 1;
-    } else if (concurrency > BLOCK_ELEMENT_MAX_COUNT) {
-        concurrency = BLOCK_ELEMENT_MAX_COUNT;
-    } // if
-
-    newCtx = calloc(1, sizeof(*newCtx) + sizeof(newCtx->blkArray[0]) * (concurrency - 1));
-    if (newCtx == NULL) {
-        err.code = 9999;
-        err.message = "not enough memory";
+        err.code = Qiniu_OK.code;
+        err.message = "ok";
         return err;
-    }
-    newCtx->blkElementCount = concurrency;
+    } // Qiniu_Qetag_Reset
 
-    err = Qiniu_Qetag_Reset(newCtx);
-    if (err.code != 200) {
-        Qiniu_Qetag_Destroy(newCtx);
-        return err;
-    }
-
-    *ctx = newCtx;
-    err.code = 200;
-    err.message = "ok";
-    return err;
-} // Qiniu_Qetag_New
-
-Qiniu_Error Qiniu_Qetag_Reset(struct _Qiniu_Qetag_Context * ctx)
-{
-    Qiniu_Error err;
-
-	ctx->sha1Digest = Qiniu_Digest_New(QINIU_DIGEST_TYPE_SHA1);
-	if (ctx->sha1Digest == NULL) {
-		err.code = 9999;
-		err.message = "openssl internal error";
-		return err;
-	}
-
-    ctx->blkCount   = 0;
-    ctx->blkUnused  = ctx->blkElementCount;
-    ctx->blkBegin   = 0;
-    ctx->blkEnd     = 0;
-    ctx->blk        = NULL;
-
-    err = Qiniu_Qetag_allocateBlock(ctx, &ctx->blk);
-    if (err.code != 200) {
-        return err;
-    }
-
-    err.code = 200;
-    err.message = "ok";
-    return err;
-} // Qiniu_Qetag_Reset
-
-void Qiniu_Qetag_Destroy(struct _Qiniu_Qetag_Context * ctx)
-{
-    if (ctx) {
-        free(ctx);
-    } // if
-} // Qiniu_Qetag_Destroy
-
-Qiniu_Error Qiniu_Qetag_Update(struct _Qiniu_Qetag_Context * ctx, const char * buf, size_t bufSize)
-{
-    Qiniu_Error err;
-    const char * pos = buf;
-    size_t size = bufSize;
-    size_t copySize = 0;
-
-    while (size > 0) {
-        if (!ctx->blk) {
-            err = Qiniu_Qetag_allocateBlock(ctx, &ctx->blk);
-            if (err.code != 200) {
-                return err;
-            }
+    void Qiniu_Qetag_Destroy(struct _Qiniu_Qetag_Context *ctx)
+    {
+        if (ctx)
+        {
+            free(ctx);
         } // if
+    }     // Qiniu_Qetag_Destroy
 
-        copySize = (size >= ctx->blk->capacity) ? ctx->blk->capacity : size;
-        if (copySize) {
-            err = Qiniu_Qetag_UpdateBlock(ctx->blk, pos, copySize, NULL);
-            if (err.code != 200) {
-                return err;
-            }
+    Qiniu_Error Qiniu_Qetag_Update(struct _Qiniu_Qetag_Context *ctx, const char *buf, size_t bufSize)
+    {
+        Qiniu_Error err;
+        const char *pos = buf;
+        size_t size = bufSize;
+        size_t copySize = 0;
 
-            pos += copySize;
-            size -= copySize;
-        } // if
+        while (size > 0)
+        {
+            if (!ctx->blk)
+            {
+                err = Qiniu_Qetag_allocateBlock(ctx, &ctx->blk);
+                if (err.code != Qiniu_OK.code)
+                {
+                    return err;
+                }
+            } // if
 
-        if (ctx->blk->capacity == 0) {
+            copySize = (size >= ctx->blk->capacity) ? ctx->blk->capacity : size;
+            if (copySize)
+            {
+                err = Qiniu_Qetag_UpdateBlock(ctx->blk, pos, copySize, NULL);
+                if (err.code != Qiniu_OK.code)
+                {
+                    return err;
+                }
+
+                pos += copySize;
+                size -= copySize;
+            } // if
+
+            if (ctx->blk->capacity == 0)
+            {
+                Qiniu_Qetag_CommitBlock(ctx, ctx->blk);
+                ctx->blk = NULL;
+            } // if
+        }     // while
+
+        err.code = Qiniu_OK.code;
+        err.message = "ok";
+        return err;
+    } // Qiniu_Qetag_Update
+
+    Qiniu_Error Qiniu_Qetag_Final(struct _Qiniu_Qetag_Context *ctx, char **digest)
+    {
+        Qiniu_Error err;
+        unsigned char digestSummary[4 + SHA_DIGEST_LENGTH];
+        char *newDigest = NULL;
+
+        if (ctx->blk)
+        {
             Qiniu_Qetag_CommitBlock(ctx, ctx->blk);
             ctx->blk = NULL;
         } // if
-    } // while
 
-    err.code = 200;
-    err.message = "ok";
-    return err;
-} // Qiniu_Qetag_Update
+        if (ctx->blkCount <= 1)
+        {
+            digestSummary[0] = 0x16;
+            if (Qiniu_Digest_Final(ctx->sha1Digest, &digestSummary[1], NULL) != QINIU_CRYPTO_RESULT_OK)
+            {
+                err.code = 9999;
+                err.message = "openssl internal error";
+                return err;
+            }
+        }
+        else
+        {
+            err = Qiniu_Qetag_mergeBlocks(ctx);
+            if (err.code != Qiniu_OK.code)
+            {
+                return err;
+            }
 
-Qiniu_Error Qiniu_Qetag_Final(struct _Qiniu_Qetag_Context * ctx, char ** digest)
-{
-    Qiniu_Error err;
-    unsigned char digestSummary[4 + SHA_DIGEST_LENGTH];
-    char * newDigest = NULL;
+            digestSummary[0] = 0x96;
+            if (Qiniu_Digest_Final(ctx->sha1Digest, &digestSummary[1], NULL) != QINIU_CRYPTO_RESULT_OK)
+            {
+                err.code = 9999;
+                err.message = "openssl internal error";
+                return err;
+            }
+        } // if
 
-    if (ctx->blk) {
-        Qiniu_Qetag_CommitBlock(ctx, ctx->blk);
-        ctx->blk = NULL;
-    } // if
-
-    if (ctx->blkCount <= 1) {
-        digestSummary[0] = 0x16;
-		if (Qiniu_Digest_Final(ctx->sha1Digest, &digestSummary[1], NULL) != QINIU_CRYPTO_RESULT_OK) {
-			err.code = 9999;
-			err.message = "openssl internal error";
-			return err;
-		}
-    } else {
-        err = Qiniu_Qetag_mergeBlocks(ctx);
-        if (err.code != 200) {
+        newDigest = Qiniu_Memory_Encode((const char *)digestSummary, 1 + SHA_DIGEST_LENGTH);
+        if (newDigest == NULL)
+        {
+            err.code = 9999;
+            err.message = "no enough memory";
             return err;
         }
 
-        digestSummary[0] = 0x96;
-		if (Qiniu_Digest_Final(ctx->sha1Digest, &digestSummary[1], NULL) != QINIU_CRYPTO_RESULT_OK) {
-			err.code = 9999;
-			err.message = "openssl internal error";
-			return err;
-		}
-    } // if
-
-    newDigest = Qiniu_Memory_Encode((const char *)digestSummary, 1 + SHA_DIGEST_LENGTH);
-    if (newDigest == NULL) {
-        err.code = 9999;
-        err.message = "no enough memory";
+        *digest = newDigest;
+        err.code = Qiniu_OK.code;
+        err.message = "ok";
         return err;
-    }
+    } // Qiniu_Qetag_Final
 
-    *digest = newDigest;
-    err.code = 200;
-    err.message = "ok";
-    return err;
-} // Qiniu_Qetag_Final
+    Qiniu_Error Qiniu_Qetag_AllocateBlock(struct _Qiniu_Qetag_Context *ctx, struct _Qiniu_Qetag_Block **blk, size_t *remainderSize)
+    {
+        Qiniu_Error err;
 
-Qiniu_Error Qiniu_Qetag_AllocateBlock(struct _Qiniu_Qetag_Context * ctx, struct _Qiniu_Qetag_Block ** blk, size_t * remainderSize)
-{
-    Qiniu_Error err;
-    
-    if (ctx->blk) {
-        *blk = ctx->blk;
-        ctx->blk = NULL;
-    } else {
-        err = Qiniu_Qetag_allocateBlock(ctx, blk);
-        if (err.code != 200) {
+        if (ctx->blk)
+        {
+            *blk = ctx->blk;
+            ctx->blk = NULL;
+        }
+        else
+        {
+            err = Qiniu_Qetag_allocateBlock(ctx, blk);
+            if (err.code != Qiniu_OK.code)
+            {
+                return err;
+            }
+        } // if
+
+        if (remainderSize)
+        {
+            *remainderSize = (*blk)->capacity;
+        }
+        err.code = Qiniu_OK.code;
+        err.message = "ok";
+        return err;
+    } // Qiniu_Qetag_AllocateBlock
+
+    Qiniu_Error Qiniu_Qetag_UpdateBlock(struct _Qiniu_Qetag_Block *blk, const char *buf, size_t bufSize, size_t *remainderSize)
+    {
+        Qiniu_Error err;
+
+        if (bufSize > 0)
+        {
+            if (Qiniu_Digest_Update(blk->sha1Digest, buf, (int)bufSize) != QINIU_CRYPTO_RESULT_OK)
+            {
+                err.code = 9999;
+                err.message = "openssl internal error";
+                return err;
+            }
+            blk->capacity -= bufSize;
+        } // if
+
+        if (remainderSize)
+        {
+            *remainderSize = blk->capacity;
+        }
+        err.code = Qiniu_OK.code;
+        err.message = "ok";
+        return err;
+    } // Qiniu_Qetag_UpdateBlock
+
+    void Qiniu_Qetag_CommitBlock(struct _Qiniu_Qetag_Context *ctx, struct _Qiniu_Qetag_Block *blk)
+    {
+        if (blk->capacity < BLOCK_MAX_SIZE)
+        {
+            blk->done = YES;
+            ctx->blkCount += 1;
+        }
+        else
+        {
+            blk->done = NO;
+        }
+    } // Qiniu_Qetag_CommitBlock
+
+    Qiniu_Error Qiniu_Qetag_DigestFile(const char *localFile, char **digest)
+    {
+        Qiniu_Error err;
+        Qiniu_Off_T offset = 0;
+        size_t readingBytes = (BLOCK_MAX_SIZE >> 2);
+        ssize_t readBytes = 0;
+        Qiniu_File *f = NULL;
+        struct _Qiniu_Qetag_Context *ctx = NULL;
+        char *buf = NULL;
+
+        // 1MB buffer
+        buf = malloc(readingBytes);
+        if (!buf)
+        {
+            err.code = 9999;
+            err.message = "no enough memory";
             return err;
         }
-    } // if
 
-    if (remainderSize) {
-        *remainderSize = (*blk)->capacity;
-    }
-    err.code = 200;
-    err.message = "ok";
-    return err;
-} // Qiniu_Qetag_AllocateBlock
+        err = Qiniu_Qetag_New(&ctx, 1);
+        if (err.code != Qiniu_OK.code)
+        {
+            goto DIGESTFILE_NEWCTX_ERROR;
+        }
 
-Qiniu_Error Qiniu_Qetag_UpdateBlock(struct _Qiniu_Qetag_Block * blk, const char * buf, size_t bufSize, size_t * remainderSize)
-{
-    Qiniu_Error err;
+        err = Qiniu_File_Open(&f, localFile);
+        if (err.code != Qiniu_OK.code)
+        {
+            goto DIGESTFILE_OPEN_ERROR;
+        }
 
-    if (bufSize > 0) {
-		if (Qiniu_Digest_Update(blk->sha1Digest, buf, (int) bufSize) != QINIU_CRYPTO_RESULT_OK) {
-			err.code = 9999;
-			err.message = "openssl internal error";
-			return err;
-		}
-        blk->capacity -= bufSize;
-    } // if
-
-    if (remainderSize) {
-        *remainderSize = blk->capacity;
-    }
-    err.code = 200;
-    err.message = "ok";
-    return err;
-} // Qiniu_Qetag_UpdateBlock
-
-void Qiniu_Qetag_CommitBlock(struct _Qiniu_Qetag_Context * ctx, struct _Qiniu_Qetag_Block * blk)
-{
-    if (blk->capacity < BLOCK_MAX_SIZE) {
-        blk->done = YES;
-        ctx->blkCount += 1;
-    } else {
-        blk->done = NO;
-    }
-} // Qiniu_Qetag_CommitBlock
-
-Qiniu_Error Qiniu_Qetag_DigestFile(const char * localFile, char ** digest)
-{
-    Qiniu_Error err;
-    Qiniu_Off_T offset = 0;
-    size_t readingBytes = (BLOCK_MAX_SIZE >> 2);
-    ssize_t readBytes = 0;
-	Qiniu_File * f = NULL;
-    struct _Qiniu_Qetag_Context * ctx = NULL;
-    char * buf = NULL;
-
-    // 1MB buffer
-    buf = malloc(readingBytes);
-    if (!buf) {
-        err.code = 9999;
-        err.message = "no enough memory";
-        return err;
-    }
-
-    err = Qiniu_Qetag_New(&ctx, 1);
-    if (err.code != 200) {
-        goto DIGESTFILE_NEWCTX_ERROR;
-    }
-
-	err = Qiniu_File_Open(&f, localFile);
-	if (err.code != 200) {
-        goto DIGESTFILE_OPEN_ERROR;
-	}
-
-    do {
-        readBytes = Qiniu_File_ReadAt(f, buf, readingBytes, offset);
-        if (readBytes < 0) {
-            err.code = 9990;
-            err.message = "failed in reading file";
-            goto DIGESTFILE_UPDATE_ERROR;
-        } else if (readBytes > 0) {
-            err = Qiniu_Qetag_Update(ctx, buf, readBytes);
-            if (err.code != 200) {
+        do
+        {
+            readBytes = Qiniu_File_ReadAt(f, buf, readingBytes, offset);
+            if (readBytes < 0)
+            {
+                err.code = 9990;
+                err.message = "failed in reading file";
                 goto DIGESTFILE_UPDATE_ERROR;
             }
-            offset += readBytes;
-        } // if
-    } while(readBytes > 0);
+            else if (readBytes > 0)
+            {
+                err = Qiniu_Qetag_Update(ctx, buf, readBytes);
+                if (err.code != Qiniu_OK.code)
+                {
+                    goto DIGESTFILE_UPDATE_ERROR;
+                }
+                offset += readBytes;
+            } // if
+        } while (readBytes > 0);
 
-    err = Qiniu_Qetag_Final(ctx, digest);
+        err = Qiniu_Qetag_Final(ctx, digest);
 
-DIGESTFILE_UPDATE_ERROR:
-    Qiniu_File_Close(f);
+    DIGESTFILE_UPDATE_ERROR:
+        Qiniu_File_Close(f);
 
-DIGESTFILE_OPEN_ERROR:
-    Qiniu_Qetag_Destroy(ctx);
+    DIGESTFILE_OPEN_ERROR:
+        Qiniu_Qetag_Destroy(ctx);
 
-DIGESTFILE_NEWCTX_ERROR:
-    free(buf);
+    DIGESTFILE_NEWCTX_ERROR:
+        free(buf);
 
-    return err;
-} // Qiniu_Qetag_DigestFile
-
-Qiniu_Error Qiniu_Qetag_DigestBuffer(const char * buf, size_t bufSize, char ** digest)
-{
-    Qiniu_Error err;
-    struct _Qiniu_Qetag_Context * ctx = NULL;
-
-    err = Qiniu_Qetag_New(&ctx, bufSize);
-    if (err.code != 200) {
         return err;
-    }
+    } // Qiniu_Qetag_DigestFile
 
-    err = Qiniu_Qetag_Update(ctx, buf, bufSize);
-    if (err.code != 200) {
+    Qiniu_Error Qiniu_Qetag_DigestBuffer(const char *buf, size_t bufSize, char **digest)
+    {
+        Qiniu_Error err;
+        struct _Qiniu_Qetag_Context *ctx = NULL;
+
+        err = Qiniu_Qetag_New(&ctx, bufSize);
+        if (err.code != Qiniu_OK.code)
+        {
+            return err;
+        }
+
+        err = Qiniu_Qetag_Update(ctx, buf, bufSize);
+        if (err.code != Qiniu_OK.code)
+        {
+            Qiniu_Qetag_Destroy(ctx);
+            return err;
+        }
+
+        err = Qiniu_Qetag_Final(ctx, digest);
         Qiniu_Qetag_Destroy(ctx);
         return err;
-    }
-
-    err = Qiniu_Qetag_Final(ctx, digest);
-    Qiniu_Qetag_Destroy(ctx);
-    return err;
-} // Qiniu_Qetag_DigestBuffer
+    } // Qiniu_Qetag_DigestBuffer
 
 #pragma pack()
 

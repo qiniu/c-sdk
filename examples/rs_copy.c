@@ -6,14 +6,16 @@
 #include <stdlib.h>
 #include "debug.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     Qiniu_Global_Init(-1);
 
     Qiniu_Client client;
 
     char *accessKey = getenv("QINIU_ACCESS_KEY");
     char *secretKey = getenv("QINIU_SECRET_KEY");
-    char *srcBucket = getenv("QINIU_TEST_BUCKET");;
+    char *srcBucket = getenv("QINIU_TEST_BUCKET");
+
     char *srcKey = "qiniu.png";
     char *destBucket = srcBucket;
     char *destKey = "qiniu_copy.png";
@@ -23,13 +25,16 @@ int main(int argc, char **argv) {
     mac.accessKey = accessKey;
     mac.secretKey = secretKey;
 
-    //init
+    // init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
     Qiniu_Error error = Qiniu_RS_Copy(&client, srcBucket, srcKey, destBucket, destKey, force);
-    if (error.code != 200) {
+    if (error.code != Qiniu_OK.code)
+    {
         printf("copy file %s:%s -> %s:%s error.\n", srcBucket, srcKey, destBucket, destKey);
         debug_log(&client, error);
-    } else {
+    }
+    else
+    {
         printf("copy file %s:%s -> %s:%s success.\n", srcBucket, srcKey, destBucket, destKey);
     }
 

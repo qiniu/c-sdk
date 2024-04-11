@@ -11,6 +11,7 @@
 #include "region.h"
 #include "tm.h"
 #include "../cJSON/cJSON.h"
+#include "../hashmap/hashmap.h"
 
 /*============================================================================*/
 
@@ -880,7 +881,7 @@ static Qiniu_Error _Qiniu_Region_Query_call(Qiniu_Client *self, const char *acce
         url = Qiniu_String_Concat(hosts[i], "/v4/query?ak=", accessKey, "&bucket=", bucketName, NULL);
         err = Qiniu_Client_Call(self, ret, url);
         Qiniu_Free(url);
-        if (err.code == 200)
+        if (err.code == Qiniu_OK.code)
         {
             cJSON *hostsJson = Qiniu_Json_GetObjectItem(*ret, "hosts", NULL);
             if (hostsJson == NULL)
@@ -918,7 +919,7 @@ _Qiniu_Region_Query(Qiniu_Client *self, Qiniu_Region **pRegion, const char *acce
         accessKey = self->auth.itbl->GetAccessKey(self->auth.self);
     }
     err = _Qiniu_Region_Query_call(self, accessKey, bucketName, &root);
-    if (err.code == 200)
+    if (err.code == Qiniu_OK.code)
     {
         cJSON *hostsJson = Qiniu_Json_GetObjectItem(root, "hosts", NULL);
         if (hostsJson == NULL)
@@ -1204,47 +1205,192 @@ Qiniu_Error Qiniu_Region_Query(Qiniu_Client *self, Qiniu_Region **pRegion, const
     return _Qiniu_Region_Query(self, pRegion, NULL, bucketName, useHttps);
 }
 
+struct Qiniu_Region_Cache
+{
+    Qiniu_Region *region;
+    const char *accessKey, *bucketName, *ucHost, *ucHostBackup, *apiHost;
+};
+
+static int _Qiniu_Compare_Str(const char *a, const char *b)
+{
+    if (a == NULL && b == NULL)
+    {
+        return 0;
+    }
+    else if (a == NULL)
+    {
+        return -1;
+    }
+    else if (b == NULL)
+    {
+        return 1;
+    }
+    else
+    {
+        return strcmp(a, b);
+    }
+}
+
+static int
+_Qiniu_Region_Cache_Compare(const void *a, const void *b, void *user_data)
+{
+    int result;
+    struct Qiniu_Region_Cache *cacheA = (struct Qiniu_Region_Cache *)a;
+    struct Qiniu_Region_Cache *cacheB = (struct Qiniu_Region_Cache *)b;
+    result = _Qiniu_Compare_Str(cacheA->accessKey, cacheB->accessKey);
+    if (!result)
+    {
+        return result;
+    }
+    result = _Qiniu_Compare_Str(cacheA->bucketName, cacheB->bucketName);
+    if (!result)
+    {
+        return result;
+    }
+    result = _Qiniu_Compare_Str(cacheA->ucHost, cacheB->ucHost);
+    if (!result)
+    {
+        return result;
+    }
+    result = _Qiniu_Compare_Str(cacheA->ucHostBackup, cacheB->ucHostBackup);
+    if (!result)
+    {
+        return result;
+    }
+    result = _Qiniu_Compare_Str(cacheA->apiHost, cacheB->apiHost);
+    if (!result)
+    {
+        return result;
+    }
+}
+
+static uint64_t _Qiniu_Region_Cache_Hash(const void *r, uint64_t seed0, uint64_t seed1)
+{
+    struct Qiniu_Region_Cache *cache = (struct Qiniu_Region_Cache *)r;
+    uint64_t hash = 0;
+    if (cache->accessKey != NULL)
+    {
+        hash ^= hashmap_sip(cache->accessKey, strlen(cache->accessKey), seed0, seed1);
+    }
+    if (cache->bucketName != NULL)
+    {
+        hash ^= hashmap_sip(cache->bucketName, strlen(cache->bucketName), seed0, seed1);
+    }
+    if (cache->ucHost != NULL)
+    {
+        hash ^= hashmap_sip(cache->ucHost, strlen(cache->ucHost), seed0, seed1);
+    }
+    if (cache->ucHostBackup != NULL)
+    {
+        hash ^= hashmap_sip(cache->ucHostBackup, strlen(cache->ucHostBackup), seed0, seed1);
+    }
+    if (cache->apiHost != NULL)
+    {
+        hash ^= hashmap_sip(cache->apiHost, strlen(cache->apiHost), seed0, seed1);
+    }
+    return hash;
+}
+
+static void _Qiniu_Region_Cache_Free(void *r)
+{
+    struct Qiniu_Region_Cache *cache = (struct Qiniu_Region_Cache *)r;
+    Qiniu_Free((void *)cache->accessKey);
+    Qiniu_Free((void *)cache->bucketName);
+    Qiniu_Free((void *)cache->ucHost);
+    Qiniu_Free((void *)cache->ucHostBackup);
+    Qiniu_Free((void *)cache->apiHost);
+    Qiniu_Region_Free(cache->region);
+    Qiniu_Zero_Ptr(cache);
+}
+
+static Qiniu_Error _Qiniu_Region_Auto_Query_With_Cache(Qiniu_Client *self, const char *accessKey, const char *bucketName, Qiniu_Region **foundRegion)
+{
+    if (accessKey == NULL)
+    {
+        accessKey = QINIU_ACCESS_KEY;
+    }
+    const struct Qiniu_Region_Cache cacheKey = {
+        .accessKey = accessKey,
+        .bucketName = bucketName,
+        .ucHost = QINIU_UC_HOST,
+        .ucHostBackup = QINIU_UC_HOST_BACKUP,
+        .apiHost = QINIU_API_HOST,
+    };
+    struct Qiniu_Region_Cache *cache = NULL;
+    if (self->cachedRegions != NULL)
+    {
+        cache = (struct Qiniu_Region_Cache *)hashmap_get(self->cachedRegions, &cacheKey);
+        if (cache != NULL && !Qiniu_Region_Is_Expired(cache->region))
+        {
+            *foundRegion = cache->region;
+            return Qiniu_OK;
+        }
+    }
+    Qiniu_Error err = _Qiniu_Region_Query(self, foundRegion, accessKey, bucketName, self->autoQueryHttpsRegion);
+    if (err.code != Qiniu_OK.code)
+    {
+        if (cache != NULL)
+        { // 有已经过期的缓存区域可以使用
+            *foundRegion = cache->region;
+            return Qiniu_OK;
+        }
+        return err;
+    }
+    if (self->cachedRegions == NULL)
+    {
+        self->cachedRegions = hashmap_new(sizeof(struct Qiniu_Region_Cache), 0, rand(), rand(), _Qiniu_Region_Cache_Hash, _Qiniu_Region_Cache_Compare, _Qiniu_Region_Cache_Free, NULL);
+    }
+    if (self->cachedRegions != NULL)
+    {
+        if (cache != NULL)
+        { // 复用前面已经过期的缓存的内存
+            Qiniu_Region_Free(cache->region);
+            cache->region = *foundRegion;
+        }
+        else
+        {
+            struct Qiniu_Region_Cache *newCache = malloc(sizeof(struct Qiniu_Region_Cache));
+            if (newCache != NULL)
+            {
+                *newCache = (struct Qiniu_Region_Cache){
+                    .region = *foundRegion,
+                    .accessKey = Qiniu_String_Dup(accessKey),
+                    .bucketName = Qiniu_String_Dup(bucketName),
+                    .ucHost = Qiniu_String_Dup(QINIU_UC_HOST),
+                    .ucHostBackup = Qiniu_String_Dup(QINIU_UC_HOST_BACKUP),
+                    .apiHost = Qiniu_String_Dup(QINIU_API_HOST),
+                };
+                hashmap_set(self->cachedRegions, newCache);
+            }
+        }
+    }
+    return Qiniu_OK;
+}
+
 Qiniu_Error _Qiniu_Region_Get_Up_Host(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char **host)
 {
     const char *const *hosts;
     size_t count;
     Qiniu_Error err = Qiniu_OK;
-    Qiniu_Region **foundRegion = &self->cachedRegion;
+    Qiniu_Region *foundRegion = NULL;
 
     if (self->specifiedRegion)
     {
-        foundRegion = &self->specifiedRegion;
+        foundRegion = self->specifiedRegion;
         goto foundCache;
     }
     else if (self->autoQueryRegion)
     {
-        if (self->cachedRegion != NULL)
+        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
+        if (err.code == Qiniu_OK.code)
         {
-            if (strcmp(self->cachedRegionBucketName, bucketName) == 0)
-            {
-                goto foundCache;
-            }
-            else
-            {
-                Qiniu_Region_Free(self->cachedRegion);
-                self->cachedRegion = NULL;
-                Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
-            }
+            goto foundCache;
         }
-        err = _Qiniu_Region_Query(self, &self->cachedRegion, accessKey, bucketName, self->autoQueryHttpsRegion);
-        if (err.code != 200)
-        {
-            goto useDefault;
-        }
-        self->cachedRegionBucketName = Qiniu_String_Dup(bucketName);
-        goto foundCache;
+        *host = QINIU_UP_HOST;
+        return err;
     }
-useDefault:
-    *host = QINIU_UP_HOST;
-    return err;
-
 foundCache:
-    hosts = Qiniu_Region_Get_Up_Preferred_Hosts(*foundRegion, &count);
+    hosts = Qiniu_Region_Get_Up_Preferred_Hosts(foundRegion, &count);
     if (count == 0)
     {
         *host = QINIU_UP_HOST;
@@ -1261,42 +1407,25 @@ Qiniu_Error _Qiniu_Region_Get_Io_Host(Qiniu_Client *self, const char *accessKey,
     const char *const *hosts;
     size_t count;
     Qiniu_Error err = Qiniu_OK;
-    Qiniu_Region **foundRegion = &self->cachedRegion;
+    Qiniu_Region *foundRegion = NULL;
 
     if (self->specifiedRegion)
     {
-        foundRegion = &self->specifiedRegion;
+        foundRegion = self->specifiedRegion;
         goto foundCache;
     }
     else if (self->autoQueryRegion)
     {
-        if (self->cachedRegion != NULL)
+        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
+        if (err.code == Qiniu_OK.code)
         {
-            if (strcmp(self->cachedRegionBucketName, bucketName) == 0 && !Qiniu_Region_Is_Expired(self->cachedRegion))
-            {
-                goto foundCache;
-            }
-            else
-            {
-                Qiniu_Region_Free(self->cachedRegion);
-                self->cachedRegion = NULL;
-                Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
-            }
+            goto foundCache;
         }
-        err = _Qiniu_Region_Query(self, &self->cachedRegion, accessKey, bucketName, self->autoQueryHttpsRegion);
-        if (err.code != 200)
-        {
-            goto useDefault;
-        }
-        self->cachedRegionBucketName = Qiniu_String_Dup(bucketName);
-        goto foundCache;
+        *host = QINIU_UP_HOST;
+        return err;
     }
-useDefault:
-    *host = QINIU_IOVIP_HOST;
-    return err;
-
 foundCache:
-    hosts = Qiniu_Region_Get_Io_Preferred_Hosts(*foundRegion, &count);
+    hosts = Qiniu_Region_Get_Io_Preferred_Hosts(foundRegion, &count);
     if (count == 0)
     {
         *host = QINIU_IOVIP_HOST;
@@ -1313,42 +1442,25 @@ Qiniu_Error _Qiniu_Region_Get_Rs_Host(Qiniu_Client *self, const char *accessKey,
     const char *const *hosts;
     size_t count;
     Qiniu_Error err = Qiniu_OK;
-    Qiniu_Region **foundRegion = &self->cachedRegion;
+    Qiniu_Region *foundRegion = NULL;
 
     if (self->specifiedRegion)
     {
-        foundRegion = &self->specifiedRegion;
+        foundRegion = self->specifiedRegion;
         goto foundCache;
     }
     else if (self->autoQueryRegion)
     {
-        if (self->cachedRegion != NULL)
+        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
+        if (err.code == Qiniu_OK.code)
         {
-            if (strcmp(self->cachedRegionBucketName, bucketName) == 0)
-            {
-                goto foundCache;
-            }
-            else
-            {
-                Qiniu_Region_Free(self->cachedRegion);
-                self->cachedRegion = NULL;
-                Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
-            }
+            goto foundCache;
         }
-        err = _Qiniu_Region_Query(self, &self->cachedRegion, accessKey, bucketName, self->autoQueryHttpsRegion);
-        if (err.code != 200)
-        {
-            goto useDefault;
-        }
-        self->cachedRegionBucketName = Qiniu_String_Dup(bucketName);
-        goto foundCache;
+        *host = QINIU_UP_HOST;
+        return err;
     }
-useDefault:
-    *host = QINIU_RS_HOST;
-    return err;
-
 foundCache:
-    hosts = Qiniu_Region_Get_Rs_Preferred_Hosts(*foundRegion, &count);
+    hosts = Qiniu_Region_Get_Rs_Preferred_Hosts(foundRegion, &count);
     if (count == 0)
     {
         *host = QINIU_RS_HOST;
@@ -1365,42 +1477,25 @@ Qiniu_Error _Qiniu_Region_Get_Rsf_Host(Qiniu_Client *self, const char *accessKey
     const char *const *hosts;
     size_t count;
     Qiniu_Error err = Qiniu_OK;
-    Qiniu_Region **foundRegion = &self->cachedRegion;
+    Qiniu_Region *foundRegion = NULL;
 
     if (self->specifiedRegion)
     {
-        foundRegion = &self->specifiedRegion;
+        foundRegion = self->specifiedRegion;
         goto foundCache;
     }
     else if (self->autoQueryRegion)
     {
-        if (self->cachedRegion != NULL)
+        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
+        if (err.code == Qiniu_OK.code)
         {
-            if (strcmp(self->cachedRegionBucketName, bucketName) == 0)
-            {
-                goto foundCache;
-            }
-            else
-            {
-                Qiniu_Region_Free(self->cachedRegion);
-                self->cachedRegion = NULL;
-                Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
-            }
+            goto foundCache;
         }
-        err = _Qiniu_Region_Query(self, &self->cachedRegion, accessKey, bucketName, self->autoQueryHttpsRegion);
-        if (err.code != 200)
-        {
-            goto useDefault;
-        }
-        self->cachedRegionBucketName = Qiniu_String_Dup(bucketName);
-        goto foundCache;
+        *host = QINIU_UP_HOST;
+        return err;
     }
-useDefault:
-    *host = QINIU_RSF_HOST;
-    return err;
-
 foundCache:
-    hosts = Qiniu_Region_Get_Rsf_Preferred_Hosts(*foundRegion, &count);
+    hosts = Qiniu_Region_Get_Rsf_Preferred_Hosts(foundRegion, &count);
     if (count == 0)
     {
         *host = QINIU_RSF_HOST;
@@ -1417,42 +1512,25 @@ Qiniu_Error _Qiniu_Region_Get_Api_Host(Qiniu_Client *self, const char *accessKey
     const char *const *hosts;
     size_t count;
     Qiniu_Error err = Qiniu_OK;
-    Qiniu_Region **foundRegion = &self->cachedRegion;
+    Qiniu_Region *foundRegion = NULL;
 
     if (self->specifiedRegion)
     {
-        foundRegion = &self->specifiedRegion;
+        foundRegion = self->specifiedRegion;
         goto foundCache;
     }
     else if (self->autoQueryRegion)
     {
-        if (self->cachedRegion != NULL)
+        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
+        if (err.code == Qiniu_OK.code)
         {
-            if (strcmp(self->cachedRegionBucketName, bucketName) == 0)
-            {
-                goto foundCache;
-            }
-            else
-            {
-                Qiniu_Region_Free(self->cachedRegion);
-                self->cachedRegion = NULL;
-                Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
-            }
+            goto foundCache;
         }
-        err = _Qiniu_Region_Query(self, &self->cachedRegion, accessKey, bucketName, self->autoQueryHttpsRegion);
-        if (err.code != 200)
-        {
-            goto useDefault;
-        }
-        self->cachedRegionBucketName = Qiniu_String_Dup(bucketName);
-        goto foundCache;
+        *host = QINIU_UP_HOST;
+        return err;
     }
-useDefault:
-    *host = QINIU_API_HOST;
-    return err;
-
 foundCache:
-    hosts = Qiniu_Region_Get_Api_Preferred_Hosts(*foundRegion, &count);
+    hosts = Qiniu_Region_Get_Api_Preferred_Hosts(foundRegion, &count);
     if (count == 0)
     {
         *host = QINIU_API_HOST;

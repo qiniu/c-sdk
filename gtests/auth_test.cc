@@ -27,7 +27,7 @@ TEST(UnitTest, TestQiniuMacAuthV2)
     const char *body = "{\"name\": \"test\"}";
     Qiniu_MacAuth_Enable_Qiniu_Timestamp_Signature();
     err = auth.itbl->AuthV2(&mac, "GET", &header, "http://upload.qiniup.com/", body, strlen(body));
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     EXPECT_EQ(match_header_prefix(header, "Authorization: Qiniu ak:"), Qiniu_True);
     EXPECT_EQ(match_header_prefix(header, "X-Qiniu-Date:"), Qiniu_True);
     curl_slist_free_all(header);
@@ -36,13 +36,13 @@ TEST(UnitTest, TestQiniuMacAuthV2)
     Qiniu_MacAuth_Disable_Qiniu_Timestamp_Signature();
     err = auth.itbl->AuthV2(&mac, "GET", &header, "http://upload.qiniup.com/", body, strlen(body));
     Qiniu_MacAuth_Enable_Qiniu_Timestamp_Signature();
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     EXPECT_EQ(match_header_prefix(header, "X-Qiniu-Date:"), Qiniu_False);
     curl_slist_free_all(header);
 
     header = NULL;
     err = auth.itbl->AuthV2(&mac, "GET", &header, "http://upload.qiniup.com/", body, strlen(body));
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     EXPECT_EQ(match_header_prefix(header, "X-Qiniu-Date:"), Qiniu_True);
     curl_slist_free_all(header);
 
@@ -55,14 +55,14 @@ TEST(UnitTest, TestQiniuMacAuthV2)
     Qiniu_MacAuth_Disable_Qiniu_Timestamp_Signature();
     err = auth.itbl->AuthV2(&mac, "GET", &header, "http://upload.qiniup.com/mkfile/sdf.jpg", body, strlen(body));
     Qiniu_MacAuth_Enable_Qiniu_Timestamp_Signature();
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     match_header_prefix(header, "Authorization: Qiniu ak:K8d62cW_hqjxQ3RElNz8g3BQHa8=");
     EXPECT_EQ(match_header_prefix(header, "X-Qiniu-Date:"), Qiniu_False);
 
     Qiniu_MacAuth_Disable_Qiniu_Timestamp_Signature();
     err = auth.itbl->AuthV2(&mac, "GET", &header, "http://upload.qiniup.com/mkfile/sdf.jpg?s=er3&df", body, strlen(body));
     Qiniu_MacAuth_Enable_Qiniu_Timestamp_Signature();
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     match_header_prefix(header, "Authorization: Qiniu ak:CzOiB_NSxrvMLkhK8hhV_1vTqYk=");
     EXPECT_EQ(match_header_prefix(header, "X-Qiniu-Date:"), Qiniu_False);
     curl_slist_free_all(header);

@@ -188,7 +188,7 @@ static Qiniu_Error Qiniu_Mac_Auth(
 
 	char const *path;
 	err = Qiniu_Mac_Parse_Url(url, NULL, NULL, &path, NULL);
-	if (err.code != 200)
+	if (err.code != Qiniu_OK.code)
 	{
 		return err;
 	}
@@ -222,7 +222,7 @@ static Qiniu_Error Qiniu_For_Each_Header(Qiniu_Header *header, Qiniu_Error (*for
 	for (Qiniu_Header *cur_header = header; cur_header != NULL; cur_header = cur_header->next)
 	{
 		Qiniu_Error err = for_each(cur_header, data);
-		if (err.code != 200)
+		if (err.code != Qiniu_OK.code)
 		{
 			return err;
 		}
@@ -419,7 +419,7 @@ Qiniu_Mac_AuthV2(
 	size_t hostLen = 0;
 	char const *path = NULL;
 	err = Qiniu_Mac_Parse_Url(url, &host, &hostLen, &path, NULL);
-	if (err.code != 200)
+	if (err.code != Qiniu_OK.code)
 	{
 		return err;
 	}

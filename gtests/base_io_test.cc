@@ -17,7 +17,7 @@ TEST(UnitTest, TestEqual)
 
 	Qiniu_Int64 ncopy;
 	Qiniu_Error err = Qiniu_Copy(w, r, NULL, 1024, &ncopy);
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 	EXPECT_EQ(ncopy, fsize);
 	EXPECT_TRUE(Qiniu_Is(&eq));
 }
@@ -30,7 +30,7 @@ TEST(UnitTest, TestFileIO)
 	Qiniu_File *fp;
 
 	Qiniu_Error err = Qiniu_File_Open(&fp, __FILE__);
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 
 	buf[len] = '\0';
 
@@ -88,12 +88,12 @@ TEST(UnitTest, TestBaseIO)
 	in = Qiniu_SectionReader(&sect, in3, 1, 13);
 	crc32.val = 0;
 	err = Qiniu_Copy(h, in, NULL, 4, NULL);
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 	EXPECT_EQ(crc32.val, 0x74e38c01);
 
 	in = Qiniu_SectionReader(&sect, in3, 1, 13);
 	crc32.val = 0;
 	err = Qiniu_Copy(h, in, NULL, 16, NULL);
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 	EXPECT_EQ(crc32.val, 0x74e38c01);
 }

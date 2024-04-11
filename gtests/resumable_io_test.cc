@@ -22,7 +22,7 @@ static void clientIoPutFile(const char *uptoken, const char *key)
 	Qiniu_Zero(extra);
 
 	err = Qiniu_Rio_PutFile(&client, &putRet, uptoken, key, __FILE__, &extra);
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 
 	Qiniu_Log_Debug("%s", Qiniu_Buffer_CStr(&client.respHeader));
 	Qiniu_Log_Debug("hash: %s", putRet.hash);
@@ -72,7 +72,7 @@ static void clientIoPutBuffer(const char *uptoken, const char *key)
 	Qiniu_Log_Debug("%s", Qiniu_Buffer_CStr(&client.respHeader));
 	Qiniu_Log_Debug("hash: %s", putRet.hash);
 
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 	EXPECT_STREQ(putRet.hash, "FoErrxvY99fW7npWmVii0RncWKme");
 
 	Qiniu_Client_Cleanup(&client);
@@ -106,7 +106,7 @@ static void clientIoGet(const char *url)
 	EXPECT_EQ(code, 0);
 
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
-	EXPECT_EQ(httpCode, 200);
+	EXPECT_EQ(httpCode, Qiniu_OK.code);
 
 	EXPECT_TRUE(Qiniu_Is(&eq));
 

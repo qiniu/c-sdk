@@ -61,11 +61,11 @@ int main(int argc, char **argv) {
     //init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
     Qiniu_Error error = Qiniu_Io_PutFile(&client, &putRet, uptoken, key, localFile, &putExtra);
-    if (error.code != 200) {
+    if (error.code != Qiniu_OK.code) {
         printf("upload file %s:%s error.\n", bucket, key);
         debug_log(&client, error);
     } else {
-        /*200, 正确返回了, 你可以通过statRet变量查询一些关于这个文件的信息*/
+        /*Qiniu_OK.code, 正确返回了, 你可以通过statRet变量查询一些关于这个文件的信息*/
         printf("upload file %s:%s success.\n\n", bucket, key);
         printf("key:\t%s\n",putRet.key);
         printf("hash:\t%s\n", putRet.hash);

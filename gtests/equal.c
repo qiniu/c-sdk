@@ -104,7 +104,7 @@ int Qiniu_Is(Qiniu_Eq *self)
 	{
 		err = Qiniu_Copy(Qiniu_Discard, self->v, NULL, 1024, &ncopy);
 		Qiniu_Log_Info("Qiniu_Is: copy.n = %D, copy.err = %E", ncopy, err);
-		return err.code == 200 && ncopy == 0;
+		return err.code == Qiniu_OK.code && ncopy == 0;
 	}
 	return 0;
 }

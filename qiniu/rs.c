@@ -197,7 +197,7 @@ Qiniu_Error Qiniu_RS_Stat(
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -212,7 +212,7 @@ Qiniu_Error Qiniu_RS_Stat(
     err = Qiniu_Client_Call(self, &root, url);
     Qiniu_Free(url);
 
-    if (err.code == 200)
+    if (err.code == Qiniu_OK.code)
     {
         ret->hash = Qiniu_Json_GetString(root, "hash", 0);
         ret->mimeType = Qiniu_Json_GetString(root, "mimeType", 0);
@@ -233,7 +233,7 @@ Qiniu_Error Qiniu_RS_Delete(Qiniu_Client *self, const char *bucket, const char *
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -261,7 +261,7 @@ Qiniu_Error Qiniu_RS_Copy(Qiniu_Client *self, const char *srcBucket, const char 
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, srcBucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -304,7 +304,7 @@ Qiniu_Error Qiniu_RS_Move(Qiniu_Client *self, const char *srcBucket, const char 
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, srcBucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -346,7 +346,7 @@ Qiniu_Error Qiniu_RS_ChangeMime(Qiniu_Client *self, const char *bucket, const ch
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -374,7 +374,7 @@ Qiniu_Error Qiniu_RS_ChangeType(Qiniu_Client *self, const char *bucket, const ch
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -424,7 +424,7 @@ Qiniu_Error Qiniu_RS_RestoreArchive(Qiniu_Client *self, const char *bucket, cons
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -454,7 +454,7 @@ Qiniu_Error Qiniu_RS_DeleteAfterDays(Qiniu_Client *self, const char *bucket, con
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -485,7 +485,7 @@ Qiniu_Error Qiniu_RS_Fetch(Qiniu_Client *self, Qiniu_RS_FetchRet *ret, const cha
     const char *ioHost;
 
     err = _Qiniu_Region_Get_Io_Host(self, NULL, bucket, &ioHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -512,7 +512,7 @@ Qiniu_Error Qiniu_RS_Fetch(Qiniu_Client *self, Qiniu_RS_FetchRet *ret, const cha
     err = Qiniu_Client_Call(self, &root, url);
     Qiniu_Free(url);
 
-    if (err.code == 200)
+    if (err.code == Qiniu_OK.code)
     {
         ret->key = Qiniu_Json_GetString(root, "key", 0);
         ret->hash = Qiniu_Json_GetString(root, "hash", 0);
@@ -531,7 +531,7 @@ Qiniu_Error Qiniu_RS_Prefetch(Qiniu_Client *self, const char *bucket, const char
     const char *ioHost;
 
     err = _Qiniu_Region_Get_Io_Host(self, NULL, bucket, &ioHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -567,7 +567,7 @@ Qiniu_Error Qiniu_RS_BatchStat(
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, entry->bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -613,7 +613,7 @@ Qiniu_Error Qiniu_RS_BatchStat(
 
         rets[curr].code = code;
 
-        if (code != 200)
+        if (code != Qiniu_OK.code)
         {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
@@ -649,7 +649,7 @@ Qiniu_Error Qiniu_RS_BatchDelete(
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, entry->bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -696,7 +696,7 @@ Qiniu_Error Qiniu_RS_BatchDelete(
 
         rets[curr].code = code;
 
-        if (code != 200)
+        if (code != Qiniu_OK.code)
         {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
@@ -725,7 +725,7 @@ Qiniu_Error Qiniu_RS_BatchMove(
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, entryPair->src.bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -785,7 +785,7 @@ Qiniu_Error Qiniu_RS_BatchMove(
 
         rets[curr].code = code;
 
-        if (code != 200)
+        if (code != Qiniu_OK.code)
         {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
@@ -814,7 +814,7 @@ Qiniu_Error Qiniu_RS_BatchCopy(
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, entryPair->src.bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -874,7 +874,7 @@ Qiniu_Error Qiniu_RS_BatchCopy(
 
         rets[curr].code = code;
 
-        if (code != 200)
+        if (code != Qiniu_OK.code)
         {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
@@ -899,7 +899,7 @@ Qiniu_Error Qiniu_RS_BatchChangeType(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, entry->bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -973,7 +973,7 @@ Qiniu_Error Qiniu_RS_BatchChangeType(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
 
         rets[curr].code = code;
 
-        if (code != 200)
+        if (code != Qiniu_OK.code)
         {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
@@ -998,7 +998,7 @@ Qiniu_Error Qiniu_RS_BatchRestoreArchive(Qiniu_Client *self, Qiniu_RS_BatchItemR
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, entry->bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -1052,7 +1052,7 @@ Qiniu_Error Qiniu_RS_BatchRestoreArchive(Qiniu_Client *self, Qiniu_RS_BatchItemR
 
         rets[curr].code = code;
 
-        if (code != 200)
+        if (code != Qiniu_OK.code)
         {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
@@ -1077,7 +1077,7 @@ Qiniu_Error Qiniu_RS_BatchChangeMime(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, entry->bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -1129,7 +1129,7 @@ Qiniu_Error Qiniu_RS_BatchChangeMime(Qiniu_Client *self, Qiniu_RS_BatchItemRet *
 
         rets[curr].code = code;
 
-        if (code != 200)
+        if (code != Qiniu_OK.code)
         {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }
@@ -1154,7 +1154,7 @@ Qiniu_Error Qiniu_RS_BatchDeleteAfterDays(Qiniu_Client *self, Qiniu_RS_BatchItem
     const char *rsHost;
 
     err = _Qiniu_Region_Get_Rs_Host(self, NULL, entry->bucket, &rsHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -1209,7 +1209,7 @@ Qiniu_Error Qiniu_RS_BatchDeleteAfterDays(Qiniu_Client *self, Qiniu_RS_BatchItem
 
         rets[curr].code = code;
 
-        if (code != 200)
+        if (code != Qiniu_OK.code)
         {
             rets[curr].error = Qiniu_Json_GetString(dataItem, "error", 0);
         }

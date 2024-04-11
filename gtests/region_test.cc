@@ -173,7 +173,7 @@ TEST(IntegrationTest, TestRegionQuery)
 
     Qiniu_Region *region;
     Qiniu_Error err = Qiniu_Region_Query(&client, &region, Test_bucket, Qiniu_True);
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
 
     EXPECT_STREQ(Qiniu_Region_Get_Id(region), "z0");
 
@@ -245,23 +245,23 @@ TEST(IntegrationTest, TestRegionAutoQuery)
     Qiniu_Error err;
 
     err = _Qiniu_Region_Get_Up_Host(&client, NULL, Test_bucket, &host);
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     EXPECT_STREQ(host, "https://upload.qiniup.com");
 
     err = _Qiniu_Region_Get_Io_Host(&client, NULL, Test_bucket, &host);
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     EXPECT_STREQ(host, "https://iovip.qbox.me");
 
     err = _Qiniu_Region_Get_Rs_Host(&client, NULL, Test_bucket, &host);
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     EXPECT_STREQ(host, "https://rs-z0.qbox.me");
 
     err = _Qiniu_Region_Get_Rsf_Host(&client, NULL, Test_bucket, &host);
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     EXPECT_STREQ(host, "https://rsf-z0.qbox.me");
 
     err = _Qiniu_Region_Get_Api_Host(&client, NULL, Test_bucket, &host);
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     EXPECT_STREQ(host, "https://api.qiniu.com");
 }
 
@@ -279,23 +279,23 @@ TEST(IntegrationTest, TestRegionSpecify)
     Qiniu_Error err;
 
     err = _Qiniu_Region_Get_Up_Host(&client, NULL, Test_bucket, &host);
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     EXPECT_STREQ(host, "http://upload-z1.qiniup.com");
 
     err = _Qiniu_Region_Get_Io_Host(&client, NULL, Test_bucket, &host);
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     EXPECT_STREQ(host, "http://iovip-z1.qiniuio.com");
 
     err = _Qiniu_Region_Get_Rs_Host(&client, NULL, Test_bucket, &host);
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     EXPECT_STREQ(host, "http://rs-z1.qiniuapi.com");
 
     err = _Qiniu_Region_Get_Rsf_Host(&client, NULL, Test_bucket, &host);
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     EXPECT_STREQ(host, "http://rsf-z1.qiniuapi.com");
 
     err = _Qiniu_Region_Get_Api_Host(&client, NULL, Test_bucket, &host);
-    EXPECT_EQ(err.code, 200);
+    EXPECT_EQ(err.code, Qiniu_OK.code);
     EXPECT_STREQ(host, "http://api-z1.qiniuapi.com");
 
     Qiniu_Region_Free(region);

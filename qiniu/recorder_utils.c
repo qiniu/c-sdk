@@ -136,7 +136,7 @@ Qiniu_Error Qiniu_Utils_Find_Medium(Qiniu_Recorder *recorder, const char *record
 	size_t haveRead;
 	char buf[BUFFER_SIZE];
 	Qiniu_Error err = recorder->open(recorder, recorderKey, "rb+", medium);
-	if (err.code != 200)
+	if (err.code != Qiniu_OK.code)
 	{
 		if (err.code == -ENOENT)
 		{
@@ -149,7 +149,7 @@ Qiniu_Error Qiniu_Utils_Find_Medium(Qiniu_Recorder *recorder, const char *record
 		return err;
 	}
 	err = medium->readEntry(medium, buf, BUFFER_SIZE, &haveRead);
-	if (err.code != 200)
+	if (err.code != Qiniu_OK.code)
 	{
 		medium->close(medium);
 		return err;
@@ -189,7 +189,7 @@ Qiniu_Error Qiniu_Utils_Find_Medium(Qiniu_Recorder *recorder, const char *record
 Qiniu_Error Qiniu_Utils_New_Medium(Qiniu_Recorder *recorder, const char *recorderKey, Qiniu_Int64 version, struct Qiniu_Record_Medium *medium, Qiniu_FileInfo *fileInfo)
 {
 	Qiniu_Error err = recorder->open(recorder, recorderKey, "wb", medium);
-	if (err.code != 200)
+	if (err.code != Qiniu_OK.code)
 	{
 		return err;
 	}
@@ -207,7 +207,7 @@ Qiniu_Error Qiniu_Utils_New_Medium(Qiniu_Recorder *recorder, const char *recorde
 	}
 	err = medium->writeEntry(medium, metadataJson, NULL);
 	free(metadataJson);
-	if (err.code != 200)
+	if (err.code != Qiniu_OK.code)
 	{
 		return err;
 	}

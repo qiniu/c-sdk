@@ -6,7 +6,8 @@
 #include <stdlib.h>
 #include "debug.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     Qiniu_Global_Init(-1);
 
     Qiniu_RSF_ListRet listRet;
@@ -28,34 +29,39 @@ int main(int argc, char **argv) {
     char **commonPrefixes = NULL;
     Qiniu_RSF_ListItem *items = NULL;
 
-    //init
+    // init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
     Qiniu_Error error = Qiniu_RSF_ListFiles(&client, &listRet, bucket, prefix, delimiter, marker, limit);
-    if (error.code != 200) {
+    if (error.code != Qiniu_OK.code)
+    {
         printf("list files of bucket %s error.\n", bucket);
         debug_log(&client, error);
-    } else {
-        /*200, 正确返回了, 你可以通过listRet变量查询文件列表信息*/
+    }
+    else
+    {
+        /*Qiniu_OK.code, 正确返回了, 你可以通过listRet变量查询文件列表信息*/
         printf("list files of bucket %s success.\n\n", bucket);
-        //marker
+        // marker
         printf("next marker: %s\n", listRet.marker);
 
-        //common prefixes
+        // common prefixes
         commonPrefixes = listRet.commonPrefixes;
-        for (i = 0; i < listRet.commonPrefixesCount; i++) {
+        for (i = 0; i < listRet.commonPrefixesCount; i++)
+        {
             printf("commonPrefix: %s\n", *commonPrefixes);
             ++commonPrefixes;
         }
 
-        //items
+        // items
         items = listRet.items;
-        for (i = 0; i < listRet.itemsCount; i++) {
+        for (i = 0; i < listRet.itemsCount; i++)
+        {
             Qiniu_RSF_ListItem item = listRet.items[i];
             printf("key: %s, hash: %s, fsize: %lld, mime: %s, putTime: %lld, endUser: %s, type: %lld\n",
                    item.key, item.hash, item.fsize, item.mimeType, item.putTime, item.endUser, item.type);
         }
 
-        //free
+        // free
         Qiniu_RSF_ListRet_Cleanup(&listRet);
     }
 

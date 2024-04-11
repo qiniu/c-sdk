@@ -6,7 +6,8 @@
 #include <stdlib.h>
 #include "debug.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     Qiniu_Global_Init(-1);
 
     Qiniu_Client client;
@@ -20,13 +21,16 @@ int main(int argc, char **argv) {
     mac.accessKey = accessKey;
     mac.secretKey = secretKey;
 
-    //init
+    // init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
     Qiniu_Error error = Qiniu_RS_Delete(&client, bucket, key);
-    if (error.code != 200) {
+    if (error.code != Qiniu_OK.code)
+    {
         printf("delete file %s:%s error.\n", bucket, key);
         debug_log(&client, error);
-    } else {
+    }
+    else
+    {
         printf("delete file %s:%s file success.\n", bucket, key);
     }
 

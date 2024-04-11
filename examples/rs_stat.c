@@ -7,7 +7,8 @@
 #include <stdlib.h>
 #include "debug.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     Qiniu_RS_StatRet statRet;
     Qiniu_Client client;
 
@@ -15,7 +16,8 @@ int main(int argc, char **argv) {
     char *secretKey = getenv("QINIU_SECRET_KEY");
     char *bucket = getenv("QINIU_TEST_BUCKET");
 
-    if (str_empty(accessKey) || str_empty(accessKey) || str_empty(bucket)) {
+    if (str_empty(accessKey) || str_empty(accessKey) || str_empty(bucket))
+    {
         printf("please fill `test-env.sh` and then run `source test-env.sh` first\n");
         return -1;
     }
@@ -27,14 +29,17 @@ int main(int argc, char **argv) {
     mac.secretKey = secretKey;
 
     Qiniu_Use_Zone_Huadong(Qiniu_True);
-    //init
+    // init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
     Qiniu_Error error = Qiniu_RS_Stat(&client, &statRet, bucket, key);
-    if (error.code != 200) {
+    if (error.code != Qiniu_OK.code)
+    {
         printf("stat file %s:%s error.\n", bucket, key);
         debug_log(&client, error);
-    } else {
-        /*200, 正确返回了, 你可以通过statRet变量查询一些关于这个文件的信息*/
+    }
+    else
+    {
+        /*Qiniu_OK.code, 正确返回了, 你可以通过statRet变量查询一些关于这个文件的信息*/
         printf("stat file \t%s:%s success.\n\n", bucket, key);
         printf("file hash: \t%s\n", statRet.hash);
         printf("file size: \t%lld\n", statRet.fsize);

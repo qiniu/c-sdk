@@ -112,7 +112,7 @@ Qiniu_Error _Qiniu_FileSystem_RecordMedium_Read_Entry(const struct Qiniu_Record_
         if (data->buf == NULL || data->bufOffset >= data->bufSize)
         {
             Qiniu_Error err = _Qiniu_FileSystem_RecordMedium_fulfill(medium);
-            if (err.code != 200)
+            if (err.code != Qiniu_OK.code)
             {
                 return err;
             }
@@ -163,7 +163,7 @@ Qiniu_Error _Qiniu_FileSystem_RecordMedium_Has_Next_Entry(const struct Qiniu_Rec
     if (data->buf == NULL || data->bufOffset >= data->bufSize)
     {
         Qiniu_Error err = _Qiniu_FileSystem_RecordMedium_fulfill(medium);
-        if (err.code != 200)
+        if (err.code != Qiniu_OK.code)
         {
             return err;
         }

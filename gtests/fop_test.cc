@@ -15,7 +15,7 @@ static void pfop(Qiniu_Client *client)
 	const char *bucket = "csdk";
 	const char *key = "test_pfop.mp4";
 	err = Qiniu_FOP_Pfop(client, &ret, bucket, key, fop, fopCount, NULL, NULL, false);
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 	EXPECT_NE(ret.persistentId, nullptr);
 }
 

@@ -1,7 +1,8 @@
 #include "../qiniu/cdn.h"
 #include "debug.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     Qiniu_Client client;
     Qiniu_CDN_LogListRet ret;
     Qiniu_Error error;
@@ -14,23 +15,25 @@ int main(int argc, char **argv) {
     mac.accessKey = accessKey;
     mac.secretKey = secretKey;
 
-
-    //urls to refresh
+    // urls to refresh
     char *domains[] = {
-            "csdk.qiniudn.com",
-            "javasdk.qiniudn.com"
+        "csdk.qiniudn.com",
+        "javasdk.qiniudn.com",
     };
     int domainsCount = 2;
     char *day = "2017-08-07";
 
-    //init
+    // init
     Qiniu_Zero(ret);
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
-    error = Qiniu_CDN_GetLogList(&client, &ret, domains, domainsCount,day);
-    if (error.code != 200) {
+    error = Qiniu_CDN_GetLogList(&client, &ret, domains, domainsCount, day);
+    if (error.code != Qiniu_OK.code)
+    {
         printf("get domain logs error.\n");
         debug_log(&client, error);
-    } else {
+    }
+    else
+    {
         printf("get domain logs success.\n\n");
         printf("Code: %d\n", ret.code);
         printf("Error: %s\n", ret.error);
@@ -38,15 +41,20 @@ int main(int argc, char **argv) {
 
         printf("-----------\n");
 
-        //data
-        for (i = 0; i < ret.domainsCount; i++) {
+        // data
+        for (i = 0; i < ret.domainsCount; i++)
+        {
             Qiniu_CDN_LogListData logData = ret.data[i];
-            if (logData.itemsCount == 0) {
+            if (logData.itemsCount == 0)
+            {
                 printf("domain: %s, no log data\n", logData.domain);
                 printf("-----------\n");
-            } else {
+            }
+            else
+            {
                 printf("domain: %s have %d log files\n", logData.domain, logData.itemsCount);
-                for (j = 0; j < logData.itemsCount; j++) {
+                for (j = 0; j < logData.itemsCount; j++)
+                {
                     printf("name: %s\n", logData.items[j].name);
                 }
                 printf("-----------\n");
@@ -54,7 +62,6 @@ int main(int argc, char **argv) {
         }
 
         Qiniu_Free_CDNLogListRet(&ret);
-
     }
     Qiniu_Client_Cleanup(&client);
 }

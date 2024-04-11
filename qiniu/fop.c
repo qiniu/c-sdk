@@ -94,7 +94,7 @@ Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, const cha
 
     const char *apiHost;
     err = _Qiniu_Region_Get_Api_Host(self, NULL, bucket, &apiHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         goto error;
     }
@@ -107,7 +107,7 @@ Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, const cha
         body,
         strlen(body),
         "application/x-www-form-urlencoded");
-    if (err.code == 200)
+    if (err.code == Qiniu_OK.code)
     {
         ret->persistentId = Qiniu_Json_GetString(root, "persistentId", 0);
     }

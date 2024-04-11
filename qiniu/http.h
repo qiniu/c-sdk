@@ -106,6 +106,8 @@ extern "C"
 	typedef struct _Qiniu_Region Qiniu_Region;
 	QINIU_DLLAPI extern void Qiniu_Region_Free(Qiniu_Region *region);
 
+	struct hashmap;
+
 	struct _Qiniu_Client
 	{
 		void *curl;
@@ -116,8 +118,7 @@ extern "C"
 
 		Qiniu_Bool autoQueryRegion;
 		Qiniu_Bool autoQueryHttpsRegion;
-		const char *cachedRegionBucketName;
-		Qiniu_Region *cachedRegion;
+		struct hashmap *cachedRegions;
 		Qiniu_Region *specifiedRegion;
 
 		// Use the following field to specify which NIC to use for sending packets.

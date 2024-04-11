@@ -31,27 +31,27 @@ int main(int argc, char **argv)
     putPolicy.scope = bucket;
     char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
 
-    //设置机房域名
-    //Qiniu_Use_Zone_Beimei(Qiniu_False);
-    //Qiniu_Use_Zone_Huabei(Qiniu_True);
+    // 设置机房域名
+    // Qiniu_Use_Zone_Beimei(Qiniu_False);
+    // Qiniu_Use_Zone_Huabei(Qiniu_True);
     Qiniu_Use_Zone_Huadong(Qiniu_False);
-    //Qiniu_Use_Zone_Huanan(Qiniu_True);
+    // Qiniu_Use_Zone_Huanan(Qiniu_True);
 
-    //put extra
-    //putExtra.upHost="http://nbxs-gate-up.qiniu.com";
+    // put extra
+    // putExtra.upHost="http://nbxs-gate-up.qiniu.com";
     putExtra.mimeType = "video/x-mp4";
 
-    //init
+    // init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
     Qiniu_Error error = Qiniu_Rio_PutFile(&client, &putRet, uptoken, key, localFile, &putExtra);
-    if (error.code != 200)
+    if (error.code != Qiniu_OK.code)
     {
         printf("upload file %s:%s error.\n", bucket, key);
         debug_log(&client, error);
     }
     else
     {
-        /*200, 正确返回了, 你可以通过statRet变量查询一些关于这个文件的信息*/
+        /*Qiniu_OK.code, 正确返回了, 你可以通过statRet变量查询一些关于这个文件的信息*/
         printf("upload file %s:%s success.\n\n", bucket, key);
         printf("key:\t%s\n", putRet.key);
         printf("hash:\t%s\n", putRet.hash);

@@ -18,7 +18,7 @@ TEST(IntegrationTest, TestRsfListFiles)
     do
     {
         err = Qiniu_RSF_ListFiles(&client, &listRet, Test_bucket, "", "", listRet.marker, 1000);
-        EXPECT_EQ(err.code, 200);
+        EXPECT_EQ(err.code, Qiniu_OK.code);
         for (int i = 0; i < listRet.itemsCount; i++)
         {
             printf("%s\n", listRet.items[i].key);

@@ -77,7 +77,7 @@ Qiniu_Error Qiniu_RSF_ListFiles(Qiniu_Client *self, Qiniu_RSF_ListRet *ret, cons
 
     err = _Qiniu_Region_Get_Rsf_Host(self, NULL, bucket, &rsfHost);
 
-    if (err.code == 200)
+    if (err.code == Qiniu_OK.code)
     {
         url = Qiniu_String_Concat(rsfHost, "/list?", "bucket=", encodedBucket, "&prefix=", encodedPrefix,
                                   "&delimiter=", encodedDelimiter, "&marker=", encodedMarker, "&limit=", limitStr, NULL);
@@ -105,14 +105,14 @@ Qiniu_Error Qiniu_RSF_ListFiles(Qiniu_Client *self, Qiniu_RSF_ListRet *ret, cons
         Qiniu_Free(encodedMarker);
     }
 
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
 
     err = Qiniu_Client_Call(self, &root, url);
     Qiniu_Free(url);
-    if (err.code == 200)
+    if (err.code == Qiniu_OK.code)
     {
         ret->marker = Qiniu_Json_GetString(root, "marker", NULL);
         // check common prefixes

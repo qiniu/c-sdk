@@ -26,17 +26,17 @@ static void batchCopy(Qiniu_Client *client,
 	{
 		Qiniu_Log_Debug("code: %d", rets[curr].code);
 
-		if (rets[curr].code != 200)
+		if (rets[curr].code != Qiniu_OK.code)
 		{
 			Qiniu_Log_Error("error: %s", rets[curr].error);
 		}
 		Qiniu_Log_Debug("%s", Qiniu_Buffer_CStr(&client->respHeader));
-		EXPECT_EQ(rets[curr].code, 200);
+		EXPECT_EQ(rets[curr].code, Qiniu_OK.code);
 		curr++;
 	}
 	free(rets);
 
-	if (err.code != 200)
+	if (err.code != Qiniu_OK.code)
 	{
 		debug(client, err);
 		FAIL();
@@ -55,17 +55,17 @@ static void batchMove(Qiniu_Client *client,
 	{
 		Qiniu_Log_Debug("code: %d", rets[curr].code);
 
-		if (rets[curr].code != 200)
+		if (rets[curr].code != Qiniu_OK.code)
 		{
 			Qiniu_Log_Error("error: %s", rets[curr].error);
 		}
 		Qiniu_Log_Debug("%s", Qiniu_Buffer_CStr(&client->respHeader));
-		EXPECT_EQ(rets[curr].code, 200);
+		EXPECT_EQ(rets[curr].code, Qiniu_OK.code);
 		curr++;
 	}
 	free(rets);
 
-	if (err.code != 200)
+	if (err.code != Qiniu_OK.code)
 	{
 		debug(client, err);
 		FAIL();
@@ -84,7 +84,7 @@ static void batchStat(Qiniu_Client *client,
 	{
 		Qiniu_Log_Debug("code: %d", rets[curr].code);
 
-		if (rets[curr].code != 200)
+		if (rets[curr].code != Qiniu_OK.code)
 		{
 			Qiniu_Log_Error("error: %s", rets[curr].error);
 		}
@@ -96,13 +96,13 @@ static void batchStat(Qiniu_Client *client,
 			Qiniu_Log_Debug("putTime: %D", rets[curr].data.putTime);
 		}
 		Qiniu_Log_Debug("%s", Qiniu_Buffer_CStr(&client->respHeader));
-		EXPECT_EQ(rets[curr].code, 200);
+		EXPECT_EQ(rets[curr].code, Qiniu_OK.code);
 		curr++;
 	}
 
 	free(rets);
 
-	if (err.code != 200)
+	if (err.code != Qiniu_OK.code)
 	{
 		debug(client, err);
 		FAIL();
@@ -121,17 +121,17 @@ static void batchChangeType(Qiniu_Client *client,
 	{
 		Qiniu_Log_Debug("code: %d", rets[curr].code);
 
-		if (rets[curr].code != 200)
+		if (rets[curr].code != Qiniu_OK.code)
 		{
 			Qiniu_Log_Error("error: %s", rets[curr].error);
 		}
 		Qiniu_Log_Debug("%s", Qiniu_Buffer_CStr(&client->respHeader));
-		EXPECT_EQ(rets[curr].code, 200);
+		EXPECT_EQ(rets[curr].code, Qiniu_OK.code);
 		curr++;
 	}
 	free(rets);
 
-	if (err.code != 200)
+	if (err.code != Qiniu_OK.code)
 	{
 		debug(client, err);
 		FAIL();
@@ -150,17 +150,17 @@ static void batchRestoreArchive(Qiniu_Client *client,
 	{
 		Qiniu_Log_Debug("code: %d", rets[curr].code);
 
-		if (rets[curr].code != 200)
+		if (rets[curr].code != Qiniu_OK.code)
 		{
 			Qiniu_Log_Error("error: %s", rets[curr].error);
 		}
 		Qiniu_Log_Debug("%s", Qiniu_Buffer_CStr(&client->respHeader));
-		EXPECT_EQ(rets[curr].code, 200);
+		EXPECT_EQ(rets[curr].code, Qiniu_OK.code);
 		curr++;
 	}
 	free(rets);
 
-	if (err.code != 200)
+	if (err.code != Qiniu_OK.code)
 	{
 		debug(client, err);
 		FAIL();
@@ -179,18 +179,18 @@ static void batchDelete(Qiniu_Client *client,
 	{
 		Qiniu_Log_Debug("code: %d", rets[curr].code);
 
-		if (rets[curr].code != 200)
+		if (rets[curr].code != Qiniu_OK.code)
 		{
 			Qiniu_Log_Error("error: %s", rets[curr].error);
 		}
 		Qiniu_Log_Debug("%s", Qiniu_Buffer_CStr(&client->respHeader));
-		EXPECT_EQ(rets[curr].code, 200);
+		EXPECT_EQ(rets[curr].code, Qiniu_OK.code);
 		curr++;
 	}
 
 	free(rets);
 
-	if (err.code != 200)
+	if (err.code != Qiniu_OK.code)
 	{
 		debug(client, err);
 		FAIL();

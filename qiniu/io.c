@@ -72,7 +72,7 @@ static Qiniu_Error Get_Qiniu_UpHost(Qiniu_Client *client, const char *accessKey,
     else
     {
         Qiniu_Error err = _Qiniu_Region_Get_Up_Host(client, accessKey, bucketName, upHost);
-        if (err.code != 200)
+        if (err.code != Qiniu_OK.code)
         {
             return err;
         }
@@ -154,12 +154,12 @@ static Qiniu_Error Qiniu_Io_call(
     const char *upHost = NULL;
 
     err = Qiniu_Client_config(self);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
     err = Get_Qiniu_UpHost(self, accessKey, bucketName, extra, &upHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -178,7 +178,7 @@ static Qiniu_Error Qiniu_Io_call(
     } // if
 
     err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
-    if (err.code == 200 && ret != NULL)
+    if (err.code == Qiniu_OK.code && ret != NULL)
     {
         if (extra->callbackRetParser != NULL)
         {
@@ -233,14 +233,14 @@ Qiniu_Error Qiniu_Io_PutFile(
         rdr.abortUserData = extra->upAbortUserData;
 
         err = Qiniu_Rd_Reader_Open(&rdr, localFile);
-        if (err.code != 200)
+        if (err.code != Qiniu_OK.code)
         {
             goto error;
         } // if
 
         Qiniu_Zero(fi);
         err = Qiniu_File_Stat(rdr.file, &fi);
-        if (err.code != 200)
+        if (err.code != Qiniu_OK.code)
         {
             goto error;
         } // if
@@ -332,12 +332,12 @@ static Qiniu_Error Qiniu_Io_call_with_callback(
 
     CURL *curl = Qiniu_Client_reset(self);
     err = Qiniu_Client_config(self);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
     err = Get_Qiniu_UpHost(self, accessKey, bucketName, extra, &upHost);
-    if (err.code != 200)
+    if (err.code != Qiniu_OK.code)
     {
         return err;
     }
@@ -350,7 +350,7 @@ static Qiniu_Error Qiniu_Io_call_with_callback(
     curl_easy_setopt(curl, CURLOPT_READFUNCTION, rdr);
 
     err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
-    if (err.code == 200 && ret != NULL)
+    if (err.code == Qiniu_OK.code && ret != NULL)
     {
         if (extra->callbackRetParser != NULL)
         {
@@ -421,7 +421,7 @@ Qiniu_Error Qiniu_UptokenAuth_ToHeader(
 
     *header = curl_slist_append(*header, self);
 
-    err.code = 200;
+    err.code = Qiniu_OK.code;
     err.message = "OK";
     return err;
 }

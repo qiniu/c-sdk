@@ -42,7 +42,7 @@ static const char *putMemoryData_multipart(const char *bucket, const char *key, 
 	Qiniu_ReaderAt reader = Qiniu_BufReaderAt(&rbuff, memData, (size_t)dataLen);
 	err = Qiniu_Multipart_Put(&client, uptoken, key, reader, dataLen, &putExtra, &putRet);
 
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 	Qiniu_Log_Debug("%s", Qiniu_Buffer_CStr(&client.respHeader));
 	Qiniu_Log_Debug("hash: %s , key:%s", putRet.hash, putRet.key);
 
@@ -80,7 +80,7 @@ static const char *putFile_multipart(const char *bucket, const char *key, const 
 #endif
 
 	err = Qiniu_FileSystem_Recorder_New(tempDirPath, &recorder);
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 	putExtra.recorder = &recorder;
 	putExtra.mimeType = mimeType;
 	putExtra.enableContentMd5 = 1;
@@ -94,7 +94,7 @@ static const char *putFile_multipart(const char *bucket, const char *key, const 
 
 	err = Qiniu_Multipart_PutFile(&client, uptoken, key, filePath, &putExtra, &putRet);
 
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 	Qiniu_Log_Debug("%s", Qiniu_Buffer_CStr(&client.respHeader));
 	Qiniu_Log_Debug("hash: %s , key:%s", putRet.hash, putRet.key);
 
@@ -138,12 +138,12 @@ TEST(IntegrationTest, TestMultipartUpload_smallfile)
 		// step3: stat file
 		Qiniu_RS_StatRet statResult;
 		err = Qiniu_RS_Stat(&client, &statResult, Test_bucket, returnKey);
-		EXPECT_EQ(err.code, 200);
+		EXPECT_EQ(err.code, Qiniu_OK.code);
 		EXPECT_STREQ(statResult.mimeType, "txt");
 
 		// step4: delete file
 		err = Qiniu_RS_Delete(&client, Test_bucket, returnKey);
-		EXPECT_EQ(err.code, 200);
+		EXPECT_EQ(err.code, Qiniu_OK.code);
 	}
 
 	Qiniu_Client_Cleanup(&client);
@@ -179,13 +179,13 @@ TEST(IntegrationTest, TestMultipartUpload_largefile)
 		// step3: stat file
 		Qiniu_RS_StatRet statResult;
 		err = Qiniu_RS_Stat(&client, &statResult, Test_bucket, returnKey);
-		EXPECT_EQ(err.code, 200);
+		EXPECT_EQ(err.code, Qiniu_OK.code);
 		EXPECT_STREQ(statResult.mimeType, "mp3");
 		EXPECT_EQ(statResult.fsize, 5097014);
 
 		// step4: delete file
 		err = Qiniu_RS_Delete(&client, Test_bucket, returnKey);
-		EXPECT_EQ(err.code, 200);
+		EXPECT_EQ(err.code, Qiniu_OK.code);
 
 		Qiniu_Client_Cleanup(&client);
 	}
@@ -218,13 +218,13 @@ TEST(IntegrationTest, TestMultipartUpload_emptyfile)
 	// step3: stat file
 	Qiniu_RS_StatRet statResult;
 	err = Qiniu_RS_Stat(&client, &statResult, Test_bucket, returnKey);
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 	EXPECT_EQ(statResult.fsize, 0);
 	EXPECT_STREQ(statResult.mimeType, "txt");
 
 	// step4: delete file
 	err = Qiniu_RS_Delete(&client, Test_bucket, returnKey);
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 
 	Qiniu_Client_Cleanup(&client);
 }
@@ -254,12 +254,12 @@ TEST(IntegrationTest, TestMultipartUpload_inMemoryData)
 	// step3: stat file
 	Qiniu_RS_StatRet statResult;
 	err = Qiniu_RS_Stat(&client, &statResult, Test_bucket, returnKey);
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 	EXPECT_EQ(statResult.fsize, sizeof(memData));
 
 	// step4: delete file
 	err = Qiniu_RS_Delete(&client, Test_bucket, returnKey);
-	EXPECT_EQ(err.code, 200);
+	EXPECT_EQ(err.code, Qiniu_OK.code);
 
 	Qiniu_Client_Cleanup(&client);
 }
