@@ -110,6 +110,7 @@ typedef unsigned long long Qiniu_Uint64;
 
 	QINIU_DLLAPI extern void Qiniu_Free(void *addr);
 	QINIU_DLLAPI extern void Qiniu_FreeV2(void **addr);
+	QINIU_DLLAPI extern void Qiniu_Multi_Free(int n, ...);
 	/*============================================================================*/
 	/* type Qiniu_Count */
 

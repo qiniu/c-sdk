@@ -137,6 +137,10 @@ extern "C"
 
 		// For those who want to send request to specific host.
 		const char *upHost;
+
+		// Specify multiple upHosts, if not set explicitly, will global QINIU_UP_HOST
+		const char *const *upHosts;
+		size_t upHostsCount;
 	} Qiniu_Rio_PutExtra;
 
 	/*============================================================================*/
@@ -157,12 +161,12 @@ extern "C"
 #endif
 
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Rio_Put(
-	    Qiniu_Client *self, Qiniu_Rio_PutRet *ret,
-	    const char *uptoken, const char *key, Qiniu_ReaderAt f, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra *extra);
+		Qiniu_Client *self, Qiniu_Rio_PutRet *ret,
+		const char *uptoken, const char *key, Qiniu_ReaderAt f, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra *extra);
 
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Rio_PutFile(
-	    Qiniu_Client *self, Qiniu_Rio_PutRet *ret,
-	    const char *uptoken, const char *key, const char *localFile, Qiniu_Rio_PutExtra *extra);
+		Qiniu_Client *self, Qiniu_Rio_PutRet *ret,
+		const char *uptoken, const char *key, const char *localFile, Qiniu_Rio_PutExtra *extra);
 
 	/*============================================================================*/
 

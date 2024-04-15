@@ -348,6 +348,7 @@ void Qiniu_Client_InitEx(Qiniu_Client *self, Qiniu_Auth auth, size_t bufSize)
     Qiniu_Zero_Ptr(self);
     self->curl = curl_easy_init();
     self->auth = auth;
+    self->retriesMax = SIZE_MAX;
 
     Qiniu_Buffer_Init(&self->b, bufSize);
     Qiniu_Buffer_Init(&self->respHeader, bufSize);
@@ -395,6 +396,11 @@ void Qiniu_Client_SetLowSpeedLimit(Qiniu_Client *self, long lowSpeedLimit, long 
     self->lowSpeedLimit = lowSpeedLimit;
     self->lowSpeedTime = lowSpeedTime;
 } // Qiniu_Client_SetLowSpeedLimit
+
+void Qiniu_Client_SetMaximumRetries(Qiniu_Client *self, size_t retriesMax)
+{
+    self->retriesMax = retriesMax;
+} // Qiniu_Client_SetMaximumRetries
 
 void Qiniu_Client_SetTimeout(Qiniu_Client *self, long timeoutMs)
 {
@@ -475,7 +481,7 @@ static Qiniu_Error Qiniu_Client_callWithBody(
     Qiniu_Error err;
     const char *ctxType;
     char ctxLength[64], userAgent[64];
-    Qiniu_Header *headers = NULL;
+    Qiniu_Header *headers;
     CURL *curl = (CURL *)self->curl;
     err = Qiniu_Client_config(self);
     if (err.code != Qiniu_OK.code)

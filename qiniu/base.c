@@ -31,6 +31,18 @@ void Qiniu_FreeV2(void **addr)
 		*addr = NULL;
 	}
 }
+void Qiniu_Multi_Free(int n, ...)
+{
+	void *p = NULL;
+	va_list v1;
+	va_start(v1, n);
+	for (int i = 0; i < n; i++)
+	{
+		p = va_arg(v1, void *);
+		free(p);
+	}
+	va_end(v1);
+}
 
 /*============================================================================*/
 /* type Qiniu_Count */

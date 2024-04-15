@@ -157,7 +157,6 @@ DONE:
 Qiniu_Error _Qiniu_FileSystem_RecordMedium_Has_Next_Entry(const struct Qiniu_Record_Medium *medium, Qiniu_Bool *has)
 {
     struct _FileSystem_Recorder_Data *data = (struct _FileSystem_Recorder_Data *)medium->data;
-    size_t i;
     Qiniu_Bool hasEntry = Qiniu_True;
 
     if (data->buf == NULL || data->bufOffset >= data->bufSize)

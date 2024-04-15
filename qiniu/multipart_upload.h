@@ -29,7 +29,7 @@ extern "C"
     {
         char *md5;
         char *etag;
-        int partNum; //Attention: partNum start with 1
+        int partNum; // Attention: partNum start with 1
     } Qiniu_UploadPartResp;
 
     typedef void (*NotifyFunc)(Qiniu_UploadPartResp *partResp);
@@ -37,11 +37,11 @@ extern "C"
 
     typedef struct _Qiniu_Multipart_PutExtra
     {
-        const char *upHost;   //if not set explicitly ,will use global QINIU_UP_HOST;
-        Qiniu_Int64 partSize; //size for each part
+        const char *upHost;   // if not set explicitly, will use upHosts;
+        Qiniu_Int64 partSize; // size for each part
         const char *mimeType;
-        int tryTimes;                //at least 1, default=3
-        Qiniu_Bool enableContentMd5; //calulate md5  and set to request.header["Content-MD5"]
+        int tryTimes;                // at least 1, default=3
+        Qiniu_Bool enableContentMd5; // calulate md5 and set to request.header["Content-MD5"]
         NotifyFunc notify;
         NotifyErrFunc notifyErr;
 
@@ -58,6 +58,9 @@ extern "C"
 
         Qiniu_Recorder *recorder;
 
+        // Specify multiple upHosts, if not set explicitly, will global QINIU_UP_HOST
+        const char *const *upHosts;
+        size_t upHostsCount;
     } Qiniu_Multipart_PutExtra;
 
     typedef struct

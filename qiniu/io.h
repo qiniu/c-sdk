@@ -3,7 +3,7 @@
  Name        : io.h
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 
@@ -51,9 +51,14 @@ extern "C"
 		Qiniu_Rd_FnAbort upAbortCallback;
 
 		const char *upHost;
+
 		const char **upIps;
 		Qiniu_Count ipCount;
 		Qiniu_Count ipIndex;
+
+		// Specify multiple upHosts
+		const char *const *upHosts;
+		size_t upHostsCount;
 	} Qiniu_Io_PutExtra;
 
 	/*============================================================================*/

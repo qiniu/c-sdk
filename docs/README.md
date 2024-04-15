@@ -77,7 +77,7 @@ INCLUDE(FetchContent)
 FetchContent_Declare(
   qiniu
   GIT_REPOSITORY https://github.com/qiniu/c-sdk.git
-  GIT_TAG v7.7.0
+  GIT_TAG v7.8.0
 )
 FetchContent_MakeAvailable(qiniu)
 
