@@ -16,3 +16,4 @@ jobs:
         run: |
           set -e
           grep -qF "const char *version = \"${RELEASE_VERSION}\";" qiniu/conf.c
+          grep -qF "## v${RELEASE_VERSION}" CHANGELOG.md
