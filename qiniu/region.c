@@ -1216,7 +1216,7 @@ Qiniu_Error _Qiniu_Region_Get_Up_Host(Qiniu_Client *self, const char *accessKey,
         foundRegion = &self->specifiedRegion;
         goto foundCache;
     }
-    else if (self->autoQueryRegion)
+    else if (self->autoQueryRegion && bucketName != NULL)
     {
         if (self->cachedRegion != NULL)
         {
@@ -1268,7 +1268,7 @@ Qiniu_Error _Qiniu_Region_Get_Io_Host(Qiniu_Client *self, const char *accessKey,
         foundRegion = &self->specifiedRegion;
         goto foundCache;
     }
-    else if (self->autoQueryRegion)
+    else if (self->autoQueryRegion && bucketName != NULL)
     {
         if (self->cachedRegion != NULL)
         {
@@ -1320,7 +1320,7 @@ Qiniu_Error _Qiniu_Region_Get_Rs_Host(Qiniu_Client *self, const char *accessKey,
         foundRegion = &self->specifiedRegion;
         goto foundCache;
     }
-    else if (self->autoQueryRegion)
+    else if (self->autoQueryRegion && bucketName != NULL)
     {
         if (self->cachedRegion != NULL)
         {
@@ -1372,7 +1372,7 @@ Qiniu_Error _Qiniu_Region_Get_Rsf_Host(Qiniu_Client *self, const char *accessKey
         foundRegion = &self->specifiedRegion;
         goto foundCache;
     }
-    else if (self->autoQueryRegion)
+    else if (self->autoQueryRegion && bucketName != NULL)
     {
         if (self->cachedRegion != NULL)
         {
@@ -1424,7 +1424,7 @@ Qiniu_Error _Qiniu_Region_Get_Api_Host(Qiniu_Client *self, const char *accessKey
         foundRegion = &self->specifiedRegion;
         goto foundCache;
     }
-    else if (self->autoQueryRegion)
+    else if (self->autoQueryRegion && bucketName != NULL)
     {
         if (self->cachedRegion != NULL)
         {

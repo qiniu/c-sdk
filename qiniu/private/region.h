@@ -1,15 +1,12 @@
 #ifndef QINIU_PRIVATE_REGION_H
 #define QINIU_PRIVATE_REGION_H
 #include <stddef.h>
-#include "../base.h"
+#include "../http.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-    struct _Qiniu_Client;
-    typedef struct _Qiniu_Client Qiniu_Client;
 
     struct _Qiniu_Region_Hosts
     {

@@ -3,7 +3,7 @@
  Name		: reader.h
  Author	  : Qiniu.com
  Copyright   : 2012-2016(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 
@@ -12,7 +12,9 @@
 
 #include "base.h"
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -47,7 +49,9 @@ QINIU_DLLAPI extern void Qiniu_Rd_Reader_Close(Qiniu_Rd_Reader * rdr);
 
 QINIU_DLLAPI extern size_t Qiniu_Rd_Reader_Callback(char * buffer, size_t size, size_t nitems, void * rdr);
 
+#if defined(_WIN32)
 #pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

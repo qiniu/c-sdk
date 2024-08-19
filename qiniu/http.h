@@ -79,7 +79,9 @@ extern "C"
 	/*============================================================================*/
 	/* type Qiniu_Auth */
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 	typedef struct curl_slist Qiniu_Header;
 
@@ -106,7 +108,7 @@ extern "C"
 	typedef struct _Qiniu_Region Qiniu_Region;
 	QINIU_DLLAPI extern void Qiniu_Region_Free(Qiniu_Region *region);
 
-	struct _Qiniu_Client
+	typedef struct _Qiniu_Client
 	{
 		void *curl;
 		Qiniu_Auth auth;
@@ -138,8 +140,7 @@ extern "C"
 
 		// Millisecond timeout for the connection phase.
 		long connectTimeoutMs;
-	};
-	typedef struct _Qiniu_Client Qiniu_Client;
+	} Qiniu_Client;
 
 	QINIU_DLLAPI extern void Qiniu_Client_InitEx(Qiniu_Client *self, Qiniu_Auth auth, size_t bufSize);
 	QINIU_DLLAPI extern void Qiniu_Client_Cleanup(Qiniu_Client *self);
@@ -185,7 +186,9 @@ extern "C"
 
 	/*============================================================================*/
 
+#if defined(_WIN32)
 #pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

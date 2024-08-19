@@ -130,7 +130,7 @@ static char *Qiniu_escape(const char *s, escapeMode mode, Qiniu_Bool *fesc)
 {
 	int spaceCount = 0;
 	int hexCount = 0;
-	int i, j, len = strlen(s);
+	size_t i, j, len = strlen(s);
 	int c;
 	char *t;
 
@@ -674,8 +674,7 @@ Qiniu_Writer Qiniu_FILE_Writer(FILE *fp)
 /*============================================================================*/
 /* func Qiniu_Copy */
 
-Qiniu_Error Qiniu_OK = {
-	200, "OK"};
+Qiniu_Error Qiniu_OK = {200, "OK"};
 
 Qiniu_Error Qiniu_Copy(Qiniu_Writer w, Qiniu_Reader r, void *buf, size_t n, Qiniu_Int64 *ret)
 {

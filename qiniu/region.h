@@ -11,16 +11,14 @@
 #define QINIU_REGION_H
 #include "http.h"
 
+#if defined(_WIN32)
+#pragma pack(1)
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-    struct _Qiniu_Client;
-    typedef struct _Qiniu_Client Qiniu_Client;
-
-    struct _Qiniu_Region;
-    typedef struct _Qiniu_Region Qiniu_Region;
 
     QINIU_DLLAPI extern const char *const *Qiniu_Region_Get_Up_Preferred_Hosts(Qiniu_Region *region, size_t *count);
     QINIU_DLLAPI extern const char *const *Qiniu_Region_Get_Up_Alternative_Hosts(Qiniu_Region *region, size_t *count);
@@ -59,6 +57,10 @@ extern "C"
 
     QINIU_DLLAPI extern Qiniu_Region *Qiniu_Use_Region(const char *const regionId, Qiniu_Bool useHttps);
     QINIU_DLLAPI extern Qiniu_Error Qiniu_Region_Query(Qiniu_Client *self, Qiniu_Region **region, const char *const bucketName, Qiniu_Bool useHttps);
+
+#if defined(_WIN32)
+#pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

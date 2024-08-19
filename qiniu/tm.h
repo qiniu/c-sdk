@@ -12,6 +12,10 @@
 
 #include "base.h"
 
+#if defined(_WIN32)
+#pragma pack(1)
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -21,6 +25,10 @@ extern "C"
 
     QINIU_DLLAPI extern const char *Qiniu_MD5_HexStr(const char *src);
     QINIU_DLLAPI extern const char *Qiniu_MD5_HexStr_From_Reader(Qiniu_Reader r);
+
+#if defined(_WIN32)
+#pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

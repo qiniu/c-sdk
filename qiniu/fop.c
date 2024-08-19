@@ -13,8 +13,9 @@
 #include "private/region.h"
 #include "../cJSON/cJSON.h"
 
-Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, const char *bucket, const char *key,
-                           char *fops[], int fopCount, const char *pipeline, const char *notifyURL, int force)
+void _Qiniu_Parse_Date_Time(char *datetime_string, Qiniu_DateTime *dt);
+
+Qiniu_Error Qiniu_FOP_Pfop_v2(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, Qiniu_FOP_PfopParams *params)
 {
     Qiniu_Error err;
     cJSON *root;
@@ -25,6 +26,7 @@ Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, const cha
     char *encodedNotifyURL = NULL;
     char *encodedPipeline = NULL;
     char *forceStr = NULL;
+    char *typeStr = NULL;
     char *url = NULL;
     char *body = NULL;
     Qiniu_Bool escapeBucketOk;
@@ -34,29 +36,29 @@ Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, const cha
     Qiniu_Bool escapeNotifyURLOk;
 
     // Add encoded bucket
-    encodedBucket = Qiniu_QueryEscape(bucket, &escapeBucketOk);
-    encodedKey = Qiniu_QueryEscape(key, &escapeKeyOk);
-    fopsStr = Qiniu_String_Join(";", fops, fopCount);
+    encodedBucket = Qiniu_QueryEscape(params->bucket, &escapeBucketOk);
+    encodedKey = Qiniu_QueryEscape(params->key, &escapeKeyOk);
+    fopsStr = Qiniu_String_Join(";", params->fops, params->fopCount);
     encodedFops = Qiniu_QueryEscape(fopsStr, &escapeFopsOk);
     Qiniu_Free(fopsStr);
 
-    if (pipeline)
+    if (params->pipeline)
     {
-        encodedPipeline = Qiniu_QueryEscape(pipeline, &escapePipelineOk);
+        encodedPipeline = Qiniu_QueryEscape(params->pipeline, &escapePipelineOk);
     }
     else
     {
         encodedPipeline = "";
     }
-    if (notifyURL)
+    if (params->notifyURL)
     {
-        encodedNotifyURL = Qiniu_QueryEscape(notifyURL, &escapeNotifyURLOk);
+        encodedNotifyURL = Qiniu_QueryEscape(params->notifyURL, &escapeNotifyURLOk);
     }
     else
     {
         encodedNotifyURL = "";
     }
-    if (force == 1)
+    if (params->force == 1)
     {
         forceStr = "1";
     }
@@ -64,9 +66,18 @@ Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, const cha
     {
         forceStr = "0";
     }
+    if (params->type == 1)
+    {
+        typeStr = "1";
+    }
+    else
+    {
+        typeStr = "0";
+    }
 
     body = Qiniu_String_Concat("bucket=", encodedBucket, "&key=", encodedKey, "&fops=", encodedFops,
-                               "&pipeline=", encodedPipeline, "&notifyURL=", encodedNotifyURL, "&force=", forceStr, NULL);
+                               "&pipeline=", encodedPipeline, "&notifyURL=", encodedNotifyURL, "&force=", forceStr,
+                               "&type=", typeStr, NULL);
     if (escapeBucketOk)
     {
         Qiniu_Free(encodedBucket);
@@ -82,23 +93,22 @@ Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, const cha
         Qiniu_Free(encodedFops);
     }
 
-    if (pipeline && escapePipelineOk)
+    if (params->pipeline && escapePipelineOk)
     {
         Qiniu_Free(encodedPipeline);
     }
 
-    if (notifyURL && escapeNotifyURLOk)
+    if (params->notifyURL && escapeNotifyURLOk)
     {
         Qiniu_Free(encodedNotifyURL);
     }
 
     const char *apiHost;
-    err = _Qiniu_Region_Get_Api_Host(self, NULL, bucket, &apiHost);
+    err = _Qiniu_Region_Get_Api_Host(self, NULL, NULL, &apiHost);
     if (err.code != 200)
     {
         goto error;
     }
-
     url = Qiniu_String_Concat2(apiHost, "/pfop/");
     err = Qiniu_Client_CallWithBuffer(
         self,
@@ -116,4 +126,88 @@ error:
     Qiniu_Free(body);
     Qiniu_Free(url);
     return err;
+}
+
+Qiniu_Error Qiniu_FOP_Pfop(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, const char *bucket, const char *key,
+                           char *fops[], int fopCount, const char *pipeline, const char *notifyURL, int force)
+{
+    Qiniu_FOP_PfopParams params;
+    Qiniu_Zero(params);
+    params.bucket = bucket;
+    params.key = key;
+    params.fops = (char **)fops;
+    params.fopCount = fopCount;
+    params.pipeline = pipeline;
+    params.notifyURL = notifyURL;
+    params.force = force;
+    return Qiniu_FOP_Pfop_v2(self, ret, &params);
 } // Qiniu_FOP_Pfop
+
+Qiniu_Error Qiniu_FOP_Prefop(Qiniu_Client *self, Qiniu_FOP_PrefopRet *ret, Qiniu_FOP_PrefopItemRet *itemsRet, Qiniu_ItemCount *itemsCount, const char *persistentId, Qiniu_ItemCount maxItemsCount)
+{
+    Qiniu_Error err;
+    cJSON *root, *items, *item;
+    Qiniu_ItemCount curIndex;
+    char *encodedPersistentId = NULL, *url = NULL, *creationDateStr = NULL;
+    Qiniu_ReadBuf emptyBodyBuf = {NULL, 0, 0};
+    Qiniu_Reader emptyBody = Qiniu_BufReader(&emptyBodyBuf, 0, 0);
+    Qiniu_Bool escapePersistentIdOk;
+
+    encodedPersistentId = Qiniu_QueryEscape(persistentId, &escapePersistentIdOk);
+
+    const char *apiHost;
+    err = _Qiniu_Region_Get_Api_Host(self, NULL, NULL, &apiHost);
+    if (err.code != 200)
+    {
+        goto error;
+    }
+    url = Qiniu_String_Concat(apiHost, "/status/get/prefop?id=", encodedPersistentId, NULL);
+    if (escapePersistentIdOk)
+    {
+        Qiniu_Free(encodedPersistentId);
+    }
+
+    err = Qiniu_Client_CallWithMethod(
+        self,
+        &root,
+        url,
+        emptyBody,
+        0,
+        "application/x-www-form-urlencoded",
+        "GET",
+        NULL);
+    if (err.code != 200)
+    {
+        goto error;
+    }
+
+    ret->id = Qiniu_Json_GetString(root, "id", NULL);
+    ret->code = Qiniu_Json_GetInt(root, "code", 0);
+    ret->desc = Qiniu_Json_GetString(root, "desc", NULL);
+    ret->inputBucket = Qiniu_Json_GetString(root, "inputBucket", NULL);
+    ret->inputKey = Qiniu_Json_GetString(root, "inputBucket", NULL);
+    ret->type = Qiniu_Json_GetInt(root, "type", 0);
+    creationDateStr = (char *)Qiniu_Json_GetString(root, "creationDate", NULL);
+    if (creationDateStr != NULL)
+    {
+        _Qiniu_Parse_Date_Time(creationDateStr, &ret->creationDate);
+    }
+
+    *itemsCount = Qiniu_Json_GetArraySize(root, "items", 0);
+    items = Qiniu_Json_GetObjectItem(root, "items", 0);
+    for (curIndex = 0; curIndex < *itemsCount && curIndex < maxItemsCount; curIndex++)
+    {
+        item = cJSON_GetArrayItem(items, curIndex);
+        itemsRet[curIndex].cmd = Qiniu_Json_GetString(item, "cmd", NULL);
+        itemsRet[curIndex].code = Qiniu_Json_GetInt(item, "code", 0);
+        itemsRet[curIndex].desc = Qiniu_Json_GetString(item, "desc", NULL);
+        itemsRet[curIndex].error = Qiniu_Json_GetString(item, "error", NULL);
+        itemsRet[curIndex].hash = Qiniu_Json_GetString(item, "hash", NULL);
+        itemsRet[curIndex].key = Qiniu_Json_GetString(item, "key", NULL);
+        itemsRet[curIndex].returnOld = Qiniu_Json_GetInt(item, "returnOld", 0);
+    }
+
+error:
+    Qiniu_Free(url);
+    return err;
+}

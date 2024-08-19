@@ -63,7 +63,7 @@ static Qiniu_Error Get_Qiniu_UpHost(Qiniu_Client *client, const char *accessKey,
     if (extra && extra->ipCount != 0)
     {
         Qiniu_Count oldIndex = Qiniu_Count_Inc(&extra->ipIndex);
-        *upHost = extra->upIps[abs(oldIndex % extra->ipCount)];
+        *upHost = extra->upIps[labs(oldIndex % extra->ipCount)];
     }
     else if (extra && extra->upHost != NULL)
     {

@@ -17,7 +17,9 @@
 #include "stdio.h"
 #include "recorder.h"
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 #ifdef __cplusplus
 extern "C"

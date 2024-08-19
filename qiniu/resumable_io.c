@@ -740,10 +740,8 @@ lzRetry:
 /*============================================================================*/
 /* func Qiniu_Rio_PutXXX */
 
-static Qiniu_Error ErrPutFailed = {
-    Qiniu_Rio_PutFailed, "resumable put failed"};
-static Qiniu_Error ErrPutInterrupted = {
-    Qiniu_Rio_PutInterrupted, "resumable put interrupted"};
+static Qiniu_Error ErrPutFailed;
+static Qiniu_Error ErrPutInterrupted;
 
 static Qiniu_Error Qiniu_Rio_loadProgresses(Qiniu_Rio_PutRet *ret, Qiniu_Rio_PutExtra *extra, Qiniu_Rio_Recorder *recorder)
 {

@@ -10,7 +10,9 @@ extern "C"
 {
 #endif
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 #define BLOCK_ELEMENT_MAX_COUNT 16
 #define BLOCK_MAX_SIZE (1 << 22)
@@ -60,7 +62,7 @@ static Qiniu_Error Qiniu_Qetag_mergeBlocks(struct _Qiniu_Qetag_Context * ctx) {
 		}
 
         blk->done = NO;
-        
+
         ctx->blkBegin += 1;
         if (ctx->blkBegin >= ctx->blkElementCount) {
             ctx->blkBegin = 0;
@@ -266,7 +268,7 @@ Qiniu_Error Qiniu_Qetag_Final(struct _Qiniu_Qetag_Context * ctx, char ** digest)
 Qiniu_Error Qiniu_Qetag_AllocateBlock(struct _Qiniu_Qetag_Context * ctx, struct _Qiniu_Qetag_Block ** blk, size_t * remainderSize)
 {
     Qiniu_Error err;
-    
+
     if (ctx->blk) {
         *blk = ctx->blk;
         ctx->blk = NULL;
@@ -394,7 +396,9 @@ Qiniu_Error Qiniu_Qetag_DigestBuffer(const char * buf, size_t bufSize, char ** d
     return err;
 } // Qiniu_Qetag_DigestBuffer
 
+#if defined(_WIN32)
 #pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

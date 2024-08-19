@@ -14,7 +14,9 @@
 #include "io.h"
 #include "recorder.h"
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -166,7 +168,9 @@ extern "C"
 
 	/*============================================================================*/
 
+#if defined(_WIN32)
 #pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

@@ -43,7 +43,9 @@ typedef off_t Qiniu_Off_T;
 
 #endif
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -357,7 +359,9 @@ typedef struct stat Qiniu_FileInfo;
 
 	/*============================================================================*/
 
+#if defined(_WIN32)
 #pragma pack()
+#endif
 
 #ifdef __cplusplus
 }
