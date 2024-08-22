@@ -20,7 +20,7 @@ jobs:
         run: |
           set -e
           cmake -S . -B build
-          cmake --build build
+          cmake --build build -j $(nproc)
       - name: Unit test
         working-directory: '${{ github.workspace }}/build/gtests'
         run: |
@@ -38,7 +38,7 @@ jobs:
         run: |
           set -e
           cmake -DOPENSSL_ROOT_DIR="$(brew --prefix)/opt/openssl/" -S . -B build
-          cmake --build build
+          cmake --build build -j $(nproc)
       - name: Unit test
         working-directory: '${{ github.workspace }}/build/gtests'
         run: |
