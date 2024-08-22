@@ -22,8 +22,9 @@ const char *QINIU_RS_HOST = "http://rs.qbox.me";
 const char *QINIU_RSF_HOST = "http://rsf.qbox.me";
 const char *QINIU_API_HOST = "http://api.qiniu.com";
 const char *QINIU_FUSION_HOST = "http://fusion.qiniuapi.com";
-const char *QINIU_UC_HOST = "http://kodo-config.qiniuapi.com";
-const char *QINIU_UC_HOST_BACKUP = "http://uc.qbox.me";
+const char *QINIU_UC_HOST = "http://uc.qiniuapi.com";
+const char *QINIU_UC_HOST_BACKUP = "http://kodo-config.qiniuapi.com";
+const char *QINIU_UC_HOST_BACKUP_2 = "http://uc.qbox.me";
 
 // 默认华东机房
 //

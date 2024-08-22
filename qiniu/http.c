@@ -9,6 +9,7 @@
 
 #include "http.h"
 #include "../cJSON/cJSON.h"
+#include "../hashmap/hashmap.h"
 #include <curl/curl.h>
 
 Qiniu_Error Qiniu_Client_config(Qiniu_Client *self);
@@ -377,8 +378,11 @@ void Qiniu_Client_Cleanup(Qiniu_Client *self)
     Qiniu_Buffer_Cleanup(&self->b);
     Qiniu_Buffer_Cleanup(&self->respHeader);
 
-    Qiniu_FreeV2((void **)&self->cachedRegion);
-    Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
+    if (self->cachedRegions != NULL)
+    {
+        hashmap_free(self->cachedRegions);
+        self->cachedRegions = NULL;
+    }
 }
 
 void Qiniu_Client_BindNic(Qiniu_Client *self, const char *nic)
