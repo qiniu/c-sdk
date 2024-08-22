@@ -107,7 +107,7 @@ Qiniu_Error Qiniu_FOP_Pfop_v2(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, Qiniu_
     err = _Qiniu_Region_Get_Api_Host(self, NULL, NULL, &apiHost);
     if (err.code != 200)
     {
-        goto error;
+        return err;
     }
     url = Qiniu_String_Concat2(apiHost, "/pfop/");
     err = Qiniu_Client_CallWithBuffer(
@@ -117,14 +117,13 @@ Qiniu_Error Qiniu_FOP_Pfop_v2(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, Qiniu_
         body,
         strlen(body),
         "application/x-www-form-urlencoded");
+    Qiniu_Free((void *)body);
+    Qiniu_Free((void *)url);
     if (err.code == 200)
     {
         ret->persistentId = Qiniu_Json_GetString(root, "persistentId", 0);
     }
 
-error:
-    Qiniu_Free(body);
-    Qiniu_Free(url);
     return err;
 }
 
@@ -159,7 +158,7 @@ Qiniu_Error Qiniu_FOP_Prefop(Qiniu_Client *self, Qiniu_FOP_PrefopRet *ret, Qiniu
     err = _Qiniu_Region_Get_Api_Host(self, NULL, NULL, &apiHost);
     if (err.code != 200)
     {
-        goto error;
+        return err;
     }
     url = Qiniu_String_Concat(apiHost, "/status/get/prefop?id=", encodedPersistentId, NULL);
     if (escapePersistentIdOk)
@@ -176,9 +175,10 @@ Qiniu_Error Qiniu_FOP_Prefop(Qiniu_Client *self, Qiniu_FOP_PrefopRet *ret, Qiniu
         "application/x-www-form-urlencoded",
         "GET",
         NULL);
+    Qiniu_Free(url);
     if (err.code != 200)
     {
-        goto error;
+        return err;
     }
 
     ret->id = Qiniu_Json_GetString(root, "id", NULL);
@@ -206,8 +206,5 @@ Qiniu_Error Qiniu_FOP_Prefop(Qiniu_Client *self, Qiniu_FOP_PrefopRet *ret, Qiniu
         itemsRet[curIndex].key = Qiniu_Json_GetString(item, "key", NULL);
         itemsRet[curIndex].returnOld = Qiniu_Json_GetInt(item, "returnOld", 0);
     }
-
-error:
-    Qiniu_Free(url);
     return err;
 }

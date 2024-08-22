@@ -139,6 +139,10 @@ extern "C"
 
 		// For those who want to send request to specific host.
 		const char *upHost;
+
+		// Specify multiple upHosts, if not set explicitly, will global QINIU_UP_HOST
+		const char *const *upHosts;
+		size_t upHostsCount;
 	} Qiniu_Rio_PutExtra;
 
 	/*============================================================================*/

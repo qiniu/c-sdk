@@ -17,6 +17,7 @@
 #include "recorder_utils.h"
 #include "../cJSON/cJSON.h"
 #include "private/region.h"
+#include "private/code.h"
 
 #define blockBits 22
 #define blockMask ((1 << blockBits) - 1)
@@ -385,22 +386,21 @@ static Qiniu_Error Qiniu_Rio_bput(
 }
 
 static Qiniu_Error Qiniu_Rio_Mkblock(
-    Qiniu_Client *self, Qiniu_Rio_BlkputRet *ret, int blkSize, Qiniu_Reader body, int bodyLength,
-    Qiniu_Rio_PutExtra *extra)
+    Qiniu_Client *self, Qiniu_Rio_BlkputRet *ret, int blkSize, const char *upHost, Qiniu_Reader body, int bodyLength)
 {
-    char *url = Qiniu_String_Format(128, "%s/mkblk/%d", extra->upHost, blkSize);
+    const char *url = Qiniu_String_Format(128, "%s/mkblk/%d", upHost, blkSize);
     Qiniu_Error err = Qiniu_Rio_bput(self, ret, body, bodyLength, url);
-    Qiniu_Free(url);
+    Qiniu_Free((void *)url);
 
     return err;
 }
 
 static Qiniu_Error Qiniu_Rio_Blockput(
-    Qiniu_Client *self, Qiniu_Rio_BlkputRet *ret, Qiniu_Reader body, int bodyLength)
+    Qiniu_Client *self, Qiniu_Rio_BlkputRet *ret, const char *upHost, Qiniu_Reader body, int bodyLength)
 {
-    char *url = Qiniu_String_Format(1024, "%s/bput/%s/%d", ret->host, ret->ctx, (int)ret->offset);
+    const char *url = Qiniu_String_Format(1024, "%s/bput/%s/%d", upHost, ret->ctx, (int)ret->offset);
     Qiniu_Error err = Qiniu_Rio_bput(self, ret, body, bodyLength, url);
-    Qiniu_Free(url);
+    Qiniu_Free((void *)url);
     return err;
 }
 
@@ -409,19 +409,17 @@ static Qiniu_Error Qiniu_Rio_Blockput(
 static Qiniu_Error ErrUnmatchedChecksum = {
     Qiniu_Rio_UnmatchedChecksum, "unmatched checksum"};
 
-static int Qiniu_TemporaryError(int code)
-{
-    return code / 100 != 4;
-}
-
 static Qiniu_Error Qiniu_Rio_ResumableBlockput(
     Qiniu_Client *c, Qiniu_Rio_BlkputRet *ret, Qiniu_ReaderAt f, int blkIdx, int blkSize,
-    Qiniu_Rio_PutExtra *extra, size_t *chunksUploaded)
+    Qiniu_Rio_PutExtra *extra, size_t *pChunksUploaded)
 {
     Qiniu_Error err = Qiniu_OK;
     Qiniu_Tee tee;
     Qiniu_Section section;
     Qiniu_Reader body, body1;
+    const char *const *upHosts;
+    const char *upHost;
+    size_t upHostsCount;
 
     Qiniu_Crc32 crc32;
     Qiniu_Writer h = Qiniu_Crc32Writer(&crc32, 0);
@@ -431,11 +429,21 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
     int bodyLength;
     int tryTimes;
     int notifyRet = 0;
-    size_t httpCalled = 0;
+    size_t chunksUploaded = 0;
+
+    if (extra->upHost != NULL)
+    {
+        upHosts = &extra->upHost;
+        upHostsCount = 1;
+    }
+    else
+    {
+        upHosts = extra->upHosts;
+        upHostsCount = extra->upHostsCount;
+    }
 
     if (ret->ctx == NULL)
     {
-
         if (chunkSize < blkSize)
         {
             bodyLength = chunkSize;
@@ -445,19 +453,31 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
             bodyLength = blkSize;
         }
 
-        body1 = Qiniu_SectionReader(&section, f, (Qiniu_Off_T)offbase, bodyLength);
-        body = Qiniu_TeeReader(&tee, body1, h);
+        for (int tries = 0; tries < extra->tryTimes && tries <= c->hostsRetriesMax; tries++)
+        {
+            body1 = Qiniu_SectionReader(&section, f, (Qiniu_Off_T)offbase, bodyLength);
+            body = Qiniu_TeeReader(&tee, body1, h);
 
-        err = Qiniu_Rio_Mkblock(c, ret, blkSize, body, bodyLength, extra);
+            upHost = upHosts[tries % upHostsCount];
+            err = Qiniu_Rio_Mkblock(c, ret, blkSize, upHost, body, bodyLength);
+            if (err.code == 200)
+            {
+                break;
+            }
+            else if (_Qiniu_Should_Retry(err.code) == QINIU_DONT_RETRY)
+            {
+                goto handleErr;
+            }
+        }
         if (err.code != 200)
         {
-            return err;
+            goto handleErr;
         }
-
-        httpCalled++;
+        chunksUploaded++;
         if (ret->crc32 != crc32.val || (int)(ret->offset) != bodyLength)
         {
-            return ErrUnmatchedChecksum;
+            err = ErrUnmatchedChecksum;
+            goto handleErr;
         }
         notifyRet = extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
         if (notifyRet == QINIU_RIO_NOTIFY_EXIT)
@@ -465,13 +485,12 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
             // Terminate the upload process if  the caller requests
             err.code = Qiniu_Rio_PutInterrupted;
             err.message = "Interrupted by the caller";
-            return err;
+            goto handleErr;
         }
     }
 
     while ((int)(ret->offset) < blkSize)
     {
-
         if (chunkSize < blkSize - (int)(ret->offset))
         {
             bodyLength = chunkSize;
@@ -482,16 +501,21 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
         }
 
         tryTimes = extra->tryTimes;
+        if (tryTimes > c->hostsRetriesMax + 1)
+        {
+            tryTimes = c->hostsRetriesMax + 1;
+        }
 
     lzRetry:
         crc32.val = 0;
         body1 = Qiniu_SectionReader(&section, f, (Qiniu_Off_T)offbase + (ret->offset), bodyLength);
         body = Qiniu_TeeReader(&tee, body1, h);
+        upHost = upHosts[tryTimes % upHostsCount];
 
-        err = Qiniu_Rio_Blockput(c, ret, body, bodyLength);
+        err = Qiniu_Rio_Blockput(c, ret, upHost, body, bodyLength);
         if (err.code == 200)
         {
-            httpCalled++;
+            chunksUploaded++;
             if (ret->crc32 == crc32.val)
             {
                 notifyRet = extra->notify(extra->notifyRecvr, blkIdx, blkSize, ret);
@@ -500,25 +524,27 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
                     // Terminate the upload process if the caller requests
                     err.code = Qiniu_Rio_PutInterrupted;
                     err.message = "Interrupted by the caller";
-                    return err;
+                    goto handleErr;
                 }
-
                 continue;
             }
-            Qiniu_Log_Warn("ResumableBlockput: invalid checksum, retry");
-            err = ErrUnmatchedChecksum;
+            else
+            {
+                Qiniu_Log_Warn("ResumableBlockput: invalid checksum, retry");
+                err = ErrUnmatchedChecksum;
+            }
+        }
+        else if (err.code == Qiniu_Rio_InvalidCtx)
+        {
+            Qiniu_Rio_BlkputRet_Cleanup(ret); // reset
+            Qiniu_Log_Warn("ResumableBlockput: invalid ctx, please retry");
+            goto handleErr;
         }
         else
         {
-            if (err.code == Qiniu_Rio_InvalidCtx)
-            {
-                Qiniu_Rio_BlkputRet_Cleanup(ret); // reset
-                Qiniu_Log_Warn("ResumableBlockput: invalid ctx, please retry");
-                return err;
-            }
             Qiniu_Log_Warn("ResumableBlockput %d off:%d failed - %E", blkIdx, (int)ret->offset, err);
         }
-        if (tryTimes > 1 && Qiniu_TemporaryError(err.code))
+        if (tryTimes > 1 && _Qiniu_Should_Retry(err.code) != QINIU_DONT_RETRY)
         {
             tryTimes--;
             Qiniu_Log_Info("ResumableBlockput %E, retrying ...", err);
@@ -527,9 +553,10 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
         break;
     }
 
-    if (chunksUploaded != NULL)
+handleErr:
+    if (pChunksUploaded != NULL)
     {
-        *chunksUploaded = httpCalled;
+        *pChunksUploaded = chunksUploaded;
     }
 
     return err;
@@ -538,7 +565,7 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
 /*============================================================================*/
 
 static Qiniu_Error Qiniu_Rio_Mkfile(
-    Qiniu_Client *c, Qiniu_Rio_PutRet *ret, const char *key, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra *extra)
+    Qiniu_Client *c, Qiniu_Rio_PutRet *ret, const char *upHost, const char *key, Qiniu_Int64 fsize, Qiniu_Rio_PutExtra *extra)
 {
     size_t i, blkCount = extra->blockCnt;
     Qiniu_Json *root;
@@ -547,7 +574,7 @@ static Qiniu_Error Qiniu_Rio_Mkfile(
     int j = 0;
 
     Qiniu_Buffer_Init(&url, 2048);
-    Qiniu_Buffer_AppendFormat(&url, "%s/mkfile/%D", extra->upHost, fsize);
+    Qiniu_Buffer_AppendFormat(&url, "%s/mkfile/%D", upHost, fsize);
 
     if (key != NULL)
     {
@@ -714,7 +741,7 @@ lzRetry:
             return;
         }
 
-        if (tryTimes > 1 && Qiniu_TemporaryError(err.code))
+        if (tryTimes > 1 && _Qiniu_Should_Retry(err.code) != QINIU_DONT_RETRY)
         {
             tryTimes--;
             Qiniu_Log_Info("resumable.Put %E, retrying ...", err);
@@ -810,7 +837,7 @@ static Qiniu_Error _Qiniu_Rio_Put(
     {
         return err;
     }
-    if (extra.upHost == NULL)
+    if (extra.upHost == NULL && (extra.upHosts == NULL || extra.upHostsCount == 0))
     {
         if (!Qiniu_Utils_Extract_Bucket(uptoken, &accessKey, &bucketName))
         {
@@ -818,7 +845,7 @@ static Qiniu_Error _Qiniu_Rio_Put(
             err.message = "parse uptoken failed";
             return err;
         }
-        err = _Qiniu_Region_Get_Up_Host(self, accessKey, bucketName, &extra.upHost);
+        err = _Qiniu_Region_Get_Up_Hosts(self, accessKey, bucketName, &extra.upHosts, &extra.upHostsCount);
         if (err.code != 200)
         {
             Qiniu_Free((void *)accessKey);
@@ -863,7 +890,7 @@ reinit:
         {
             wg.itbl->Done(wg.self);
             Qiniu_Count_Inc(&ninterrupts);
-            free(task);
+            Qiniu_Free((void *)task);
         }
 
         if (ninterrupts > 0)
@@ -883,16 +910,38 @@ reinit:
     }
     else
     {
-        err = Qiniu_Rio_Mkfile(self, ret, key, fsize, &extra);
-        if (err.code == Qiniu_Rio_InvalidCtx && recorder != NULL && recorder->toLoadProgresses == Qiniu_True && fi != NULL)
+        const char *const *upHosts;
+        size_t upHostsCount;
+
+        if (extra.upHost != NULL)
         {
-            Qiniu_Rio_PutExtra_Clear(&extra);
-            reinitializeRecorder(&extra, fi, recorder);
-            goto reinit;
+            upHosts = &extra.upHost;
+            upHostsCount = 1;
         }
-        if (err.code / 100 == 2 || err.code / 100 == 4 || err.code == Qiniu_Rio_InvalidCtx)
+        else
         {
-            Qiniu_Rio_clearProgresses(&extra, recorder);
+            upHosts = extra.upHosts;
+            upHostsCount = extra.upHostsCount;
+        }
+
+        for (int tries = 0; tries < extra.tryTimes && tries <= self->hostsRetriesMax; tries++)
+        {
+            const char *upHost = upHosts[tries % upHostsCount];
+            err = Qiniu_Rio_Mkfile(self, ret, upHost, key, fsize, &extra);
+            if (err.code == Qiniu_Rio_InvalidCtx && recorder != NULL && recorder->toLoadProgresses == Qiniu_True && fi != NULL)
+            {
+                Qiniu_Rio_PutExtra_Clear(&extra);
+                reinitializeRecorder(&extra, fi, recorder);
+                goto reinit;
+            }
+            else if (err.code == 200 || _Qiniu_Should_Retry(err.code) == QINIU_DONT_RETRY)
+            {
+                if (err.code / 100 != 4 || err.code == Qiniu_Rio_InvalidCtx)
+                {
+                    Qiniu_Rio_clearProgresses(&extra, recorder);
+                }
+                break;
+            }
         }
     }
 

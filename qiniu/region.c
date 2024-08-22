@@ -1408,26 +1408,11 @@ Qiniu_Error _Qiniu_Region_Get_Up_Host(Qiniu_Client *self, const char *accessKey,
 {
     const char *const *hosts;
     size_t count;
-    Qiniu_Error err = Qiniu_OK;
-    Qiniu_Region *foundRegion = NULL;
-
-    if (self->specifiedRegion)
+    Qiniu_Error err = _Qiniu_Region_Get_Up_Hosts(self, accessKey, bucketName, &hosts, &count);
+    if (err.code != 200)
     {
-        foundRegion = self->specifiedRegion;
-        goto foundCache;
-    }
-    else if (self->autoQueryRegion && bucketName != NULL)
-    {
-        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
-        if (err.code == 200)
-        {
-            goto foundCache;
-        }
-        *host = QINIU_UC_HOST;
         return err;
     }
-foundCache:
-    hosts = Qiniu_Region_Get_Up_Preferred_Hosts(foundRegion, &count);
     if (count == 0)
     {
         *host = QINIU_UP_HOST;
@@ -1439,10 +1424,8 @@ foundCache:
     return err;
 }
 
-Qiniu_Error _Qiniu_Region_Get_Io_Host(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char **host)
+Qiniu_Error _Qiniu_Region_Get_Up_Hosts(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char *const **hosts, size_t *count)
 {
-    const char *const *hosts;
-    size_t count;
     Qiniu_Error err = Qiniu_OK;
     Qiniu_Region *foundRegion = NULL;
 
@@ -1458,11 +1441,22 @@ Qiniu_Error _Qiniu_Region_Get_Io_Host(Qiniu_Client *self, const char *accessKey,
         {
             goto foundCache;
         }
-        *host = QINIU_IOVIP_HOST;
         return err;
     }
 foundCache:
-    hosts = Qiniu_Region_Get_Io_Preferred_Hosts(foundRegion, &count);
+    *hosts = Qiniu_Region_Get_Up_Preferred_Hosts(foundRegion, count);
+    return err;
+}
+
+Qiniu_Error _Qiniu_Region_Get_Io_Host(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char **host)
+{
+    const char *const *hosts;
+    size_t count;
+    Qiniu_Error err = _Qiniu_Region_Get_Io_Hosts(self, accessKey, bucketName, &hosts, &count);
+    if (err.code != 200)
+    {
+        return err;
+    }
     if (count == 0)
     {
         *host = QINIU_IOVIP_HOST;
@@ -1471,6 +1465,30 @@ foundCache:
     {
         *host = hosts[0];
     }
+    return err;
+}
+
+Qiniu_Error _Qiniu_Region_Get_Io_Hosts(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char *const **hosts, size_t *count)
+{
+    Qiniu_Error err = Qiniu_OK;
+    Qiniu_Region *foundRegion = NULL;
+
+    if (self->specifiedRegion)
+    {
+        foundRegion = self->specifiedRegion;
+        goto foundCache;
+    }
+    else if (self->autoQueryRegion && bucketName != NULL)
+    {
+        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
+        if (err.code == 200)
+        {
+            goto foundCache;
+        }
+        return err;
+    }
+foundCache:
+    *hosts = Qiniu_Region_Get_Io_Preferred_Hosts(foundRegion, count);
     return err;
 }
 
@@ -1478,6 +1496,24 @@ Qiniu_Error _Qiniu_Region_Get_Rs_Host(Qiniu_Client *self, const char *accessKey,
 {
     const char *const *hosts;
     size_t count;
+    Qiniu_Error err = _Qiniu_Region_Get_Rs_Hosts(self, accessKey, bucketName, &hosts, &count);
+    if (err.code != 200)
+    {
+        return err;
+    }
+    if (count == 0)
+    {
+        *host = QINIU_RS_HOST;
+    }
+    else
+    {
+        *host = hosts[0];
+    }
+    return err;
+}
+
+Qiniu_Error _Qiniu_Region_Get_Rs_Hosts(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char *const **hosts, size_t *count)
+{
     Qiniu_Error err = Qiniu_OK;
     Qiniu_Region *foundRegion = NULL;
 
@@ -1493,19 +1529,10 @@ Qiniu_Error _Qiniu_Region_Get_Rs_Host(Qiniu_Client *self, const char *accessKey,
         {
             goto foundCache;
         }
-        *host = QINIU_RS_HOST;
         return err;
     }
 foundCache:
-    hosts = Qiniu_Region_Get_Rs_Preferred_Hosts(foundRegion, &count);
-    if (count == 0)
-    {
-        *host = QINIU_RS_HOST;
-    }
-    else
-    {
-        *host = hosts[0];
-    }
+    *hosts = Qiniu_Region_Get_Rs_Preferred_Hosts(foundRegion, count);
     return err;
 }
 
@@ -1513,26 +1540,11 @@ Qiniu_Error _Qiniu_Region_Get_Rsf_Host(Qiniu_Client *self, const char *accessKey
 {
     const char *const *hosts;
     size_t count;
-    Qiniu_Error err = Qiniu_OK;
-    Qiniu_Region *foundRegion = NULL;
-
-    if (self->specifiedRegion)
+    Qiniu_Error err = _Qiniu_Region_Get_Rsf_Hosts(self, accessKey, bucketName, &hosts, &count);
+    if (err.code != 200)
     {
-        foundRegion = self->specifiedRegion;
-        goto foundCache;
-    }
-    else if (self->autoQueryRegion && bucketName != NULL)
-    {
-        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
-        if (err.code == 200)
-        {
-            goto foundCache;
-        }
-        *host = QINIU_RSF_HOST;
         return err;
     }
-foundCache:
-    hosts = Qiniu_Region_Get_Rsf_Preferred_Hosts(foundRegion, &count);
     if (count == 0)
     {
         *host = QINIU_RSF_HOST;
@@ -1544,10 +1556,8 @@ foundCache:
     return err;
 }
 
-Qiniu_Error _Qiniu_Region_Get_Api_Host(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char **host)
+Qiniu_Error _Qiniu_Region_Get_Rsf_Hosts(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char *const **hosts, size_t *count)
 {
-    const char *const *hosts;
-    size_t count;
     Qiniu_Error err = Qiniu_OK;
     Qiniu_Region *foundRegion = NULL;
 
@@ -1563,11 +1573,22 @@ Qiniu_Error _Qiniu_Region_Get_Api_Host(Qiniu_Client *self, const char *accessKey
         {
             goto foundCache;
         }
-        *host = QINIU_API_HOST;
         return err;
     }
 foundCache:
-    hosts = Qiniu_Region_Get_Api_Preferred_Hosts(foundRegion, &count);
+    *hosts = Qiniu_Region_Get_Rsf_Preferred_Hosts(foundRegion, count);
+    return err;
+}
+
+Qiniu_Error _Qiniu_Region_Get_Api_Host(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char **host)
+{
+    const char *const *hosts;
+    size_t count;
+    Qiniu_Error err = _Qiniu_Region_Get_Api_Hosts(self, accessKey, bucketName, &hosts, &count);
+    if (err.code != 200)
+    {
+        return err;
+    }
     if (count == 0)
     {
         *host = QINIU_API_HOST;
@@ -1576,5 +1597,29 @@ foundCache:
     {
         *host = hosts[0];
     }
+    return err;
+}
+
+Qiniu_Error _Qiniu_Region_Get_Api_Hosts(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char *const **hosts, size_t *count)
+{
+    Qiniu_Error err = Qiniu_OK;
+    Qiniu_Region *foundRegion = NULL;
+
+    if (self->specifiedRegion)
+    {
+        foundRegion = self->specifiedRegion;
+        goto foundCache;
+    }
+    else if (self->autoQueryRegion && bucketName != NULL)
+    {
+        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
+        if (err.code == 200)
+        {
+            goto foundCache;
+        }
+        return err;
+    }
+foundCache:
+    *hosts = Qiniu_Region_Get_Api_Preferred_Hosts(foundRegion, count);
     return err;
 }

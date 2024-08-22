@@ -141,12 +141,16 @@ extern "C"
 
 		// Millisecond timeout for the connection phase.
 		long connectTimeoutMs;
+
+		// Max retries count.
+		size_t hostsRetriesMax;
 	} Qiniu_Client;
 
 	QINIU_DLLAPI extern void Qiniu_Client_InitEx(Qiniu_Client *self, Qiniu_Auth auth, size_t bufSize);
 	QINIU_DLLAPI extern void Qiniu_Client_Cleanup(Qiniu_Client *self);
 	QINIU_DLLAPI extern void Qiniu_Client_BindNic(Qiniu_Client *self, const char *nic);
 	QINIU_DLLAPI extern void Qiniu_Client_SetLowSpeedLimit(Qiniu_Client *self, long lowSpeedLimit, long lowSpeedTime);
+	QINIU_DLLAPI extern void Qiniu_Client_SetMaximumHostsRetries(Qiniu_Client *self, size_t retries);
 	QINIU_DLLAPI extern void Qiniu_Client_SetTimeout(Qiniu_Client *self, long timeoutMs);
 	QINIU_DLLAPI extern void Qiniu_Client_SetConnectTimeout(Qiniu_Client *self, long connectTimeoutMs);
 	QINIU_DLLAPI extern void Qiniu_Client_EnableAutoQuery(Qiniu_Client *self, Qiniu_Bool useHttps);

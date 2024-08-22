@@ -62,6 +62,7 @@ int main(int argc, char **argv)
     char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
 
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
+    Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
     Qiniu_RS_Delete(&client, bucket, key); //to avoid "file exist" err
 
     error = Qiniu_Multipart_PutFile(&client, uptoken, key, localFile, &putExtra, &putRet);

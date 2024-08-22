@@ -11,6 +11,7 @@
 #include "reader.h"
 #include "recorder_utils.h"
 #include "private/region.h"
+#include "private/code.h"
 #include <curl/curl.h>
 
 /*============================================================================*/
@@ -58,20 +59,27 @@ CURL *Qiniu_Client_reset(Qiniu_Client *self);
 
 Qiniu_Error Qiniu_callex(CURL *curl, Qiniu_Buffer *resp, Qiniu_Json **ret, Qiniu_Bool simpleError, Qiniu_Buffer *resph);
 
-static Qiniu_Error Get_Qiniu_UpHost(Qiniu_Client *client, const char *accessKey, const char *bucketName, Qiniu_Io_PutExtra *extra, const char **upHost)
+static Qiniu_Error _Qiniu_Get_UpHosts(Qiniu_Client *client, const char *accessKey, const char *bucketName, Qiniu_Io_PutExtra *extra, const char *const **upHosts, size_t *upHostsCount)
 {
     if (extra && extra->ipCount != 0)
     {
         Qiniu_Count oldIndex = Qiniu_Count_Inc(&extra->ipIndex);
-        *upHost = extra->upIps[labs(oldIndex % extra->ipCount)];
+        *upHosts = &extra->upIps[labs(oldIndex % extra->ipCount)];
+        *upHostsCount = 1;
     }
     else if (extra && extra->upHost != NULL)
     {
-        *upHost = extra->upHost;
+        *upHosts = &extra->upHost;
+        *upHostsCount = 1;
+    }
+    else if (extra && extra->upHosts != NULL && extra->upHostsCount != 0)
+    {
+        *upHosts = extra->upHosts;
+        *upHostsCount = extra->upHostsCount;
     }
     else
     {
-        Qiniu_Error err = _Qiniu_Region_Get_Up_Host(client, accessKey, bucketName, upHost);
+        Qiniu_Error err = _Qiniu_Region_Get_Up_Hosts(client, accessKey, bucketName, upHosts, upHostsCount);
         if (err.code != 200)
         {
             return err;
@@ -150,48 +158,62 @@ static Qiniu_Error Qiniu_Io_call(
 {
     int retCode = 0;
     Qiniu_Error err;
-    struct curl_slist *headers = NULL;
-    const char *upHost = NULL;
-
-    err = Qiniu_Client_config(self);
-    if (err.code != 200)
-    {
-        return err;
-    }
-    err = Get_Qiniu_UpHost(self, accessKey, bucketName, extra, &upHost);
-    if (err.code != 200)
-    {
-        return err;
-    }
+    struct curl_slist *headers;
+    const char *const *upHosts;
+    const char *defaultUpHosts[] = {QINIU_UP_HOST};
+    size_t upHostsCount;
 
     headers = curl_slist_append(NULL, "Expect:");
-
-    CURL *curl = Qiniu_Client_reset(self);
-    curl_easy_setopt(curl, CURLOPT_URL, upHost);
-    curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-    //// For aborting uploading file.
-    if (extra->upAbortCallback)
+    err = _Qiniu_Get_UpHosts(self, accessKey, bucketName, extra, &upHosts, &upHostsCount);
+    if (err.code != 200)
     {
-        curl_easy_setopt(curl, CURLOPT_READFUNCTION, Qiniu_Rd_Reader_Callback);
-    } // if
-
-    err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
-    if (err.code == 200 && ret != NULL)
+        return err;
+    }
+    if (upHostsCount == 0)
     {
-        if (extra->callbackRetParser != NULL)
-        {
-            err = (*extra->callbackRetParser)(extra->callbackRet, self->root);
-        }
-        else
-        {
-            ret->hash = Qiniu_Json_GetString(self->root, "hash", NULL);
-            ret->key = Qiniu_Json_GetString(self->root, "key", NULL);
-            ret->persistentId = Qiniu_Json_GetString(self->root, "persistentId", NULL);
-        }
+        upHosts = defaultUpHosts;
+        upHostsCount = 1;
     }
 
+    for (size_t retries = 0; retries <= self->hostsRetriesMax; retries++)
+    {
+        CURL *curl = Qiniu_Client_reset(self);
+        err = Qiniu_Client_config(self);
+        if (err.code != 200)
+        {
+            return err;
+        }
+
+        curl_easy_setopt(curl, CURLOPT_URL, upHosts[retries % upHostsCount]);
+        curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        //// For aborting uploading file.
+        if (extra->upAbortCallback)
+        {
+            curl_easy_setopt(curl, CURLOPT_READFUNCTION, Qiniu_Rd_Reader_Callback);
+        } // if
+
+        err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
+        if (err.code == 200)
+        {
+            if (extra->callbackRetParser != NULL)
+            {
+                err = (*extra->callbackRetParser)(extra->callbackRet, self->root);
+            }
+            else if (ret != NULL)
+            {
+                ret->hash = Qiniu_Json_GetString(self->root, "hash", NULL);
+                ret->key = Qiniu_Json_GetString(self->root, "key", NULL);
+                ret->persistentId = Qiniu_Json_GetString(self->root, "persistentId", NULL);
+            }
+            break;
+        }
+        else if (_Qiniu_Should_Retry(err.code) == QINIU_DONT_RETRY)
+        {
+            break;
+        }
+    }
     curl_formfree(formpost);
     curl_slist_free_all(headers);
     return err;
@@ -313,7 +335,6 @@ Qiniu_Error Qiniu_Io_PutBuffer(
         CURLFORM_BUFFER, key, CURLFORM_BUFFERPTR, buf, CURLFORM_BUFFERLENGTH, fsize, CURLFORM_END);
     err = Qiniu_Io_call(self, accessKey, bucketName, ret, form.formpost, extra);
 
-error:
     Qiniu_Free((void *)accessKey);
     Qiniu_Free((void *)bucketName);
     return err;
@@ -327,42 +348,56 @@ static Qiniu_Error Qiniu_Io_call_with_callback(
 {
     int retCode = 0;
     Qiniu_Error err;
-    struct curl_slist *headers = NULL;
-    const char *upHost;
-
-    CURL *curl = Qiniu_Client_reset(self);
-    err = Qiniu_Client_config(self);
-    if (err.code != 200)
-    {
-        return err;
-    }
-    err = Get_Qiniu_UpHost(self, accessKey, bucketName, extra, &upHost);
-    if (err.code != 200)
-    {
-        return err;
-    }
+    struct curl_slist *headers;
+    const char *const *upHosts;
+    const char *defaultUpHosts[] = {QINIU_UP_HOST};
+    size_t upHostsCount;
 
     headers = curl_slist_append(NULL, "Expect:");
-
-    curl_easy_setopt(curl, CURLOPT_URL, upHost);
-    curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_READFUNCTION, rdr);
-
-    err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
-    if (err.code == 200 && ret != NULL)
+    err = _Qiniu_Get_UpHosts(self, accessKey, bucketName, extra, &upHosts, &upHostsCount);
+    if (err.code != 200)
     {
-        if (extra->callbackRetParser != NULL)
-        {
-            err = (*extra->callbackRetParser)(extra->callbackRet, self->root);
-        }
-        else
-        {
-            ret->hash = Qiniu_Json_GetString(self->root, "hash", NULL);
-            ret->key = Qiniu_Json_GetString(self->root, "key", NULL);
-        }
+        return err;
+    }
+    if (upHostsCount == 0)
+    {
+        upHosts = defaultUpHosts;
+        upHostsCount = 1;
     }
 
+    for (size_t retries = 0; retries <= self->hostsRetriesMax; retries++)
+    {
+        CURL *curl = Qiniu_Client_reset(self);
+        err = Qiniu_Client_config(self);
+        if (err.code != 200)
+        {
+            return err;
+        }
+
+        curl_easy_setopt(curl, CURLOPT_URL, upHosts[retries % upHostsCount]);
+        curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_READFUNCTION, rdr);
+
+        err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
+        if (err.code == 200)
+        {
+            if (extra->callbackRetParser != NULL)
+            {
+                err = (*extra->callbackRetParser)(extra->callbackRet, self->root);
+            }
+            else if (ret != NULL)
+            {
+                ret->hash = Qiniu_Json_GetString(self->root, "hash", NULL);
+                ret->key = Qiniu_Json_GetString(self->root, "key", NULL);
+            }
+            break;
+        }
+        else if (_Qiniu_Should_Retry(err.code) == QINIU_DONT_RETRY)
+        {
+            break;
+        }
+    }
     curl_formfree(formpost);
     curl_slist_free_all(headers);
     return err;

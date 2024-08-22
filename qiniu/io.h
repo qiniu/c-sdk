@@ -52,10 +52,15 @@ extern "C"
 		void *upAbortUserData;
 		Qiniu_Rd_FnAbort upAbortCallback;
 
+		// Deprecated fields, prefer upHosts.
 		const char *upHost;
 		const char **upIps;
 		Qiniu_Count ipCount;
 		Qiniu_Count ipIndex;
+
+		// Specify multiple upHosts
+		const char *const *upHosts;
+		size_t upHostsCount;
 	} Qiniu_Io_PutExtra;
 
 	/*============================================================================*/
