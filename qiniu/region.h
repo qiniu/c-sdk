@@ -22,6 +22,7 @@ extern "C"
 
     QINIU_DLLAPI extern const char *const *Qiniu_Region_Get_Up_Preferred_Hosts(Qiniu_Region *region, size_t *count);
     QINIU_DLLAPI extern const char *const *Qiniu_Region_Get_Up_Alternative_Hosts(Qiniu_Region *region, size_t *count);
+    QINIU_DLLAPI extern const char *const *Qiniu_Region_Get_Up_Accelerated_Hosts(Qiniu_Region *region, size_t *count);
     QINIU_DLLAPI extern const char *const *Qiniu_Region_Get_Io_Preferred_Hosts(Qiniu_Region *region, size_t *count);
     QINIU_DLLAPI extern const char *const *Qiniu_Region_Get_Io_Alternative_Hosts(Qiniu_Region *region, size_t *count);
     QINIU_DLLAPI extern const char *const *Qiniu_Region_Get_Io_Src_Preferred_Hosts(Qiniu_Region *region, size_t *count);
@@ -42,6 +43,7 @@ extern "C"
 
     QINIU_DLLAPI extern void Qiniu_Region_Set_Up_Preferred_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps);
     QINIU_DLLAPI extern void Qiniu_Region_Set_Up_Alternative_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps);
+    QINIU_DLLAPI extern void Qiniu_Region_Set_Up_Accelerated_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps);
     QINIU_DLLAPI extern void Qiniu_Region_Set_Io_Preferred_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps);
     QINIU_DLLAPI extern void Qiniu_Region_Set_Io_Alternative_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps);
     QINIU_DLLAPI extern void Qiniu_Region_Set_Io_Src_Preferred_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps);

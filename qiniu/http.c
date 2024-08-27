@@ -384,6 +384,7 @@ void Qiniu_Client_Cleanup(Qiniu_Client *self)
         hashmap_free(self->cachedRegions);
         self->cachedRegions = NULL;
     }
+    self->enableUploadingAcceleration = Qiniu_False;
 }
 
 void Qiniu_Client_BindNic(Qiniu_Client *self, const char *nic)
@@ -416,6 +417,16 @@ void Qiniu_Client_EnableAutoQuery(Qiniu_Client *self, Qiniu_Bool useHttps)
 {
     self->autoQueryRegion = Qiniu_True;
     self->autoQueryHttpsRegion = useHttps;
+}
+
+void Qiniu_Client_EnableUploadingAcceleration(Qiniu_Client *self)
+{
+    self->enableUploadingAcceleration = Qiniu_True;
+}
+
+void Qiniu_Client_DisableUploadingAcceleration(Qiniu_Client *self)
+{
+    self->enableUploadingAcceleration = Qiniu_False;
 }
 
 void Qiniu_Client_SpecifyRegion(Qiniu_Client *self, Qiniu_Region *region)

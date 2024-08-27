@@ -144,6 +144,9 @@ extern "C"
 
 		// Max retries count.
 		size_t hostsRetriesMax;
+
+		// Is uploading acceleration enabled.
+		Qiniu_Bool enableUploadingAcceleration;
 	} Qiniu_Client;
 
 	QINIU_DLLAPI extern void Qiniu_Client_InitEx(Qiniu_Client *self, Qiniu_Auth auth, size_t bufSize);
@@ -154,6 +157,8 @@ extern "C"
 	QINIU_DLLAPI extern void Qiniu_Client_SetTimeout(Qiniu_Client *self, long timeoutMs);
 	QINIU_DLLAPI extern void Qiniu_Client_SetConnectTimeout(Qiniu_Client *self, long connectTimeoutMs);
 	QINIU_DLLAPI extern void Qiniu_Client_EnableAutoQuery(Qiniu_Client *self, Qiniu_Bool useHttps);
+	QINIU_DLLAPI extern void Qiniu_Client_EnableUploadingAcceleration(Qiniu_Client *self);
+	QINIU_DLLAPI extern void Qiniu_Client_DisableUploadingAcceleration(Qiniu_Client *self);
 	QINIU_DLLAPI extern void Qiniu_Client_SpecifyRegion(Qiniu_Client *self, Qiniu_Region *region);
 
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_Call(Qiniu_Client *self, Qiniu_Json **ret, const char *url);
