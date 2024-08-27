@@ -16,6 +16,7 @@
 #include "recorder_key.h"
 #include "recorder_utils.h"
 #include "../cJSON/cJSON.h"
+#include "../hashmap/hashmap.h"
 #include "private/region.h"
 #include "private/code.h"
 
@@ -278,7 +279,7 @@ static Qiniu_Error Qiniu_Rio_PutExtra_Init(
     }
     else
     {
-        memset(self, 0, sizeof(Qiniu_Rio_PutExtra));
+        Qiniu_Zero_Ptr(self);
     }
 
     cbprog = sizeof(Qiniu_Rio_BlkputRet) * blockCnt;
@@ -350,19 +351,133 @@ static void Qiniu_Io_PutExtra_initFrom(Qiniu_Io_PutExtra *self, Qiniu_Rio_PutExt
     }
     else
     {
-        memset(self, 0, sizeof(*self));
+        Qiniu_Zero_Ptr(self);
     }
 }
 
 /*============================================================================*/
 
-static Qiniu_Error Qiniu_Rio_bput(
-    Qiniu_Client *self, Qiniu_Rio_BlkputRet *ret, Qiniu_Reader body, int bodyLength, const char *url)
+struct _Qiniu_Uploading_Parts_Progress
+{
+    size_t uploaded;
+    struct hashmap *uploading;
+    Qiniu_Mutex mutex;
+};
+
+struct _Qiniu_Uploading_Parts_Progress_Pair
+{
+    int blkIdx;
+    size_t uploaded;
+};
+
+static uint64_t _Qiniu_Uploading_Parts_Progress_Hash(const void *item, uint64_t seed0, uint64_t seed1)
+{
+    const struct _Qiniu_Uploading_Parts_Progress_Pair *pair = (const struct _Qiniu_Uploading_Parts_Progress_Pair *)item;
+    return hashmap_sip(&pair->blkIdx, sizeof(pair->blkIdx), seed0, seed1);
+}
+
+static int _Qiniu_Uploading_Parts_Progress_Compare(const void *a, const void *b, void *udata)
+{
+    const struct _Qiniu_Uploading_Parts_Progress_Pair *left = (const struct _Qiniu_Uploading_Parts_Progress_Pair *)a;
+    const struct _Qiniu_Uploading_Parts_Progress_Pair *right = (const struct _Qiniu_Uploading_Parts_Progress_Pair *)b;
+    return left->blkIdx - right->blkIdx;
+}
+
+static struct _Qiniu_Uploading_Parts_Progress *_Qiniu_Uploading_Parts_Progress_New()
+{
+    struct _Qiniu_Uploading_Parts_Progress *data = (struct _Qiniu_Uploading_Parts_Progress *)malloc(sizeof(struct _Qiniu_Uploading_Parts_Progress));
+    Qiniu_Zero_Ptr(data);
+    Qiniu_Mutex_Init(&data->mutex);
+    data->uploading = hashmap_new(
+        sizeof(struct _Qiniu_Uploading_Parts_Progress_Pair), 0, rand(), rand(),
+        _Qiniu_Uploading_Parts_Progress_Hash, _Qiniu_Uploading_Parts_Progress_Compare,
+        free, NULL);
+    return data;
+}
+
+static void _Qiniu_Uploading_Parts_Progress_Free(struct _Qiniu_Uploading_Parts_Progress *data)
+{
+    hashmap_free(data->uploading);
+    Qiniu_Mutex_Cleanup(&data->mutex);
+    free((void *)data);
+}
+
+static void _Qiniu_Uploading_Parts_Progress_Set_Progress(struct _Qiniu_Uploading_Parts_Progress *progress, int blkIdx, size_t uploaded)
+{
+    Qiniu_Mutex_Lock(&progress->mutex);
+    const struct _Qiniu_Uploading_Parts_Progress_Pair pair = {.blkIdx = blkIdx};
+    struct _Qiniu_Uploading_Parts_Progress_Pair *pPair = (struct _Qiniu_Uploading_Parts_Progress_Pair *)hashmap_get(progress->uploading, &pair);
+    if (pPair == NULL)
+    {
+        pPair = (struct _Qiniu_Uploading_Parts_Progress_Pair *)malloc(sizeof(struct _Qiniu_Uploading_Parts_Progress_Pair));
+        pPair->blkIdx = blkIdx;
+        pPair->uploaded = uploaded;
+        hashmap_set(progress->uploading, pPair);
+    }
+    else
+    {
+        pPair->uploaded = uploaded;
+    }
+
+    Qiniu_Mutex_Unlock(&progress->mutex);
+}
+
+static void _Qiniu_Uploading_Parts_Progress_Part_Uploaded(struct _Qiniu_Uploading_Parts_Progress *progress, int blkIdx, size_t partSize)
+{
+    Qiniu_Mutex_Lock(&progress->mutex);
+    const struct _Qiniu_Uploading_Parts_Progress_Pair pair = {.blkIdx = blkIdx};
+    hashmap_delete(progress->uploading, (const void *)&pair);
+    progress->uploaded += partSize;
+    Qiniu_Mutex_Unlock(&progress->mutex);
+}
+
+static size_t _Qiniu_Uploading_Parts_Progress_Get_Total_Size(struct _Qiniu_Uploading_Parts_Progress *progress)
+{
+    Qiniu_Mutex_Lock(&progress->mutex);
+    size_t total = progress->uploaded, iter = 0;
+    void *iter_val;
+    while (hashmap_iter(progress->uploading, &iter, &iter_val))
+    {
+        struct _Qiniu_Uploading_Parts_Progress_Pair *pair = (struct _Qiniu_Uploading_Parts_Progress_Pair *)iter_val;
+        total += pair->uploaded;
+    }
+    Qiniu_Mutex_Unlock(&progress->mutex);
+    return total;
+}
+
+struct _Qiniu_Progress_Callback_Data
+{
+    size_t totalSize, previousUlNow;
+    int blkIdx;
+    struct _Qiniu_Uploading_Parts_Progress *progress;
+    void (*callback)(size_t, size_t);
+};
+
+static int _Qiniu_Progress_Callback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow)
+{
+    struct _Qiniu_Progress_Callback_Data *data = (struct _Qiniu_Progress_Callback_Data *)clientp;
+    if (data->previousUlNow != (size_t)ulnow)
+    {
+        _Qiniu_Uploading_Parts_Progress_Set_Progress(data->progress, data->blkIdx, (size_t)ulnow);
+        data->callback((size_t)data->totalSize, _Qiniu_Uploading_Parts_Progress_Get_Total_Size(data->progress));
+        data->previousUlNow = (size_t)ulnow;
+    }
+    return 0;
+}
+
+static Qiniu_Error Qiniu_Rio_bput(Qiniu_Client *self, Qiniu_Rio_BlkputRet *ret, Qiniu_Reader body, int bodyLength, const char *url, struct _Qiniu_Progress_Callback_Data *progressCallback)
 {
     Qiniu_Rio_BlkputRet retFromResp;
     Qiniu_Json *root;
+    int (*callback)(void *, double, double, double, double) = NULL;
+    void *callbackData = NULL;
+    if (progressCallback != NULL && progressCallback->callback != NULL)
+    {
+        callback = _Qiniu_Progress_Callback;
+        callbackData = (void *)progressCallback;
+    }
 
-    Qiniu_Error err = Qiniu_Client_CallWithBinary(self, &root, url, body, bodyLength, NULL);
+    Qiniu_Error err = Qiniu_Client_CallWithBinaryAndProgressCallback(self, &root, url, body, bodyLength, NULL, callback, callbackData);
     if (err.code == 200)
     {
         retFromResp.ctx = Qiniu_Json_GetString(root, "ctx", NULL);
@@ -386,20 +501,20 @@ static Qiniu_Error Qiniu_Rio_bput(
 }
 
 static Qiniu_Error Qiniu_Rio_Mkblock(
-    Qiniu_Client *self, Qiniu_Rio_BlkputRet *ret, int blkSize, const char *upHost, Qiniu_Reader body, int bodyLength)
+    Qiniu_Client *self, Qiniu_Rio_BlkputRet *ret, int blkSize, const char *upHost, Qiniu_Reader body, int bodyLength, struct _Qiniu_Progress_Callback_Data *progressCallback)
 {
     const char *url = Qiniu_String_Format(128, "%s/mkblk/%d", upHost, blkSize);
-    Qiniu_Error err = Qiniu_Rio_bput(self, ret, body, bodyLength, url);
+    Qiniu_Error err = Qiniu_Rio_bput(self, ret, body, bodyLength, url, progressCallback);
     Qiniu_Free((void *)url);
 
     return err;
 }
 
 static Qiniu_Error Qiniu_Rio_Blockput(
-    Qiniu_Client *self, Qiniu_Rio_BlkputRet *ret, const char *upHost, Qiniu_Reader body, int bodyLength)
+    Qiniu_Client *self, Qiniu_Rio_BlkputRet *ret, const char *upHost, Qiniu_Reader body, int bodyLength, struct _Qiniu_Progress_Callback_Data *progressCallback)
 {
     const char *url = Qiniu_String_Format(1024, "%s/bput/%s/%d", upHost, ret->ctx, (int)ret->offset);
-    Qiniu_Error err = Qiniu_Rio_bput(self, ret, body, bodyLength, url);
+    Qiniu_Error err = Qiniu_Rio_bput(self, ret, body, bodyLength, url, progressCallback);
     Qiniu_Free((void *)url);
     return err;
 }
@@ -409,9 +524,10 @@ static Qiniu_Error Qiniu_Rio_Blockput(
 static Qiniu_Error ErrUnmatchedChecksum = {
     Qiniu_Rio_UnmatchedChecksum, "unmatched checksum"};
 
-static Qiniu_Error Qiniu_Rio_ResumableBlockput(
-    Qiniu_Client *c, Qiniu_Rio_BlkputRet *ret, Qiniu_ReaderAt f, int blkIdx, int blkSize,
-    Qiniu_Rio_PutExtra *extra, size_t *pChunksUploaded)
+static Qiniu_Error
+Qiniu_Rio_ResumableBlockput(
+    Qiniu_Client *c, Qiniu_Rio_BlkputRet *ret, Qiniu_ReaderAt f, int blkIdx, int blkSize, int fsize,
+    struct _Qiniu_Uploading_Parts_Progress *uploadingPartsProgress, Qiniu_Rio_PutExtra *extra, size_t *pChunksUploaded)
 {
     Qiniu_Error err = Qiniu_OK;
     Qiniu_Tee tee;
@@ -430,6 +546,17 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
     int tryTimes;
     int notifyRet = 0;
     size_t chunksUploaded = 0;
+
+    struct _Qiniu_Progress_Callback_Data progressCallbackData;
+    Qiniu_Zero(progressCallbackData);
+
+    if (extra->uploadingProgress != NULL)
+    {
+        progressCallbackData.callback = extra->uploadingProgress;
+        progressCallbackData.totalSize = (size_t)fsize;
+        progressCallbackData.progress = uploadingPartsProgress;
+        progressCallbackData.blkIdx = blkIdx;
+    }
 
     if (extra->upHost != NULL)
     {
@@ -459,14 +586,25 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
             body = Qiniu_TeeReader(&tee, body1, h);
 
             upHost = upHosts[tries % upHostsCount];
-            err = Qiniu_Rio_Mkblock(c, ret, blkSize, upHost, body, bodyLength);
+            err = Qiniu_Rio_Mkblock(c, ret, blkSize, upHost, body, bodyLength, &progressCallbackData);
             if (err.code == 200)
             {
+                if (extra->uploadingProgress != NULL)
+                {
+                    _Qiniu_Uploading_Parts_Progress_Part_Uploaded(uploadingPartsProgress, blkIdx, bodyLength);
+                }
                 break;
             }
-            else if (_Qiniu_Should_Retry(err.code) == QINIU_DONT_RETRY)
+            else
             {
-                goto handleErr;
+                if (extra->uploadingProgress != NULL)
+                {
+                    _Qiniu_Uploading_Parts_Progress_Set_Progress(uploadingPartsProgress, blkIdx, 0);
+                }
+                if (_Qiniu_Should_Retry(err.code) == QINIU_DONT_RETRY)
+                {
+                    goto handleErr;
+                }
             }
         }
         if (err.code != 200)
@@ -488,9 +626,14 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
             goto handleErr;
         }
     }
+    else if (extra->uploadingProgress != NULL)
+    {
+        _Qiniu_Uploading_Parts_Progress_Part_Uploaded(uploadingPartsProgress, blkIdx, ret->offset);
+    }
 
     while ((int)(ret->offset) < blkSize)
     {
+
         if (chunkSize < blkSize - (int)(ret->offset))
         {
             bodyLength = chunkSize;
@@ -512,7 +655,7 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
         body = Qiniu_TeeReader(&tee, body1, h);
         upHost = upHosts[tryTimes % upHostsCount];
 
-        err = Qiniu_Rio_Blockput(c, ret, upHost, body, bodyLength);
+        err = Qiniu_Rio_Blockput(c, ret, upHost, body, bodyLength, &progressCallbackData);
         if (err.code == 200)
         {
             chunksUploaded++;
@@ -526,12 +669,20 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
                     err.message = "Interrupted by the caller";
                     goto handleErr;
                 }
+                if (extra->uploadingProgress != NULL)
+                {
+                    _Qiniu_Uploading_Parts_Progress_Part_Uploaded(uploadingPartsProgress, blkIdx, bodyLength);
+                }
                 continue;
             }
             else
             {
                 Qiniu_Log_Warn("ResumableBlockput: invalid checksum, retry");
                 err = ErrUnmatchedChecksum;
+                if (extra->uploadingProgress != NULL)
+                {
+                    _Qiniu_Uploading_Parts_Progress_Set_Progress(uploadingPartsProgress, blkIdx, 0);
+                }
             }
         }
         else if (err.code == Qiniu_Rio_InvalidCtx)
@@ -543,6 +694,10 @@ static Qiniu_Error Qiniu_Rio_ResumableBlockput(
         else
         {
             Qiniu_Log_Warn("ResumableBlockput %d off:%d failed - %E", blkIdx, (int)ret->offset, err);
+            if (extra->uploadingProgress != NULL)
+            {
+                _Qiniu_Uploading_Parts_Progress_Set_Progress(uploadingPartsProgress, blkIdx, 0);
+            }
         }
         if (tryTimes > 1 && _Qiniu_Should_Retry(err.code) != QINIU_DONT_RETRY)
         {
@@ -701,6 +856,8 @@ typedef struct _Qiniu_Rio_task
     Qiniu_Count *ninterrupts;
     int blkIdx;
     int blkSize1;
+    int fsize;
+    struct _Qiniu_Uploading_Parts_Progress *progress;
 } Qiniu_Rio_task;
 
 static void Qiniu_Rio_doTask(void *params)
@@ -728,7 +885,7 @@ static void Qiniu_Rio_doTask(void *params)
 
 lzRetry:
     Qiniu_Rio_BlkputRet_Assign(&ret, &extra->progresses[blkIdx]);
-    Qiniu_Error err = Qiniu_Rio_ResumableBlockput(c, &ret, task->f, blkIdx, task->blkSize1, extra, &chunksUploaded);
+    Qiniu_Error err = Qiniu_Rio_ResumableBlockput(c, &ret, task->f, blkIdx, task->blkSize1, task->fsize, task->progress, extra, &chunksUploaded);
     if (err.code != 200)
     {
         if (err.code == Qiniu_Rio_PutInterrupted)
@@ -832,6 +989,7 @@ static Qiniu_Error _Qiniu_Rio_Put(
     int nfails;
     int retCode;
     Qiniu_Count ninterrupts;
+    struct _Qiniu_Uploading_Parts_Progress *uploadingPartProgress = NULL;
     Qiniu_Error err = Qiniu_Rio_PutExtra_Init(&extra, fsize, extra1);
     if (err.code != 200)
     {
@@ -852,6 +1010,10 @@ static Qiniu_Error _Qiniu_Rio_Put(
             Qiniu_Free((void *)bucketName);
             return err;
         }
+    }
+    if (extra.uploadingProgress != NULL)
+    {
+        uploadingPartProgress = _Qiniu_Uploading_Parts_Progress_New();
     }
 
     tm = extra.threadModel;
@@ -878,6 +1040,8 @@ reinit:
         task->ninterrupts = &ninterrupts;
         task->blkIdx = i;
         task->blkSize1 = blkSize;
+        task->fsize = fsize;
+        task->progress = uploadingPartProgress;
         if (i == last)
         {
             offbase = (Qiniu_Int64)(i) << blockBits;
@@ -945,6 +1109,10 @@ reinit:
         }
     }
 
+    if (uploadingPartProgress != NULL)
+    {
+        _Qiniu_Uploading_Parts_Progress_Free(uploadingPartProgress);
+    }
     Qiniu_Rio_PutExtra_Cleanup(&extra);
     Qiniu_Free((void *)accessKey);
     Qiniu_Free((void *)bucketName);

@@ -50,6 +50,12 @@ typedef struct
     int totalPartNum;
 } Qiniu_UploadParts_Ret;
 
+struct _Qiniu_Progress_Callback_Data
+{
+    size_t base, totalSize, previousUlNow;
+    void (*callback)(size_t, size_t);
+};
+
 static Qiniu_Error readMedium(struct Qiniu_Record_Medium *medium, char **uploadId, Qiniu_Uint64 *expireAt, Qiniu_UploadPartResp *ret);
 static Qiniu_Error writeMedium(struct Qiniu_Record_Medium *medium, const Qiniu_InitPart_Ret *, const Qiniu_UploadPartResp *);
 static Qiniu_Error initializeRecorder(Qiniu_Multipart_PutExtra *param, const char *uptoken, const char *key, const char *fileName, Qiniu_FileInfo *fi, Qiniu_Record_Medium *medium, Qiniu_Multipart_Recorder *recorder);
@@ -166,13 +172,31 @@ static Qiniu_Error init_upload(Qiniu_Client *client, const char *bucket, const c
     return err;
 }
 
+static int _Qiniu_Progress_Callback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow)
+{
+    struct _Qiniu_Progress_Callback_Data *data = (struct _Qiniu_Progress_Callback_Data *)clientp;
+    if (data->previousUlNow != (size_t)ulnow)
+    {
+        data->callback((size_t)data->totalSize, data->base + (size_t)ulnow);
+        data->previousUlNow = (size_t)ulnow;
+    }
+    return 0;
+}
+
 Qiniu_Error upload_one_part(Qiniu_Client *client, Qiniu_Multipart_PutExtra *extraParam, const char *path,
                             int partNum, Qiniu_ReaderAt reader, Qiniu_Int64 partOffset, Qiniu_Int64 partSize, const char *md5str,
-                            Qiniu_UploadPartResp *ret)
+                            Qiniu_UploadPartResp *ret, struct _Qiniu_Progress_Callback_Data *progressCallback)
 {
     Qiniu_Error err = Qiniu_OK;
     const char *const *upHosts;
     size_t upHostsCount;
+    int (*callback)(void *, double, double, double, double) = NULL;
+    void *callbackData = NULL;
+    if (progressCallback != NULL && progressCallback->callback != NULL)
+    {
+        callback = _Qiniu_Progress_Callback;
+        callbackData = (void *)progressCallback;
+    }
 
     if (extraParam->upHost != NULL)
     {
@@ -192,7 +216,7 @@ Qiniu_Error upload_one_part(Qiniu_Client *client, Qiniu_Multipart_PutExtra *extr
         Qiniu_Json *callRet = NULL; // don't cJSON_Delete(callRet), it will be automatically freed on next http request by Qiniu_Client_Call.
         const char *upHost = upHosts[tries % upHostsCount];
         const char *reqUrl = Qiniu_String_Concat(upHost, path, NULL);
-        err = Qiniu_Client_CallWithMethod(client, &callRet, reqUrl, thisPartBody, partSize, NULL, "PUT", md5str);
+        err = Qiniu_Client_CallWithMethodAndProgressCallback(client, &callRet, reqUrl, thisPartBody, partSize, NULL, "PUT", md5str, callback, callbackData);
         Qiniu_Free((void *)reqUrl);
         if (err.code == 200)
         {
@@ -229,18 +253,17 @@ static Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const 
     Qiniu_Error err = Qiniu_OK;
     Qiniu_Int64 partSize = extraParam->partSize;
     const int lastPart = totalPartNum - 1;
+    struct _Qiniu_Progress_Callback_Data progressCallbackData;
+    Qiniu_Zero(progressCallbackData);
+
+    if (extraParam->uploadingProgress != NULL)
+    {
+        progressCallbackData.callback = extraParam->uploadingProgress;
+        progressCallbackData.totalSize = (size_t)fsize;
+    }
+
     for (int partNum = 0; partNum < totalPartNum; partNum++)
     {
-        if ((uploadPartsRet->PartsRet + partNum)->etag != NULL)
-        {
-            continue;
-        }
-
-        const int partNumInReq = partNum + 1; // partNum start from 1
-        char partNumStr[10];            // valid partNum ={"1"~"10000"}
-        snprintf(partNumStr, 10, "%d", partNumInReq);
-        const char *path = Qiniu_String_Concat("/buckets/", bucket, "/objects/", encodedKey, "/uploads/", initParts->uploadId, "/", partNumStr, NULL);
-
         Qiniu_Int64 thisPartOffset = partNum * partSize;
         Qiniu_Int64 thisPartSize = partSize;
         if (partNum == lastPart)
@@ -248,28 +271,36 @@ static Qiniu_Error upload_parts(Qiniu_Client *client, const char *bucket, const 
             thisPartSize = fsize - (totalPartNum - 1) * partSize;
         }
 
-        const char *md5str = NULL;
-        if (extraParam->enableContentMd5)
+        if ((uploadPartsRet->PartsRet + partNum)->etag == NULL)
         {
-            md5str = caculatePartMd5(*reader, thisPartOffset, thisPartSize);
-            // Qiniu_Log_Debug("partNum:%d, local Md5:%s ", partNumInReq, md5str);
-        }
-        err = upload_one_part(client, extraParam, path, partNumInReq, *reader, thisPartOffset, thisPartSize, md5str, &uploadPartsRet->PartsRet[partNum]);
-        Qiniu_Multi_Free(2, (void *)path, (void *)md5str);
+            const int partNumInReq = partNum + 1; // partNum start from 1
+            char partNumStr[10];                  // valid partNum ={"1"~"10000"}
+            snprintf(partNumStr, 10, "%d", partNumInReq);
+            const char *path = Qiniu_String_Concat("/buckets/", bucket, "/objects/", encodedKey, "/uploads/", initParts->uploadId, "/", partNumStr, NULL);
 
-        if (err.code != 200)
-        {
-            return err;
-        }
+            const char *md5str = NULL;
+            if (extraParam->enableContentMd5)
+            {
+                md5str = caculatePartMd5(*reader, thisPartOffset, thisPartSize);
+                // Qiniu_Log_Debug("partNum:%d, local Md5:%s ", partNumInReq, md5str);
+            }
+            err = upload_one_part(client, extraParam, path, partNumInReq, *reader, thisPartOffset, thisPartSize, md5str, &uploadPartsRet->PartsRet[partNum], &progressCallbackData);
+            Qiniu_Multi_Free(2, (void *)path, (void *)md5str);
 
-        if (recorder != NULL && recorder->recorderMedium != NULL)
-        {
-            err = writeMedium(recorder->recorderMedium, initParts, &uploadPartsRet->PartsRet[partNum]);
             if (err.code != 200)
             {
                 return err;
             }
+            if (recorder != NULL && recorder->recorderMedium != NULL)
+            {
+                err = writeMedium(recorder->recorderMedium, initParts, &uploadPartsRet->PartsRet[partNum]);
+                if (err.code != 200)
+                {
+                    return err;
+                }
+            }
         }
+        progressCallbackData.base += thisPartSize;
     }
     return err;
 }

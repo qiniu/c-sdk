@@ -152,6 +152,13 @@ Qiniu_Error Qiniu_Client_config(Qiniu_Client *self)
     return err;
 }
 
+static int _Qiniu_Progress_Callback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow)
+{
+    void (*uploadingProgress)(size_t, size_t) = (void (*)(size_t, size_t))clientp;
+    uploadingProgress((size_t)ultotal, (size_t)ulnow);
+    return 0;
+}
+
 static Qiniu_Error Qiniu_Io_call(
     Qiniu_Client *self, const char *accessKey, const char *bucketName,
     Qiniu_Io_PutRet *ret, struct curl_httppost *formpost, Qiniu_Io_PutExtra *extra)
@@ -187,6 +194,16 @@ static Qiniu_Error Qiniu_Io_call(
         curl_easy_setopt(curl, CURLOPT_URL, upHosts[retries % upHostsCount]);
         curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        if (extra->uploadingProgress != NULL)
+        {
+            curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, _Qiniu_Progress_Callback);
+            curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, extra->uploadingProgress);
+            curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+        }
+        else
+        {
+            curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
+        }
 
         //// For aborting uploading file.
         if (extra->upAbortCallback)
@@ -378,6 +395,17 @@ static Qiniu_Error Qiniu_Io_call_with_callback(
         curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl, CURLOPT_READFUNCTION, rdr);
+
+        if (extra->uploadingProgress != NULL)
+        {
+            curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, _Qiniu_Progress_Callback);
+            curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, extra->uploadingProgress);
+            curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+        }
+        else
+        {
+            curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
+        }
 
         err = Qiniu_callex(curl, &self->b, &self->root, Qiniu_False, &self->respHeader);
         if (err.code == 200)

@@ -63,6 +63,9 @@ extern "C"
         // Specify multiple upHosts, if not set explicitly, will global QINIU_UP_HOST
         const char *const *upHosts;
         size_t upHostsCount;
+
+        // Uploading file progress
+        void (*uploadingProgress)(size_t ultotal, size_t ulnow);
     } Qiniu_Multipart_PutExtra;
 
     typedef struct

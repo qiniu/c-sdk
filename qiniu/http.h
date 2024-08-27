@@ -177,6 +177,16 @@ extern "C"
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithMethod(
 		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
 		Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5);
+
+	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithBinaryAndProgressCallback(
+		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+		Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType,
+		int (*callback)(void *, double, double, double, double), void *callbackData);
+
+	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithMethodAndProgressCallback(
+		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+		Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5,
+		int (*callback)(void *, double, double, double, double), void *callbackData);
 	/*============================================================================*/
 	/* func Qiniu_Client_InitNoAuth/InitMacAuth  */
 

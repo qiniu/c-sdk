@@ -61,6 +61,9 @@ extern "C"
 		// Specify multiple upHosts
 		const char *const *upHosts;
 		size_t upHostsCount;
+
+		// Uploading file progress
+		void (*uploadingProgress)(size_t ultotal, size_t ulnow);
 	} Qiniu_Io_PutExtra;
 
 	/*============================================================================*/

@@ -554,11 +554,29 @@ Qiniu_Error Qiniu_Client_CallWithMethod(
     Qiniu_Client *self, Qiniu_Json **ret, const char *url,
     Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5)
 {
+    return Qiniu_Client_CallWithMethodAndProgressCallback(self, ret, url, body, bodyLen, mimeType, httpMethod, md5, NULL, NULL);
+}
+
+Qiniu_Error Qiniu_Client_CallWithMethodAndProgressCallback(
+    Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+    Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5,
+    int (*callback)(void *, double, double, double, double), void *callbackData)
+{
     CURL *curl = Qiniu_Client_initcall_withMethod(self, url, httpMethod);
 
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, bodyLen);
     curl_easy_setopt(curl, CURLOPT_READFUNCTION, body.Read);
     curl_easy_setopt(curl, CURLOPT_READDATA, body.self);
+    if (callback != NULL)
+    {
+        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, callback);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, callbackData);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+    }
+    else
+    {
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
+    }
 
     return Qiniu_Client_callWithBody(self, ret, url, NULL, bodyLen, mimeType, md5);
 }
@@ -567,11 +585,29 @@ Qiniu_Error Qiniu_Client_CallWithBinary(
     Qiniu_Client *self, Qiniu_Json **ret, const char *url,
     Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType)
 {
+    return Qiniu_Client_CallWithBinaryAndProgressCallback(self, ret, url, body, bodyLen, mimeType, NULL, NULL);
+}
+
+Qiniu_Error Qiniu_Client_CallWithBinaryAndProgressCallback(
+    Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+    Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType,
+    int (*callback)(void *, double, double, double, double), void *callbackData)
+{
     CURL *curl = Qiniu_Client_initcall(self, url);
 
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, bodyLen);
     curl_easy_setopt(curl, CURLOPT_READFUNCTION, body.Read);
     curl_easy_setopt(curl, CURLOPT_READDATA, body.self);
+    if (callback != NULL)
+    {
+        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, callback);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, callbackData);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+    }
+    else
+    {
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
+    }
 
     return Qiniu_Client_callWithBody(self, ret, url, NULL, bodyLen, mimeType, NULL);
 }
