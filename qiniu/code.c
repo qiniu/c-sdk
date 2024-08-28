@@ -1,6 +1,11 @@
 #include <curl/curl.h>
 #include "private/code.h"
 
+#define CURLE_WEIRD_SERVER_REPLY 8
+#define CURLE_HTTP2_STREAM 92
+#define CURLE_HTTP3 95
+#define CURLE_QUIC_CONNECT_ERROR 96
+
 Qiniu_Retry_Decision _Qiniu_Should_Retry(int code)
 {
     if (code / 100 == 4 && code != 406 && code != 429)
