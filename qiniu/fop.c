@@ -13,7 +13,16 @@
 #include "private/region.h"
 #include "../cJSON/cJSON.h"
 
-void _Qiniu_Parse_Date_Time(char *datetime_string, Qiniu_DateTime *dt);
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+    void _Qiniu_Parse_Date_Time(char *datetime_string, Qiniu_DateTime *dt);
+
+#ifdef __cplusplus
+}
+#endif
 
 Qiniu_Error Qiniu_FOP_Pfop_v2(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, Qiniu_FOP_PfopParams *params)
 {

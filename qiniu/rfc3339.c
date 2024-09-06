@@ -46,93 +46,19 @@ static void _Qiniu_Parse_Date(char *date_string, Qiniu_Date *d)
         return;
     }
 
-    unsigned int leap = (d->year % 4 == 0) &&
-                        (d->year % 100 || (d->year % 400 == 0));
+    const int days_in_month[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-    switch (d->month)
+    if (d->month == 2)
     {
-    case 1:
-        if (d->day > 31)
+        int leap = (d->year % 4 == 0 && d->year % 100 != 0) || (d->year % 400 == 0);
+        if (d->day > (days_in_month[2 - 1] + leap))
         {
             return;
         }
-        break;
-    case 2:
-        if (leap > 0)
-        {
-            if (d->day > 29)
-            {
-                return;
-            }
-        }
-        else
-        {
-            if (d->day > 28)
-            {
-                return;
-            }
-        }
-        break;
-    case 3:
-        if (d->day > 31)
-        {
-            return;
-        }
-        break;
-    case 4:
-        if (d->day > 30)
-        {
-            return;
-        }
-        break;
-    case 5:
-        if (d->day > 31)
-        {
-            return;
-        }
-        break;
-    case 6:
-        if (d->day > 30)
-        {
-            return;
-        }
-        break;
-    case 7:
-        if (d->day > 31)
-        {
-            return;
-        }
-        break;
-    case 8:
-        if (d->day > 31)
-        {
-            return;
-        }
-        break;
-    case 9:
-        if (d->day > 30)
-        {
-            return;
-        }
-        break;
-    case 10:
-        if (d->day > 31)
-        {
-            return;
-        }
-        break;
-    case 11:
-        if (d->day > 30)
-        {
-            return;
-        }
-        break;
-    case 12:
-        if (d->day > 31)
-        {
-            return;
-        }
-        break;
+    }
+    else if (d->day > days_in_month[d->month - 1])
+    {
+        return;
     }
 
     d->ok = 1;
@@ -303,6 +229,8 @@ cleanup:
 
 void _Qiniu_Parse_Date_Time(char *datetime_string, Qiniu_DateTime *dt)
 {
+    dt->ok = 0;
+
     _Qiniu_Parse_Date(datetime_string, &(dt->date));
     if (dt->date.ok == 0)
     {

@@ -25,7 +25,6 @@ extern "C"
         unsigned int year;
         unsigned int month;
         unsigned int day;
-        unsigned int wday;
         char ok;
     } Qiniu_Date;
 
