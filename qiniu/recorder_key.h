@@ -13,7 +13,9 @@
 #include "base.h"
 #include "private/crypto.h"
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -36,7 +38,9 @@ QINIU_DLLAPI extern void Qiniu_Recorder_Key_Generator_Free(Qiniu_Recorder_Key_Ge
 
 /*============================================================================*/
 
+#if defined(_WIN32)
 #pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

@@ -43,13 +43,56 @@ int main(int argc, char **argv) {
 
     char *fops[] = {avthumbMp4Fop, vframeJpgFop};
 
-    Qiniu_Error error = Qiniu_FOP_Pfop(&client, &pfopRet, bucket, key, fops, 2, pipeline, notifyURL, force);
+    Qiniu_FOP_PfopParams params = {
+        .bucket = bucket,
+        .key = key,
+        .pipeline = pipeline,
+        .notifyURL = notifyURL,
+        .fops = fops,
+        .fopCount = 2,
+        .force = force,
+    };
+    Qiniu_Error error = Qiniu_FOP_Pfop_v2(&client, &pfopRet, &params);
     if (error.code != 200) {
         printf("video file pfop %s:%s error.\n", bucket, key);
         debug_log(&client, error);
     } else {
         /*200, 正确返回了, 你可以通过pfopRet变量查询任务ID*/
         printf("video file pfop %s:%s success, persistentId: %s .\n\n", bucket, key, pfopRet.persistentId);
+    }
+
+    Qiniu_FOP_PrefopRet prefopRet;
+    Qiniu_FOP_PrefopItemRet prefopItemRet[2];
+    Qiniu_ItemCount itemsCount;
+    error = Qiniu_FOP_Prefop(&client, &prefopRet, (Qiniu_FOP_PrefopItemRet *)&prefopItemRet, &itemsCount, pfopRet.persistentId, 2);
+    if (error.code != 200)
+    {
+        debug_log(&client, error);
+    }
+    else
+    {
+        printf("ID: %s\n", prefopRet.id);
+        printf("Code: %d\n", prefopRet.code);
+        printf("Desc: %s\n", prefopRet.desc);
+        printf("InputBucket: %s\n", prefopRet.inputBucket);
+        printf("InputKey: %s\n", prefopRet.inputKey);
+        printf("Type: %d\n", prefopRet.type);
+        printf("CreationDate: %d-%d-%d %d:%d:%d +%d\n", prefopRet.creationDate.date.year, prefopRet.creationDate.date.month,
+               prefopRet.creationDate.date.day, prefopRet.creationDate.time.hour,
+               prefopRet.creationDate.time.minute, prefopRet.creationDate.time.second,
+               prefopRet.creationDate.time.offset);
+
+        for (Qiniu_ItemCount i = 0; i < itemsCount; i++)
+        {
+            printf("\tIndex: %d\n", i);
+            printf("\tCmd: %s\n", prefopItemRet[i].cmd);
+            printf("\tCode: %d\n", prefopItemRet[i].code);
+            printf("\tDesc: %s\n", prefopItemRet[i].desc);
+            printf("\tError: %s\n", prefopItemRet[i].error);
+            printf("\tHash: %s\n", prefopItemRet[i].hash);
+            printf("\tKey: %s\n", prefopItemRet[i].key);
+            printf("\tReturnOld: %d\n", prefopItemRet[i].returnOld);
+        }
     }
 
     Qiniu_Free(avthumbMp4Fop);

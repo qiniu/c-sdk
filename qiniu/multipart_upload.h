@@ -17,7 +17,9 @@
 #include "stdio.h"
 #include "recorder.h"
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -37,7 +39,7 @@ extern "C"
 
     typedef struct _Qiniu_Multipart_PutExtra
     {
-        const char *upHost;   //if not set explicitly ,will use global QINIU_UP_HOST;
+        const char *upHost;   // if not set explicitly, will use global upHosts;
         Qiniu_Int64 partSize; //size for each part
         const char *mimeType;
         int tryTimes;                //at least 1, default=3
@@ -58,6 +60,12 @@ extern "C"
 
         Qiniu_Recorder *recorder;
 
+        // Specify multiple upHosts, if not set explicitly, will global QINIU_UP_HOST
+        const char *const *upHosts;
+        size_t upHostsCount;
+
+        // Uploading file progress
+        void (*uploadingProgress)(size_t ultotal, size_t ulnow);
     } Qiniu_Multipart_PutExtra;
 
     typedef struct

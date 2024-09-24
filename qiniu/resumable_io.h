@@ -14,7 +14,9 @@
 #include "io.h"
 #include "recorder.h"
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -137,6 +139,13 @@ extern "C"
 
 		// For those who want to send request to specific host.
 		const char *upHost;
+
+		// Specify multiple upHosts, if not set explicitly, will global QINIU_UP_HOST
+		const char *const *upHosts;
+		size_t upHostsCount;
+
+		// Uploading file progress
+		void (*uploadingProgress)(size_t ultotal, size_t ulnow);
 	} Qiniu_Rio_PutExtra;
 
 	/*============================================================================*/
@@ -166,7 +175,9 @@ extern "C"
 
 	/*============================================================================*/
 
+#if defined(_WIN32)
 #pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

@@ -31,12 +31,6 @@ int main(int argc, char **argv) {
     putPolicy.scope = bucket;
     char *uptoken = Qiniu_RS_PutPolicy_Token(&putPolicy, &mac);
 
-    //设置机房域名
-    //Qiniu_Use_Zone_Beimei(Qiniu_False);
-    //Qiniu_Use_Zone_Huabei(Qiniu_True);
-    Qiniu_Use_Zone_Huadong(Qiniu_False);
-    //Qiniu_Use_Zone_Huanan(Qiniu_True);
-
     //put extra
     //putExtra.upHost="http://nbxs-gate-up.qiniu.com";
 
@@ -60,6 +54,7 @@ int main(int argc, char **argv) {
 
     //init
     Qiniu_Client_InitMacAuth(&client, 1024, &mac);
+    Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
     Qiniu_Error error = Qiniu_Io_PutFile(&client, &putRet, uptoken, key, localFile, &putExtra);
     if (error.code != 200) {
         printf("upload file %s:%s error.\n", bucket, key);

@@ -14,6 +14,10 @@
 
 #include "macro.h"
 
+#if defined(_WIN32)
+#pragma pack(1)
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -50,6 +54,10 @@ QINIU_DLLAPI extern unsigned _int64 Qiniu_Posix_GetTimeOfDay(void);
 QINIU_DLLAPI extern char* Qiniu_Posix_strndup(const char *, size_t n);
 
 /*============================================================================*/
+
+#if defined(_WIN32)
+#pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

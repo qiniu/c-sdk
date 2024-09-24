@@ -23,6 +23,7 @@ static void resumableUploadWithKey(Qiniu_Mac *mac, const char *bucket, const cha
 	Qiniu_Client client;
 	Qiniu_Global_Init(-1);
 	Qiniu_Client_InitNoAuth(&client, 1024);
+	Qiniu_Client_EnableAutoQuery(&client, Qiniu_True);
 
 	Qiniu_Error error;
 	Qiniu_Rio_PutRet putRet;

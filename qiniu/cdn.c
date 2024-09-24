@@ -13,7 +13,7 @@ char *Qiniu_CDN_CreateTimestampAntiLeechURL(const char *host, const char *fileNa
     char *queryStrEscaped = NULL;
 
     char expireHex[20];
-    sprintf(expireHex, "%0llx", deadline);
+    snprintf(expireHex, 20, "%0llx", deadline);
 
     if (queryStr != NULL && strcmp("", queryStr) != 0) {
         queryStrEscaped = Qiniu_PathEscape(queryStr, &queryStrEscapeOk);

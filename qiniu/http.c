@@ -9,6 +9,7 @@
 
 #include "http.h"
 #include "../cJSON/cJSON.h"
+#include "../hashmap/hashmap.h"
 #include <curl/curl.h>
 
 Qiniu_Error Qiniu_Client_config(Qiniu_Client *self);
@@ -347,6 +348,7 @@ void Qiniu_Client_InitEx(Qiniu_Client *self, Qiniu_Auth auth, size_t bufSize)
     Qiniu_Zero_Ptr(self);
     self->curl = curl_easy_init();
     self->auth = auth;
+    self->hostsRetriesMax = 3;
 
     Qiniu_Buffer_Init(&self->b, bufSize);
     Qiniu_Buffer_Init(&self->respHeader, bufSize);
@@ -377,8 +379,12 @@ void Qiniu_Client_Cleanup(Qiniu_Client *self)
     Qiniu_Buffer_Cleanup(&self->b);
     Qiniu_Buffer_Cleanup(&self->respHeader);
 
-    Qiniu_FreeV2((void **)&self->cachedRegion);
-    Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
+    if (self->cachedRegions != NULL)
+    {
+        hashmap_free(self->cachedRegions);
+        self->cachedRegions = NULL;
+    }
+    self->enableUploadingAcceleration = Qiniu_False;
 }
 
 void Qiniu_Client_BindNic(Qiniu_Client *self, const char *nic)
@@ -391,6 +397,11 @@ void Qiniu_Client_SetLowSpeedLimit(Qiniu_Client *self, long lowSpeedLimit, long 
     self->lowSpeedLimit = lowSpeedLimit;
     self->lowSpeedTime = lowSpeedTime;
 } // Qiniu_Client_SetLowSpeedLimit
+
+void Qiniu_Client_SetMaximumHostsRetries(Qiniu_Client *self, size_t hostsRetriesMax)
+{
+    self->hostsRetriesMax = hostsRetriesMax;
+} // Qiniu_Client_SetMaximumHostsRetries
 
 void Qiniu_Client_SetTimeout(Qiniu_Client *self, long timeoutMs)
 {
@@ -406,6 +417,16 @@ void Qiniu_Client_EnableAutoQuery(Qiniu_Client *self, Qiniu_Bool useHttps)
 {
     self->autoQueryRegion = Qiniu_True;
     self->autoQueryHttpsRegion = useHttps;
+}
+
+void Qiniu_Client_EnableUploadingAcceleration(Qiniu_Client *self)
+{
+    self->enableUploadingAcceleration = Qiniu_True;
+}
+
+void Qiniu_Client_DisableUploadingAcceleration(Qiniu_Client *self)
+{
+    self->enableUploadingAcceleration = Qiniu_False;
 }
 
 void Qiniu_Client_SpecifyRegion(Qiniu_Client *self, Qiniu_Region *region)
@@ -471,7 +492,7 @@ static Qiniu_Error Qiniu_Client_callWithBody(
     Qiniu_Error err;
     const char *ctxType;
     char ctxLength[64], userAgent[64];
-    Qiniu_Header *headers = NULL;
+    Qiniu_Header *headers;
     CURL *curl = (CURL *)self->curl;
     err = Qiniu_Client_config(self);
     if (err.code != 200)
@@ -533,11 +554,29 @@ Qiniu_Error Qiniu_Client_CallWithMethod(
     Qiniu_Client *self, Qiniu_Json **ret, const char *url,
     Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5)
 {
+    return Qiniu_Client_CallWithMethodAndProgressCallback(self, ret, url, body, bodyLen, mimeType, httpMethod, md5, NULL, NULL);
+}
+
+Qiniu_Error Qiniu_Client_CallWithMethodAndProgressCallback(
+    Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+    Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5,
+    int (*callback)(void *, double, double, double, double), void *callbackData)
+{
     CURL *curl = Qiniu_Client_initcall_withMethod(self, url, httpMethod);
 
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, bodyLen);
     curl_easy_setopt(curl, CURLOPT_READFUNCTION, body.Read);
     curl_easy_setopt(curl, CURLOPT_READDATA, body.self);
+    if (callback != NULL)
+    {
+        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, callback);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, callbackData);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+    }
+    else
+    {
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
+    }
 
     return Qiniu_Client_callWithBody(self, ret, url, NULL, bodyLen, mimeType, md5);
 }
@@ -546,11 +585,29 @@ Qiniu_Error Qiniu_Client_CallWithBinary(
     Qiniu_Client *self, Qiniu_Json **ret, const char *url,
     Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType)
 {
+    return Qiniu_Client_CallWithBinaryAndProgressCallback(self, ret, url, body, bodyLen, mimeType, NULL, NULL);
+}
+
+Qiniu_Error Qiniu_Client_CallWithBinaryAndProgressCallback(
+    Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+    Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType,
+    int (*callback)(void *, double, double, double, double), void *callbackData)
+{
     CURL *curl = Qiniu_Client_initcall(self, url);
 
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, bodyLen);
     curl_easy_setopt(curl, CURLOPT_READFUNCTION, body.Read);
     curl_easy_setopt(curl, CURLOPT_READDATA, body.self);
+    if (callback != NULL)
+    {
+        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, callback);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, callbackData);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+    }
+    else
+    {
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
+    }
 
     return Qiniu_Client_callWithBody(self, ret, url, NULL, bodyLen, mimeType, NULL);
 }

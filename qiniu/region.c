@@ -11,6 +11,7 @@
 #include "region.h"
 #include "tm.h"
 #include "../cJSON/cJSON.h"
+#include "../hashmap/hashmap.h"
 
 /*============================================================================*/
 
@@ -18,8 +19,7 @@
 #include <windows.h>
 #endif
 
-static const char *
-duplicate_host(const char *host, Qiniu_Bool useHttps)
+static const char *_Qiniu_Duplicate_Host(const char *host, Qiniu_Bool useHttps)
 {
     if (host == NULL)
     {
@@ -39,83 +39,82 @@ duplicate_host(const char *host, Qiniu_Bool useHttps)
     }
 }
 
-struct _Qiniu_Region_Hosts *_Qiniu_Region_Hosts_New(const char *const *const hosts, size_t hostsCount, Qiniu_Bool useHttps)
+static Qiniu_Bool _Qiniu_Region_Service_Copy_Hosts(const char **targetHosts, size_t copyOffset, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
 {
-    const char **newHosts = malloc(sizeof(const char *) * hostsCount);
-    if (newHosts == NULL)
-    {
-        return NULL;
-    }
-
-    struct _Qiniu_Region_Hosts *newRegionHosts = malloc(sizeof(struct _Qiniu_Region_Hosts));
-    if (newRegionHosts == NULL)
-    {
-        free((void *)newHosts);
-        return NULL;
-    }
-    newRegionHosts->hosts = (const char *const *)newHosts;
-
-    for (size_t i = 0; i < hostsCount; i++)
+    size_t i, j;
+    for (i = 0; i < hostsCount; i++)
     {
         if (hosts[i] == NULL)
         {
             break;
         }
-        newHosts[i] = duplicate_host(hosts[i], useHttps);
-        if (newHosts[i] == NULL)
+        targetHosts[copyOffset + i] = _Qiniu_Duplicate_Host(hosts[i], useHttps);
+        if (targetHosts[copyOffset + i] == NULL)
         {
-            for (size_t j = 0; j < i; j++)
-            {
-                free((void *)newHosts[j]);
-            }
-            free((void *)newHosts);
-            free((void *)newRegionHosts);
-            return NULL;
+            goto handleErr;
         }
-        newRegionHosts->hostsCount = i + 1;
     }
-    return newRegionHosts;
+    return Qiniu_True;
+handleErr:
+    for (j = 0; j < i; j++)
+    {
+        free((void *)targetHosts[copyOffset + j]);
+    }
+    return Qiniu_False;
 }
 
-struct _Qiniu_Region_Hosts *_Qiniu_Region_Hosts_New_without_dup(const char *const *hosts, size_t hostsCount)
-{
-    struct _Qiniu_Region_Hosts *newRegionHosts = malloc(sizeof(struct _Qiniu_Region_Hosts));
-    if (newRegionHosts == NULL)
-    {
-        return NULL;
-    }
-    newRegionHosts->hosts = hosts;
-    newRegionHosts->hostsCount = hostsCount;
-    return newRegionHosts;
-}
-
-void _Qiniu_Region_Hosts_Free(struct _Qiniu_Region_Hosts *hosts)
-{
-    if (hosts == NULL)
-    {
-        return;
-    }
-    for (int i = 0; i < hosts->hostsCount; i++)
-    {
-        free((void *)hosts->hosts[i]);
-    }
-    free((void *)hosts->hosts);
-    hosts->hosts = NULL;
-    hosts->hostsCount = 0;
-    free((void *)hosts);
-}
-
-struct _Qiniu_Region_Service *_Qiniu_Region_Service_New(struct _Qiniu_Region_Hosts *preferredHosts, struct _Qiniu_Region_Hosts *alternativeHosts)
+struct _Qiniu_Region_Service *_Qiniu_Region_Service_New(
+    const char *const *acceleratedHosts, size_t acceleratedHostsCount,
+    const char *const *preferredHosts, size_t preferredHostsCount,
+    const char *const *alternativeHosts, size_t alternativeHostsCount,
+    Qiniu_Bool useHttps)
 {
     struct _Qiniu_Region_Service *newService = malloc(sizeof(struct _Qiniu_Region_Service));
     if (newService == NULL)
     {
-        return NULL;
+        goto handleErr;
     }
-    newService->preferredHosts = preferredHosts;
-    newService->alternativeHosts = alternativeHosts;
-
+    size_t allHostsCount = acceleratedHostsCount + preferredHostsCount + alternativeHostsCount;
+    const char **newHosts = malloc(sizeof(const char *) * allHostsCount);
+    if (newHosts == NULL)
+    {
+        goto handleErr;
+    }
+    size_t offset = 0;
+    if (_Qiniu_Region_Service_Copy_Hosts(newHosts, offset, acceleratedHosts, acceleratedHostsCount, useHttps) == Qiniu_False)
+    {
+        goto handleErr;
+    }
+    offset += acceleratedHostsCount;
+    if (_Qiniu_Region_Service_Copy_Hosts(newHosts, offset, preferredHosts, preferredHostsCount, useHttps) == Qiniu_False)
+    {
+        goto handleErr;
+    }
+    offset += preferredHostsCount;
+    if (_Qiniu_Region_Service_Copy_Hosts(newHosts, offset, alternativeHosts, alternativeHostsCount, useHttps) == Qiniu_False)
+    {
+        goto handleErr;
+    }
+    offset += alternativeHostsCount;
+    newService->hosts = newHosts;
+    newService->acceleratedHostsCount = acceleratedHostsCount;
+    newService->preferredHostsCount = preferredHostsCount;
+    newService->alternativeHostsCount = alternativeHostsCount;
     return newService;
+handleErr:
+    if (newHosts != NULL)
+    {
+        for (size_t j = 0; j < offset; j++)
+        {
+            free((void *)newHosts[offset + j]);
+        }
+        free((void *)newHosts);
+    }
+    if (newService != NULL)
+    {
+        free((void *)newService);
+    }
+    return NULL;
 }
 
 void _Qiniu_Region_Service_Free(struct _Qiniu_Region_Service *service)
@@ -124,11 +123,13 @@ void _Qiniu_Region_Service_Free(struct _Qiniu_Region_Service *service)
     {
         return;
     }
-    _Qiniu_Region_Hosts_Free(service->preferredHosts);
-    service->preferredHosts = NULL;
-    _Qiniu_Region_Hosts_Free(service->alternativeHosts);
-    service->alternativeHosts = NULL;
-    free(service);
+    size_t allHostsCount = service->acceleratedHostsCount + service->preferredHostsCount + service->alternativeHostsCount;
+    for (size_t i = 0; i < allHostsCount; i++)
+    {
+        free((void *)service->hosts[i]);
+    }
+    free((void *)service->hosts);
+    free((void *)service);
 }
 
 Qiniu_Region *Qiniu_Region_New(const char *regionId, Qiniu_Uint64 ttl)
@@ -182,22 +183,48 @@ void Qiniu_Region_Free(Qiniu_Region *region)
     free((void *)region);
 }
 
+void Qiniu_Region_Set_Up_Accelerated_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
+{
+    if (region == NULL)
+    {
+        return;
+    }
+    if (region->upService != NULL)
+    {
+        struct _Qiniu_Region_Service *oldUpService = region->upService;
+        region->upService = _Qiniu_Region_Service_New(
+            hosts, hostsCount,
+            oldUpService->hosts + oldUpService->acceleratedHostsCount, oldUpService->preferredHostsCount,
+            oldUpService->hosts + oldUpService->acceleratedHostsCount + oldUpService->preferredHostsCount, oldUpService->alternativeHostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldUpService);
+    }
+    else
+    {
+        region->upService = _Qiniu_Region_Service_New(hosts, hostsCount, NULL, 0, NULL, 0, useHttps);
+    }
+}
+
 void Qiniu_Region_Set_Up_Preferred_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
 {
     if (region == NULL)
     {
         return;
     }
-    if (region->upService == NULL)
+    if (region->upService != NULL)
     {
-        region->upService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldUpService = region->upService;
+        region->upService = _Qiniu_Region_Service_New(
+            oldUpService->hosts, oldUpService->acceleratedHostsCount,
+            hosts, hostsCount,
+            oldUpService->hosts + oldUpService->acceleratedHostsCount + oldUpService->preferredHostsCount, oldUpService->alternativeHostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldUpService);
     }
-    if (region->upService->preferredHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->upService->preferredHosts);
-        region->upService->preferredHosts = NULL;
+        region->upService = _Qiniu_Region_Service_New(NULL, 0, hosts, hostsCount, NULL, 0, useHttps);
     }
-    region->upService->preferredHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
 }
 
 void Qiniu_Region_Set_Up_Alternative_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
@@ -206,16 +233,20 @@ void Qiniu_Region_Set_Up_Alternative_Hosts(Qiniu_Region *region, const char *con
     {
         return;
     }
-    if (region->upService == NULL)
+    if (region->upService != NULL)
     {
-        region->upService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldUpService = region->upService;
+        region->upService = _Qiniu_Region_Service_New(
+            oldUpService->hosts, oldUpService->acceleratedHostsCount,
+            oldUpService->hosts + oldUpService->acceleratedHostsCount, oldUpService->preferredHostsCount,
+            hosts, hostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldUpService);
     }
-    if (region->upService->alternativeHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->upService->alternativeHosts);
-        region->upService->alternativeHosts = NULL;
+        region->upService = _Qiniu_Region_Service_New(NULL, 0, NULL, 0, hosts, hostsCount, useHttps);
     }
-    region->upService->alternativeHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
 }
 
 void Qiniu_Region_Set_Io_Preferred_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
@@ -224,16 +255,20 @@ void Qiniu_Region_Set_Io_Preferred_Hosts(Qiniu_Region *region, const char *const
     {
         return;
     }
-    if (region->ioService == NULL)
+    if (region->ioService != NULL)
     {
-        region->ioService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldIoService = region->ioService;
+        region->ioService = _Qiniu_Region_Service_New(
+            oldIoService->hosts, oldIoService->acceleratedHostsCount,
+            hosts, hostsCount,
+            oldIoService->hosts + oldIoService->acceleratedHostsCount + oldIoService->preferredHostsCount, oldIoService->alternativeHostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldIoService);
     }
-    if (region->ioService->preferredHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->ioService->preferredHosts);
-        region->ioService->preferredHosts = NULL;
+        region->ioService = _Qiniu_Region_Service_New(NULL, 0, hosts, hostsCount, NULL, 0, useHttps);
     }
-    region->ioService->preferredHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
 }
 
 void Qiniu_Region_Set_Io_Alternative_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
@@ -242,16 +277,20 @@ void Qiniu_Region_Set_Io_Alternative_Hosts(Qiniu_Region *region, const char *con
     {
         return;
     }
-    if (region->ioService == NULL)
+    if (region->ioService != NULL)
     {
-        region->ioService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldIoService = region->ioService;
+        region->ioService = _Qiniu_Region_Service_New(
+            oldIoService->hosts, oldIoService->acceleratedHostsCount,
+            oldIoService->hosts + oldIoService->acceleratedHostsCount, oldIoService->preferredHostsCount,
+            hosts, hostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldIoService);
     }
-    if (region->ioService->alternativeHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->ioService->alternativeHosts);
-        region->ioService->alternativeHosts = NULL;
+        region->ioService = _Qiniu_Region_Service_New(NULL, 0, NULL, 0, hosts, hostsCount, useHttps);
     }
-    region->ioService->alternativeHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
 }
 
 void Qiniu_Region_Set_Io_Src_Preferred_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
@@ -260,16 +299,20 @@ void Qiniu_Region_Set_Io_Src_Preferred_Hosts(Qiniu_Region *region, const char *c
     {
         return;
     }
-    if (region->ioSrcService == NULL)
+    if (region->ioSrcService != NULL)
     {
-        region->ioSrcService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldIoSrcService = region->ioSrcService;
+        region->ioSrcService = _Qiniu_Region_Service_New(
+            oldIoSrcService->hosts, oldIoSrcService->acceleratedHostsCount,
+            hosts, hostsCount,
+            oldIoSrcService->hosts + oldIoSrcService->acceleratedHostsCount + oldIoSrcService->preferredHostsCount, oldIoSrcService->alternativeHostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldIoSrcService);
     }
-    if (region->ioSrcService->preferredHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->ioSrcService->preferredHosts);
-        region->ioSrcService->preferredHosts = NULL;
+        region->ioSrcService = _Qiniu_Region_Service_New(NULL, 0, hosts, hostsCount, NULL, 0, useHttps);
     }
-    region->ioSrcService->preferredHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
 }
 
 void Qiniu_Region_Set_Io_Src_Alternative_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
@@ -278,16 +321,20 @@ void Qiniu_Region_Set_Io_Src_Alternative_Hosts(Qiniu_Region *region, const char 
     {
         return;
     }
-    if (region->ioSrcService == NULL)
+    if (region->ioSrcService != NULL)
     {
-        region->ioSrcService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldIoSrcService = region->ioSrcService;
+        region->ioSrcService = _Qiniu_Region_Service_New(
+            oldIoSrcService->hosts, oldIoSrcService->acceleratedHostsCount,
+            oldIoSrcService->hosts + oldIoSrcService->acceleratedHostsCount, oldIoSrcService->preferredHostsCount,
+            hosts, hostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldIoSrcService);
     }
-    if (region->ioSrcService->alternativeHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->ioSrcService->alternativeHosts);
-        region->ioSrcService->alternativeHosts = NULL;
+        region->ioSrcService = _Qiniu_Region_Service_New(NULL, 0, NULL, 0, hosts, hostsCount, useHttps);
     }
-    region->ioSrcService->alternativeHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
 }
 
 void Qiniu_Region_Set_Bucket_Preferred_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
@@ -296,16 +343,20 @@ void Qiniu_Region_Set_Bucket_Preferred_Hosts(Qiniu_Region *region, const char *c
     {
         return;
     }
-    if (region->ucService == NULL)
+    if (region->ucService != NULL)
     {
-        region->ucService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldUcService = region->ucService;
+        region->ucService = _Qiniu_Region_Service_New(
+            oldUcService->hosts, oldUcService->acceleratedHostsCount,
+            hosts, hostsCount,
+            oldUcService->hosts + oldUcService->acceleratedHostsCount + oldUcService->preferredHostsCount, oldUcService->alternativeHostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldUcService);
     }
-    if (region->ucService->preferredHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->ucService->preferredHosts);
-        region->ucService->preferredHosts = NULL;
+        region->ucService = _Qiniu_Region_Service_New(NULL, 0, hosts, hostsCount, NULL, 0, useHttps);
     }
-    region->ucService->preferredHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
 }
 
 void Qiniu_Region_Set_Bucket_Alternative_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
@@ -314,16 +365,20 @@ void Qiniu_Region_Set_Bucket_Alternative_Hosts(Qiniu_Region *region, const char 
     {
         return;
     }
-    if (region->ucService == NULL)
+    if (region->ucService != NULL)
     {
-        region->ucService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldUcService = region->ucService;
+        region->ucService = _Qiniu_Region_Service_New(
+            oldUcService->hosts, oldUcService->acceleratedHostsCount,
+            oldUcService->hosts + oldUcService->acceleratedHostsCount, oldUcService->preferredHostsCount,
+            hosts, hostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldUcService);
     }
-    if (region->ucService->alternativeHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->ucService->alternativeHosts);
-        region->ucService->alternativeHosts = NULL;
+        region->ucService = _Qiniu_Region_Service_New(NULL, 0, NULL, 0, hosts, hostsCount, useHttps);
     }
-    region->ucService->alternativeHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
 }
 
 void Qiniu_Region_Set_Rs_Preferred_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
@@ -332,16 +387,20 @@ void Qiniu_Region_Set_Rs_Preferred_Hosts(Qiniu_Region *region, const char *const
     {
         return;
     }
-    if (region->rsService == NULL)
+    if (region->rsService != NULL)
     {
-        region->rsService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldRsService = region->rsService;
+        region->rsService = _Qiniu_Region_Service_New(
+            oldRsService->hosts, oldRsService->acceleratedHostsCount,
+            hosts, hostsCount,
+            oldRsService->hosts + oldRsService->acceleratedHostsCount + oldRsService->preferredHostsCount, oldRsService->alternativeHostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldRsService);
     }
-    if (region->rsService->preferredHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->rsService->preferredHosts);
-        region->rsService->preferredHosts = NULL;
+        region->rsService = _Qiniu_Region_Service_New(NULL, 0, hosts, hostsCount, NULL, 0, useHttps);
     }
-    region->rsService->preferredHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
 }
 
 void Qiniu_Region_Set_Rs_Alternative_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
@@ -350,16 +409,20 @@ void Qiniu_Region_Set_Rs_Alternative_Hosts(Qiniu_Region *region, const char *con
     {
         return;
     }
-    if (region->rsService == NULL)
+    if (region->rsService != NULL)
     {
-        region->rsService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldRsService = region->rsService;
+        region->rsService = _Qiniu_Region_Service_New(
+            oldRsService->hosts, oldRsService->acceleratedHostsCount,
+            oldRsService->hosts + oldRsService->acceleratedHostsCount, oldRsService->preferredHostsCount,
+            hosts, hostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldRsService);
     }
-    if (region->rsService->alternativeHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->rsService->alternativeHosts);
-        region->rsService->alternativeHosts = NULL;
+        region->rsService = _Qiniu_Region_Service_New(NULL, 0, NULL, 0, hosts, hostsCount, useHttps);
     }
-    region->rsService->alternativeHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
 }
 
 void Qiniu_Region_Set_Rsf_Preferred_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
@@ -368,16 +431,20 @@ void Qiniu_Region_Set_Rsf_Preferred_Hosts(Qiniu_Region *region, const char *cons
     {
         return;
     }
-    if (region->rsfService == NULL)
+    if (region->rsfService != NULL)
     {
-        region->rsfService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldRsfService = region->rsfService;
+        region->rsfService = _Qiniu_Region_Service_New(
+            oldRsfService->hosts, oldRsfService->acceleratedHostsCount,
+            hosts, hostsCount,
+            oldRsfService->hosts + oldRsfService->acceleratedHostsCount + oldRsfService->preferredHostsCount, oldRsfService->alternativeHostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldRsfService);
     }
-    if (region->rsfService->preferredHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->rsfService->preferredHosts);
-        region->rsfService->preferredHosts = NULL;
+        region->rsfService = _Qiniu_Region_Service_New(NULL, 0, hosts, hostsCount, NULL, 0, useHttps);
     }
-    region->rsfService->preferredHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
 }
 
 void Qiniu_Region_Set_Rsf_Alternative_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
@@ -386,16 +453,20 @@ void Qiniu_Region_Set_Rsf_Alternative_Hosts(Qiniu_Region *region, const char *co
     {
         return;
     }
-    if (region->rsfService == NULL)
+    if (region->rsfService != NULL)
     {
-        region->rsfService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldRsfService = region->rsfService;
+        region->rsfService = _Qiniu_Region_Service_New(
+            oldRsfService->hosts, oldRsfService->acceleratedHostsCount,
+            oldRsfService->hosts + oldRsfService->acceleratedHostsCount, oldRsfService->preferredHostsCount,
+            hosts, hostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldRsfService);
     }
-    if (region->rsfService->alternativeHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->rsfService->alternativeHosts);
-        region->rsfService->alternativeHosts = NULL;
+        region->rsfService = _Qiniu_Region_Service_New(NULL, 0, NULL, 0, hosts, hostsCount, useHttps);
     }
-    region->rsfService->alternativeHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
 }
 
 void Qiniu_Region_Set_Api_Preferred_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
@@ -404,16 +475,20 @@ void Qiniu_Region_Set_Api_Preferred_Hosts(Qiniu_Region *region, const char *cons
     {
         return;
     }
-    if (region->apiService == NULL)
+    if (region->apiService != NULL)
     {
-        region->apiService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldApiService = region->apiService;
+        region->apiService = _Qiniu_Region_Service_New(
+            oldApiService->hosts, oldApiService->acceleratedHostsCount,
+            hosts, hostsCount,
+            oldApiService->hosts + oldApiService->acceleratedHostsCount + oldApiService->preferredHostsCount, oldApiService->alternativeHostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldApiService);
     }
-    if (region->apiService->preferredHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->apiService->preferredHosts);
-        region->apiService->preferredHosts = NULL;
+        region->apiService = _Qiniu_Region_Service_New(NULL, 0, hosts, hostsCount, NULL, 0, useHttps);
     }
-    region->apiService->preferredHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
 }
 
 void Qiniu_Region_Set_Api_Alternative_Hosts(Qiniu_Region *region, const char *const *hosts, size_t hostsCount, Qiniu_Bool useHttps)
@@ -422,16 +497,45 @@ void Qiniu_Region_Set_Api_Alternative_Hosts(Qiniu_Region *region, const char *co
     {
         return;
     }
-    if (region->apiService == NULL)
+    if (region->apiService != NULL)
     {
-        region->apiService = _Qiniu_Region_Service_New(NULL, NULL);
+        struct _Qiniu_Region_Service *oldApiService = region->apiService;
+        region->apiService = _Qiniu_Region_Service_New(
+            oldApiService->hosts, oldApiService->acceleratedHostsCount,
+            oldApiService->hosts + oldApiService->acceleratedHostsCount, oldApiService->preferredHostsCount,
+            hosts, hostsCount,
+            useHttps);
+        _Qiniu_Region_Service_Free(oldApiService);
     }
-    if (region->apiService->alternativeHosts != NULL)
+    else
     {
-        _Qiniu_Region_Hosts_Free(region->apiService->alternativeHosts);
-        region->apiService->alternativeHosts = NULL;
+        region->apiService = _Qiniu_Region_Service_New(NULL, 0, NULL, 0, hosts, hostsCount, useHttps);
     }
-    region->apiService->alternativeHosts = _Qiniu_Region_Hosts_New(hosts, hostsCount, useHttps);
+}
+
+const char *const *Qiniu_Region_Get_Up_Accelerated_Hosts(Qiniu_Region *region, size_t *count)
+{
+    if (count != NULL)
+    {
+        *count = 0;
+    }
+    if (region == NULL)
+    {
+        return NULL;
+    }
+    if (region->upService == NULL)
+    {
+        return NULL;
+    }
+    if (region->upService->hosts == NULL || region->upService->acceleratedHostsCount == 0)
+    {
+        return NULL;
+    }
+    if (count != NULL)
+    {
+        *count = region->upService->acceleratedHostsCount;
+    }
+    return region->upService->hosts;
 }
 
 const char *const *Qiniu_Region_Get_Up_Preferred_Hosts(Qiniu_Region *region, size_t *count)
@@ -448,15 +552,15 @@ const char *const *Qiniu_Region_Get_Up_Preferred_Hosts(Qiniu_Region *region, siz
     {
         return NULL;
     }
-    if (region->upService->preferredHosts == NULL)
+    if (region->upService->hosts == NULL || region->upService->preferredHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->upService->preferredHosts->hostsCount;
+        *count = region->upService->preferredHostsCount;
     }
-    return region->upService->preferredHosts->hosts;
+    return region->upService->hosts + region->upService->acceleratedHostsCount;
 }
 
 const char *const *Qiniu_Region_Get_Up_Alternative_Hosts(Qiniu_Region *region, size_t *count)
@@ -473,15 +577,52 @@ const char *const *Qiniu_Region_Get_Up_Alternative_Hosts(Qiniu_Region *region, s
     {
         return NULL;
     }
-    if (region->upService->alternativeHosts == NULL)
+    if (region->upService->hosts == NULL || region->upService->alternativeHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->upService->alternativeHosts->hostsCount;
+        *count = region->upService->alternativeHostsCount;
     }
-    return region->upService->alternativeHosts->hosts;
+    return region->upService->hosts + region->upService->acceleratedHostsCount + region->upService->preferredHostsCount;
+}
+
+const char *const *_Qiniu_Region_Get_All_Up_Hosts(Qiniu_Region *region, size_t *count, Qiniu_Bool accelerationEnabled)
+{
+    if (count != NULL)
+    {
+        *count = 0;
+    }
+    if (region == NULL)
+    {
+        return NULL;
+    }
+    if (region->upService == NULL)
+    {
+        return NULL;
+    }
+    size_t allHostsCount = region->upService->preferredHostsCount + region->upService->alternativeHostsCount;
+    if (accelerationEnabled)
+    {
+        allHostsCount += region->upService->acceleratedHostsCount;
+    }
+    if (region->upService->hosts == NULL || allHostsCount == 0)
+    {
+        return NULL;
+    }
+    if (count != NULL)
+    {
+        *count = allHostsCount;
+    }
+    if (accelerationEnabled)
+    {
+        return region->upService->hosts;
+    }
+    else
+    {
+        return region->upService->hosts + region->upService->acceleratedHostsCount;
+    }
 }
 
 const char *const *Qiniu_Region_Get_Io_Preferred_Hosts(Qiniu_Region *region, size_t *count)
@@ -498,15 +639,15 @@ const char *const *Qiniu_Region_Get_Io_Preferred_Hosts(Qiniu_Region *region, siz
     {
         return NULL;
     }
-    if (region->ioService->preferredHosts == NULL)
+    if (region->ioService->hosts == NULL || region->ioService->preferredHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->ioService->preferredHosts->hostsCount;
+        *count = region->ioService->preferredHostsCount;
     }
-    return region->ioService->preferredHosts->hosts;
+    return region->ioService->hosts + region->ioService->acceleratedHostsCount;
 }
 
 const char *const *Qiniu_Region_Get_Io_Alternative_Hosts(Qiniu_Region *region, size_t *count)
@@ -523,15 +664,52 @@ const char *const *Qiniu_Region_Get_Io_Alternative_Hosts(Qiniu_Region *region, s
     {
         return NULL;
     }
-    if (region->ioService->alternativeHosts == NULL)
+    if (region->ioService->hosts == NULL || region->ioService->alternativeHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->ioService->alternativeHosts->hostsCount;
+        *count = region->ioService->alternativeHostsCount;
     }
-    return region->ioService->alternativeHosts->hosts;
+    return region->ioService->hosts + region->ioService->acceleratedHostsCount + region->ioService->preferredHostsCount;
+}
+
+const char *const *_Qiniu_Region_Get_All_Io_Hosts(Qiniu_Region *region, size_t *count, Qiniu_Bool accelerationEnabled)
+{
+    if (count != NULL)
+    {
+        *count = 0;
+    }
+    if (region == NULL)
+    {
+        return NULL;
+    }
+    if (region->ioService == NULL)
+    {
+        return NULL;
+    }
+    size_t allHostsCount = region->ioService->preferredHostsCount + region->ioService->alternativeHostsCount;
+    if (accelerationEnabled)
+    {
+        allHostsCount += region->ioService->acceleratedHostsCount;
+    }
+    if (region->ioService->hosts == NULL || allHostsCount == 0)
+    {
+        return NULL;
+    }
+    if (count != NULL)
+    {
+        *count = allHostsCount;
+    }
+    if (accelerationEnabled)
+    {
+        return region->ioService->hosts;
+    }
+    else
+    {
+        return region->ioService->hosts + region->ioService->acceleratedHostsCount;
+    }
 }
 
 const char *const *Qiniu_Region_Get_Io_Src_Preferred_Hosts(Qiniu_Region *region, size_t *count)
@@ -548,15 +726,15 @@ const char *const *Qiniu_Region_Get_Io_Src_Preferred_Hosts(Qiniu_Region *region,
     {
         return NULL;
     }
-    if (region->ioSrcService->preferredHosts == NULL)
+    if (region->ioSrcService->hosts == NULL || region->ioSrcService->preferredHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->ioSrcService->preferredHosts->hostsCount;
+        *count = region->ioSrcService->preferredHostsCount;
     }
-    return region->ioSrcService->preferredHosts->hosts;
+    return region->ioSrcService->hosts + region->ioSrcService->acceleratedHostsCount;
 }
 
 const char *const *Qiniu_Region_Get_Io_Src_Alternative_Hosts(Qiniu_Region *region, size_t *count)
@@ -573,15 +751,52 @@ const char *const *Qiniu_Region_Get_Io_Src_Alternative_Hosts(Qiniu_Region *regio
     {
         return NULL;
     }
-    if (region->ioSrcService->alternativeHosts == NULL)
+    if (region->ioSrcService->hosts == NULL || region->ioSrcService->alternativeHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->ioSrcService->alternativeHosts->hostsCount;
+        *count = region->ioSrcService->alternativeHostsCount;
     }
-    return region->ioSrcService->alternativeHosts->hosts;
+    return region->ioSrcService->hosts + region->ioSrcService->acceleratedHostsCount + region->ioSrcService->preferredHostsCount;
+}
+
+const char *const *_Qiniu_Region_Get_All_Io_Src_Hosts(Qiniu_Region *region, size_t *count, Qiniu_Bool accelerationEnabled)
+{
+    if (count != NULL)
+    {
+        *count = 0;
+    }
+    if (region == NULL)
+    {
+        return NULL;
+    }
+    if (region->ioSrcService == NULL)
+    {
+        return NULL;
+    }
+    size_t allHostsCount = region->ioSrcService->preferredHostsCount + region->ioSrcService->alternativeHostsCount;
+    if (accelerationEnabled)
+    {
+        allHostsCount += region->ioSrcService->acceleratedHostsCount;
+    }
+    if (region->ioSrcService->hosts == NULL || allHostsCount == 0)
+    {
+        return NULL;
+    }
+    if (count != NULL)
+    {
+        *count = allHostsCount;
+    }
+    if (accelerationEnabled)
+    {
+        return region->ioSrcService->hosts;
+    }
+    else
+    {
+        return region->ioSrcService->hosts + region->ioSrcService->acceleratedHostsCount;
+    }
 }
 
 const char *const *Qiniu_Region_Get_Bucket_Preferred_Hosts(Qiniu_Region *region, size_t *count)
@@ -598,15 +813,15 @@ const char *const *Qiniu_Region_Get_Bucket_Preferred_Hosts(Qiniu_Region *region,
     {
         return NULL;
     }
-    if (region->ucService->preferredHosts == NULL)
+    if (region->ucService->hosts == NULL || region->ucService->preferredHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->ucService->preferredHosts->hostsCount;
+        *count = region->ucService->preferredHostsCount;
     }
-    return region->ucService->preferredHosts->hosts;
+    return region->ucService->hosts + region->ucService->acceleratedHostsCount;
 }
 
 const char *const *Qiniu_Region_Get_Bucket_Alternative_Hosts(Qiniu_Region *region, size_t *count)
@@ -623,15 +838,52 @@ const char *const *Qiniu_Region_Get_Bucket_Alternative_Hosts(Qiniu_Region *regio
     {
         return NULL;
     }
-    if (region->ucService->alternativeHosts == NULL)
+    if (region->ucService->hosts == NULL || region->ucService->alternativeHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->ucService->alternativeHosts->hostsCount;
+        *count = region->ucService->alternativeHostsCount;
     }
-    return region->ucService->alternativeHosts->hosts;
+    return region->ucService->hosts + region->ucService->acceleratedHostsCount + region->ucService->preferredHostsCount;
+}
+
+const char *const *_Qiniu_Region_Get_All_Bucket_Hosts(Qiniu_Region *region, size_t *count, Qiniu_Bool accelerationEnabled)
+{
+    if (count != NULL)
+    {
+        *count = 0;
+    }
+    if (region == NULL)
+    {
+        return NULL;
+    }
+    if (region->ucService == NULL)
+    {
+        return NULL;
+    }
+    size_t allHostsCount = region->ucService->preferredHostsCount + region->ucService->alternativeHostsCount;
+    if (accelerationEnabled)
+    {
+        allHostsCount += region->ucService->acceleratedHostsCount;
+    }
+    if (region->ucService->hosts == NULL || allHostsCount == 0)
+    {
+        return NULL;
+    }
+    if (count != NULL)
+    {
+        *count = allHostsCount;
+    }
+    if (accelerationEnabled)
+    {
+        return region->ucService->hosts;
+    }
+    else
+    {
+        return region->ucService->hosts + region->ucService->acceleratedHostsCount;
+    }
 }
 
 const char *const *Qiniu_Region_Get_Rs_Preferred_Hosts(Qiniu_Region *region, size_t *count)
@@ -648,15 +900,15 @@ const char *const *Qiniu_Region_Get_Rs_Preferred_Hosts(Qiniu_Region *region, siz
     {
         return NULL;
     }
-    if (region->rsService->preferredHosts == NULL)
+    if (region->rsService->hosts == NULL || region->rsService->preferredHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->rsService->preferredHosts->hostsCount;
+        *count = region->rsService->preferredHostsCount;
     }
-    return region->rsService->preferredHosts->hosts;
+    return region->rsService->hosts + region->rsService->acceleratedHostsCount;
 }
 
 const char *const *Qiniu_Region_Get_Rs_Alternative_Hosts(Qiniu_Region *region, size_t *count)
@@ -673,15 +925,52 @@ const char *const *Qiniu_Region_Get_Rs_Alternative_Hosts(Qiniu_Region *region, s
     {
         return NULL;
     }
-    if (region->rsService->alternativeHosts == NULL)
+    if (region->rsService->hosts == NULL || region->rsService->alternativeHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->rsService->alternativeHosts->hostsCount;
+        *count = region->rsService->alternativeHostsCount;
     }
-    return region->rsService->alternativeHosts->hosts;
+    return region->rsService->hosts + region->rsService->acceleratedHostsCount + region->rsService->preferredHostsCount;
+}
+
+const char *const *_Qiniu_Region_Get_All_Rs_Hosts(Qiniu_Region *region, size_t *count, Qiniu_Bool accelerationEnabled)
+{
+    if (count != NULL)
+    {
+        *count = 0;
+    }
+    if (region == NULL)
+    {
+        return NULL;
+    }
+    if (region->rsService == NULL)
+    {
+        return NULL;
+    }
+    size_t allHostsCount = region->rsService->preferredHostsCount + region->rsService->alternativeHostsCount;
+    if (accelerationEnabled)
+    {
+        allHostsCount += region->rsService->acceleratedHostsCount;
+    }
+    if (region->rsService->hosts == NULL || allHostsCount == 0)
+    {
+        return NULL;
+    }
+    if (count != NULL)
+    {
+        *count = allHostsCount;
+    }
+    if (accelerationEnabled)
+    {
+        return region->rsService->hosts;
+    }
+    else
+    {
+        return region->rsService->hosts + region->rsService->acceleratedHostsCount;
+    }
 }
 
 const char *const *Qiniu_Region_Get_Rsf_Preferred_Hosts(Qiniu_Region *region, size_t *count)
@@ -698,15 +987,15 @@ const char *const *Qiniu_Region_Get_Rsf_Preferred_Hosts(Qiniu_Region *region, si
     {
         return NULL;
     }
-    if (region->rsfService->preferredHosts == NULL)
+    if (region->rsfService->hosts == NULL || region->rsfService->preferredHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->rsfService->preferredHosts->hostsCount;
+        *count = region->rsfService->preferredHostsCount;
     }
-    return region->rsfService->preferredHosts->hosts;
+    return region->rsfService->hosts + region->rsfService->acceleratedHostsCount;
 }
 
 const char *const *Qiniu_Region_Get_Rsf_Alternative_Hosts(Qiniu_Region *region, size_t *count)
@@ -723,15 +1012,52 @@ const char *const *Qiniu_Region_Get_Rsf_Alternative_Hosts(Qiniu_Region *region, 
     {
         return NULL;
     }
-    if (region->rsfService->alternativeHosts == NULL)
+    if (region->rsfService->hosts == NULL || region->rsfService->alternativeHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->rsfService->alternativeHosts->hostsCount;
+        *count = region->rsfService->alternativeHostsCount;
     }
-    return region->rsfService->alternativeHosts->hosts;
+    return region->rsfService->hosts + region->rsfService->acceleratedHostsCount + region->rsfService->preferredHostsCount;
+}
+
+const char *const *_Qiniu_Region_Get_All_Rsf_Hosts(Qiniu_Region *region, size_t *count, Qiniu_Bool accelerationEnabled)
+{
+    if (count != NULL)
+    {
+        *count = 0;
+    }
+    if (region == NULL)
+    {
+        return NULL;
+    }
+    if (region->rsfService == NULL)
+    {
+        return NULL;
+    }
+    size_t allHostsCount = region->rsfService->preferredHostsCount + region->rsfService->alternativeHostsCount;
+    if (accelerationEnabled)
+    {
+        allHostsCount += region->rsfService->acceleratedHostsCount;
+    }
+    if (region->rsfService->hosts == NULL || allHostsCount == 0)
+    {
+        return NULL;
+    }
+    if (count != NULL)
+    {
+        *count = allHostsCount;
+    }
+    if (accelerationEnabled)
+    {
+        return region->rsfService->hosts;
+    }
+    else
+    {
+        return region->rsfService->hosts + region->rsfService->acceleratedHostsCount;
+    }
 }
 
 const char *const *Qiniu_Region_Get_Api_Preferred_Hosts(Qiniu_Region *region, size_t *count)
@@ -748,15 +1074,15 @@ const char *const *Qiniu_Region_Get_Api_Preferred_Hosts(Qiniu_Region *region, si
     {
         return NULL;
     }
-    if (region->apiService->preferredHosts == NULL)
+    if (region->apiService->hosts == NULL || region->apiService->preferredHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->apiService->preferredHosts->hostsCount;
+        *count = region->apiService->preferredHostsCount;
     }
-    return region->apiService->preferredHosts->hosts;
+    return region->apiService->hosts + region->apiService->acceleratedHostsCount;
 }
 
 const char *const *Qiniu_Region_Get_Api_Alternative_Hosts(Qiniu_Region *region, size_t *count)
@@ -773,15 +1099,52 @@ const char *const *Qiniu_Region_Get_Api_Alternative_Hosts(Qiniu_Region *region, 
     {
         return NULL;
     }
-    if (region->apiService->alternativeHosts == NULL)
+    if (region->apiService->hosts == NULL || region->apiService->alternativeHostsCount == 0)
     {
         return NULL;
     }
     if (count != NULL)
     {
-        *count = region->apiService->alternativeHosts->hostsCount;
+        *count = region->apiService->alternativeHostsCount;
     }
-    return region->apiService->alternativeHosts->hosts;
+    return region->apiService->hosts + region->apiService->acceleratedHostsCount + region->apiService->preferredHostsCount;
+}
+
+const char *const *_Qiniu_Region_Get_All_Api_Hosts(Qiniu_Region *region, size_t *count, Qiniu_Bool accelerationEnabled)
+{
+    if (count != NULL)
+    {
+        *count = 0;
+    }
+    if (region == NULL)
+    {
+        return NULL;
+    }
+    if (region->apiService == NULL)
+    {
+        return NULL;
+    }
+    size_t allHostsCount = region->apiService->preferredHostsCount + region->apiService->alternativeHostsCount;
+    if (accelerationEnabled)
+    {
+        allHostsCount += region->apiService->acceleratedHostsCount;
+    }
+    if (region->apiService->hosts == NULL || allHostsCount == 0)
+    {
+        return NULL;
+    }
+    if (count != NULL)
+    {
+        *count = allHostsCount;
+    }
+    if (accelerationEnabled)
+    {
+        return region->apiService->hosts;
+    }
+    else
+    {
+        return region->apiService->hosts + region->apiService->acceleratedHostsCount;
+    }
 }
 
 Qiniu_Region *Qiniu_Use_Region(const char *const regionId, Qiniu_Bool useHttps)
@@ -798,35 +1161,23 @@ Qiniu_Region *Qiniu_Use_Region(const char *const regionId, Qiniu_Bool useHttps)
 
     if (strcmp(regionId, "z0") == 0)
     {
-        Qiniu_Region_Set_Up_Preferred_Hosts(region, (const char *const[]){"upload.qiniup.com", "up.qiniup.com"}, 2, useHttps);
-        Qiniu_Region_Set_Up_Alternative_Hosts(region, (const char *const[]){"up.qbox.me"}, 1, useHttps);
-        Qiniu_Region_Set_Io_Preferred_Hosts(region, (const char *const[]){"iovip.qiniuio.com"}, 1, useHttps);
-        Qiniu_Region_Set_Io_Alternative_Hosts(region, (const char *const[]){"iovip.qbox.me"}, 1, useHttps);
+        region->upService = _Qiniu_Region_Service_New(NULL, 0, (const char *const[]){"upload.qiniup.com", "up.qiniup.com"}, 2, (const char *const[]){"up.qbox.me"}, 1, useHttps);
+        region->ioService = _Qiniu_Region_Service_New(NULL, 0, (const char *const[]){"iovip.qiniuio.com"}, 1, (const char *const[]){"iovip.qbox.me"}, 1, useHttps);
     }
     else
     {
         Qiniu_snprintf(buf, sizeof(buf), "upload-%s.qiniup.com", regionId);
         Qiniu_snprintf(buf2, sizeof(buf2), "up-%s.qiniup.com", regionId);
-        Qiniu_Region_Set_Up_Preferred_Hosts(region, (const char *const[]){buf, buf2}, 2, useHttps);
-        Qiniu_snprintf(buf, sizeof(buf), "up-%s.qbox.me", regionId);
-        Qiniu_Region_Set_Up_Alternative_Hosts(region, (const char *const[]){buf}, 1, useHttps);
+        region->upService = _Qiniu_Region_Service_New(NULL, 0, (const char *const[]){buf, buf2}, 2, NULL, 0, useHttps);
         Qiniu_snprintf(buf, sizeof(buf), "iovip-%s.qiniuio.com", regionId);
-        Qiniu_Region_Set_Io_Preferred_Hosts(region, (const char *const[]){buf}, 1, useHttps);
-        Qiniu_snprintf(buf, sizeof(buf), "iovip-%s.qbox.me", regionId);
-        Qiniu_Region_Set_Io_Alternative_Hosts(region, (const char *const[]){buf}, 1, useHttps);
+        region->ioService = _Qiniu_Region_Service_New(NULL, 0, (const char *const[]){buf}, 1, NULL, 0, useHttps);
     }
     Qiniu_snprintf(buf, sizeof(buf), "rs-%s.qiniuapi.com", regionId);
-    Qiniu_Region_Set_Rs_Preferred_Hosts(region, (const char *const[]){buf}, 1, useHttps);
-    Qiniu_snprintf(buf, sizeof(buf), "rs-%s.qbox.me", regionId);
-    Qiniu_Region_Set_Rs_Alternative_Hosts(region, (const char *const[]){buf}, 1, useHttps);
+    region->rsService = _Qiniu_Region_Service_New(NULL, 0, (const char *const[]){buf}, 1, NULL, 0, useHttps);
     Qiniu_snprintf(buf, sizeof(buf), "rsf-%s.qiniuapi.com", regionId);
-    Qiniu_Region_Set_Rsf_Preferred_Hosts(region, (const char *const[]){buf}, 1, useHttps);
-    Qiniu_snprintf(buf, sizeof(buf), "rsf-%s.qbox.me", regionId);
-    Qiniu_Region_Set_Rsf_Alternative_Hosts(region, (const char *const[]){buf}, 1, useHttps);
+    region->rsfService = _Qiniu_Region_Service_New(NULL, 0, (const char *const[]){buf}, 1, NULL, 0, useHttps);
     Qiniu_snprintf(buf, sizeof(buf), "api-%s.qiniuapi.com", regionId);
-    Qiniu_Region_Set_Api_Preferred_Hosts(region, (const char *const[]){buf}, 1, useHttps);
-    Qiniu_snprintf(buf, sizeof(buf), "api-%s.qbox.me", regionId);
-    Qiniu_Region_Set_Api_Alternative_Hosts(region, (const char *const[]){buf}, 1, useHttps);
+    region->apiService = _Qiniu_Region_Service_New(NULL, 0, (const char *const[]){buf}, 1, NULL, 0, useHttps);
     return region;
 }
 
@@ -854,28 +1205,50 @@ static Qiniu_Bool isRegionQueryRetryable(Qiniu_Error err)
     }
 }
 
+QINIU_DLLAPI extern const char *QINIU_UC_HOST_BACKUP_2;
+
+static const char **_Qiniu_Get_Bucket_Hosts(Qiniu_Client *self, size_t *count, Qiniu_Bool *needToFree)
+{
+    const char **hosts = NULL;
+    *count = 0;
+    *needToFree = Qiniu_False;
+
+    if (self->specifiedRegion == NULL)
+    {
+        hosts = (const char **)malloc(sizeof(const char *) * 3);
+        *needToFree = Qiniu_True;
+        if (QINIU_UC_HOST != NULL)
+        {
+            hosts[(*count)++] = QINIU_UC_HOST;
+        }
+        if (QINIU_UC_HOST_BACKUP != NULL)
+        {
+            hosts[(*count)++] = QINIU_UC_HOST_BACKUP;
+        }
+        if (QINIU_UC_HOST_BACKUP_2 != NULL)
+        {
+            hosts[(*count)++] = QINIU_UC_HOST_BACKUP_2;
+        }
+    }
+    else
+    {
+        hosts = (const char **)_Qiniu_Region_Get_All_Bucket_Hosts(self->specifiedRegion, count, Qiniu_False);
+    }
+    return hosts;
+}
+
 static Qiniu_Error _Qiniu_Region_Query_call(Qiniu_Client *self, const char *accessKey, const char *const bucketName, cJSON **ret)
 {
     char *url;
     Qiniu_Error err;
     Qiniu_Zero(err);
-    const char *hosts[3] = {NULL, NULL, NULL};
-    int hostsLen = 0;
+    const char *const *hosts;
+    size_t hostsLen;
+    Qiniu_Bool needToFreeHosts;
 
-    if (QINIU_UC_HOST != NULL)
-    {
-        hosts[hostsLen++] = QINIU_UC_HOST;
-    }
-    if (QINIU_UC_HOST_BACKUP != NULL)
-    {
-        hosts[hostsLen++] = QINIU_UC_HOST_BACKUP;
-    }
-    if (QINIU_API_HOST != NULL)
-    {
-        hosts[hostsLen++] = QINIU_API_HOST;
-    }
+    hosts = _Qiniu_Get_Bucket_Hosts(self, &hostsLen, &needToFreeHosts);
 
-    for (int i = 0; i < hostsLen; i++)
+    for (size_t i = 0; i < hostsLen; i++)
     {
         url = Qiniu_String_Concat(hosts[i], "/v4/query?ak=", accessKey, "&bucket=", bucketName, NULL);
         err = Qiniu_Client_Call(self, ret, url);
@@ -892,11 +1265,11 @@ static Qiniu_Error _Qiniu_Region_Query_call(Qiniu_Client *self, const char *acce
             {
                 continue;
             }
-            return err;
+            goto handleErr;
         }
         else if (!isRegionQueryRetryable(err))
         {
-            return err;
+            goto handleErr;
         }
     }
     if (err.code == 0)
@@ -904,7 +1277,93 @@ static Qiniu_Error _Qiniu_Region_Query_call(Qiniu_Client *self, const char *acce
         err.code = 599;
         err.message = "no uc hosts available";
     }
+handleErr:
+    if (needToFreeHosts)
+    {
+        Qiniu_Free((void *)hosts);
+    }
     return err;
+}
+
+static struct _Qiniu_Region_Service *_Qiniu_Region_New_From_JSON(cJSON *json, Qiniu_Bool useHttps)
+{
+    cJSON *accDomainsJson = Qiniu_Json_GetObjectItem(json, "acc_domains", NULL);
+    cJSON *domainsJson = Qiniu_Json_GetObjectItem(json, "domains", NULL);
+    cJSON *oldJson = Qiniu_Json_GetObjectItem(json, "old", NULL);
+    size_t accDomainsCount = 0, domainsCount = 0, oldCount = 0;
+    if (accDomainsJson != NULL)
+    {
+        accDomainsCount = cJSON_GetArraySize(accDomainsJson);
+    }
+    if (domainsJson != NULL)
+    {
+        domainsCount = cJSON_GetArraySize(domainsJson);
+    }
+    if (oldJson != NULL)
+    {
+        oldCount = cJSON_GetArraySize(oldJson);
+    }
+
+    struct _Qiniu_Region_Service *newService = malloc(sizeof(struct _Qiniu_Region_Service));
+    if (newService == NULL)
+    {
+        goto handleErr;
+    }
+    const char **newHosts = malloc(sizeof(const char *) * (accDomainsCount + domainsCount + oldCount));
+    if (newHosts == NULL)
+    {
+        goto handleErr;
+    }
+    size_t offset = 0, i;
+    const char *h;
+    for (i = 0; i < accDomainsCount; i++)
+    {
+        h = _Qiniu_Duplicate_Host(Qiniu_Json_GetStringAt(accDomainsJson, i, NULL), useHttps);
+        if (h == NULL)
+        {
+            goto handleErr;
+        }
+        newHosts[offset + i] = h;
+    }
+    offset += accDomainsCount;
+    for (i = 0; i < domainsCount; i++)
+    {
+        h = _Qiniu_Duplicate_Host(Qiniu_Json_GetStringAt(domainsJson, i, NULL), useHttps);
+        if (h == NULL)
+        {
+            goto handleErr;
+        }
+        newHosts[offset + i] = h;
+    }
+    offset += domainsCount;
+    for (i = 0; i < oldCount; i++)
+    {
+        h = _Qiniu_Duplicate_Host(Qiniu_Json_GetStringAt(oldJson, i, NULL), useHttps);
+        if (h == NULL)
+        {
+            goto handleErr;
+        }
+        newHosts[offset + i] = h;
+    }
+    newService->hosts = newHosts;
+    newService->acceleratedHostsCount = accDomainsCount;
+    newService->preferredHostsCount = domainsCount;
+    newService->alternativeHostsCount = oldCount;
+    return newService;
+handleErr:
+    if (newHosts != NULL)
+    {
+        for (size_t j = 0; j < offset + i; j++)
+        {
+            free((void *)newHosts[j]);
+        }
+        free((void *)newHosts);
+    }
+    if (newService != NULL)
+    {
+        free((void *)newService);
+    }
+    return NULL;
 }
 
 Qiniu_Error
@@ -943,253 +1402,43 @@ _Qiniu_Region_Query(Qiniu_Client *self, Qiniu_Region **pRegion, const char *acce
         cJSON *upJson = Qiniu_Json_GetObjectItem(firstHostJson, "up", NULL);
         if (upJson != NULL)
         {
-            struct _Qiniu_Region_Hosts *upPreferredRegionHosts = NULL, *upAlternativeRegionHosts = NULL;
-            cJSON *upDomainsJson = Qiniu_Json_GetObjectItem(upJson, "domains", NULL);
-            if (upDomainsJson != NULL)
-            {
-                int upPreferredHostsCount = cJSON_GetArraySize(upDomainsJson);
-                if (upPreferredHostsCount > 0)
-                {
-                    const char **upPreferredHosts = (const char **)malloc(sizeof(const char *) * upPreferredHostsCount);
-                    for (int i = 0; i < upPreferredHostsCount; i++)
-                    {
-                        upPreferredHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(upDomainsJson, i, NULL), useHttps);
-                    }
-                    upPreferredRegionHosts = _Qiniu_Region_Hosts_New_without_dup(upPreferredHosts, upPreferredHostsCount);
-                }
-            }
-            cJSON *upOldJson = Qiniu_Json_GetObjectItem(upJson, "old", NULL);
-            if (upOldJson != NULL)
-            {
-                int upAlternativeHostsCount = cJSON_GetArraySize(upOldJson);
-                if (upAlternativeHostsCount > 0)
-                {
-                    const char **upAlternativeHosts = (const char **)malloc(sizeof(const char *) * upAlternativeHostsCount);
-                    for (int i = 0; i < upAlternativeHostsCount; i++)
-                    {
-                        upAlternativeHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(upOldJson, i, NULL), useHttps);
-                    }
-                    upAlternativeRegionHosts = _Qiniu_Region_Hosts_New_without_dup(upAlternativeHosts, upAlternativeHostsCount);
-                }
-            }
-            struct _Qiniu_Region_Service *upService = _Qiniu_Region_Service_New(upPreferredRegionHosts, upAlternativeRegionHosts);
-            region->upService = upService;
+            region->upService = _Qiniu_Region_New_From_JSON(upJson, useHttps);
         }
 
         cJSON *ioJson = Qiniu_Json_GetObjectItem(firstHostJson, "io", NULL);
         if (ioJson != NULL)
         {
-            struct _Qiniu_Region_Hosts *ioPreferredRegionHosts = NULL, *ioAlternativeRegionHosts = NULL;
-            cJSON *ioDomainsJson = Qiniu_Json_GetObjectItem(ioJson, "domains", NULL);
-            if (ioDomainsJson != NULL)
-            {
-                int ioPreferredHostsCount = cJSON_GetArraySize(ioDomainsJson);
-                if (ioPreferredHostsCount > 0)
-                {
-                    const char **ioPreferredHosts = (const char **)malloc(sizeof(const char *) * ioPreferredHostsCount);
-                    for (int i = 0; i < ioPreferredHostsCount; i++)
-                    {
-                        ioPreferredHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(ioDomainsJson, i, NULL), useHttps);
-                    }
-                    ioPreferredRegionHosts = _Qiniu_Region_Hosts_New_without_dup(ioPreferredHosts, ioPreferredHostsCount);
-                }
-            }
-            cJSON *ioOldJson = Qiniu_Json_GetObjectItem(ioJson, "old", NULL);
-            if (ioOldJson != NULL)
-            {
-                int ioAlternativeHostsCount = cJSON_GetArraySize(ioOldJson);
-                if (ioAlternativeHostsCount > 0)
-                {
-                    const char **ioAlternativeHosts = (const char **)malloc(sizeof(const char *) * ioAlternativeHostsCount);
-                    for (int i = 0; i < ioAlternativeHostsCount; i++)
-                    {
-                        ioAlternativeHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(ioOldJson, i, NULL), useHttps);
-                    }
-                    ioAlternativeRegionHosts = _Qiniu_Region_Hosts_New_without_dup(ioAlternativeHosts, ioAlternativeHostsCount);
-                }
-            }
-            struct _Qiniu_Region_Service *ioService = _Qiniu_Region_Service_New(ioPreferredRegionHosts, ioAlternativeRegionHosts);
-            region->ioService = ioService;
+            region->ioService = _Qiniu_Region_New_From_JSON(ioJson, useHttps);
         }
 
         cJSON *ioSrcJson = Qiniu_Json_GetObjectItem(firstHostJson, "io_src", NULL);
         if (ioSrcJson != NULL)
         {
-            struct _Qiniu_Region_Hosts *ioSrcPreferredRegionHosts = NULL, *ioSrcAlternativeRegionHosts = NULL;
-            cJSON *ioSrcDomainsJson = Qiniu_Json_GetObjectItem(ioSrcJson, "domains", NULL);
-            if (ioSrcDomainsJson != NULL)
-            {
-                int ioSrcPreferredHostsCount = cJSON_GetArraySize(ioSrcDomainsJson);
-                if (ioSrcPreferredHostsCount > 0)
-                {
-                    const char **ioSrcPreferredHosts = (const char **)malloc(sizeof(const char *) * ioSrcPreferredHostsCount);
-                    for (int i = 0; i < ioSrcPreferredHostsCount; i++)
-                    {
-                        ioSrcPreferredHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(ioSrcDomainsJson, i, NULL), useHttps);
-                    }
-                    ioSrcPreferredRegionHosts = _Qiniu_Region_Hosts_New_without_dup(ioSrcPreferredHosts, ioSrcPreferredHostsCount);
-                }
-            }
-            cJSON *ioSrcOldJson = Qiniu_Json_GetObjectItem(ioSrcJson, "old", NULL);
-            if (ioSrcOldJson != NULL)
-            {
-                int ioSrcAlternativeHostsCount = cJSON_GetArraySize(ioSrcOldJson);
-                if (ioSrcAlternativeHostsCount > 0)
-                {
-                    const char **ioSrcAlternativeHosts = (const char **)malloc(sizeof(const char *) * ioSrcAlternativeHostsCount);
-                    for (int i = 0; i < ioSrcAlternativeHostsCount; i++)
-                    {
-                        ioSrcAlternativeHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(ioSrcOldJson, i, NULL), useHttps);
-                    }
-                    ioSrcAlternativeRegionHosts = _Qiniu_Region_Hosts_New_without_dup(ioSrcAlternativeHosts, ioSrcAlternativeHostsCount);
-                }
-            }
-            struct _Qiniu_Region_Service *ioSrcService = _Qiniu_Region_Service_New(ioSrcPreferredRegionHosts, ioSrcAlternativeRegionHosts);
-            region->ioSrcService = ioSrcService;
+            region->ioSrcService = _Qiniu_Region_New_From_JSON(ioSrcJson, useHttps);
         }
 
         cJSON *ucJson = Qiniu_Json_GetObjectItem(firstHostJson, "uc", NULL);
         if (ucJson != NULL)
         {
-            struct _Qiniu_Region_Hosts *ucPreferredRegionHosts = NULL, *ucAlternativeRegionHosts = NULL;
-            cJSON *ucDomainsJson = Qiniu_Json_GetObjectItem(ucJson, "domains", NULL);
-            if (ucDomainsJson != NULL)
-            {
-                int ucPreferredHostsCount = cJSON_GetArraySize(ucDomainsJson);
-                if (ucPreferredHostsCount > 0)
-                {
-                    const char **ucPreferredHosts = (const char **)malloc(sizeof(const char *) * ucPreferredHostsCount);
-                    for (int i = 0; i < ucPreferredHostsCount; i++)
-                    {
-                        ucPreferredHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(ucDomainsJson, i, NULL), useHttps);
-                    }
-                    ucPreferredRegionHosts = _Qiniu_Region_Hosts_New_without_dup(ucPreferredHosts, ucPreferredHostsCount);
-                }
-            }
-            cJSON *ucOldJson = Qiniu_Json_GetObjectItem(ucJson, "old", NULL);
-            if (ucOldJson != NULL)
-            {
-                int ucAlternativeHostsCount = cJSON_GetArraySize(ucOldJson);
-                if (ucAlternativeHostsCount > 0)
-                {
-                    const char **ucAlternativeHosts = (const char **)malloc(sizeof(const char *) * ucAlternativeHostsCount);
-                    for (int i = 0; i < ucAlternativeHostsCount; i++)
-                    {
-                        ucAlternativeHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(ucOldJson, i, NULL), useHttps);
-                    }
-                    ucAlternativeRegionHosts = _Qiniu_Region_Hosts_New_without_dup(ucAlternativeHosts, ucAlternativeHostsCount);
-                }
-            }
-            struct _Qiniu_Region_Service *ucService = _Qiniu_Region_Service_New(ucPreferredRegionHosts, ucAlternativeRegionHosts);
-            region->ucService = ucService;
+            region->ucService = _Qiniu_Region_New_From_JSON(ucJson, useHttps);
         }
 
         cJSON *rsJson = Qiniu_Json_GetObjectItem(firstHostJson, "rs", NULL);
         if (rsJson != NULL)
         {
-            struct _Qiniu_Region_Hosts *rsPreferredRegionHosts = NULL, *rsAlternativeRegionHosts = NULL;
-            cJSON *rsDomainsJson = Qiniu_Json_GetObjectItem(rsJson, "domains", NULL);
-            if (rsDomainsJson != NULL)
-            {
-                int rsPreferredHostsCount = cJSON_GetArraySize(rsDomainsJson);
-                if (rsPreferredHostsCount > 0)
-                {
-                    const char **rsPreferredHosts = (const char **)malloc(sizeof(const char *) * rsPreferredHostsCount);
-                    for (int i = 0; i < rsPreferredHostsCount; i++)
-                    {
-                        rsPreferredHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(rsDomainsJson, i, NULL), useHttps);
-                    }
-                    rsPreferredRegionHosts = _Qiniu_Region_Hosts_New_without_dup(rsPreferredHosts, rsPreferredHostsCount);
-                }
-            }
-            cJSON *rsOldJson = Qiniu_Json_GetObjectItem(rsJson, "old", NULL);
-            if (rsOldJson != NULL)
-            {
-                int rsAlternativeHostsCount = cJSON_GetArraySize(rsOldJson);
-                if (rsAlternativeHostsCount > 0)
-                {
-                    const char **rsAlternativeHosts = (const char **)malloc(sizeof(const char *) * rsAlternativeHostsCount);
-                    for (int i = 0; i < rsAlternativeHostsCount; i++)
-                    {
-                        rsAlternativeHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(rsOldJson, i, NULL), useHttps);
-                    }
-                    rsAlternativeRegionHosts = _Qiniu_Region_Hosts_New_without_dup(rsAlternativeHosts, rsAlternativeHostsCount);
-                }
-            }
-            struct _Qiniu_Region_Service *rsService = _Qiniu_Region_Service_New(rsPreferredRegionHosts, rsAlternativeRegionHosts);
-            region->rsService = rsService;
+            region->rsService = _Qiniu_Region_New_From_JSON(rsJson, useHttps);
         }
 
         cJSON *rsfJson = Qiniu_Json_GetObjectItem(firstHostJson, "rsf", NULL);
         if (rsfJson != NULL)
         {
-            struct _Qiniu_Region_Hosts *rsfPreferredRegionHosts = NULL, *rsfAlternativeRegionHosts = NULL;
-            cJSON *rsfDomainsJson = Qiniu_Json_GetObjectItem(rsfJson, "domains", NULL);
-            if (rsfDomainsJson != NULL)
-            {
-                int rsfPreferredHostsCount = cJSON_GetArraySize(rsfDomainsJson);
-                if (rsfPreferredHostsCount > 0)
-                {
-                    const char **rsfPreferredHosts = (const char **)malloc(sizeof(const char *) * rsfPreferredHostsCount);
-                    for (int i = 0; i < rsfPreferredHostsCount; i++)
-                    {
-                        rsfPreferredHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(rsfDomainsJson, i, NULL), useHttps);
-                    }
-                    rsfPreferredRegionHosts = _Qiniu_Region_Hosts_New_without_dup(rsfPreferredHosts, rsfPreferredHostsCount);
-                }
-            }
-            cJSON *rsfOldJson = Qiniu_Json_GetObjectItem(rsfJson, "old", NULL);
-            if (rsfOldJson != NULL)
-            {
-                int rsfAlternativeHostsCount = cJSON_GetArraySize(rsfOldJson);
-                if (rsfAlternativeHostsCount > 0)
-                {
-                    const char **rsfAlternativeHosts = (const char **)malloc(sizeof(const char *) * rsfAlternativeHostsCount);
-                    for (int i = 0; i < rsfAlternativeHostsCount; i++)
-                    {
-                        rsfAlternativeHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(rsfOldJson, i, NULL), useHttps);
-                    }
-                    rsfAlternativeRegionHosts = _Qiniu_Region_Hosts_New_without_dup(rsfAlternativeHosts, rsfAlternativeHostsCount);
-                }
-            }
-            struct _Qiniu_Region_Service *rsfService = _Qiniu_Region_Service_New(rsfPreferredRegionHosts, rsfAlternativeRegionHosts);
-            region->rsfService = rsfService;
+            region->rsfService = _Qiniu_Region_New_From_JSON(rsfJson, useHttps);
         }
 
         cJSON *apiJson = Qiniu_Json_GetObjectItem(firstHostJson, "api", NULL);
         if (apiJson != NULL)
         {
-            struct _Qiniu_Region_Hosts *apiPreferredRegionHosts = NULL, *apiAlternativeRegionHosts = NULL;
-            cJSON *apiDomainsJson = Qiniu_Json_GetObjectItem(apiJson, "domains", NULL);
-            if (apiDomainsJson != NULL)
-            {
-                int apiPreferredHostsCount = cJSON_GetArraySize(apiDomainsJson);
-                if (apiPreferredHostsCount > 0)
-                {
-                    const char **apiPreferredHosts = (const char **)malloc(sizeof(const char *) * apiPreferredHostsCount);
-                    for (int i = 0; i < apiPreferredHostsCount; i++)
-                    {
-                        apiPreferredHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(apiDomainsJson, i, NULL), useHttps);
-                    }
-                    apiPreferredRegionHosts = _Qiniu_Region_Hosts_New_without_dup(apiPreferredHosts, apiPreferredHostsCount);
-                }
-            }
-            cJSON *apiOldJson = Qiniu_Json_GetObjectItem(apiJson, "old", NULL);
-            if (apiOldJson != NULL)
-            {
-                int apiAlternativeHostsCount = cJSON_GetArraySize(apiOldJson);
-                if (apiAlternativeHostsCount > 0)
-                {
-                    const char **apiAlternativeHosts = (const char **)malloc(sizeof(const char *) * apiAlternativeHostsCount);
-                    for (int i = 0; i < apiAlternativeHostsCount; i++)
-                    {
-                        apiAlternativeHosts[i] = duplicate_host(Qiniu_Json_GetStringAt(apiOldJson, i, NULL), useHttps);
-                    }
-                    apiAlternativeRegionHosts = _Qiniu_Region_Hosts_New_without_dup(apiAlternativeHosts, apiAlternativeHostsCount);
-                }
-            }
-            struct _Qiniu_Region_Service *apiService = _Qiniu_Region_Service_New(apiPreferredRegionHosts, apiAlternativeRegionHosts);
-            region->apiService = apiService;
+            region->apiService = _Qiniu_Region_New_From_JSON(apiJson, useHttps);
         }
 
         *pRegion = region;
@@ -1204,55 +1453,225 @@ Qiniu_Error Qiniu_Region_Query(Qiniu_Client *self, Qiniu_Region **pRegion, const
     return _Qiniu_Region_Query(self, pRegion, NULL, bucketName, useHttps);
 }
 
-Qiniu_Error _Qiniu_Region_Get_Up_Host(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char **host)
+struct _Qiniu_Region_Cache
 {
-    const char *const *hosts;
-    size_t count;
-    Qiniu_Error err = Qiniu_OK;
-    Qiniu_Region **foundRegion = &self->cachedRegion;
+    Qiniu_Region *region;
+    const char *accessKey, *bucketName, *const *bucketHosts;
+    size_t bucketHostsLen;
+    Qiniu_Bool needToFreeBucketHosts, uploadingAccelerationEnabled;
+};
 
-    if (self->specifiedRegion)
+static int _Qiniu_Compare_Str(const char *a, const char *b)
+{
+    if (a == NULL && b == NULL)
     {
-        foundRegion = &self->specifiedRegion;
-        goto foundCache;
+        return 0;
     }
-    else if (self->autoQueryRegion)
+    else if (a == NULL)
     {
-        if (self->cachedRegion != NULL)
-        {
-            if (strcmp(self->cachedRegionBucketName, bucketName) == 0)
-            {
-                goto foundCache;
-            }
-            else
-            {
-                Qiniu_Region_Free(self->cachedRegion);
-                self->cachedRegion = NULL;
-                Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
-            }
-        }
-        err = _Qiniu_Region_Query(self, &self->cachedRegion, accessKey, bucketName, self->autoQueryHttpsRegion);
-        if (err.code != 200)
-        {
-            goto useDefault;
-        }
-        self->cachedRegionBucketName = Qiniu_String_Dup(bucketName);
-        goto foundCache;
+        return -1;
     }
-useDefault:
-    *host = QINIU_UP_HOST;
-    return err;
-
-foundCache:
-    hosts = Qiniu_Region_Get_Up_Preferred_Hosts(*foundRegion, &count);
-    if (count == 0)
+    else if (b == NULL)
     {
-        *host = QINIU_UP_HOST;
+        return 1;
     }
     else
     {
-        *host = hosts[0];
+        return strcmp(a, b);
     }
+}
+
+static int _Qiniu_Region_Cache_Compare(const void *a, const void *b, void *user_data)
+{
+    int result;
+    struct _Qiniu_Region_Cache *cacheA = (struct _Qiniu_Region_Cache *)a;
+    struct _Qiniu_Region_Cache *cacheB = (struct _Qiniu_Region_Cache *)b;
+    result = _Qiniu_Compare_Str(cacheA->accessKey, cacheB->accessKey);
+    if (!result)
+    {
+        return result;
+    }
+    result = _Qiniu_Compare_Str(cacheA->bucketName, cacheB->bucketName);
+    if (!result)
+    {
+        return result;
+    }
+    if (cacheA->bucketHostsLen == cacheB->bucketHostsLen)
+    {
+        for (size_t i = 0; i < cacheA->bucketHostsLen; i++)
+        {
+            result = _Qiniu_Compare_Str(cacheA->bucketHosts[i], cacheB->bucketHosts[i]);
+            if (!result)
+            {
+                return result;
+            }
+        }
+        return result;
+    }
+    else
+    {
+        return cacheA->bucketHostsLen - cacheB->bucketHostsLen;
+    }
+}
+
+static void _Qiniu_Region_Cache_Free(void *r)
+{
+    struct _Qiniu_Region_Cache *cache = (struct _Qiniu_Region_Cache *)r;
+    Qiniu_Free((void *)cache->accessKey);
+    Qiniu_Free((void *)cache->bucketName);
+    if (cache->needToFreeBucketHosts)
+    {
+        Qiniu_Free((void *)cache->bucketHosts);
+    }
+    Qiniu_Region_Free(cache->region);
+    Qiniu_Zero_Ptr(cache);
+}
+
+static uint64_t _Qiniu_Region_Cache_Hash(const void *r, uint64_t seed0, uint64_t seed1)
+{
+    struct _Qiniu_Region_Cache *cache = (struct _Qiniu_Region_Cache *)r;
+    uint64_t hash = 0;
+    if (cache->accessKey != NULL)
+    {
+        hash ^= hashmap_sip(cache->accessKey, strlen(cache->accessKey), seed0, seed1);
+    }
+    if (cache->bucketName != NULL)
+    {
+        hash ^= hashmap_sip(cache->bucketName, strlen(cache->bucketName), seed0, seed1);
+    }
+    hash ^= hashmap_sip(&cache->bucketHostsLen, sizeof(cache->bucketHostsLen), seed0, seed1);
+    for (size_t i = 0; i < cache->bucketHostsLen; i++)
+    {
+        hash ^= hashmap_sip(cache->bucketHosts[i], strlen(cache->bucketHosts[i]), seed0, seed1);
+    }
+    hash ^= hashmap_sip(&cache->uploadingAccelerationEnabled, sizeof(cache->uploadingAccelerationEnabled), seed0, seed1);
+    return hash;
+}
+
+static Qiniu_Error _Qiniu_Region_Auto_Query_With_Cache(Qiniu_Client *self, const char *accessKey, const char *bucketName, Qiniu_Region **foundRegion)
+{
+    const char *const *hosts;
+    size_t hostsLen;
+    Qiniu_Bool needToFreeHosts;
+    Qiniu_Error err = Qiniu_OK;
+
+    if (accessKey == NULL)
+    {
+        accessKey = QINIU_ACCESS_KEY;
+    }
+
+    hosts = _Qiniu_Get_Bucket_Hosts(self, &hostsLen, &needToFreeHosts);
+    const struct _Qiniu_Region_Cache cacheKey = {
+        .accessKey = accessKey,
+        .bucketName = bucketName,
+        .bucketHosts = hosts,
+        .bucketHostsLen = hostsLen,
+        .needToFreeBucketHosts = needToFreeHosts,
+        .uploadingAccelerationEnabled = self->enableUploadingAcceleration,
+    };
+    struct _Qiniu_Region_Cache *cache = NULL;
+    if (self->cachedRegions != NULL)
+    {
+        cache = (struct _Qiniu_Region_Cache *)hashmap_get(self->cachedRegions, &cacheKey);
+        if (cache != NULL && !Qiniu_Region_Is_Expired(cache->region))
+        {
+            *foundRegion = cache->region;
+            err = Qiniu_OK;
+            goto handleErr;
+        }
+    }
+    err = _Qiniu_Region_Query(self, foundRegion, accessKey, bucketName, self->autoQueryHttpsRegion);
+    if (err.code != 200)
+    {
+        if (cache != NULL)
+        { // 有已经过期的缓存区域可以使用
+            *foundRegion = cache->region;
+            err = Qiniu_OK;
+        }
+        goto handleErr;
+    }
+    if (self->cachedRegions == NULL)
+    {
+        self->cachedRegions = hashmap_new(sizeof(struct _Qiniu_Region_Cache), 0, rand(), rand(), _Qiniu_Region_Cache_Hash, _Qiniu_Region_Cache_Compare, _Qiniu_Region_Cache_Free, NULL);
+    }
+    if (self->cachedRegions != NULL)
+    {
+        if (cache != NULL)
+        { // 复用前面已经过期的缓存的内存
+            Qiniu_Region_Free(cache->region);
+            cache->region = *foundRegion;
+        }
+        else
+        {
+            struct _Qiniu_Region_Cache *newCache = malloc(sizeof(struct _Qiniu_Region_Cache));
+            if (newCache != NULL)
+            {
+                *newCache = (struct _Qiniu_Region_Cache){
+                    .region = *foundRegion,
+                    .accessKey = Qiniu_String_Dup(accessKey),
+                    .bucketName = Qiniu_String_Dup(bucketName),
+                    .bucketHosts = hosts,
+                    .bucketHostsLen = hostsLen,
+                    .needToFreeBucketHosts = needToFreeHosts,
+                };
+                hashmap_set(self->cachedRegions, newCache);
+                needToFreeHosts = Qiniu_False;
+            }
+        }
+    }
+handleErr:
+    if (needToFreeHosts)
+    {
+        Qiniu_Free((void *)hosts);
+    }
+    return err;
+}
+
+Qiniu_Error _Qiniu_Region_Get_Up_Hosts(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char *const **hosts, size_t *count)
+{
+    Qiniu_Error err = Qiniu_OK;
+    Qiniu_Region *foundRegion = NULL;
+
+    if (self->specifiedRegion)
+    {
+        foundRegion = self->specifiedRegion;
+        goto foundCache;
+    }
+    else if (self->autoQueryRegion && bucketName != NULL)
+    {
+        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
+        if (err.code == 200)
+        {
+            goto foundCache;
+        }
+        return err;
+    }
+foundCache:
+    *hosts = _Qiniu_Region_Get_All_Up_Hosts(foundRegion, count, self->enableUploadingAcceleration);
+    return err;
+}
+
+Qiniu_Error _Qiniu_Region_Get_Io_Hosts(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char *const **hosts, size_t *count)
+{
+    Qiniu_Error err = Qiniu_OK;
+    Qiniu_Region *foundRegion = NULL;
+
+    if (self->specifiedRegion)
+    {
+        foundRegion = self->specifiedRegion;
+        goto foundCache;
+    }
+    else if (self->autoQueryRegion && bucketName != NULL)
+    {
+        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
+        if (err.code == 200)
+        {
+            goto foundCache;
+        }
+        return err;
+    }
+foundCache:
+    *hosts = _Qiniu_Region_Get_All_Io_Hosts(foundRegion, count, Qiniu_False);
     return err;
 }
 
@@ -1260,43 +1679,11 @@ Qiniu_Error _Qiniu_Region_Get_Io_Host(Qiniu_Client *self, const char *accessKey,
 {
     const char *const *hosts;
     size_t count;
-    Qiniu_Error err = Qiniu_OK;
-    Qiniu_Region **foundRegion = &self->cachedRegion;
-
-    if (self->specifiedRegion)
+    Qiniu_Error err = _Qiniu_Region_Get_Io_Hosts(self, accessKey, bucketName, &hosts, &count);
+    if (err.code != 200)
     {
-        foundRegion = &self->specifiedRegion;
-        goto foundCache;
+        return err;
     }
-    else if (self->autoQueryRegion)
-    {
-        if (self->cachedRegion != NULL)
-        {
-            if (strcmp(self->cachedRegionBucketName, bucketName) == 0 && !Qiniu_Region_Is_Expired(self->cachedRegion))
-            {
-                goto foundCache;
-            }
-            else
-            {
-                Qiniu_Region_Free(self->cachedRegion);
-                self->cachedRegion = NULL;
-                Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
-            }
-        }
-        err = _Qiniu_Region_Query(self, &self->cachedRegion, accessKey, bucketName, self->autoQueryHttpsRegion);
-        if (err.code != 200)
-        {
-            goto useDefault;
-        }
-        self->cachedRegionBucketName = Qiniu_String_Dup(bucketName);
-        goto foundCache;
-    }
-useDefault:
-    *host = QINIU_IOVIP_HOST;
-    return err;
-
-foundCache:
-    hosts = Qiniu_Region_Get_Io_Preferred_Hosts(*foundRegion, &count);
     if (count == 0)
     {
         *host = QINIU_IOVIP_HOST;
@@ -1308,47 +1695,39 @@ foundCache:
     return err;
 }
 
+Qiniu_Error _Qiniu_Region_Get_Rs_Hosts(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char *const **hosts, size_t *count)
+{
+    Qiniu_Error err = Qiniu_OK;
+    Qiniu_Region *foundRegion = NULL;
+
+    if (self->specifiedRegion)
+    {
+        foundRegion = self->specifiedRegion;
+        goto foundCache;
+    }
+    else if (self->autoQueryRegion && bucketName != NULL)
+    {
+        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
+        if (err.code == 200)
+        {
+            goto foundCache;
+        }
+        return err;
+    }
+foundCache:
+    *hosts = _Qiniu_Region_Get_All_Rs_Hosts(foundRegion, count, Qiniu_False);
+    return err;
+}
+
 Qiniu_Error _Qiniu_Region_Get_Rs_Host(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char **host)
 {
     const char *const *hosts;
     size_t count;
-    Qiniu_Error err = Qiniu_OK;
-    Qiniu_Region **foundRegion = &self->cachedRegion;
-
-    if (self->specifiedRegion)
+    Qiniu_Error err = _Qiniu_Region_Get_Rs_Hosts(self, accessKey, bucketName, &hosts, &count);
+    if (err.code != 200)
     {
-        foundRegion = &self->specifiedRegion;
-        goto foundCache;
+        return err;
     }
-    else if (self->autoQueryRegion)
-    {
-        if (self->cachedRegion != NULL)
-        {
-            if (strcmp(self->cachedRegionBucketName, bucketName) == 0)
-            {
-                goto foundCache;
-            }
-            else
-            {
-                Qiniu_Region_Free(self->cachedRegion);
-                self->cachedRegion = NULL;
-                Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
-            }
-        }
-        err = _Qiniu_Region_Query(self, &self->cachedRegion, accessKey, bucketName, self->autoQueryHttpsRegion);
-        if (err.code != 200)
-        {
-            goto useDefault;
-        }
-        self->cachedRegionBucketName = Qiniu_String_Dup(bucketName);
-        goto foundCache;
-    }
-useDefault:
-    *host = QINIU_RS_HOST;
-    return err;
-
-foundCache:
-    hosts = Qiniu_Region_Get_Rs_Preferred_Hosts(*foundRegion, &count);
     if (count == 0)
     {
         *host = QINIU_RS_HOST;
@@ -1360,47 +1739,39 @@ foundCache:
     return err;
 }
 
+Qiniu_Error _Qiniu_Region_Get_Rsf_Hosts(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char *const **hosts, size_t *count)
+{
+    Qiniu_Error err = Qiniu_OK;
+    Qiniu_Region *foundRegion = NULL;
+
+    if (self->specifiedRegion)
+    {
+        foundRegion = self->specifiedRegion;
+        goto foundCache;
+    }
+    else if (self->autoQueryRegion && bucketName != NULL)
+    {
+        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
+        if (err.code == 200)
+        {
+            goto foundCache;
+        }
+        return err;
+    }
+foundCache:
+    *hosts = _Qiniu_Region_Get_All_Rsf_Hosts(foundRegion, count, Qiniu_False);
+    return err;
+}
+
 Qiniu_Error _Qiniu_Region_Get_Rsf_Host(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char **host)
 {
     const char *const *hosts;
     size_t count;
-    Qiniu_Error err = Qiniu_OK;
-    Qiniu_Region **foundRegion = &self->cachedRegion;
-
-    if (self->specifiedRegion)
+    Qiniu_Error err = _Qiniu_Region_Get_Rsf_Hosts(self, accessKey, bucketName, &hosts, &count);
+    if (err.code != 200)
     {
-        foundRegion = &self->specifiedRegion;
-        goto foundCache;
+        return err;
     }
-    else if (self->autoQueryRegion)
-    {
-        if (self->cachedRegion != NULL)
-        {
-            if (strcmp(self->cachedRegionBucketName, bucketName) == 0)
-            {
-                goto foundCache;
-            }
-            else
-            {
-                Qiniu_Region_Free(self->cachedRegion);
-                self->cachedRegion = NULL;
-                Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
-            }
-        }
-        err = _Qiniu_Region_Query(self, &self->cachedRegion, accessKey, bucketName, self->autoQueryHttpsRegion);
-        if (err.code != 200)
-        {
-            goto useDefault;
-        }
-        self->cachedRegionBucketName = Qiniu_String_Dup(bucketName);
-        goto foundCache;
-    }
-useDefault:
-    *host = QINIU_RSF_HOST;
-    return err;
-
-foundCache:
-    hosts = Qiniu_Region_Get_Rsf_Preferred_Hosts(*foundRegion, &count);
     if (count == 0)
     {
         *host = QINIU_RSF_HOST;
@@ -1412,47 +1783,39 @@ foundCache:
     return err;
 }
 
+Qiniu_Error _Qiniu_Region_Get_Api_Hosts(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char *const **hosts, size_t *count)
+{
+    Qiniu_Error err = Qiniu_OK;
+    Qiniu_Region *foundRegion = NULL;
+
+    if (self->specifiedRegion)
+    {
+        foundRegion = self->specifiedRegion;
+        goto foundCache;
+    }
+    else if (self->autoQueryRegion && bucketName != NULL)
+    {
+        err = _Qiniu_Region_Auto_Query_With_Cache(self, accessKey, bucketName, &foundRegion);
+        if (err.code == 200)
+        {
+            goto foundCache;
+        }
+        return err;
+    }
+foundCache:
+    *hosts = _Qiniu_Region_Get_All_Api_Hosts(foundRegion, count, Qiniu_False);
+    return err;
+}
+
 Qiniu_Error _Qiniu_Region_Get_Api_Host(Qiniu_Client *self, const char *accessKey, const char *bucketName, const char **host)
 {
     const char *const *hosts;
     size_t count;
-    Qiniu_Error err = Qiniu_OK;
-    Qiniu_Region **foundRegion = &self->cachedRegion;
-
-    if (self->specifiedRegion)
+    Qiniu_Error err = _Qiniu_Region_Get_Api_Hosts(self, accessKey, bucketName, &hosts, &count);
+    if (err.code != 200)
     {
-        foundRegion = &self->specifiedRegion;
-        goto foundCache;
+        return err;
     }
-    else if (self->autoQueryRegion)
-    {
-        if (self->cachedRegion != NULL)
-        {
-            if (strcmp(self->cachedRegionBucketName, bucketName) == 0)
-            {
-                goto foundCache;
-            }
-            else
-            {
-                Qiniu_Region_Free(self->cachedRegion);
-                self->cachedRegion = NULL;
-                Qiniu_FreeV2((void **)&self->cachedRegionBucketName);
-            }
-        }
-        err = _Qiniu_Region_Query(self, &self->cachedRegion, accessKey, bucketName, self->autoQueryHttpsRegion);
-        if (err.code != 200)
-        {
-            goto useDefault;
-        }
-        self->cachedRegionBucketName = Qiniu_String_Dup(bucketName);
-        goto foundCache;
-    }
-useDefault:
-    *host = QINIU_API_HOST;
-    return err;
-
-foundCache:
-    hosts = Qiniu_Region_Get_Api_Preferred_Hosts(*foundRegion, &count);
     if (count == 0)
     {
         *host = QINIU_API_HOST;

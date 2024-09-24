@@ -7,7 +7,9 @@
 
 #include "http.h"
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -37,7 +39,9 @@ extern "C"
                                                         const char *prefix, const char *delimiter, const char *marker,
                                                         int limit);
     QINIU_DLLAPI extern void Qiniu_RSF_ListRet_Cleanup(Qiniu_RSF_ListRet *self);
+#if defined(_WIN32)
 #pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

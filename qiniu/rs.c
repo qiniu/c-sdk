@@ -108,6 +108,10 @@ char *Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy *auth, Qiniu_Mac *mac)
     {
         cJSON_AddNumberToObject(root, "fileType", auth->fileType);
     }
+    if (auth->persistentType)
+    {
+        cJSON_AddNumberToObject(root, "persistentType", auth->persistentType);
+    }
 
     if (auth->expires)
     {

@@ -3,7 +3,7 @@
  Name        : io.h
  Author      : Qiniu.com
  Copyright   : 2012(c) Shanghai Qiniu Information Technologies Co., Ltd.
- Description : 
+ Description :
  ============================================================================
  */
 
@@ -13,7 +13,9 @@
 #include "http.h"
 #include "reader.h"
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -50,10 +52,18 @@ extern "C"
 		void *upAbortUserData;
 		Qiniu_Rd_FnAbort upAbortCallback;
 
+		// Deprecated fields, prefer upHosts.
 		const char *upHost;
 		const char **upIps;
 		Qiniu_Count ipCount;
 		Qiniu_Count ipIndex;
+
+		// Specify multiple upHosts
+		const char *const *upHosts;
+		size_t upHostsCount;
+
+		// Uploading file progress
+		void (*uploadingProgress)(size_t ultotal, size_t ulnow);
 	} Qiniu_Io_PutExtra;
 
 	/*============================================================================*/
@@ -98,7 +108,9 @@ extern "C"
 		void *self, Qiniu_Header **header, const char *url, const char *addition, size_t addlen);
 	/*============================================================================*/
 
+#if defined(_WIN32)
 #pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

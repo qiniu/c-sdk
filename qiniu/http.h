@@ -79,7 +79,9 @@ extern "C"
 	/*============================================================================*/
 	/* type Qiniu_Auth */
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 	typedef struct curl_slist Qiniu_Header;
 
@@ -106,7 +108,9 @@ extern "C"
 	typedef struct _Qiniu_Region Qiniu_Region;
 	QINIU_DLLAPI extern void Qiniu_Region_Free(Qiniu_Region *region);
 
-	struct _Qiniu_Client
+	struct hashmap;
+
+	typedef struct _Qiniu_Client
 	{
 		void *curl;
 		Qiniu_Auth auth;
@@ -116,8 +120,7 @@ extern "C"
 
 		Qiniu_Bool autoQueryRegion;
 		Qiniu_Bool autoQueryHttpsRegion;
-		const char *cachedRegionBucketName;
-		Qiniu_Region *cachedRegion;
+		struct hashmap *cachedRegions;
 		Qiniu_Region *specifiedRegion;
 
 		// Use the following field to specify which NIC to use for sending packets.
@@ -138,16 +141,24 @@ extern "C"
 
 		// Millisecond timeout for the connection phase.
 		long connectTimeoutMs;
-	};
-	typedef struct _Qiniu_Client Qiniu_Client;
+
+		// Max retries count.
+		size_t hostsRetriesMax;
+
+		// Is uploading acceleration enabled.
+		Qiniu_Bool enableUploadingAcceleration;
+	} Qiniu_Client;
 
 	QINIU_DLLAPI extern void Qiniu_Client_InitEx(Qiniu_Client *self, Qiniu_Auth auth, size_t bufSize);
 	QINIU_DLLAPI extern void Qiniu_Client_Cleanup(Qiniu_Client *self);
 	QINIU_DLLAPI extern void Qiniu_Client_BindNic(Qiniu_Client *self, const char *nic);
 	QINIU_DLLAPI extern void Qiniu_Client_SetLowSpeedLimit(Qiniu_Client *self, long lowSpeedLimit, long lowSpeedTime);
+	QINIU_DLLAPI extern void Qiniu_Client_SetMaximumHostsRetries(Qiniu_Client *self, size_t retries);
 	QINIU_DLLAPI extern void Qiniu_Client_SetTimeout(Qiniu_Client *self, long timeoutMs);
 	QINIU_DLLAPI extern void Qiniu_Client_SetConnectTimeout(Qiniu_Client *self, long connectTimeoutMs);
 	QINIU_DLLAPI extern void Qiniu_Client_EnableAutoQuery(Qiniu_Client *self, Qiniu_Bool useHttps);
+	QINIU_DLLAPI extern void Qiniu_Client_EnableUploadingAcceleration(Qiniu_Client *self);
+	QINIU_DLLAPI extern void Qiniu_Client_DisableUploadingAcceleration(Qiniu_Client *self);
 	QINIU_DLLAPI extern void Qiniu_Client_SpecifyRegion(Qiniu_Client *self, Qiniu_Region *region);
 
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_Call(Qiniu_Client *self, Qiniu_Json **ret, const char *url);
@@ -166,6 +177,16 @@ extern "C"
 	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithMethod(
 		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
 		Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5);
+
+	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithBinaryAndProgressCallback(
+		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+		Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType,
+		int (*callback)(void *, double, double, double, double), void *callbackData);
+
+	QINIU_DLLAPI extern Qiniu_Error Qiniu_Client_CallWithMethodAndProgressCallback(
+		Qiniu_Client *self, Qiniu_Json **ret, const char *url,
+		Qiniu_Reader body, Qiniu_Int64 bodyLen, const char *mimeType, const char *httpMethod, const char *md5,
+		int (*callback)(void *, double, double, double, double), void *callbackData);
 	/*============================================================================*/
 	/* func Qiniu_Client_InitNoAuth/InitMacAuth  */
 
@@ -185,7 +206,9 @@ extern "C"
 
 	/*============================================================================*/
 
+#if defined(_WIN32)
 #pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

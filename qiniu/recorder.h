@@ -14,7 +14,9 @@
 #define Qiniu_Recorder_Read_Error 9801
 #define Qiniu_Recorder_Write_Error 9802
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -45,7 +47,9 @@ extern "C"
     QINIU_DLLAPI extern Qiniu_Error Qiniu_FileSystem_Recorder_New(const char *rootPath, struct Qiniu_Recorder *recorder);
     /*============================================================================*/
 
+#if defined(_WIN32)
 #pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

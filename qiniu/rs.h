@@ -12,7 +12,9 @@
 
 #include "http.h"
 
+#if defined(_WIN32)
 #pragma pack(1)
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -55,6 +57,7 @@ typedef struct _Qiniu_RS_PutPolicy {
     Qiniu_Uint32 expires;
     Qiniu_Uint32 deleteAfterDays;
     Qiniu_Uint32 fileType;
+    Qiniu_Uint32 persistentType;
 } Qiniu_RS_PutPolicy;
 
 /* @endgist */
@@ -245,7 +248,9 @@ QINIU_DLLAPI extern Qiniu_Error Qiniu_RS_BatchRestoreArchive(Qiniu_Client *self,
                                                              Qiniu_RS_EntryRestoreArchive *entries,
                                                              Qiniu_ItemCount entryCount);
 
+#if defined(_WIN32)
 #pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

@@ -13,6 +13,10 @@
 #include "macro.h"
 #include "base.h"
 
+#if defined(_WIN32)
+#pragma pack(1)
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -63,6 +67,10 @@ extern "C"
 	//
 	// 不再推荐使用，建议使用 Qiniu_Use_Region("cn-east-2") 方法替代
 	QINIU_DLLAPI extern void Qiniu_Use_Zone_Cn_East_2(Qiniu_Bool useHttps);
+
+#if defined(_WIN32)
+#pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

@@ -135,7 +135,7 @@ static ssize_t Qiniu_ReadBuf_ReadAt(Qiniu_ReadBuf *self, void *buf, size_t n, Qi
 		n = max & (~(size_t)0L);
 	}
 	memcpy(buf, self->buf + off, n);
-	return n;
+	return (ssize_t)n;
 }
 
 Qiniu_Reader Qiniu_BufReader(Qiniu_ReadBuf *self, const char *buf, size_t bytes)

@@ -14,6 +14,10 @@
 #include "macro.h"
 #include "http.h"
 
+#if defined(_WIN32)
+#pragma pack(1)
+#endif
+
 #ifdef __cplusplus
  extern "C"
  {
@@ -163,6 +167,10 @@ QINIU_DLLAPI extern void Qiniu_Free_CDNBandwidthRet(Qiniu_CDN_BandwidthRet *ret)
 QINIU_DLLAPI extern void Qiniu_Free_CDNLogListRet(Qiniu_CDN_LogListRet *ret);
 
 //=====================================================================
+
+#if defined(_WIN32)
+#pragma pack()
+#endif
 
 #ifdef __cplusplus
 }
