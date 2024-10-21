@@ -80,6 +80,10 @@ char *Qiniu_RS_PutPolicy_Token(Qiniu_RS_PutPolicy *auth, Qiniu_Mac *mac)
     {
         cJSON_AddStringToObject(root, "persistentPipeline", auth->persistentPipeline);
     }
+    if (auth->persistentWorkflowTemplateID)
+    {
+        cJSON_AddStringToObject(root, "persistentWorkflowTemplateID", auth->persistentWorkflowTemplateID);
+    }
     if (auth->mimeLimit)
     {
         cJSON_AddStringToObject(root, "mimeLimit", auth->mimeLimit);

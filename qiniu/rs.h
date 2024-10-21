@@ -49,6 +49,7 @@ typedef struct _Qiniu_RS_PutPolicy {
     const char *persistentOps;
     const char *persistentNotifyUrl;
     const char *persistentPipeline;
+    const char *persistentWorkflowTemplateID;
     const char *mimeLimit;
     Qiniu_Uint64 fsizeLimit;
     Qiniu_Uint64 fsizeMin;

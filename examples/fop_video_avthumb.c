@@ -76,6 +76,7 @@ int main(int argc, char **argv) {
         printf("Desc: %s\n", prefopRet.desc);
         printf("InputBucket: %s\n", prefopRet.inputBucket);
         printf("InputKey: %s\n", prefopRet.inputKey);
+        printf("TaskFrom: %s\n", prefopRet.taskFrom);
         printf("Type: %d\n", prefopRet.type);
         printf("CreationDate: %d-%d-%d %d:%d:%d +%d\n", prefopRet.creationDate.date.year, prefopRet.creationDate.date.month,
                prefopRet.creationDate.date.day, prefopRet.creationDate.time.hour,

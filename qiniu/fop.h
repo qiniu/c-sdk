@@ -33,6 +33,7 @@ typedef struct _Qiniu_FOP_PfopParams
     const char *key;
     const char *pipeline;
     const char *notifyURL;
+    const char *workflowTemplateID;
     char **fops;
     int fopCount;
     int force;
@@ -57,6 +58,7 @@ typedef struct _Qiniu_FOP_PrefopRet
     const char *desc;
     const char *inputBucket;
     const char *inputKey;
+    const char *taskFrom;
     int code;
     int type;
     Qiniu_DateTime creationDate;
