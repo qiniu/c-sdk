@@ -38,18 +38,20 @@ Qiniu_Error Qiniu_FOP_Pfop_v2(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, Qiniu_
     char *typeStr = NULL;
     char *url = NULL;
     char *body = NULL;
-    Qiniu_Bool escapeBucketOk;
-    Qiniu_Bool escapeKeyOk;
-    Qiniu_Bool escapeFopsOk;
-    Qiniu_Bool escapePipelineOk;
-    Qiniu_Bool escapeNotifyURLOk;
+    Qiniu_Bool escapeBucketOk = Qiniu_False;
+    Qiniu_Bool escapeKeyOk = Qiniu_False;
+    Qiniu_Bool escapeFopsOk = Qiniu_False;
+    Qiniu_Bool escapePipelineOk = Qiniu_False;
+    Qiniu_Bool escapeNotifyURLOk = Qiniu_False;
 
     // Add encoded bucket
     encodedBucket = Qiniu_QueryEscape(params->bucket, &escapeBucketOk);
     encodedKey = Qiniu_QueryEscape(params->key, &escapeKeyOk);
-    fopsStr = Qiniu_String_Join(";", params->fops, params->fopCount);
-    encodedFops = Qiniu_QueryEscape(fopsStr, &escapeFopsOk);
-    Qiniu_Free(fopsStr);
+    if (params->fopCount > 0 || params->fops){
+        fopsStr = Qiniu_String_Join(";", params->fops, params->fopCount);
+        encodedFops = Qiniu_QueryEscape(fopsStr, &escapeFopsOk);
+        Qiniu_Free(fopsStr);
+    }
 
     if (params->pipeline)
     {
@@ -84,9 +86,19 @@ Qiniu_Error Qiniu_FOP_Pfop_v2(Qiniu_Client *self, Qiniu_FOP_PfopRet *ret, Qiniu_
         typeStr = "0";
     }
 
-    body = Qiniu_String_Concat("bucket=", encodedBucket, "&key=", encodedKey, "&fops=", encodedFops,
-                               "&pipeline=", encodedPipeline, "&notifyURL=", encodedNotifyURL, "&force=", forceStr,
-                               "&type=", typeStr, NULL);
+    if (escapeFopsOk)
+    {
+        body = Qiniu_String_Concat("bucket=", encodedBucket, "&key=", encodedKey, "&fops=", encodedFops,
+                                   "&pipeline=", encodedPipeline, "&notifyURL=", encodedNotifyURL, "&force=", forceStr,
+                                   "&type=", typeStr, NULL);
+    }
+    else
+    {
+        body = Qiniu_String_Concat("bucket=", encodedBucket, "&key=", encodedKey, "&workflowTemplateID=", params->workflowTemplateID,
+                                   "&pipeline=", encodedPipeline, "&notifyURL=", encodedNotifyURL, "&force=", forceStr,
+                                   "&type=", typeStr, NULL);
+    }
+
     if (escapeBucketOk)
     {
         Qiniu_Free(encodedBucket);
@@ -195,6 +207,7 @@ Qiniu_Error Qiniu_FOP_Prefop(Qiniu_Client *self, Qiniu_FOP_PrefopRet *ret, Qiniu
     ret->desc = Qiniu_Json_GetString(root, "desc", NULL);
     ret->inputBucket = Qiniu_Json_GetString(root, "inputBucket", NULL);
     ret->inputKey = Qiniu_Json_GetString(root, "inputBucket", NULL);
+    ret->taskFrom = Qiniu_Json_GetString(root, "taskFrom", NULL);
     ret->type = Qiniu_Json_GetInt(root, "type", 0);
     creationDateStr = (char *)Qiniu_Json_GetString(root, "creationDate", NULL);
     if (creationDateStr != NULL)
